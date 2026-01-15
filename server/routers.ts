@@ -1,0 +1,517 @@
+import { COOKIE_NAME } from "@shared/const";
+import { getSessionCookieOptions } from "./_core/cookies";
+import { systemRouter } from "./_core/systemRouter";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import * as db from "./db";
+
+// ============================================
+// ROLE-BASED MIDDLEWARE
+// ============================================
+
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "admin") {
+    throw new TRPCError({ 
+      code: "FORBIDDEN", 
+      message: "Admin access required" 
+    });
+  }
+  return next({ ctx });
+});
+
+const maintainerProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!["admin", "maintainer"].includes(ctx.user.role)) {
+    throw new TRPCError({ 
+      code: "FORBIDDEN", 
+      message: "Maintainer or Admin access required" 
+    });
+  }
+  return next({ ctx });
+});
+
+const editorProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!["admin", "maintainer", "editor"].includes(ctx.user.role)) {
+    throw new TRPCError({ 
+      code: "FORBIDDEN", 
+      message: "Editor, Maintainer or Admin access required" 
+    });
+  }
+  return next({ ctx });
+});
+
+// ============================================
+// ROUTERS
+// ============================================
+
+export const appRouter = router({
+  system: systemRouter,
+  
+  auth: router({
+    me: publicProcedure.query(opts => opts.ctx.user),
+    logout: publicProcedure.mutation(({ ctx }) => {
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      return { success: true } as const;
+    }),
+  }),
+
+  // ============================================
+  // USER MANAGEMENT (Admin only)
+  // ============================================
+  users: router({
+    list: adminProcedure.query(async () => {
+      return db.getAllUsers();
+    }),
+    updateRole: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        role: z.enum(["admin", "maintainer", "editor", "user"])
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateUserRole(input.userId, input.role);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
+  // SHOTCOUNTER
+  // ============================================
+  shotcounter: router({
+    getTeams: publicProcedure
+      .input(z.object({ year: z.number() }))
+      .query(async ({ input }) => {
+        return db.getShotcounterTeamsByYear(input.year);
+      }),
+    
+    createTeam: maintainerProcedure
+      .input(z.object({
+        name: z.string().min(1).max(100),
+        year: z.number()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const teamId = await db.createShotcounterTeam({
+          name: input.name,
+          year: input.year,
+          score: 0,
+          createdBy: ctx.user.id
+        });
+        
+        await db.createAuditLog({
+          teamId: Number(teamId),
+          action: "create_team",
+          amount: null,
+          previousScore: null,
+          newScore: 0,
+          performedBy: ctx.user.id,
+          performedByName: ctx.user.name || "Unknown"
+        });
+        
+        return { teamId };
+      }),
+    
+    updateScore: maintainerProcedure
+      .input(z.object({
+        teamId: z.number(),
+        amount: z.number()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const team = await db.getShotcounterTeamById(input.teamId);
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        
+        const previousScore = team.score;
+        const newScore = previousScore + input.amount;
+        
+        await db.updateShotcounterScore(input.teamId, newScore);
+        await db.createAuditLog({
+          teamId: input.teamId,
+          action: input.amount > 0 ? "add" : "subtract",
+          amount: input.amount,
+          previousScore,
+          newScore,
+          performedBy: ctx.user.id,
+          performedByName: ctx.user.name || "Unknown"
+        });
+        
+        return { success: true, newScore };
+      }),
+    
+    deleteTeam: maintainerProcedure
+      .input(z.object({ teamId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const team = await db.getShotcounterTeamById(input.teamId);
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        
+        await db.createAuditLog({
+          teamId: input.teamId,
+          action: "delete_team",
+          amount: null,
+          previousScore: team.score,
+          newScore: null,
+          performedBy: ctx.user.id,
+          performedByName: ctx.user.name || "Unknown"
+        });
+        
+        await db.deleteShotcounterTeam(input.teamId);
+        return { success: true };
+      }),
+    
+    resetYear: adminProcedure
+      .input(z.object({ year: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.resetShotcounterForYear(input.year);
+        return { success: true };
+      }),
+    
+    getAuditLog: maintainerProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.getAllAuditLogs(input.limit);
+      }),
+  }),
+
+  // ============================================
+  // SPONSORS
+  // ============================================
+  sponsors: router({
+    list: publicProcedure.query(async () => {
+      return db.getAllSponsors();
+    }),
+    
+    create: maintainerProcedure
+      .input(z.object({
+        name: z.string().min(1).max(255),
+        logoUrl: z.string().url().optional(),
+        logoKey: z.string().optional(),
+        websiteUrl: z.string().url().optional(),
+        displayOrder: z.number().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const sponsorId = await db.createSponsor({
+          ...input,
+          createdBy: ctx.user.id
+        });
+        return { sponsorId };
+      }),
+    
+    delete: maintainerProcedure
+      .input(z.object({ sponsorId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteSponsor(input.sponsorId);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
+  // EVENTS
+  // ============================================
+  events: router({
+    list: publicProcedure.query(async ({ ctx }) => {
+      const isAuthenticated = !!ctx.user;
+      return db.getAllEvents(!isAuthenticated);
+    }),
+    
+    getById: publicProcedure
+      .input(z.object({ eventId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getEventById(input.eventId);
+      }),
+    
+    create: maintainerProcedure
+      .input(z.object({
+        title: z.string().min(1).max(255),
+        description: z.string().optional(),
+        eventDate: z.date(),
+        location: z.string().max(255).optional(),
+        isPublished: z.boolean().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const eventId = await db.createEvent({
+          ...input,
+          createdBy: ctx.user.id
+        });
+        return { eventId };
+      }),
+    
+    update: maintainerProcedure
+      .input(z.object({
+        eventId: z.number(),
+        title: z.string().min(1).max(255).optional(),
+        description: z.string().optional(),
+        eventDate: z.date().optional(),
+        location: z.string().max(255).optional(),
+        isPublished: z.boolean().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const { eventId, ...data } = input;
+        await db.updateEvent(eventId, data);
+        return { success: true };
+      }),
+    
+    delete: maintainerProcedure
+      .input(z.object({ eventId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteEvent(input.eventId);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
+  // PHOTOS
+  // ============================================
+  photos: router({
+    listByEvent: publicProcedure
+      .input(z.object({ eventId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const isAuthenticated = !!ctx.user;
+        return db.getPhotosByEvent(input.eventId, !isAuthenticated);
+      }),
+    
+    listAll: publicProcedure.query(async ({ ctx }) => {
+      const isAuthenticated = !!ctx.user;
+      return db.getAllPhotos(!isAuthenticated);
+    }),
+    
+    create: maintainerProcedure
+      .input(z.object({
+        eventId: z.number().optional(),
+        title: z.string().max(255).optional(),
+        description: z.string().optional(),
+        imageUrl: z.string().url(),
+        imageKey: z.string(),
+        thumbnailUrl: z.string().url().optional(),
+        thumbnailKey: z.string().optional(),
+        displayOrder: z.number().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const photoId = await db.createPhoto({
+          ...input,
+          uploadedBy: ctx.user.id
+        });
+        return { photoId };
+      }),
+    
+    delete: maintainerProcedure
+      .input(z.object({ photoId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deletePhoto(input.photoId);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
+  // TEAM MEMBERS
+  // ============================================
+  team: router({
+    list: publicProcedure.query(async () => {
+      return db.getAllTeamMembers(true);
+    }),
+    
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1).max(255),
+        nickname: z.string().max(100).optional(),
+        role: z.string().max(100).optional(),
+        bio: z.string().optional(),
+        photoUrl: z.string().url().optional(),
+        photoKey: z.string().optional(),
+        displayOrder: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const memberId = await db.createTeamMember(input);
+        return { memberId };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        memberId: z.number(),
+        name: z.string().min(1).max(255).optional(),
+        nickname: z.string().max(100).optional(),
+        role: z.string().max(100).optional(),
+        bio: z.string().optional(),
+        photoUrl: z.string().url().optional(),
+        photoKey: z.string().optional(),
+        displayOrder: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const { memberId, ...data } = input;
+        await db.updateTeamMember(memberId, data);
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ memberId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteTeamMember(input.memberId);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
+  // FEATURE TOGGLES (Admin only)
+  // ============================================
+  features: router({
+    list: adminProcedure.query(async () => {
+      return db.getAllFeatureToggles();
+    }),
+    
+    toggle: adminProcedure
+      .input(z.object({
+        featureName: z.string(),
+        isEnabled: z.boolean()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.setFeatureToggle(input.featureName, input.isEnabled, ctx.user.id);
+        return { success: true };
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        featureName: z.string(),
+        description: z.string().optional(),
+        isEnabled: z.boolean().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.setFeatureToggle(input.featureName, input.isEnabled ?? false, ctx.user.id, input.description);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
+  // CONTACT FORM
+  // ============================================
+  contact: router({
+    submit: publicProcedure
+      .input(z.object({
+        name: z.string().min(1).max(255),
+        email: z.string().email().max(320),
+        subject: z.string().max(255).optional(),
+        message: z.string().min(1),
+        honeypot: z.string().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Honeypot check
+        if (input.honeypot) {
+          return { success: true }; // Fake success for bots
+        }
+        
+        const submissionId = await db.createContactSubmission({
+          name: input.name,
+          email: input.email,
+          subject: input.subject,
+          message: input.message,
+          honeypot: input.honeypot,
+          ipAddress: ctx.req.ip || ctx.req.headers['x-forwarded-for'] as string || undefined
+        });
+        
+        return { success: true, submissionId };
+      }),
+    
+    list: adminProcedure.query(async () => {
+      return db.getAllContactSubmissions(false);
+    }),
+    
+    markAsRead: adminProcedure
+      .input(z.object({ submissionId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.markContactSubmissionAsRead(input.submissionId);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
+  // GÖNNERMITGLIEDER (Sponsor Members)
+  // ============================================
+  goennermitglieder: router({
+    list: protectedProcedure.query(async () => {
+      return db.getAllGoennermitglieder();
+    }),
+    
+    listActive: protectedProcedure.query(async () => {
+      return db.getActiveGoennermitglieder();
+    }),
+    
+    listExpired: protectedProcedure.query(async () => {
+      return db.getExpiredGoennermitglieder();
+    }),
+    
+    create: maintainerProcedure
+      .input(z.object({
+        firstName: z.string().min(1).max(100),
+        lastName: z.string().min(1).max(100),
+        street: z.string().min(1).max(255),
+        houseNumber: z.string().min(1).max(20),
+        zipCode: z.string().min(1).max(10),
+        city: z.string().min(1).max(100),
+        email: z.string().email().max(320).optional(),
+        phone: z.string().max(50).optional(),
+        membershipStartDate: z.date(),
+        notes: z.string().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Default end date is start date + 1 year
+        const endDate = new Date(input.membershipStartDate);
+        endDate.setFullYear(endDate.getFullYear() + 1);
+        
+        const memberId = await db.createGoennermitglied({
+          ...input,
+          membershipEndDate: endDate,
+          createdBy: ctx.user.id
+        });
+        return { memberId };
+      }),
+    
+    update: maintainerProcedure
+      .input(z.object({
+        memberId: z.number(),
+        firstName: z.string().min(1).max(100).optional(),
+        lastName: z.string().min(1).max(100).optional(),
+        street: z.string().min(1).max(255).optional(),
+        houseNumber: z.string().min(1).max(20).optional(),
+        zipCode: z.string().min(1).max(10).optional(),
+        city: z.string().min(1).max(100).optional(),
+        email: z.string().email().max(320).optional(),
+        phone: z.string().max(50).optional(),
+        notes: z.string().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const { memberId, ...data } = input;
+        await db.updateGoennermitglied(memberId, data);
+        return { success: true };
+      }),
+    
+    extend: maintainerProcedure
+      .input(z.object({
+        memberId: z.number(),
+        years: z.number().min(1).max(10).default(1)
+      }))
+      .mutation(async ({ input }) => {
+        const newEndDate = await db.extendGoennermitgliedschaft(input.memberId, input.years);
+        return { success: true, newEndDate };
+      }),
+    
+    delete: maintainerProcedure
+      .input(z.object({ memberId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteGoennermitglied(input.memberId);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
+  // USER PROFILE
+  // ============================================
+  profile: router({
+    updatePicture: protectedProcedure
+      .input(z.object({
+        profilePictureUrl: z.string().url(),
+        profilePictureKey: z.string()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateUserProfilePicture(ctx.user.id, input.profilePictureUrl, input.profilePictureKey);
+        return { success: true };
+      }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
