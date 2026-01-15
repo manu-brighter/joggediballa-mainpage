@@ -58,9 +58,12 @@ export function registerGoogleAuthRoutes(app: Express) {
     }),
     async (req: Request, res: Response) => {
       try {
+        console.log("[Google OAuth] Callback received");
         const user = req.user as any;
+        console.log("[Google OAuth] User from passport:", user ? { openId: user.openId, email: user.email, name: user.name } : "null");
 
         if (!user) {
+          console.error("[Google OAuth] No user returned from passport");
           return res.redirect("/login-failed");
         }
 
@@ -76,12 +79,20 @@ export function registerGoogleAuthRoutes(app: Express) {
           .setExpirationTime("7d")
           .sign(new TextEncoder().encode(JWT_SECRET));
 
+        console.log("[Google OAuth] JWT token created successfully");
+
         // Set cookie with JWT
         const cookieOptions = getSessionCookieOptions(req);
+        console.log("[Google OAuth] Cookie options:", cookieOptions);
+        console.log("[Google OAuth] Request protocol:", req.protocol);
+        console.log("[Google OAuth] X-Forwarded-Proto:", req.headers["x-forwarded-proto"]);
+        
         res.cookie(COOKIE_NAME, token, {
           ...cookieOptions,
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
+
+        console.log("[Google OAuth] Cookie set, redirecting to homepage");
 
         // Redirect to homepage
         res.redirect("/");
