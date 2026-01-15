@@ -67,14 +67,15 @@ export function registerGoogleAuthRoutes(app: Express) {
           return res.redirect("/login-failed");
         }
 
-        // Create JWT token
+        // Create JWT token - must include openId, appId, and name for verifySession compatibility
         const token = await new SignJWT({
           openId: user.openId,
+          appId: "google-oauth", // Required by verifySession
+          name: user.name || "",
           email: user.email,
-          name: user.name,
           role: user.role,
         })
-          .setProtectedHeader({ alg: "HS256" })
+          .setProtectedHeader({ alg: "HS256", typ: "JWT" })
           .setIssuedAt()
           .setExpirationTime("7d")
           .sign(new TextEncoder().encode(JWT_SECRET));
