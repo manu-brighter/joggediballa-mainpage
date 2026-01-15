@@ -201,3 +201,12 @@
 - [x] Feature Toggles mit echten Toggles:
   - [x] Beamer-Modus Button anzeigen/verstecken
   - [x] Wartungsmodus Toggle
+
+## Google OAuth Migration für Self-Hosting
+- [x] Google Cloud Console OAuth Client erstellen
+- [x] Backend OAuth-System von Manus auf Google umstellen
+- [x] Frontend Login-Flow für Google OAuth anpassen
+- [x] Environment-Variablen für Google OAuth dokumentieren
+- [x] Session-Management für Self-Hosting optimieren
+- [x] Deployment-Anleitung für Root Server erstellen
+- [x] README mit Google OAuth Setup-Anleitung aktualisieren
