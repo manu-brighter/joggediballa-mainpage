@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1768428479780,
+      "tag": "0000_broken_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1768428589603,
+      "tag": "0001_last_lenny_balinger",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1768490559165,
+      "tag": "0002_bumpy_red_wolf",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1768496397154,
+      "tag": "0003_last_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1768496635820,
+      "tag": "0004_shocking_morph",
+      "breakpoints": true
+    }
+  ]
+}
