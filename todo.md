@@ -1,0 +1,203 @@
+# Jogge di Balla - Projekt TODO
+
+## Phase 1: Projektstruktur und Vorbereitung
+- [x] Projekt initialisieren mit web-db-user Template
+- [x] Logo-Dateien in public/ kopieren
+- [x] TODO-Liste erstellen
+
+## Phase 2: Datenbank-Schema
+- [x] User-Tabelle um Rollen erweitern (admin, maintainer, editor, public)
+- [x] Shotcounter-Tabelle erstellen (Teams, Scores, Jahr-Persistenz)
+- [x] Shotcounter-Audit-Log-Tabelle erstellen
+- [x] Sponsoren-Tabelle erstellen
+- [x] Events-Tabelle erstellen
+- [x] Fotos-Tabelle erstellen
+- [x] Team-Mitglieder-Tabelle erstellen
+- [x] Feature-Toggles-Tabelle erstellen
+- [x] Kontaktformular-Submissions-Tabelle erstellen
+- [x] Datenbank-Migration durchführen (pnpm db:push)
+
+## Phase 3: Authentifizierung und Rollenverwaltung
+- [x] Rollenverwaltung in Auth-System integrieren
+- [x] adminProcedure für Admin-Only-Zugriff erstellen
+- [x] maintainerProcedure für Maintainer-Zugriff erstellen
+- [x] editorProcedure für Editor-Zugriff erstellen
+- [x] Rollen-Middleware in tRPC implementieren
+
+## Phase 4: Design-System und Layout
+- [x] Farbschema aus Logo extrahieren (Coral-Rot #FF5A6B, Teal-Blau #1B9BA8)
+- [x] Globale CSS-Variablen in index.css definieren
+- [x] Dark/Light Mode Theme-System konfigurieren
+- [x] Hauptnavigation mit Logo erstellen
+- [x] Footer-Komponente erstellen
+- [x] Responsive Layout-Wrapper erstellen
+
+## Phase 5: Shotcounter-Feature
+- [x] Shotcounter-Backend-Logik (CRUD für Teams)
+- [x] Shotcounter-Tabelle mit Sortierung
+- [x] Aktionen: +1, +5, freie Eingabe
+- [x] Countdown bis Silvester
+- [x] Gewinner-Popup bei Jahreswechsel
+- [x] Manueller Reset (nur Admin)
+- [x] Audit-Log für alle Änderungen
+- [x] Beamer-Modus (Vollbild, große Schrift)
+- [x] Shotcounter-Frontend-UI
+
+## Phase 6: Admin-Dashboard
+- [x] Admin-Dashboard-Layout
+- [x] User-Verwaltung (Liste, Rollen ändern)
+- [x] Feature-Toggles-Verwaltung
+- [x] Shotcounter-Reset-Funktion
+- [x] Audit-Log-Ansicht
+- [x] Admin-Navigation
+
+## Phase 7: Öffentliche Seiten - Teil 1
+- [x] Homepage: Vereinsvorstellung
+- [x] Homepage: Nächstes Event anzeigen
+- [x] Homepage: Instagram-Feed-Integration
+- [x] Team-Seite: Mitglieder-Grid
+- [x] Team-Seite: Mitglieder-Vorstellung
+- [x] Sponsoren-Seite: Grid-Layout
+- [x] Sponsoren-Verwaltung (Maintainer: hinzufügen/löschen)
+
+## Phase 8: Events und Fotos
+- [x] Events-Liste (nach Datum sortiert)
+- [x] Event-Detail-Seite
+- [ ] Foto-Upload (Maintainer) - Backend vorhanden, Frontend TODO
+- [x] Foto-Galerie mit Lightbox
+- [x] Lazy Loading für Bilder
+- [x] Copyright-Hinweis "Fotos © Manuel Heller"
+- [x] Kontakt-Hinweis für Foto-Anfragen
+
+## Phase 9: Kontakt und Rechtliches
+- [x] Kontaktformular mit Validierung
+- [x] Honeypot-Feld gegen Spam
+- [ ] SMTP-Integration für E-Mail-Versand - Backend vorhanden, SMTP TODO
+- [x] Erfolgs-/Fehler-Meldungen
+- [x] Impressum-Seite
+- [x] Datenschutzerklärung-Seite
+- [ ] Cookie-Hinweis (optional) - Nicht benötigt
+
+## Phase 10: SEO und Performance
+- [x] Meta-Tags für alle Seiten
+- [x] Semantisches HTML überprüfen
+- [x] Alt-Texte für alle Bilder
+- [x] Saubere URLs konfigurieren
+- [x] Performance-Optimierung (Lazy Loading, Code Splitting)
+- [ ] Lighthouse-Score überprüfen - Kann nach Deployment erfolge## Phase 11: Testing und Deployment
+- [x] Vitest-Tests für kritische Backend-Funktionen schreiben
+- [x] Shotcounter-Tests
+- [x] Auth-Tests
+- [x] Deployment-Dokumentation erstellen
+- [x] README.md aktualisieren, Safari)
+- [ ] Mobile-Testing (iOS, Android)
+- [ ] Checkpoint erstellen
+- [ ] Deployment-Dokumentation
+
+
+## UI/UX Redesign Iteration
+
+### Dark Mode
+- [x] System-Erkennung für Dark/Light Mode
+- [x] Manueller Toggle in Navigation
+- [x] Konsistente Dark Mode Farben
+
+### Homepage Redesign
+- [x] Stärkere Hero-Section mit Animationen
+- [x] Kreatives Layout, weniger textlastig
+- [x] Logo-Skalierung auf Mobile korrigieren
+
+### Shotcounter Redesign
+- [x] Moderne Tabellen-UI mit hohem Kontrast
+- [x] Animierter Rahmen/Glow für #1 Team
+- [x] Buttons: -1, +1, +5 (kein "freier Wert")
+- [x] Klickbarer Shot-Count mit Inline-Edit
+- [x] Custom Modal für Team-Löschung
+
+### Beamer-Modus
+- [x] Echter Fullscreen-Modus
+- [x] Alle UI-Elemente ausblenden
+- [x] Subtiler Exit-Button
+- [x] Auf Mobile: Beamer-Button verstecken
+- [x] Bug Fix: Exit aus Beamer-Modus ermöglichen
+
+### Mobile UX
+- [x] Bessere Abstände und Skalierung
+- [x] Kleineres Logo
+- [x] Größere Tap-Targets für Buttons
+- [x] Footer kompakt und zentriert
+
+### Profilbild-Upload
+- [x] User können Profilbild hochladen
+- [x] Avatar-Anzeige in Navigation
+
+### Gönnermitgliederverwaltung (Neue Seite)
+- [x] Datenbank-Schema für Gönnermitglieder
+- [x] Tabelle mit Vorname, Nachname, Adresse
+- [x] Mitgliedschafts-Start und Ablaufdatum
+- [x] Verlängerung um 1 Jahr (mit Modal)
+- [x] Löschen mit Bestätigungs-Modal
+- [x] Aktive/Abgelaufene Mitglieder trennen
+- [x] Sortierung nach Name, Ablaufdatum, "läuft bald ab"
+- [x] Visuelle Zustände: normal, <30 Tage (gelb), abgelaufen (grau/rot)
+
+### Animationen & Styling
+- [x] Hover-Animationen für alle interaktiven Elemente
+- [x] Page Transitions
+- [x] Counter-Animationen
+- [x] Keine Browser-Standard-Dialoge
+
+## Bug Fixes
+- [x] Fix nested <a> tags error on Homepage
+- [x] Fix /profile route 404 error - add route and profile page
+
+
+## UI/UX Polishing Iteration (Jan 2026)
+
+### Homepage & Navbar
+- [x] Homepage Mobile: "Since 2022" Badge Spacing von Navbar korrigieren
+- [x] Homepage Mobile: Scroll-Indicator darf Logo nicht überlappen
+- [x] Navbar: Transparenz beibehalten, im Dark Mode etwas heller
+- [x] Navbar: Optionaler subtiler Farbakzent
+
+### Login-Sichtbarkeit
+- [x] Login subtil/versteckt wenn ausgeloggt
+- [x] Website sauber für öffentliche Benutzer
+- [x] Nach Login: Profilbild und Admin/Maintainer-Aktionen prominent
+
+### Shotcounter Beamer-Mode
+- [x] Scaling-Slider für Team-Card-Höhe hinzufügen
+- [x] Optimiert für viele Teams auf 16:9 Screen
+- [x] Animierte Transitions bei Rangwechsel
+- [x] Vereinslogo sichtbar (subtiles Wasserzeichen)n im Hintergrund)
+
+### Profil-Bearbeitung
+- [x] Separaten Button entfernen
+- [x] Hover über Profilbild: Bild abdunkeln + "Bild ändern" Overlay
+
+### Gönnermitgliederverwaltung
+- [x] Sortier-Button Breite korrigieren (voller Text sichtbar)
+- [x] Stats-Cards vertikal zentrieren mit gleichem Padding
+- [x] Abgelaufene Mitglieder visuell unterscheiden (grau/rot)
+- [x] Aktive Mitglieder <30 Tage gelb hervorheben
+- [x] Standard-Sortierung: Aktive nach Ablaufdatum, Abgelaufene separat
+
+### Sponsoren
+- [x] Logo-Upload implementieren (PNG mit transparentem Hintergrund)
+- [x] Preview und Validierung
+
+### E### Events & Fotos
+- [x] Events und Foto-Galerie zusammenführen
+- [x] Event-Cards mit Titel, Beschreibung, Foto-Galerie
+- [x] Eingeloggte User: Events hinzufügen/bearbeiten/löschenn
+
+### Team-Seite
+- [x] Eingeloggte User können Mitglieder hinzufügen/entfernen
+- [x] Mitglieder-Cards: Name, Spitzname, Rolle, Bild, Beschreibung
+
+### Admin-Dashboard
+- [x] Rollen: Admin, Maintainer, Member
+- [x] Permissions-Management-Card mit Feature-Tabelle
+- [x] Feature Toggles mit echten Toggles:
+  - [x] Beamer-Modus Button anzeigen/verstecken
+  - [x] Wartungsmodus Toggle
