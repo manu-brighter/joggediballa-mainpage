@@ -350,7 +350,10 @@ export default function Shotcounter() {
 
           {/* Teams */}
           <LayoutGroup>
-            <div className="space-y-4 max-w-4xl mx-auto pb-8">
+            <div 
+              className="space-y-4 max-w-4xl mx-auto pb-16"
+              style={{ transform: `scale(${beamerScale / 100})`, transformOrigin: 'top center' }}
+            >
               <AnimatePresence mode="popLayout">
                 {teams.map((team, index) => (
                   <MotionDiv
@@ -371,7 +374,6 @@ export default function Shotcounter() {
                         ? "bg-gradient-to-r from-primary/20 to-secondary/20 border-primary shadow-2xl shadow-primary/20" 
                         : "bg-card/50 border-border"
                     )}
-                    style={{ minHeight: `${getCardHeight()}px` }}
                   >
                     <div className="flex items-center justify-between gap-4">
                       {/* Rank & Name */}
@@ -384,7 +386,7 @@ export default function Shotcounter() {
                         )}>
                           {index === 0 ? <Crown className="h-8 w-8 md:h-12 md:w-12" /> : index + 1}
                         </div>
-                        <span className="font-bold text-2xl md:text-4xl truncate">{team.name}</span>
+                        <span className="font-bold text-2xl md:text-4xl truncate pb-1">{team.name}</span>
                       </div>
                       
                       {/* Score */}
