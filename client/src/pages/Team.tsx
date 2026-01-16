@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,9 +26,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Users, Plus, Pencil, Trash2, Upload, X, Loader2, Camera } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, Upload, X, Loader2, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 
 const MotionDiv = motion.div;
 
@@ -37,6 +39,20 @@ interface MemberFormData {
   nickname: string;
   role: string;
   bio: string;
+}
+
+// Helper function to create centered aspect crop
+function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
+  return centerCrop(
+    makeAspectCrop(
+      { unit: "%", width: 90 },
+      aspect,
+      mediaWidth,
+      mediaHeight
+    ),
+    mediaWidth,
+    mediaHeight
+  );
 }
 
 export default function Team() {
@@ -57,12 +73,17 @@ export default function Team() {
     bio: ""
   });
   
-  // Photo upload state
+  // Photo upload state with cropping
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [crop, setCrop] = useState<Crop>();
   const [uploading, setUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
+  const isLoggedIn = !!user;
   const canManageTeam = user && ["admin", "maintainer"].includes(user.role);
 
   // Mutations
@@ -96,11 +117,21 @@ export default function Team() {
     onError: (error) => toast.error(`Fehler: ${error.message}`)
   });
 
+  const reorderMemberMutation = trpc.team.reorder.useMutation({
+    onSuccess: () => {
+      utils.team.list.invalidate();
+    },
+    onError: (error) => toast.error(`Fehler: ${error.message}`)
+  });
+
   const resetMemberForm = () => {
     setMemberForm({ name: "", nickname: "", role: "", bio: "" });
+    setSelectedMember(null);
     setPhotoFile(null);
     setPhotoPreview(null);
-    setSelectedMember(null);
+    setOriginalImage(null);
+    setShowCropper(false);
+    setCrop(undefined);
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,24 +139,83 @@ export default function Team() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Bitte wähle eine Bilddatei aus.");
+      toast.error("Bitte wähle eine Bilddatei aus");
       return;
     }
 
     if (file.size > 25 * 1024 * 1024) {
-      toast.error("Das Bild darf maximal 25MB groß sein.");
+      toast.error("Das Bild ist zu groß (max. 25MB)");
       return;
     }
 
-    setPhotoFile(file);
+    // Show original image for cropping
     const reader = new FileReader();
-    reader.onloadend = () => setPhotoPreview(reader.result as string);
+    reader.onload = () => {
+      setOriginalImage(reader.result as string);
+      setShowCropper(true);
+    };
     reader.readAsDataURL(file);
+  };
+
+  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    setCrop(centerAspectCrop(width, height, 1)); // 1:1 aspect ratio
+  }, []);
+
+  const getCroppedImg = async (): Promise<Blob | null> => {
+    if (!imgRef.current || !crop) return null;
+
+    const image = imgRef.current;
+    const canvas = document.createElement("canvas");
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    
+    const pixelCrop = {
+      x: (crop.x / 100) * image.width * scaleX,
+      y: (crop.y / 100) * image.height * scaleY,
+      width: (crop.width / 100) * image.width * scaleX,
+      height: (crop.height / 100) * image.height * scaleY,
+    };
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+    });
+  };
+
+  const handleCropComplete = async () => {
+    const croppedBlob = await getCroppedImg();
+    if (croppedBlob) {
+      const file = new File([croppedBlob], "cropped-photo.jpg", { type: "image/jpeg" });
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(croppedBlob));
+    }
+    setShowCropper(false);
+    setOriginalImage(null);
   };
 
   const clearPhoto = () => {
     setPhotoFile(null);
     setPhotoPreview(null);
+    setOriginalImage(null);
+    setShowCropper(false);
+    setCrop(undefined);
     if (photoInputRef.current) {
       photoInputRef.current.value = "";
     }
@@ -246,6 +336,116 @@ export default function Team() {
     setDeleteMemberOpen(true);
   };
 
+  // Reorder member
+  const moveMember = (memberId: number, direction: "up" | "down") => {
+    const currentIndex = members.findIndex(m => m.id === memberId);
+    if (currentIndex === -1) return;
+    
+    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= members.length) return;
+
+    const newOrder = members.map(m => m.id);
+    [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
+    
+    reorderMemberMutation.mutate({ memberIds: newOrder });
+  };
+
+  // Photo upload button component - rectangular, not circular
+  const PhotoUploadButton = ({ isEdit = false }: { isEdit?: boolean }) => (
+    <div className="space-y-2">
+      <Label>Foto</Label>
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handlePhotoSelect}
+        className="hidden"
+      />
+      {photoPreview && !showCropper ? (
+        <div className="relative">
+          <div className="aspect-square max-w-[200px] mx-auto overflow-hidden rounded-lg border-2 border-primary/20">
+            <img
+              src={photoPreview}
+              alt="Vorschau"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="flex justify-center gap-2 mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => photoInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Ändern
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={clearPhoto}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Entfernen
+            </Button>
+          </div>
+        </div>
+      ) : showCropper && originalImage ? (
+        <div className="space-y-4">
+          <div className="max-h-[300px] overflow-auto">
+            <ReactCrop
+              crop={crop}
+              onChange={(_, percentCrop: Crop) => setCrop(percentCrop)}
+              aspect={1}
+              circularCrop={false}
+            >
+              <img
+                ref={imgRef}
+                src={originalImage}
+                alt="Zu beschneiden"
+                onLoad={onImageLoad}
+                className="max-w-full"
+              />
+            </ReactCrop>
+          </div>
+          <div className="flex justify-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowCropper(false);
+                setOriginalImage(null);
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleCropComplete}
+            >
+              Zuschneiden
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-24 border-dashed"
+          onClick={() => photoInputRef.current?.click()}
+        >
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="h-6 w-6" />
+            <span className="text-sm">Foto hochladen</span>
+          </div>
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div className="container py-12 space-y-8">
       {/* Header */}
@@ -279,7 +479,7 @@ export default function Team() {
                 Mitglied hinzufügen
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Neues Mitglied hinzufügen</DialogTitle>
                 <DialogDescription>
@@ -287,47 +487,7 @@ export default function Team() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                {/* Photo Upload */}
-                <div className="flex justify-center">
-                  <div className="relative">
-                    <input
-                      ref={photoInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoSelect}
-                      className="hidden"
-                    />
-                    {photoPreview ? (
-                      <div className="relative">
-                        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/20">
-                          <img
-                            src={photoPreview}
-                            alt="Vorschau"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute -top-1 -right-1 h-8 w-8 rounded-full"
-                          onClick={clearPhoto}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => photoInputRef.current?.click()}
-                        className="w-32 h-32 rounded-full border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/30 transition-all flex flex-col items-center justify-center gap-2 text-muted-foreground"
-                      >
-                        <Camera className="h-8 w-8" />
-                        <span className="text-xs">Foto hinzufügen</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <PhotoUploadButton />
 
                 <div className="space-y-2">
                   <Label htmlFor="name">Name *</Label>
@@ -418,10 +578,11 @@ export default function Team() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: index * 0.05 }}
+                layout
               >
                 <Card className="overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
-                  {/* Member Photo - with consistent padding */}
-                  <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted to-muted/50 relative p-0">
+                  {/* Member Photo - no padding, full bleed */}
+                  <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted to-muted/50 relative">
                     {member.photoUrl ? (
                       <img
                         src={member.photoUrl}
@@ -438,13 +599,13 @@ export default function Team() {
                       </div>
                     )}
                     
-                    {/* Edit/Delete Buttons - Always visible on mobile */}
+                    {/* Edit/Delete Buttons - visible styling for all backgrounds */}
                     {canManageTeam && (
                       <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="h-8 w-8 bg-white/90 dark:bg-black/90"
+                          className="h-8 w-8 bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 text-gray-900 dark:text-white shadow-md"
                           onClick={() => openEditMember(member)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -452,10 +613,34 @@ export default function Team() {
                         <Button
                           variant="destructive"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-8 w-8 shadow-md"
                           onClick={() => openDeleteMember({ id: member.id, name: member.name })}
                         >
                           <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Reorder buttons - only for logged in users */}
+                    {isLoggedIn && (
+                      <div className="absolute bottom-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-7 w-7 bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 text-gray-900 dark:text-white shadow-md"
+                          onClick={() => moveMember(member.id, "up")}
+                          disabled={index === 0 || reorderMemberMutation.isPending}
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-7 w-7 bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 text-gray-900 dark:text-white shadow-md"
+                          onClick={() => moveMember(member.id, "down")}
+                          disabled={index === members.length - 1 || reorderMemberMutation.isPending}
+                        >
+                          <ArrowDown className="h-3 w-3" />
                         </Button>
                       </div>
                     )}
@@ -494,59 +679,15 @@ export default function Team() {
         setEditMemberOpen(open);
         if (!open) resetMemberForm();
       }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Mitglied bearbeiten</DialogTitle>
             <DialogDescription>
-              Bearbeite die Details des Team-Mitglieds.
+              Bearbeite die Informationen des Team-Mitglieds.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {/* Photo Upload */}
-            <div className="flex justify-center">
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoSelect}
-                  className="hidden"
-                  id="edit-photo-input"
-                />
-                {photoPreview ? (
-                  <div className="relative">
-                    <label htmlFor="edit-photo-input" className="cursor-pointer block">
-                      <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/20 group">
-                        <img
-                          src={photoPreview}
-                          alt="Vorschau"
-                          className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Camera className="h-8 w-8 text-white drop-shadow-lg" />
-                        </div>
-                      </div>
-                    </label>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-1 -right-1 h-8 w-8 rounded-full"
-                      onClick={clearPhoto}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <label
-                    htmlFor="edit-photo-input"
-                    className="w-32 h-32 rounded-full border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/30 transition-all flex flex-col items-center justify-center gap-2 text-muted-foreground cursor-pointer"
-                  >
-                    <Camera className="h-8 w-8" />
-                    <span className="text-xs">Foto hinzufügen</span>
-                  </label>
-                )}
-              </div>
-            </div>
+            <PhotoUploadButton isEdit />
 
             <div className="space-y-2">
               <Label htmlFor="edit-name">Name *</Label>
@@ -559,7 +700,7 @@ export default function Team() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-nickname">Spitzname (optional)</Label>
+              <Label htmlFor="edit-nickname">Spitzname</Label>
               <Input
                 id="edit-nickname"
                 value={memberForm.nickname}
@@ -569,7 +710,7 @@ export default function Team() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-role">Rolle (optional)</Label>
+              <Label htmlFor="edit-role">Rolle</Label>
               <Input
                 id="edit-role"
                 value={memberForm.role}
@@ -579,7 +720,7 @@ export default function Team() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-bio">Beschreibung (optional)</Label>
+              <Label htmlFor="edit-bio">Beschreibung</Label>
               <Textarea
                 id="edit-bio"
                 value={memberForm.bio}
@@ -599,7 +740,7 @@ export default function Team() {
               className="gap-2"
             >
               {uploading || updateMemberMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 animate-spin" />Speichern...</>
+                <><Loader2 className="h-4 w-4 animate-spin" />Lädt...</>
               ) : "Speichern"}
             </Button>
           </DialogFooter>
