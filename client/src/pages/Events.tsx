@@ -83,6 +83,10 @@ export default function Events() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadEventId, setUploadEventId] = useState<number | null>(null);
   const photoInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
+  
+  // Photo management dialog state
+  const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
+  const [photoManagementEventId, setPhotoManagementEventId] = useState<number | null>(null);
 
   const isLoggedIn = !!user;
   const canManageEvents = user && ["admin", "maintainer", "editor"].includes(user.role);
@@ -523,46 +527,62 @@ export default function Events() {
                         )}
                         
                         {/* Photo Gallery Preview - with thumbnail selection */}
-                        {eventPhotos.length > 1 && (
-                          <div className="grid grid-cols-4 gap-1 mt-auto">
-                            {eventPhotos.slice(0, 4).map((photo, idx) => (
-                              <div
-                                key={photo.id}
-                                className={cn(
-                                  "aspect-square overflow-hidden rounded cursor-pointer relative group/thumb",
-                                  idx === 3 && eventPhotos.length > 4 && "relative",
-                                  photo.id === event.thumbnailPhotoId && "ring-2 ring-primary"
-                                )}
-                                onClick={() => openLightbox(idx, event.id)}
+                        {eventPhotos.length > 0 && (
+                          <div className="space-y-2 mt-auto">
+                            <div className="grid grid-cols-4 gap-1">
+                              {eventPhotos.slice(0, 4).map((photo, idx) => (
+                                <div
+                                  key={photo.id}
+                                  className={cn(
+                                    "aspect-square overflow-hidden rounded cursor-pointer relative group/thumb",
+                                    idx === 3 && eventPhotos.length > 4 && "relative",
+                                    photo.id === event.thumbnailPhotoId && "ring-2 ring-primary"
+                                  )}
+                                  onClick={() => openLightbox(idx, event.id)}
+                                >
+                                  <img
+                                    src={photo.thumbnailUrl || photo.imageUrl}
+                                    alt=""
+                                    className="w-full h-full object-cover hover:scale-110 transition-transform"
+                                    loading="lazy"
+                                  />
+                                  {idx === 3 && eventPhotos.length > 4 && (
+                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold">
+                                      +{eventPhotos.length - 4}
+                                    </div>
+                                  )}
+                                  {/* Set as thumbnail button */}
+                                  {canManageEvents && photo.id !== event.thumbnailPhotoId && (
+                                    <Button
+                                      variant="secondary"
+                                      size="icon"
+                                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setThumbnailMutation.mutate({ eventId: event.id, photoId: photo.id });
+                                      }}
+                                      title="Als Thumbnail setzen"
+                                    >
+                                      <Star className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            {/* Expand button to show all photos */}
+                            {eventPhotos.length > 4 && canManageEvents && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full text-xs h-7"
+                                onClick={() => {
+                                  setPhotoManagementEventId(event.id);
+                                  setPhotoManagementOpen(true);
+                                }}
                               >
-                                <img
-                                  src={photo.thumbnailUrl || photo.imageUrl}
-                                  alt=""
-                                  className="w-full h-full object-cover hover:scale-110 transition-transform"
-                                  loading="lazy"
-                                />
-                                {idx === 3 && eventPhotos.length > 4 && (
-                                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold">
-                                    +{eventPhotos.length - 4}
-                                  </div>
-                                )}
-                                {/* Set as thumbnail button */}
-                                {canManageEvents && photo.id !== event.thumbnailPhotoId && (
-                                  <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setThumbnailMutation.mutate({ eventId: event.id, photoId: photo.id });
-                                    }}
-                                    title="Als Thumbnail setzen"
-                                  >
-                                    <Star className="h-3 w-3" />
-                                  </Button>
-                                )}
-                              </div>
-                            ))}
+                                Alle {eventPhotos.length} Fotos verwalten
+                              </Button>
+                            )}
                           </div>
                         )}
 
@@ -756,6 +776,10 @@ export default function Events() {
       {/* Fullscreen Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 bg-black/95 border-0 rounded-none">
+          {/* Hidden title for accessibility */}
+          <DialogTitle className="sr-only">
+            {currentPhotoEventName || "Foto"} - Bild {currentPhotoIndex + 1} von {selectedPhotos.length}
+          </DialogTitle>
           {/* Close button */}
           <Button
             variant="ghost"
@@ -822,6 +846,91 @@ export default function Events() {
           <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-white/50">
             © Manuel Heller | Pfeiltasten zur Navigation
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Management Dialog */}
+      <Dialog open={photoManagementOpen} onOpenChange={setPhotoManagementOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Fotos verwalten</DialogTitle>
+            <DialogDescription>
+              Wähle ein Thumbnail oder lösche Fotos für dieses Event.
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const eventPhotos = photoManagementEventId
+              ? allPhotos.filter((p) => p.eventId === photoManagementEventId)
+              : [];
+            const event = events.find((e) => e.id === photoManagementEventId);
+            
+            return (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"} vorhanden
+                </p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {eventPhotos.map((photo) => (
+                    <div
+                      key={photo.id}
+                      className={cn(
+                        "aspect-square overflow-hidden rounded-lg cursor-pointer relative group border-2 transition-all",
+                        photo.id === event?.thumbnailPhotoId
+                          ? "border-primary ring-2 ring-primary/30"
+                          : "border-transparent hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <img
+                        src={photo.thumbnailUrl || photo.imageUrl}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Thumbnail indicator */}
+                      {photo.id === event?.thumbnailPhotoId && (
+                        <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Star className="h-3 w-3" fill="currentColor" />
+                          Thumbnail
+                        </div>
+                      )}
+                      {/* Action buttons */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        {photo.id !== event?.thumbnailPhotoId && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-8 gap-1"
+                            onClick={() => {
+                              if (photoManagementEventId) {
+                                setThumbnailMutation.mutate({ eventId: photoManagementEventId, photoId: photo.id });
+                              }
+                            }}
+                          >
+                            <Star className="h-3 w-3" />
+                            Thumbnail
+                          </Button>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            deletePhotoMutation.mutate({ photoId: photo.id });
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPhotoManagementOpen(false)}>
+              Schliessen
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

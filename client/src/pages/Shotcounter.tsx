@@ -119,8 +119,8 @@ export default function Shotcounter() {
   const [winnerDialogOpen, setWinnerDialogOpen] = useState(false);
   const { isBeamerMode, setBeamerMode } = useBeamerMode();
   
-  // Beamer mode scaling
-  const [beamerScale, setBeamerScale] = useState(100);
+  // Beamer mode row height (percentage of base height)
+  const [beamerRowHeight, setBeamerRowHeight] = useState(100);
   const [showBeamerSettings, setShowBeamerSettings] = useState(false);
 
   // Check if beamer mode feature is enabled
@@ -256,10 +256,34 @@ export default function Shotcounter() {
     }
   }, [timeToNewYear.isNewYear, winner, winnerDialogOpen]);
 
-  // Calculate dynamic card height based on scale
-  const getCardHeight = () => {
-    const baseHeight = 80; // px
-    return Math.round(baseHeight * (beamerScale / 100));
+  // Calculate dynamic row height for beamer mode
+  // At 20% = very compact (fit ~30 teams), at 100% = normal size
+  const getRowPadding = () => {
+    // Base padding: py-6 = 24px, at 20% = 4.8px, at 100% = 24px
+    const basePadding = 24;
+    return Math.max(4, Math.round(basePadding * (beamerRowHeight / 100)));
+  };
+  
+  const getRowFontSize = () => {
+    // Scale font size: at 20% = small, at 100% = large
+    if (beamerRowHeight <= 30) return 'text-sm';
+    if (beamerRowHeight <= 50) return 'text-base';
+    if (beamerRowHeight <= 70) return 'text-lg md:text-xl';
+    return 'text-xl md:text-2xl';
+  };
+  
+  const getRankSize = () => {
+    if (beamerRowHeight <= 30) return 'w-6 h-6 text-xs';
+    if (beamerRowHeight <= 50) return 'w-8 h-8 text-sm';
+    if (beamerRowHeight <= 70) return 'w-10 h-10 text-base';
+    return 'w-12 h-12 md:w-16 md:h-16 text-lg md:text-2xl';
+  };
+  
+  const getScoreFontSize = () => {
+    if (beamerRowHeight <= 30) return 'text-lg';
+    if (beamerRowHeight <= 50) return 'text-xl';
+    if (beamerRowHeight <= 70) return 'text-2xl';
+    return 'text-3xl md:text-4xl';
   };
 
   // Beamer Mode
@@ -303,22 +327,25 @@ export default function Shotcounter() {
               className="fixed top-16 left-4 p-4 rounded-xl bg-card/90 backdrop-blur-lg border shadow-lg z-[10000] w-64"
             >
               <Label className="text-sm font-medium mb-3 block">
-                Kartengröße: {beamerScale}%
+                Zeilengröße: {beamerRowHeight}%
               </Label>
               <div className="py-2">
                 <Slider
-                  value={[beamerScale]}
-                  onValueChange={(value) => setBeamerScale(value[0])}
-                  min={50}
-                  max={150}
+                  value={[beamerRowHeight]}
+                  onValueChange={(value) => setBeamerRowHeight(value[0])}
+                  min={20}
+                  max={100}
                   step={5}
                   className="w-full cursor-pointer"
                 />
               </div>
               <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>50%</span>
-                <span>150%</span>
+                <span>Kompakt</span>
+                <span>Normal</span>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Bei 20% passen ca. 30 Teams auf den Bildschirm
+              </p>
             </MotionDiv>
           )}
         </AnimatePresence>
@@ -350,52 +377,60 @@ export default function Shotcounter() {
 
           {/* Teams */}
           <LayoutGroup>
-            <div 
-              className="space-y-4 max-w-4xl mx-auto pb-16"
-              style={{ transform: `scale(${beamerScale / 100})`, transformOrigin: 'top center' }}
-            >
+            <div className="space-y-1 w-full max-w-5xl mx-auto pb-8">
               <AnimatePresence mode="popLayout">
                 {teams.map((team, index) => (
                   <MotionDiv
                     key={team.id}
                     layout
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ 
                       type: "spring",
-                      stiffness: 300,
-                      damping: 35,
-                      layout: { type: "spring", stiffness: 200, damping: 35 }
+                      stiffness: 400,
+                      damping: 40,
+                      layout: { type: "spring", stiffness: 300, damping: 40 }
                     }}
                     className={cn(
-                      "p-6 md:p-8 rounded-2xl border-2 transition-all",
+                      "rounded-lg border transition-all",
                       index === 0 
-                        ? "bg-gradient-to-r from-primary/20 to-secondary/20 border-primary shadow-2xl shadow-primary/20" 
+                        ? "bg-gradient-to-r from-primary/20 to-secondary/20 border-primary" 
                         : "bg-card/50 border-border"
                     )}
+                    style={{ 
+                      paddingTop: `${getRowPadding()}px`,
+                      paddingBottom: `${getRowPadding()}px`,
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                      marginBottom: `${Math.max(2, beamerRowHeight / 20)}px`
+                    }}
                   >
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-2">
                       {/* Rank & Name */}
-                      <div className="flex items-center gap-4 md:gap-6 min-w-0">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
                         <div className={cn(
-                          "flex-shrink-0 w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center font-black text-2xl md:text-4xl",
+                          "flex-shrink-0 rounded-full flex items-center justify-center font-black",
+                          getRankSize(),
                           index === 0 
                             ? "bg-yellow-500/30 text-yellow-500" 
                             : "bg-muted text-muted-foreground"
                         )}>
-                          {index === 0 ? <Crown className="h-8 w-8 md:h-12 md:w-12" /> : index + 1}
+                          {index === 0 ? (
+                            <Crown className={beamerRowHeight <= 50 ? "h-3 w-3" : "h-5 w-5"} />
+                          ) : (
+                            index + 1
+                          )}
                         </div>
-                        <span className="font-bold text-2xl md:text-4xl truncate pb-1">{team.name}</span>
+                        <span className={cn("font-bold truncate", getRowFontSize())}>
+                          {team.name}
+                        </span>
                       </div>
                       
                       {/* Score */}
-                      <InlineScoreEdit
-                        value={team.score}
-                        onSave={(newScore) => handleSetScore(team.id, newScore)}
-                        disabled={!isMaintainerOrAdmin}
-                        isBeamerMode={true}
-                      />
+                      <span className={cn("font-black tabular-nums text-primary flex-shrink-0", getScoreFontSize())}>
+                        {team.score}
+                      </span>
                     </div>
                   </MotionDiv>
                 ))}

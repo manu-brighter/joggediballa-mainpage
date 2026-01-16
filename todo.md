@@ -353,3 +353,23 @@
 ### UI/UX
 - [x] After clicking links, start at top of new page (scroll-to-top)
 - [x] Smooth scrolling and animated transitions
+
+
+## Bug Fixes - January 2026 (Part 3)
+
+### Shotcounter
+- [x] Kartengrösse slider should only adjust row height, not width
+- [x] Fit around 30 teams on a normal 16:9 screen at lowest setting
+
+### Team Tab
+- [x] Modernize photo cropping UI (current looks outdated and doesn't work)
+- [x] Make cropping clean, modern and functional
+
+### Accessibility
+- [x] Fix DialogTitle missing error (5 occurrences)
+- [x] Add VisuallyHidden DialogTitle where needed
+
+### Events
+- [x] Add option to expand event photos to show all (not just first 4)
+- [x] Allow thumbnail selection from all photos in expanded view
+- [x] Add delete photo option in expanded view

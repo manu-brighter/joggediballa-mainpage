@@ -350,10 +350,10 @@ export default function Team() {
     reorderMemberMutation.mutate({ memberIds: newOrder });
   };
 
-  // Photo upload button component - rectangular, not circular
+  // Photo upload button component - modern, clean design
   const PhotoUploadButton = ({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="space-y-2">
-      <Label>Foto</Label>
+    <div className="space-y-3">
+      <Label className="text-sm font-medium">Foto</Label>
       <input
         ref={photoInputRef}
         type="file"
@@ -362,86 +362,111 @@ export default function Team() {
         className="hidden"
       />
       {photoPreview && !showCropper ? (
-        <div className="relative">
-          <div className="aspect-square max-w-[200px] mx-auto overflow-hidden rounded-lg border-2 border-primary/20">
-            <img
-              src={photoPreview}
-              alt="Vorschau"
-              className="w-full h-full object-cover"
-            />
+        <div className="space-y-3">
+          {/* Preview card */}
+          <div className="relative group rounded-xl overflow-hidden border border-border bg-muted/30">
+            <div className="aspect-square max-w-[280px] mx-auto">
+              <img
+                src={photoPreview}
+                alt="Vorschau"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {/* Overlay on hover */}
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => photoInputRef.current?.click()}
+                className="gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Ändern
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={clearPhoto}
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Entfernen
+              </Button>
+            </div>
           </div>
-          <div className="flex justify-center gap-2 mt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => photoInputRef.current?.click()}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Ändern
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={clearPhoto}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Entfernen
-            </Button>
-          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            Hover über das Bild um es zu ändern
+          </p>
         </div>
       ) : showCropper && originalImage ? (
         <div className="space-y-4">
-          <div className="max-h-[300px] overflow-auto">
-            <ReactCrop
-              crop={crop}
-              onChange={(_, percentCrop: Crop) => setCrop(percentCrop)}
-              aspect={1}
-              circularCrop={false}
-            >
-              <img
-                ref={imgRef}
-                src={originalImage}
-                alt="Zu beschneiden"
-                onLoad={onImageLoad}
-                className="max-w-full"
-              />
-            </ReactCrop>
+          {/* Modern cropper container */}
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <p className="text-sm text-muted-foreground mb-3 text-center">
+              Ziehe den Rahmen um den gewünschten Bildausschnitt
+            </p>
+            <div className="flex justify-center">
+              <div className="relative max-w-full max-h-[400px] overflow-hidden rounded-lg">
+                <ReactCrop
+                  crop={crop}
+                  onChange={(_, percentCrop: Crop) => setCrop(percentCrop)}
+                  aspect={1}
+                  circularCrop={false}
+                  className="rounded-lg"
+                >
+                  <img
+                    ref={imgRef}
+                    src={originalImage}
+                    alt="Zu beschneiden"
+                    onLoad={onImageLoad}
+                    style={{ maxHeight: '400px', width: 'auto' }}
+                    className="rounded-lg"
+                  />
+                </ReactCrop>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-center gap-2">
+          {/* Action buttons */}
+          <div className="flex justify-center gap-3">
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={() => {
                 setShowCropper(false);
                 setOriginalImage(null);
               }}
+              className="gap-2"
             >
+              <X className="h-4 w-4" />
               Abbrechen
             </Button>
             <Button
               type="button"
-              size="sm"
               onClick={handleCropComplete}
+              className="gap-2"
             >
-              Zuschneiden
+              <Upload className="h-4 w-4" />
+              Zuschneiden & Verwenden
             </Button>
           </div>
         </div>
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full h-24 border-dashed"
+        <div
           onClick={() => photoInputRef.current?.click()}
+          className="cursor-pointer rounded-xl border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-8"
         >
-          <div className="flex flex-col items-center gap-2">
-            <Upload className="h-6 w-6" />
-            <span className="text-sm">Foto hochladen</span>
+          <div className="flex flex-col items-center gap-3 text-muted-foreground">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Upload className="h-6 w-6 text-primary" />
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-foreground">Foto hochladen</p>
+              <p className="text-xs mt-1">Klicke hier oder ziehe ein Bild</p>
+            </div>
           </div>
-        </Button>
+        </div>
       )}
     </div>
   );

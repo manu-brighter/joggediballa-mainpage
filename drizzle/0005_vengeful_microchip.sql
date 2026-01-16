@@ -1,0 +1,1 @@
+ALTER TABLE `events` ADD `thumbnailPhotoId` int;
