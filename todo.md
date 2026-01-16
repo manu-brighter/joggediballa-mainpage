@@ -293,7 +293,7 @@
 
 ### Gönnermitglieder
 - [x] 20. Make counter cards slimmer or redesign; reduce empty space
-- [ ] 31. Click to show details
+- [x] 31. Click to show details
 
 ### Sponsors
 - [x] 22. Add card at bottom: "Werde Sponsor von Jogge di Balla" with Standard & Premium packages
@@ -313,5 +313,43 @@
 - [x] 29. Fix "Kartengroesse" slider- [x] 30. Fix teams slightly cut off at the bottom in beamer mode
 
 ### Navbar & Admin
-- [ ] 26. All navbar links toggleable via admin dashboard except Home, Team, Kontakt
+- [x] 26. All navbar links toggleable via admin dashboard except Home, Team, Kontakt
 - [x] 27. Admin mobile: permissions card padding improved similar to Audit Log card
+
+
+## Missing Adjustments - January 2026 (Part 2)
+
+### Events & Fotos
+- [x] All Events visible for all users, even logged out
+- [x] Allow selecting thumbnail for event cards
+- [x] Loader for card thumbnail prioritized over others
+- [x] Add horizontal padding/margin on event cards thumbnail images
+- [x] Photo upload bugfix - not added to correct event
+- [x] Photoview: remove filename, display eventname instead
+- [x] Photoview: bigger/fullscreen after clicking
+
+### Team Tab
+- [x] Edit icon should not be black on black box (visibility fix)
+- [x] Add horizontal padding/margin on member cards thumbnail images
+- [x] Member image upload button should not be circle like profile
+- [x] After uploading member image, show full size with manual cropping option
+- [x] Allow reordering of members (logged-in only)
+
+### Events Form
+- [x] Date field uses datepicker
+- [x] Photo view arrows smaller, less dominant and cleaner
+
+### Gönnermitglieder
+- [x] Edit button in table to edit/view all data of a Gönnermitglied
+
+### Shotcounter
+- [x] Bugfix "Kartengroesse" slider not working- [x] Fix teamnames slightly cut off at bottom in beamer mode (low letters like 'g')
+
+### Navbar & Admin
+- [x] New card in admin dashboard for navbar link toggles
+- [x] Home, Team, Kontakt cannot be turned off
+- [x] Off/Hidden links move behind separator and require login
+
+### UI/UX
+- [x] After clicking links, start at top of new page (scroll-to-top)
+- [x] Smooth scrolling and animated transitions
