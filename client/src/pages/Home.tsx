@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link, useLocation } from "wouter";
-import { Calendar, Trophy, Users, Heart, ArrowRight, Instagram, Sparkles } from "lucide-react";
+import { Calendar, Trophy, Users, Heart, ArrowRight, Instagram, Sparkles, Gift, Twitch } from "lucide-react";
 import { motion } from "framer-motion";
 
 const MotionDiv = motion.div;
@@ -213,7 +213,7 @@ export default function Home() {
                   <Button 
                     size="lg" 
                     className="btn-animate mt-4"
-                    onClick={() => navigate("/events")}
+                    onClick={() => navigate("/events#event-cards")}
                   >
                     Mehr erfahren
                     <ArrowRight className="h-4 w-4 ml-2" />
@@ -260,7 +260,60 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Instagram Section */}
+      {/* Gönnermitgliedschaft Section */}
+      <section className="py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <div className="container">
+          <MotionDiv 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="max-w-3xl mx-auto"
+          >
+            <Card className="border-2 border-primary/30 overflow-hidden">
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Gift className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-2xl md:text-3xl">Werde Gönnermitglied!</CardTitle>
+                <CardDescription className="text-lg">
+                  Unterstütze Jogge di Balla und profitiere von exklusiven Vorteilen
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center space-y-6">
+                <div className="inline-block px-6 py-3 rounded-full bg-primary/10 border border-primary/20">
+                  <span className="text-3xl font-bold text-primary">CHF 20.-</span>
+                  <span className="text-muted-foreground ml-2">pro Jahr</span>
+                </div>
+                <div className="grid sm:grid-cols-3 gap-4 text-sm">
+                  <div className="p-4 rounded-lg bg-muted/50">
+                    <Gift className="h-6 w-6 text-primary mx-auto mb-2" />
+                    <p className="font-medium">Exklusive Giveaways</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/50">
+                    <Trophy className="h-6 w-6 text-primary mx-auto mb-2" />
+                    <p className="font-medium">Reduzierte Preise</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/50">
+                    <Heart className="h-6 w-6 text-primary mx-auto mb-2" />
+                    <p className="font-medium">Verein unterstützen</p>
+                  </div>
+                </div>
+                <Button 
+                  size="lg" 
+                  className="btn-animate"
+                  onClick={() => navigate("/contact")}
+                >
+                  Jetzt Gönner werden
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+          </MotionDiv>
+        </div>
+      </section>
+
+      {/* Social Media Section */}
       <section className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 via-background to-primary/10" />
         <div className="container relative z-10">
@@ -271,23 +324,35 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="text-center space-y-6"
           >
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto">
-              <Instagram className="h-10 w-10 text-white" />
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold">Folge uns auf Instagram</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Folge uns</h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
               Bleib auf dem Laufenden und verpasse keine Updates!
             </p>
-            <a 
-              href="https://instagram.com/joggediballa" 
-              target="_blank" 
-              rel="noopener noreferrer"
-            >
-              <Button size="lg" className="btn-animate bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0">
-                <Instagram className="h-5 w-5 mr-2" />
-                @joggediballa folgen
-              </Button>
-            </a>
+            <div className="flex flex-wrap justify-center gap-4">
+              {/* Instagram */}
+              <a 
+                href="https://instagram.com/joggediballa" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button size="lg" className="btn-animate bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0">
+                  <Instagram className="h-5 w-5 mr-2" />
+                  @joggediballa
+                </Button>
+              </a>
+              {/* Twitch */}
+              <a 
+                href="https://twitch.tv/joggediballa" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button size="lg" variant="outline" className="btn-animate bg-[#9146FF]/10 border-[#9146FF]/30 hover:bg-[#9146FF]/20 text-[#9146FF]">
+                  <Twitch className="h-5 w-5 mr-2" />
+                  Twitch
+                </Button>
+              </a>
+              {/* Add more social links here easily */}
+            </div>
           </MotionDiv>
         </div>
       </section>
