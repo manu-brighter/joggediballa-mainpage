@@ -50,10 +50,11 @@ export function Footer() {
             <ul className="space-y-2.5 text-sm">
               {navLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href}>
-                    <a className="text-muted-foreground hover:text-foreground transition-colors">
-                      {link.label}
-                    </a>
+                  <Link 
+                    href={link.href}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
                   </Link>
                 </li>
               ))}
@@ -66,10 +67,11 @@ export function Footer() {
             <ul className="space-y-2.5 text-sm">
               {legalLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href}>
-                    <a className="text-muted-foreground hover:text-foreground transition-colors">
-                      {link.label}
-                    </a>
+                  <Link 
+                    href={link.href}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
                   </Link>
                 </li>
               ))}
@@ -82,10 +84,11 @@ export function Footer() {
             <p className="text-sm text-muted-foreground">
               Fragen oder Anregungen?
             </p>
-            <Link href="/contact">
-              <a className="inline-block mt-2 text-sm text-primary hover:underline">
-                Schreib uns →
-              </a>
+            <Link 
+              href="/contact"
+              className="inline-block mt-2 text-sm text-primary hover:underline"
+            >
+              Schreib uns →
             </Link>
           </div>
         </div>
@@ -104,10 +107,12 @@ export function Footer() {
           {/* Navigation Links - Horizontal */}
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href}>
-                <a className="text-muted-foreground hover:text-foreground transition-colors">
-                  {link.label}
-                </a>
+              <Link 
+                key={link.href} 
+                href={link.href}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {link.label}
               </Link>
             ))}
           </div>
@@ -115,10 +120,12 @@ export function Footer() {
           {/* Legal Links */}
           <div className="flex justify-center gap-4 text-sm">
             {legalLinks.map((link) => (
-              <Link key={link.href} href={link.href}>
-                <a className="text-muted-foreground hover:text-foreground transition-colors">
-                  {link.label}
-                </a>
+              <Link 
+                key={link.href} 
+                href={link.href}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {link.label}
               </Link>
             ))}
           </div>

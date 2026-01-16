@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Calendar, Trophy, Users, Heart, ArrowRight, Instagram, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -9,6 +9,7 @@ const MotionDiv = motion.div;
 
 export default function Home() {
   const { data: events = [] } = trpc.events.list.useQuery();
+  const [, navigate] = useLocation();
   
   const nextEvent = events.find((event) => new Date(event.eventDate) > new Date());
 
@@ -49,19 +50,24 @@ export default function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link href="/shotcounter">
-                  <Button size="lg" className="btn-animate text-base h-12 px-8 w-full sm:w-auto">
-                    <Trophy className="h-5 w-5 mr-2" />
-                    Zum Shotcounter
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
-                <Link href="/events">
-                  <Button variant="outline" size="lg" className="btn-animate text-base h-12 px-8 bg-background/50 backdrop-blur-sm w-full sm:w-auto">
-                    <Calendar className="h-5 w-5 mr-2" />
-                    Unsere Events
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  className="btn-animate text-base h-12 px-8 w-full sm:w-auto"
+                  onClick={() => navigate("/shotcounter")}
+                >
+                  <Trophy className="h-5 w-5 mr-2" />
+                  Zum Shotcounter
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="btn-animate text-base h-12 px-8 bg-background/50 backdrop-blur-sm w-full sm:w-auto"
+                  onClick={() => navigate("/events")}
+                >
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Unsere Events
+                </Button>
               </div>
             </MotionDiv>
             
@@ -139,25 +145,26 @@ export default function Home() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: feature.delay }}
               >
-                <Link href={feature.href}>
-                  <Card className="h-full card-hover border-2 hover:border-primary/50 bg-card/50 backdrop-blur-sm cursor-pointer">
-                    <CardHeader>
-                      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                        <feature.icon className="h-7 w-7 text-primary" />
-                      </div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
-                      <CardDescription className="text-base">
-                        {feature.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <span className="flex items-center gap-2 font-semibold text-primary group">
-                        Mehr erfahren
-                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <Card 
+                  className="h-full card-hover border-2 hover:border-primary/50 bg-card/50 backdrop-blur-sm cursor-pointer"
+                  onClick={() => navigate(feature.href)}
+                >
+                  <CardHeader>
+                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                      <feature.icon className="h-7 w-7 text-primary" />
+                    </div>
+                    <CardTitle className="text-xl">{feature.title}</CardTitle>
+                    <CardDescription className="text-base">
+                      {feature.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <span className="flex items-center gap-2 font-semibold text-primary group">
+                      Mehr erfahren
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </CardContent>
+                </Card>
               </MotionDiv>
             ))}
           </div>
@@ -203,12 +210,14 @@ export default function Home() {
                       <span className="text-xl">📍</span> {nextEvent.location}
                     </p>
                   )}
-                  <Link href="/events">
-                    <Button size="lg" className="btn-animate mt-4">
-                      Mehr erfahren
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </Link>
+                  <Button 
+                    size="lg" 
+                    className="btn-animate mt-4"
+                    onClick={() => navigate("/events")}
+                  >
+                    Mehr erfahren
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
                 </CardContent>
               </Card>
             </MotionDiv>
@@ -237,12 +246,15 @@ export default function Home() {
               Ob beim legendären Shotcounter-Wettbewerb oder bei unseren gemeinsamen Feiern – 
               bei uns steht der Spaß im Vordergrund!
             </p>
-            <Link href="/contact">
-              <Button variant="outline" size="lg" className="btn-animate">
-                Kontakt aufnehmen
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="btn-animate"
+              onClick={() => navigate("/contact")}
+            >
+              Kontakt aufnehmen
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
           </MotionDiv>
         </div>
       </section>
