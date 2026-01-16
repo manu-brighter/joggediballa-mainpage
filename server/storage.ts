@@ -1,9 +1,22 @@
 // Preconfigured storage helpers for Manus WebDev templates
-// Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
+// Supports both Manus S3 proxy and self-hosted local storage
 
 import { ENV } from './_core/env';
+import * as fs from 'fs';
+import * as path from 'path';
 
 type StorageConfig = { baseUrl: string; apiKey: string };
+
+// Check if self-hosted storage is enabled
+function isSelfHosted(): boolean {
+  return process.env.SELF_HOSTED_STORAGE === 'true';
+}
+
+function getSelfHostedConfig(): { uploadDir: string; publicUrl: string } {
+  const uploadDir = process.env.UPLOAD_DIR || '/var/www/joggediballa/uploads';
+  const publicUrl = process.env.PUBLIC_UPLOAD_URL || 'https://joggediballa.ch/uploads';
+  return { uploadDir, publicUrl };
+}
 
 function getStorageConfig(): StorageConfig {
   const baseUrl = ENV.forgeApiUrl;
@@ -67,7 +80,41 @@ function buildAuthHeaders(apiKey: string): HeadersInit {
   return { Authorization: `Bearer ${apiKey}` };
 }
 
-export async function storagePut(
+// Self-hosted storage implementation
+async function storagePutLocal(
+  relKey: string,
+  data: Buffer | Uint8Array | string,
+  contentType = "application/octet-stream"
+): Promise<{ key: string; url: string }> {
+  const { uploadDir, publicUrl } = getSelfHostedConfig();
+  const key = normalizeKey(relKey);
+  const filePath = path.join(uploadDir, key);
+  
+  // Ensure directory exists
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  
+  // Write file
+  const buffer = typeof data === 'string' ? Buffer.from(data) : Buffer.from(data);
+  fs.writeFileSync(filePath, buffer);
+  
+  // Build public URL
+  const url = `${publicUrl.replace(/\/+$/, '')}/${key}`;
+  
+  return { key, url };
+}
+
+async function storageGetLocal(relKey: string): Promise<{ key: string; url: string }> {
+  const { publicUrl } = getSelfHostedConfig();
+  const key = normalizeKey(relKey);
+  const url = `${publicUrl.replace(/\/+$/, '')}/${key}`;
+  return { key, url };
+}
+
+// Manus S3 storage implementation
+async function storagePutS3(
   relKey: string,
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream"
@@ -92,11 +139,30 @@ export async function storagePut(
   return { key, url };
 }
 
-export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
+async function storageGetS3(relKey: string): Promise<{ key: string; url: string }> {
   const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
   return {
     key,
     url: await buildDownloadUrl(baseUrl, key, apiKey),
   };
+}
+
+// Exported functions - automatically choose storage backend
+export async function storagePut(
+  relKey: string,
+  data: Buffer | Uint8Array | string,
+  contentType = "application/octet-stream"
+): Promise<{ key: string; url: string }> {
+  if (isSelfHosted()) {
+    return storagePutLocal(relKey, data, contentType);
+  }
+  return storagePutS3(relKey, data, contentType);
+}
+
+export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
+  if (isSelfHosted()) {
+    return storageGetLocal(relKey);
+  }
+  return storageGetS3(relKey);
 }
