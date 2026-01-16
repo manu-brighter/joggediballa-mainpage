@@ -17,6 +17,7 @@ import Datenschutz from "./pages/Datenschutz";
 import AdminDashboard from "./pages/admin/Dashboard";
 import Goennermitglieder from "./pages/Goennermitglieder";
 import Profile from "./pages/Profile";
+import Dienstleistungen from "./pages/Dienstleistungen";
 import MaintenancePage from "./pages/Maintenance";
 import { createContext, useContext, useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/goennermitglieder" component={Goennermitglieder} />
       <Route path="/profile" component={Profile} />
+      <Route path="/dienstleistungen" component={Dienstleistungen} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
