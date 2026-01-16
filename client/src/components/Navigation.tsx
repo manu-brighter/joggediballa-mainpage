@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Sun, Moon, Monitor, Settings, LogOut, Users, LogIn } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, Sun, Moon, Monitor, Settings, LogOut, Users, LogIn, Lock } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -17,19 +17,40 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
+// Map nav items to their feature toggle names
+const NAV_FEATURE_MAP: Record<string, string> = {
+  "/shotcounter": "nav_shotcounter",
+  "/events": "nav_events",
+  "/dienstleistungen": "nav_dienstleistungen",
+  "/sponsors": "nav_sponsors",
+};
+
+// Items that cannot be disabled
+const ALWAYS_VISIBLE = ["/", "/team", "/contact"];
+
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, loading } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const logoutMutation = trpc.auth.logout.useMutation();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  // Scroll to top on navigation
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location]);
+
+  // Fetch feature toggles for navbar visibility
+  const { data: featureToggles = [] } = trpc.features.list.useQuery(undefined, {
+    staleTime: 30000,
+  });
 
   const handleLogout = async () => {
     await logoutMutation.mutateAsync();
     window.location.href = "/";
   };
 
-  const navLinks = [
+  const allNavLinks = [
     { href: "/", label: "Home" },
     { href: "/shotcounter", label: "Shotcounter" },
     { href: "/team", label: "Team" },
@@ -38,6 +59,30 @@ export function Navigation() {
     { href: "/sponsors", label: "Sponsoren" },
     { href: "/contact", label: "Kontakt" },
   ];
+
+  // Check if a nav item is enabled
+  const isNavEnabled = (href: string): boolean => {
+    const featureName = NAV_FEATURE_MAP[href];
+    if (!featureName) return true; // Always visible items
+    const toggle = featureToggles.find(f => f.featureName === featureName);
+    return toggle?.isEnabled ?? true; // Default to enabled if not set
+  };
+
+  // Split nav links into visible and hidden
+  const { visibleLinks, hiddenLinks } = useMemo(() => {
+    const visible: typeof allNavLinks = [];
+    const hidden: typeof allNavLinks = [];
+
+    allNavLinks.forEach(link => {
+      if (ALWAYS_VISIBLE.includes(link.href) || isNavEnabled(link.href)) {
+        visible.push(link);
+      } else {
+        hidden.push(link);
+      }
+    });
+
+    return { visibleLinks: visible, hiddenLinks: hidden };
+  }, [featureToggles]);
 
   const ThemeIcon = () => {
     if (theme === "system") return <Monitor className="h-4 w-4" />;
@@ -50,7 +95,6 @@ export function Navigation() {
   return (
     <nav className={cn(
       "sticky top-0 z-40 w-full border-b backdrop-blur-lg supports-[backdrop-filter]:bg-background/60",
-      // Slightly brighter in dark mode with subtle teal tint
       "bg-background/80 dark:bg-background/70 dark:border-primary/10"
     )}>
       <div className="container flex h-16 items-center justify-between">
@@ -65,7 +109,8 @@ export function Navigation() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex md:items-center md:space-x-1">
-          {navLinks.map((link) => (
+          {/* Visible nav links */}
+          {visibleLinks.map((link) => (
             <Link 
               key={link.href} 
               href={link.href}
@@ -79,6 +124,28 @@ export function Navigation() {
               {link.label}
             </Link>
           ))}
+          
+          {/* Hidden links (only for logged in users) */}
+          {isAuthenticated && hiddenLinks.length > 0 && (
+            <>
+              <div className="h-6 w-px bg-border mx-2" />
+              {hiddenLinks.map((link) => (
+                <Link 
+                  key={link.href} 
+                  href={link.href}
+                  className={cn(
+                    "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5",
+                    location === link.href 
+                      ? "text-primary bg-primary/10" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Lock className="h-3 w-3" />
+                  {link.label}
+                </Link>
+              ))}
+            </>
+          )}
           
           {/* Divider and Gönnermitglieder - only visible for admin/maintainer */}
           {isAdminOrMaintainer && (
@@ -178,36 +245,26 @@ export function Navigation() {
                         Profil bearbeiten
                       </Link>
                     </DropdownMenuItem>
-                    {isAdminOrMaintainer && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href="/admin" className="w-full cursor-pointer flex items-center">
-                            <Settings className="mr-2 h-4 w-4" />
-                            Admin Dashboard
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/goennermitglieder" className="w-full cursor-pointer flex items-center">
-                            <Users className="mr-2 h-4 w-4" />
-                            Gönnermitglieder
-                          </Link>
-                        </DropdownMenuItem>
-                      </>
+                    {user.role === "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="w-full cursor-pointer flex items-center">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
                       Abmelden
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                // Subtle login button for logged out users - just an icon
-                <Button asChild variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
-                  <a href={getLoginUrl()} title="Anmelden">
+                <Button asChild variant="default" size="sm" className="btn-animate">
+                  <a href={getLoginUrl()} className="flex items-center gap-2">
                     <LogIn className="h-4 w-4" />
-                    <span className="sr-only">Anmelden</span>
+                    <span className="hidden sm:inline">Anmelden</span>
                   </a>
                 </Button>
               )}
@@ -226,49 +283,68 @@ export function Navigation() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-background/95 backdrop-blur-lg animate-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden border-t bg-background/95 backdrop-blur-lg">
           <div className="container py-4 space-y-1">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.href} 
+            {/* Visible links */}
+            {visibleLinks.map((link) => (
+              <Link
+                key={link.href}
                 href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "block py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200",
+                  "block px-4 py-3 text-sm font-medium rounded-lg transition-colors",
                   location === link.href 
                     ? "text-primary bg-primary/10" 
                     : "text-foreground/70 hover:text-foreground hover:bg-muted"
                 )}
-                onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}
               </Link>
             ))}
+            
+            {/* Hidden links for logged in users */}
+            {isAuthenticated && hiddenLinks.length > 0 && (
+              <>
+                <div className="h-px bg-border my-2" />
+                <p className="px-4 py-1 text-xs text-muted-foreground">Nur für Mitglieder</p>
+                {hiddenLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                      location === link.href 
+                        ? "text-primary bg-primary/10" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <Lock className="h-3 w-3" />
+                    {link.label}
+                  </Link>
+                ))}
+              </>
+            )}
+            
+            {/* Gönnermitglieder for admin/maintainer */}
             {isAdminOrMaintainer && (
               <>
                 <div className="h-px bg-border my-2" />
-                <Link 
+                <Link
                   href="/goennermitglieder"
-                  className="block py-3 px-4 text-sm font-medium rounded-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                    location === "/goennermitglieder" 
+                      ? "text-primary bg-primary/10" 
+                      : "text-foreground/70 hover:text-foreground hover:bg-muted"
+                  )}
                 >
+                  <Users className="h-4 w-4" />
                   Gönnermitglieder
                 </Link>
-              </>
-            )}
-            {/* Subtle login link in mobile menu for logged out users */}
-            {!isAuthenticated && !loading && (
-              <>
-                <div className="h-px bg-border my-2" />
-                <a
-                  href={getLoginUrl()}
-                  className="block py-3 px-4 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <LogIn className="inline-block h-4 w-4 mr-2" />
-                  Anmelden
-                </a>
               </>
             )}
           </div>
