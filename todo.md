@@ -373,3 +373,20 @@
 - [x] Add option to expand event photos to show all (not just first 4)
 - [x] Allow thumbnail selection from all photos in expanded view
 - [x] Add delete photo option in expanded view
+
+
+## Critical Bugs - January 2026
+
+### Auto-Redirect Issue
+- [x] Fix auto-redirect to Google Auth after a few seconds
+- [x] Login should be optional, only for members
+- [x] Entire website should be viewable without login
+
+### Database & API Errors
+- [x] Fix events.list 500 error (thumbnailPhotoId SQL issue)
+- [x] Fix profile picture 404 errors (/uploads/profile-pictures/)
+
+### Team Photo Cropping
+- [x] Fix Team photo cropping - currently not working
+- [x] Modernize cropping UI (current looks old and ugly)
+- [x] Ensure cropping is functional and user-friendly

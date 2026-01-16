@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,12 +25,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Users, Plus, Pencil, Trash2, Upload, X, Loader2, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, Upload, X, Loader2, GripVertical, ArrowUp, ArrowDown, ZoomIn, ZoomOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
-import "react-image-crop/dist/ReactCrop.css";
+import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 
 const MotionDiv = motion.div;
 
@@ -41,760 +42,820 @@ interface MemberFormData {
   bio: string;
 }
 
-// Helper function to create centered aspect crop
-function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number) {
-  return centerCrop(
-    makeAspectCrop(
-      { unit: "%", width: 90 },
-      aspect,
-      mediaWidth,
-      mediaHeight
-    ),
-    mediaWidth,
-    mediaHeight
+// Helper function to create a cropped image
+async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error("No 2d context");
+  }
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
   );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Canvas is empty"));
+        return;
+      }
+      resolve(blob);
+    }, "image/jpeg", 0.95);
+  });
+}
+
+function createImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener("load", () => resolve(image));
+    image.addEventListener("error", (error) => reject(error));
+    image.src = url;
+  });
 }
 
 export default function Team() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
-  
+
+  // Fetch team members
   const { data: members = [], isLoading } = trpc.team.list.useQuery();
 
-  // Member management state
-  const [createMemberOpen, setCreateMemberOpen] = useState(false);
-  const [editMemberOpen, setEditMemberOpen] = useState(false);
-  const [deleteMemberOpen, setDeleteMemberOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<{ id: number; name: string } | null>(null);
-  const [memberForm, setMemberForm] = useState<MemberFormData>({
+  // Mutations
+  const createMutation = trpc.team.create.useMutation({
+    onSuccess: () => {
+      utils.team.list.invalidate();
+      toast.success("Mitglied erfolgreich hinzugefügt");
+      setAddDialogOpen(false);
+      resetForm();
+    },
+    onError: (error) => {
+      toast.error("Fehler beim Hinzufügen: " + error.message);
+    },
+  });
+
+  const updateMutation = trpc.team.update.useMutation({
+    onSuccess: () => {
+      utils.team.list.invalidate();
+      toast.success("Mitglied erfolgreich aktualisiert");
+      setEditDialogOpen(false);
+      resetForm();
+    },
+    onError: (error) => {
+      toast.error("Fehler beim Aktualisieren: " + error.message);
+    },
+  });
+
+  const deleteMutation = trpc.team.delete.useMutation({
+    onSuccess: () => {
+      utils.team.list.invalidate();
+      toast.success("Mitglied erfolgreich gelöscht");
+      setDeleteDialogOpen(false);
+      setSelectedMember(null);
+    },
+    onError: (error) => {
+      toast.error("Fehler beim Löschen: " + error.message);
+    },
+  });
+
+  const reorderMutation = trpc.team.reorder.useMutation({
+    onSuccess: () => {
+      utils.team.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Fehler beim Sortieren: " + error.message);
+    },
+  });
+
+  // Form state
+  const [formData, setFormData] = useState<MemberFormData>({
     name: "",
     nickname: "",
     role: "",
-    bio: ""
+    bio: "",
   });
-  
-  // Photo upload state with cropping
+
+  // Dialog states
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<typeof members[0] | null>(null);
+
+  // Photo upload state
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [originalImage, setOriginalImage] = useState<string | null>(null);
-  const [showCropper, setShowCropper] = useState(false);
-  const [crop, setCrop] = useState<Crop>();
-  const [uploading, setUploading] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  
+  // Cropper state
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [croppedImageUrl, setCroppedImageUrl] = useState<string>("");
+
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
 
   const isLoggedIn = !!user;
-  const canManageTeam = user && ["admin", "maintainer"].includes(user.role);
+  const canManageTeam = user && ["admin", "maintainer", "editor"].includes(user.role);
 
-  // Mutations
-  const createMemberMutation = trpc.team.create.useMutation({
-    onSuccess: () => {
-      utils.team.list.invalidate();
-      toast.success("Mitglied erfolgreich hinzugefügt!");
-      setCreateMemberOpen(false);
-      resetMemberForm();
-    },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
-  });
-
-  const updateMemberMutation = trpc.team.update.useMutation({
-    onSuccess: () => {
-      utils.team.list.invalidate();
-      toast.success("Mitglied aktualisiert!");
-      setEditMemberOpen(false);
-      resetMemberForm();
-    },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
-  });
-
-  const deleteMemberMutation = trpc.team.delete.useMutation({
-    onSuccess: () => {
-      utils.team.list.invalidate();
-      toast.success("Mitglied entfernt!");
-      setDeleteMemberOpen(false);
-      setSelectedMember(null);
-    },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
-  });
-
-  const reorderMemberMutation = trpc.team.reorder.useMutation({
-    onSuccess: () => {
-      utils.team.list.invalidate();
-    },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
-  });
-
-  const resetMemberForm = () => {
-    setMemberForm({ name: "", nickname: "", role: "", bio: "" });
-    setSelectedMember(null);
+  const resetForm = () => {
+    setFormData({ name: "", nickname: "", role: "", bio: "" });
     setPhotoFile(null);
-    setPhotoPreview(null);
-    setOriginalImage(null);
-    setShowCropper(false);
-    setCrop(undefined);
+    setPhotoPreview("");
+    setCroppedImageUrl("");
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Bitte wähle eine Bilddatei aus");
-      return;
-    }
-
+    // Validate file size (25MB max)
     if (file.size > 25 * 1024 * 1024) {
-      toast.error("Das Bild ist zu groß (max. 25MB)");
+      toast.error("Datei zu groß. Maximal 25MB erlaubt.");
       return;
     }
 
-    // Show original image for cropping
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Nur Bilddateien sind erlaubt.");
+      return;
+    }
+
+    setPhotoFile(file);
     const reader = new FileReader();
     reader.onload = () => {
-      setOriginalImage(reader.result as string);
-      setShowCropper(true);
+      setPhotoPreview(reader.result as string);
+      setCropperOpen(true);
     };
     reader.readAsDataURL(file);
   };
 
-  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { width, height } = e.currentTarget;
-    setCrop(centerAspectCrop(width, height, 1)); // 1:1 aspect ratio
+  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const getCroppedImg = async (): Promise<Blob | null> => {
-    if (!imgRef.current || !crop) return null;
-
-    const image = imgRef.current;
-    const canvas = document.createElement("canvas");
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-    
-    const pixelCrop = {
-      x: (crop.x / 100) * image.width * scaleX,
-      y: (crop.y / 100) * image.height * scaleY,
-      width: (crop.width / 100) * image.width * scaleX,
-      height: (crop.height / 100) * image.height * scaleY,
-    };
-
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    ctx.drawImage(
-      image,
-      pixelCrop.x,
-      pixelCrop.y,
-      pixelCrop.width,
-      pixelCrop.height,
-      0,
-      0,
-      pixelCrop.width,
-      pixelCrop.height
-    );
-
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
-    });
-  };
-
-  const handleCropComplete = async () => {
-    const croppedBlob = await getCroppedImg();
-    if (croppedBlob) {
-      const file = new File([croppedBlob], "cropped-photo.jpg", { type: "image/jpeg" });
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(croppedBlob));
-    }
-    setShowCropper(false);
-    setOriginalImage(null);
-  };
-
-  const clearPhoto = () => {
-    setPhotoFile(null);
-    setPhotoPreview(null);
-    setOriginalImage(null);
-    setShowCropper(false);
-    setCrop(undefined);
-    if (photoInputRef.current) {
-      photoInputRef.current.value = "";
-    }
-  };
-
-  const handleCreateMember = async () => {
-    if (!memberForm.name.trim()) {
-      toast.error("Bitte gib einen Namen ein");
-      return;
-    }
+  const handleCropSave = async () => {
+    if (!photoPreview || !croppedAreaPixels) return;
 
     try {
-      setUploading(true);
-
-      let photoUrl: string | undefined;
-      let photoKey: string | undefined;
-
-      if (photoFile) {
-        const formData = new FormData();
-        formData.append("file", photoFile);
-
-        const response = await fetch("/api/upload/team-member-photo", {
-          method: "POST",
-          body: formData
-        });
-
-        if (!response.ok) {
-          throw new Error("Foto-Upload fehlgeschlagen");
-        }
-
-        const data = await response.json();
-        photoUrl = data.url;
-        photoKey = data.key;
-      }
-
-      await createMemberMutation.mutateAsync({
-        name: memberForm.name.trim(),
-        nickname: memberForm.nickname.trim() || undefined,
-        role: memberForm.role.trim() || undefined,
-        bio: memberForm.bio.trim() || undefined,
-        photoUrl,
-        photoKey
+      const croppedBlob = await getCroppedImg(photoPreview, croppedAreaPixels);
+      const croppedUrl = URL.createObjectURL(croppedBlob);
+      setCroppedImageUrl(croppedUrl);
+      
+      // Convert blob to file
+      const croppedFile = new File([croppedBlob], photoFile?.name || "cropped.jpg", {
+        type: "image/jpeg",
       });
+      setPhotoFile(croppedFile);
+      
+      setCropperOpen(false);
+      toast.success("Bild zugeschnitten");
     } catch (error) {
-      console.error("Error creating member:", error);
-      toast.error("Fehler beim Erstellen des Mitglieds");
-    } finally {
-      setUploading(false);
+      console.error("Crop error:", error);
+      toast.error("Fehler beim Zuschneiden");
     }
   };
 
-  const handleUpdateMember = async () => {
-    if (!selectedMember || !memberForm.name.trim()) {
-      toast.error("Bitte gib einen Namen ein");
+  const handlePhotoUpload = async () => {
+    if (!photoFile) return null;
+
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", photoFile);
+
+      const response = await fetch("/api/upload/team-member", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload fehlgeschlagen");
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Fehler beim Hochladen des Bildes");
+      return null;
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleSubmit = async (isEdit: boolean) => {
+    if (!formData.name.trim()) {
+      toast.error("Name ist erforderlich");
       return;
     }
 
-    try {
-      setUploading(true);
-
-      let photoUrl: string | undefined;
-      let photoKey: string | undefined;
-
-      if (photoFile) {
-        const formData = new FormData();
-        formData.append("file", photoFile);
-
-        const response = await fetch("/api/upload/team-member-photo", {
-          method: "POST",
-          body: formData
-        });
-
-        if (!response.ok) {
-          throw new Error("Foto-Upload fehlgeschlagen");
-        }
-
-        const data = await response.json();
-        photoUrl = data.url;
-        photoKey = data.key;
+    let photoUrl = selectedMember?.photoUrl || "";
+    if (photoFile) {
+      const uploadedUrl = await handlePhotoUpload();
+      if (uploadedUrl) {
+        photoUrl = uploadedUrl;
       }
+    }
 
-      await updateMemberMutation.mutateAsync({
+    if (isEdit && selectedMember) {
+      updateMutation.mutate({
         memberId: selectedMember.id,
-        name: memberForm.name.trim(),
-        nickname: memberForm.nickname.trim() || undefined,
-        role: memberForm.role.trim() || undefined,
-        bio: memberForm.bio.trim() || undefined,
-        ...(photoUrl && { photoUrl, photoKey })
+        name: formData.name,
+        nickname: formData.nickname || undefined,
+        role: formData.role || undefined,
+        bio: formData.bio || undefined,
+        photoUrl: photoUrl || undefined,
       });
-    } catch (error) {
-      console.error("Error updating member:", error);
-      toast.error("Fehler beim Aktualisieren des Mitglieds");
-    } finally {
-      setUploading(false);
+    } else {
+      createMutation.mutate({
+        name: formData.name,
+        nickname: formData.nickname || undefined,
+        role: formData.role || undefined,
+        bio: formData.bio || undefined,
+        photoUrl: photoUrl || undefined,
+      });
     }
   };
 
-  const openEditMember = (member: typeof members[0]) => {
-    setSelectedMember({ id: member.id, name: member.name });
-    setMemberForm({
+  const openEditDialog = (member: typeof members[0]) => {
+    setSelectedMember(member);
+    setFormData({
       name: member.name,
       nickname: member.nickname || "",
       role: member.role || "",
-      bio: member.bio || ""
+      bio: member.bio || "",
     });
-    // Set photo preview if member has a photo
-    if (member.photoUrl) {
-      setPhotoPreview(member.photoUrl);
-    } else {
-      setPhotoPreview(null);
-    }
-    setPhotoFile(null); // Reset file selection
-    setEditMemberOpen(true);
+    setPhotoPreview(member.photoUrl || "");
+    setCroppedImageUrl(member.photoUrl || "");
+    setEditDialogOpen(true);
   };
 
-  const openDeleteMember = (member: { id: number; name: string }) => {
+  const openDeleteDialog = (member: typeof members[0]) => {
     setSelectedMember(member);
-    setDeleteMemberOpen(true);
+    setDeleteDialogOpen(true);
   };
 
-  // Reorder member
   const moveMember = (memberId: number, direction: "up" | "down") => {
-    const currentIndex = members.findIndex(m => m.id === memberId);
+    const currentIndex = members.findIndex((m) => m.id === memberId);
     if (currentIndex === -1) return;
-    
+
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
     if (newIndex < 0 || newIndex >= members.length) return;
 
-    const newOrder = members.map(m => m.id);
-    [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
-    
-    reorderMemberMutation.mutate({ memberIds: newOrder });
+    const reorderedMembers = [...members];
+    [reorderedMembers[currentIndex], reorderedMembers[newIndex]] = [
+      reorderedMembers[newIndex],
+      reorderedMembers[currentIndex],
+    ];
+
+    const newOrder = reorderedMembers.map((m) => m.id);
+
+    reorderMutation.mutate({ memberIds: newOrder });
   };
 
-  // Photo upload button component - modern, clean design
-  const PhotoUploadButton = ({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="space-y-3">
-      <Label className="text-sm font-medium">Foto</Label>
-      <input
-        ref={photoInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handlePhotoSelect}
-        className="hidden"
-      />
-      {photoPreview && !showCropper ? (
-        <div className="space-y-3">
-          {/* Preview card */}
-          <div className="relative group rounded-xl overflow-hidden border border-border bg-muted/30">
-            <div className="aspect-square max-w-[280px] mx-auto">
-              <img
-                src={photoPreview}
-                alt="Vorschau"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            {/* Overlay on hover */}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => photoInputRef.current?.click()}
-                className="gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                Ändern
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={clearPhoto}
-                className="gap-2"
-              >
-                <X className="h-4 w-4" />
-                Entfernen
-              </Button>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground text-center">
-            Hover über das Bild um es zu ändern
-          </p>
-        </div>
-      ) : showCropper && originalImage ? (
-        <div className="space-y-4">
-          {/* Modern cropper container */}
-          <div className="rounded-xl border border-border bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground mb-3 text-center">
-              Ziehe den Rahmen um den gewünschten Bildausschnitt
-            </p>
-            <div className="flex justify-center">
-              <div className="relative max-w-full max-h-[400px] overflow-hidden rounded-lg">
-                <ReactCrop
-                  crop={crop}
-                  onChange={(_, percentCrop: Crop) => setCrop(percentCrop)}
-                  aspect={1}
-                  circularCrop={false}
-                  className="rounded-lg"
-                >
-                  <img
-                    ref={imgRef}
-                    src={originalImage}
-                    alt="Zu beschneiden"
-                    onLoad={onImageLoad}
-                    style={{ maxHeight: '400px', width: 'auto' }}
-                    className="rounded-lg"
-                  />
-                </ReactCrop>
-              </div>
-            </div>
-          </div>
-          {/* Action buttons */}
-          <div className="flex justify-center gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowCropper(false);
-                setOriginalImage(null);
-              }}
-              className="gap-2"
-            >
-              <X className="h-4 w-4" />
-              Abbrechen
-            </Button>
-            <Button
-              type="button"
-              onClick={handleCropComplete}
-              className="gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Zuschneiden & Verwenden
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div
-          onClick={() => photoInputRef.current?.click()}
-          className="cursor-pointer rounded-xl border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 bg-muted/20 hover:bg-muted/40 transition-all duration-200 p-8"
-        >
-          <div className="flex flex-col items-center gap-3 text-muted-foreground">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Upload className="h-6 w-6 text-primary" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium text-foreground">Foto hochladen</p>
-              <p className="text-xs mt-1">Klicke hier oder ziehe ein Bild</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
   return (
-    <div className="container py-12 space-y-8">
-      {/* Header */}
-      <MotionDiv
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
-      >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 mb-4">
-          <Users className="h-10 w-10 text-primary" />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-black">
-          <span className="gradient-text">Unser Team</span>
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Lerne die Menschen kennen, die Jogge di Balla zu dem machen, was es ist – 
-          ein Ort voller Action, Kreativität und unvergesslicher Momente.
-        </p>
-      </MotionDiv>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="container py-12 space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between"
+        >
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
+              <Users className="h-10 w-10 text-primary" />
+              Unser Team
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              Die Köpfe hinter Jogge di Balla
+            </p>
+          </div>
 
-      {/* Add Member Button */}
-      {canManageTeam && (
-        <div className="flex justify-center">
-          <Dialog open={createMemberOpen} onOpenChange={(open) => {
-            setCreateMemberOpen(open);
-            if (!open) resetMemberForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="btn-animate gap-2">
-                <Plus className="h-5 w-5" />
-                Mitglied hinzufügen
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Neues Mitglied hinzufügen</DialogTitle>
-                <DialogDescription>
-                  Füge ein neues Team-Mitglied mit Foto und Beschreibung hinzu.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <PhotoUploadButton />
+          {canManageTeam && (
+            <Dialog open={addDialogOpen} onOpenChange={(open) => {
+              setAddDialogOpen(open);
+              if (!open) resetForm();
+            }}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="gap-2">
+                  <Plus className="h-5 w-5" />
+                  Neues Mitglied
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Neues Mitglied hinzufügen</DialogTitle>
+                  <DialogDescription>
+                    Füge ein neues Team-Mitglied hinzu
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  {/* Photo Upload */}
+                  <div className="space-y-2">
+                    <Label>Foto</Label>
+                    <div className="flex items-center gap-4">
+                      {croppedImageUrl ? (
+                        <div className="relative">
+                          <img
+                            src={croppedImageUrl}
+                            alt="Preview"
+                            className="w-24 h-24 rounded-lg object-cover"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                            onClick={() => {
+                              setCroppedImageUrl("");
+                              setPhotoFile(null);
+                              setPhotoPreview("");
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                          <Upload className="h-8 w-8 text-muted-foreground/50" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <input
+                          ref={photoInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handlePhotoSelect}
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => photoInputRef.current?.click()}
+                          disabled={uploadingPhoto}
+                          className="w-full"
+                        >
+                          {uploadingPhoto ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Hochladen...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Foto auswählen
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Max. 25MB, JPG/PNG
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={memberForm.name}
-                    onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
-                    placeholder="Vollständiger Name"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="z.B. Max Mustermann"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="nickname">Spitzname</Label>
+                    <Input
+                      id="nickname"
+                      value={formData.nickname}
+                      onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                      placeholder="z.B. Maxi"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Rolle</Label>
+                    <Input
+                      id="role"
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      placeholder="z.B. Präsident, Kassier, DJ"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Beschreibung</Label>
+                    <Textarea
+                      id="bio"
+                      value={formData.bio}
+                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      placeholder="Kurze Beschreibung..."
+                      rows={4}
+                    />
+                  </div>
                 </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAddDialogOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Abbrechen
+                  </Button>
+                  <Button
+                    onClick={() => handleSubmit(false)}
+                    disabled={createMutation.isPending || uploadingPhoto}
+                  >
+                    {createMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Wird hinzugefügt...
+                      </>
+                    ) : (
+                      "Hinzufügen"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+        </motion.div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="nickname">Spitzname</Label>
-                  <Input
-                    id="nickname"
-                    value={memberForm.nickname}
-                    onChange={(e) => setMemberForm({ ...memberForm, nickname: e.target.value })}
-                    placeholder="Spitzname"
-                  />
-                </div>
+        {/* Team Members Grid */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : members.length === 0 ? (
+          <Card>
+            <CardContent className="py-20 text-center">
+              <Users className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-lg text-muted-foreground">Noch keine Team-Mitglieder</p>
+              {canManageTeam && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Klicke auf "Neues Mitglied" um das erste Mitglied hinzuzufügen
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimatePresence mode="popLayout">
+              {members.map((member, index) => (
+                <MotionDiv
+                  key={member.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+                    <CardHeader className="relative p-0">
+                      {member.photoUrl && (
+                        <div className="aspect-square overflow-hidden">
+                          <img
+                            src={member.photoUrl}
+                            alt={member.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      )}
+                      {!member.photoUrl && (
+                        <div className="aspect-square bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                          <Users className="h-20 w-20 text-primary/30" />
+                        </div>
+                      )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="role">Rolle</Label>
-                  <Input
-                    id="role"
-                    value={memberForm.role}
-                    onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
-                    placeholder="z.B. Gründer, DJ, Organisator"
-                  />
-                </div>
+                      {/* Action Buttons */}
+                      {canManageTeam && (
+                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {index > 0 && (
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="h-8 w-8 bg-background/90 hover:bg-background"
+                              onClick={() => moveMember(member.id, "up")}
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {index < members.length - 1 && (
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="h-8 w-8 bg-background/90 hover:bg-background"
+                              onClick={() => moveMember(member.id, "down")}
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-8 w-8 bg-background/90 hover:bg-background"
+                            onClick={() => openEditDialog(member)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openDeleteDialog(member)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-2">
+                      <div>
+                        <h3 className="text-xl font-bold">{member.name}</h3>
+                        {member.nickname && (
+                          <p className="text-sm text-muted-foreground">
+                            "{member.nickname}"
+                          </p>
+                        )}
+                      </div>
+                      {member.role && (
+                        <p className="text-sm font-medium text-primary">{member.role}</p>
+                      )}
+                      {member.bio && (
+                        <p className="text-sm text-muted-foreground line-clamp-3">
+                          {member.bio}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </MotionDiv>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Beschreibung</Label>
-                  <Textarea
-                    id="bio"
-                    value={memberForm.bio}
-                    onChange={(e) => setMemberForm({ ...memberForm, bio: e.target.value })}
-                    placeholder="Kurze Beschreibung..."
-                    rows={3}
-                  />
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) {
+            resetForm();
+            setSelectedMember(null);
+          }
+        }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Mitglied bearbeiten</DialogTitle>
+              <DialogDescription>
+                Aktualisiere die Informationen des Team-Mitglieds
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Photo Upload */}
+              <div className="space-y-2">
+                <Label>Foto</Label>
+                <div className="flex items-center gap-4">
+                  {croppedImageUrl ? (
+                    <div className="relative">
+                      <img
+                        src={croppedImageUrl}
+                        alt="Preview"
+                        className="w-24 h-24 rounded-lg object-cover"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={() => {
+                          setCroppedImageUrl("");
+                          setPhotoFile(null);
+                          setPhotoPreview("");
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                      <Upload className="h-8 w-8 text-muted-foreground/50" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handlePhotoSelect}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="w-full"
+                    >
+                      {uploadingPhoto ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Hochladen...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Foto ändern
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Max. 25MB, JPG/PNG
+                    </p>
+                  </div>
                 </div>
               </div>
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button variant="outline" onClick={() => setCreateMemberOpen(false)}>
-                  Abbrechen
-                </Button>
-                <Button
-                  onClick={handleCreateMember}
-                  disabled={uploading || createMemberMutation.isPending || !memberForm.name.trim()}
-                  className="gap-2"
-                >
-                  {uploading || createMemberMutation.isPending ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" />Lädt...</>
-                  ) : "Hinzufügen"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      )}
 
-      {/* Team Grid */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : members.length === 0 ? (
-        <Card className="max-w-md mx-auto">
-          <CardContent className="py-12 text-center">
-            <Users className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
-            <p className="text-muted-foreground text-lg">
-              Noch keine Team-Mitglieder vorhanden.
-            </p>
-            {canManageTeam && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Füge das erste Mitglied hinzu!
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence>
-            {members.map((member, index) => (
-              <MotionDiv
-                key={member.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.05 }}
-                layout
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="z.B. Max Mustermann"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-nickname">Spitzname</Label>
+                <Input
+                  id="edit-nickname"
+                  value={formData.nickname}
+                  onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                  placeholder="z.B. Maxi"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Rolle</Label>
+                <Input
+                  id="edit-role"
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  placeholder="z.B. Präsident, Kassier, DJ"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-bio">Beschreibung</Label>
+                <Textarea
+                  id="edit-bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="Kurze Beschreibung..."
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  resetForm();
+                  setSelectedMember(null);
+                }}
               >
-                <Card className="overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
-                  {/* Member Photo - no padding, full bleed */}
-                  <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted to-muted/50 relative">
-                    {member.photoUrl ? (
-                      <img
-                        src={member.photoUrl}
-                        alt={member.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-4xl font-bold text-primary">
-                            {member.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Edit/Delete Buttons - visible styling for all backgrounds */}
-                    {canManageTeam && (
-                      <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="h-8 w-8 bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 text-gray-900 dark:text-white shadow-md"
-                          onClick={() => openEditMember(member)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="h-8 w-8 shadow-md"
-                          onClick={() => openDeleteMember({ id: member.id, name: member.name })}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                Abbrechen
+              </Button>
+              <Button
+                onClick={() => handleSubmit(true)}
+                disabled={updateMutation.isPending || uploadingPhoto}
+              >
+                {updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Wird gespeichert...
+                  </>
+                ) : (
+                  "Speichern"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-                    {/* Reorder buttons - only for logged in users */}
-                    {isLoggedIn && (
-                      <div className="absolute bottom-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="h-7 w-7 bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 text-gray-900 dark:text-white shadow-md"
-                          onClick={() => moveMember(member.id, "up")}
-                          disabled={index === 0 || reorderMemberMutation.isPending}
-                        >
-                          <ArrowUp className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="h-7 w-7 bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 text-gray-900 dark:text-white shadow-md"
-                          onClick={() => moveMember(member.id, "down")}
-                          disabled={index === members.length - 1 || reorderMemberMutation.isPending}
-                        >
-                          <ArrowDown className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2">
-                      {member.name}
-                      {member.nickname && (
-                        <span className="text-sm font-normal text-muted-foreground">
-                          "{member.nickname}"
-                        </span>
-                      )}
-                    </CardTitle>
-                    {member.role && (
-                      <CardDescription className="text-primary font-medium">
-                        {member.role}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  
-                  {member.bio && (
-                    <CardContent className="pt-0">
-                      <p className="text-sm text-muted-foreground line-clamp-3">{member.bio}</p>
-                    </CardContent>
-                  )}
-                </Card>
-              </MotionDiv>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Mitglied löschen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Möchtest du {selectedMember?.name} wirklich aus dem Team entfernen? Diese Aktion kann nicht rückgängig gemacht werden.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setSelectedMember(null)}>
+                Abbrechen
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (selectedMember) {
+                    deleteMutation.mutate({ memberId: selectedMember.id });
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Wird gelöscht...
+                  </>
+                ) : (
+                  "Löschen"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-      {/* Edit Member Dialog */}
-      <Dialog open={editMemberOpen} onOpenChange={(open) => {
-        setEditMemberOpen(open);
-        if (!open) resetMemberForm();
-      }}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Mitglied bearbeiten</DialogTitle>
-            <DialogDescription>
-              Bearbeite die Informationen des Team-Mitglieds.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <PhotoUploadButton isEdit />
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Name *</Label>
-              <Input
-                id="edit-name"
-                value={memberForm.name}
-                onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
-                placeholder="Vollständiger Name"
-              />
+        {/* Image Cropper Dialog */}
+        <Dialog open={cropperOpen} onOpenChange={setCropperOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Bild zuschneiden</DialogTitle>
+              <DialogDescription>
+                Passe den Bildausschnitt an
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="relative w-full h-[400px] bg-black rounded-lg overflow-hidden">
+                {photoPreview && (
+                  <Cropper
+                    image={photoPreview}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={1}
+                    onCropChange={setCrop}
+                    onZoomChange={setZoom}
+                    onCropComplete={onCropComplete}
+                  />
+                )}
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <ZoomOut className="h-4 w-4" />
+                    Zoom
+                  </Label>
+                  <Label className="flex items-center gap-2">
+                    <ZoomIn className="h-4 w-4" />
+                  </Label>
+                </div>
+                <Slider
+                  value={[zoom]}
+                  onValueChange={(value) => setZoom(value[0])}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-nickname">Spitzname</Label>
-              <Input
-                id="edit-nickname"
-                value={memberForm.nickname}
-                onChange={(e) => setMemberForm({ ...memberForm, nickname: e.target.value })}
-                placeholder="Spitzname"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-role">Rolle</Label>
-              <Input
-                id="edit-role"
-                value={memberForm.role}
-                onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
-                placeholder="z.B. Gründer, DJ, Organisator"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-bio">Beschreibung</Label>
-              <Textarea
-                id="edit-bio"
-                value={memberForm.bio}
-                onChange={(e) => setMemberForm({ ...memberForm, bio: e.target.value })}
-                placeholder="Kurze Beschreibung..."
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setEditMemberOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button
-              onClick={handleUpdateMember}
-              disabled={uploading || updateMemberMutation.isPending || !memberForm.name.trim()}
-              className="gap-2"
-            >
-              {uploading || updateMemberMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 animate-spin" />Lädt...</>
-              ) : "Speichern"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Member Dialog */}
-      <AlertDialog open={deleteMemberOpen} onOpenChange={setDeleteMemberOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mitglied entfernen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Möchtest du "{selectedMember?.name}" wirklich aus dem Team entfernen? 
-              Diese Aktion kann nicht rückgängig gemacht werden.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => selectedMember && deleteMemberMutation.mutate({ memberId: selectedMember.id })}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteMemberMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Entfernen...</>
-              ) : "Entfernen"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCropperOpen(false);
+                  setPhotoPreview("");
+                  setPhotoFile(null);
+                }}
+              >
+                Abbrechen
+              </Button>
+              <Button onClick={handleCropSave}>
+                Zuschnitt übernehmen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }
