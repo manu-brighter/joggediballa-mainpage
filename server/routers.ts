@@ -261,6 +261,13 @@ export const appRouter = router({
         await db.deleteEvent(input.eventId);
         return { success: true };
       }),
+
+    setThumbnail: maintainerProcedure
+      .input(z.object({ eventId: z.number(), photoId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.setEventThumbnail(input.eventId, input.photoId);
+        return { success: true };
+      }),
   }),
 
   // ============================================

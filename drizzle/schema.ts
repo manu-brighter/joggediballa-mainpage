@@ -85,6 +85,7 @@ export const events = mysqlTable("events", {
   description: text("description"),
   eventDate: timestamp("eventDate").notNull(),
   location: varchar("location", { length: 255 }),
+  thumbnailPhotoId: int("thumbnailPhotoId"), // Reference to photo used as thumbnail
   isPublished: boolean("isPublished").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

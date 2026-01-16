@@ -274,6 +274,12 @@ export async function deleteEvent(eventId: number) {
   await db.delete(events).where(eq(events.id, eventId));
 }
 
+export async function setEventThumbnail(eventId: number, photoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(events).set({ thumbnailPhotoId: photoId }).where(eq(events.id, eventId));
+}
+
 // ============================================
 // PHOTOS
 // ============================================

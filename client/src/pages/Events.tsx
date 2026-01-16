@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +37,8 @@ import {
   Trash2,
   Upload,
   X,
-  Loader2
+  Loader2,
+  Star
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ export default function Events() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
 
   // Event management state
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -77,10 +79,10 @@ export default function Events() {
     location: ""
   });
   
-  // Photo upload state
+  // Photo upload state - use separate refs for each event
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadEventId, setUploadEventId] = useState<number | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
 
   const isLoggedIn = !!user;
   const canManageEvents = user && ["admin", "maintainer", "editor"].includes(user.role);
@@ -132,9 +134,22 @@ export default function Events() {
     onError: (error) => toast.error(`Fehler: ${error.message}`)
   });
 
+  const setThumbnailMutation = trpc.events.setThumbnail.useMutation({
+    onSuccess: () => {
+      utils.events.list.invalidate();
+      toast.success("Thumbnail gesetzt!");
+    },
+    onError: (error) => toast.error(`Fehler: ${error.message}`)
+  });
+
   const selectedPhotos = selectedEventId
     ? allPhotos.filter((p) => p.eventId === selectedEventId)
     : allPhotos;
+
+  // Get event name for current photo
+  const currentPhotoEventName = selectedPhotos[currentPhotoIndex]
+    ? events.find(e => e.id === selectedPhotos[currentPhotoIndex].eventId)?.title
+    : null;
 
   const resetEventForm = () => {
     setEventForm({ title: "", description: "", eventDate: "", eventTime: "", location: "" });
@@ -145,15 +160,30 @@ export default function Events() {
     setCurrentPhotoIndex(index);
     setSelectedEventId(eventId || null);
     setLightboxOpen(true);
+    setImageLoading(true);
   };
 
   const nextPhoto = () => {
+    setImageLoading(true);
     setCurrentPhotoIndex((prev) => (prev + 1) % selectedPhotos.length);
   };
 
   const prevPhoto = () => {
+    setImageLoading(true);
     setCurrentPhotoIndex((prev) => (prev - 1 + selectedPhotos.length) % selectedPhotos.length);
   };
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!lightboxOpen) return;
+      if (e.key === "ArrowRight") nextPhoto();
+      if (e.key === "ArrowLeft") prevPhoto();
+      if (e.key === "Escape") setLightboxOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxOpen, selectedPhotos.length]);
 
   const handleCreateEvent = () => {
     if (!eventForm.title.trim() || !eventForm.eventDate) {
@@ -212,11 +242,12 @@ export default function Events() {
     setDeleteEventOpen(true);
   };
 
-  const handlePhotoUpload = async (files: FileList | null, eventId: number) => {
+  // Fixed photo upload handler - uses the eventId passed directly
+  const handlePhotoUpload = async (files: FileList | null, targetEventId: number) => {
     if (!files || files.length === 0) return;
 
     setUploadingPhotos(true);
-    setUploadEventId(eventId);
+    setUploadEventId(targetEventId);
 
     try {
       for (const file of Array.from(files)) {
@@ -244,8 +275,9 @@ export default function Events() {
 
         const { url, key } = await response.json();
 
+        // Use the targetEventId that was captured when the button was clicked
         await createPhotoMutation.mutateAsync({
-          eventId,
+          eventId: targetEventId,
           imageUrl: url,
           imageKey: key,
           title: file.name.replace(/\.[^/.]+$/, "")
@@ -259,8 +291,10 @@ export default function Events() {
     } finally {
       setUploadingPhotos(false);
       setUploadEventId(null);
-      if (photoInputRef.current) {
-        photoInputRef.current.value = "";
+      // Clear the specific input
+      const inputRef = photoInputRefs.current.get(targetEventId);
+      if (inputRef) {
+        inputRef.value = "";
       }
     }
   };
@@ -301,7 +335,7 @@ export default function Events() {
               <DialogHeader>
                 <DialogTitle>Neues Event erstellen</DialogTitle>
                 <DialogDescription>
-                  Erstelle ein neues Event mit Titel, Beschreibung und Datum.
+                  Erstelle ein neues Event für den Verein.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -314,27 +348,28 @@ export default function Events() {
                     placeholder="Event-Titel"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date">Datum *</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={eventForm.eventDate}
-                    onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Datum *</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={eventForm.eventDate}
+                      onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="time">Uhrzeit (optional)</Label>
+                    <Input
+                      id="time"
+                      type="time"
+                      value={eventForm.eventTime}
+                      onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="time">Uhrzeit (optional)</Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    value={eventForm.eventTime}
-                    onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
-                    placeholder="--:--"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Ort (optional)</Label>
+                  <Label htmlFor="location">Ort</Label>
                   <Input
                     id="location"
                     value={eventForm.location}
@@ -343,7 +378,7 @@ export default function Events() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Beschreibung (optional)</Label>
+                  <Label htmlFor="description">Beschreibung</Label>
                   <Textarea
                     id="description"
                     value={eventForm.description}
@@ -357,10 +392,7 @@ export default function Events() {
                 <Button variant="outline" onClick={() => setCreateEventOpen(false)}>
                   Abbrechen
                 </Button>
-                <Button 
-                  onClick={handleCreateEvent}
-                  disabled={createEventMutation.isPending}
-                >
+                <Button onClick={handleCreateEvent} disabled={createEventMutation.isPending}>
                   {createEventMutation.isPending ? (
                     <><Loader2 className="h-4 w-4 animate-spin mr-2" />Erstellen...</>
                   ) : "Erstellen"}
@@ -371,12 +403,21 @@ export default function Events() {
         </div>
       )}
 
-         {/* Event Cards */}
-      <section id="event-cards" className="space-y-6 scroll-mt-24">
+      {/* Events Grid */}
+      <section id="event-cards" className="space-y-6">
         <h2 className="text-3xl font-bold">Unsere Events</h2>
+        
         {eventsLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="grid md:grid-cols-2 gap-6">
+            {[1, 2].map((i) => (
+              <Card key={i} className="overflow-hidden animate-pulse">
+                <div className="aspect-video bg-muted" />
+                <CardHeader>
+                  <div className="h-6 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/2 mt-2" />
+                </CardHeader>
+              </Card>
+            ))}
           </div>
         ) : events.length === 0 ? (
           <Card className="max-w-md mx-auto">
@@ -397,6 +438,11 @@ export default function Events() {
             <AnimatePresence>
               {events.map((event, index) => {
                 const eventPhotos = allPhotos.filter((p) => p.eventId === event.id);
+                // Find thumbnail photo or use first photo
+                const thumbnailPhoto = event.thumbnailPhotoId 
+                  ? eventPhotos.find(p => p.id === event.thumbnailPhotoId) || eventPhotos[0]
+                  : eventPhotos[0];
+                
                 return (
                   <MotionDiv
                     key={event.id}
@@ -406,17 +452,17 @@ export default function Events() {
                     transition={{ delay: index * 0.05 }}
                   >
                     <Card className="overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full flex flex-col">
-                      {/* Event Cover Image */}
-                      {eventPhotos.length > 0 ? (
+                      {/* Event Cover Image - removed top padding */}
+                      {thumbnailPhoto ? (
                         <div
                           className="aspect-video overflow-hidden bg-muted cursor-pointer relative group"
-                          onClick={() => openLightbox(0, event.id)}
+                          onClick={() => openLightbox(eventPhotos.indexOf(thumbnailPhoto), event.id)}
                         >
                           <img
-                            src={eventPhotos[0].thumbnailUrl || eventPhotos[0].imageUrl}
+                            src={thumbnailPhoto.thumbnailUrl || thumbnailPhoto.imageUrl}
                             alt={event.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy"
+                            loading={index < 2 ? "eager" : "lazy"}
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-black/90 px-3 py-1.5 rounded-full text-sm font-medium">
@@ -476,15 +522,16 @@ export default function Events() {
                           </p>
                         )}
                         
-                        {/* Photo Gallery Preview */}
+                        {/* Photo Gallery Preview - with thumbnail selection */}
                         {eventPhotos.length > 1 && (
                           <div className="grid grid-cols-4 gap-1 mt-auto">
                             {eventPhotos.slice(0, 4).map((photo, idx) => (
                               <div
                                 key={photo.id}
                                 className={cn(
-                                  "aspect-square overflow-hidden rounded cursor-pointer relative",
-                                  idx === 3 && eventPhotos.length > 4 && "relative"
+                                  "aspect-square overflow-hidden rounded cursor-pointer relative group/thumb",
+                                  idx === 3 && eventPhotos.length > 4 && "relative",
+                                  photo.id === event.thumbnailPhotoId && "ring-2 ring-primary"
                                 )}
                                 onClick={() => openLightbox(idx, event.id)}
                               >
@@ -499,12 +546,27 @@ export default function Events() {
                                     +{eventPhotos.length - 4}
                                   </div>
                                 )}
+                                {/* Set as thumbnail button */}
+                                {canManageEvents && photo.id !== event.thumbnailPhotoId && (
+                                  <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setThumbnailMutation.mutate({ eventId: event.id, photoId: photo.id });
+                                    }}
+                                    title="Als Thumbnail setzen"
+                                  >
+                                    <Star className="h-3 w-3" />
+                                  </Button>
+                                )}
                               </div>
                             ))}
                           </div>
                         )}
 
-                        {/* Photo Upload for logged-in users */}
+                        {/* Photo Upload for logged-in users - separate input per event */}
                         {canManageEvents && (
                           <div className="mt-auto pt-3 border-t">
                             <input
@@ -512,7 +574,9 @@ export default function Events() {
                               accept="image/*"
                               multiple
                               className="hidden"
-                              ref={photoInputRef}
+                              ref={(el) => {
+                                if (el) photoInputRefs.current.set(event.id, el);
+                              }}
                               onChange={(e) => handlePhotoUpload(e.target.files, event.id)}
                             />
                             <Button
@@ -520,8 +584,8 @@ export default function Events() {
                               size="sm"
                               className="w-full gap-2"
                               onClick={() => {
-                                setUploadEventId(event.id);
-                                photoInputRef.current?.click();
+                                const inputRef = photoInputRefs.current.get(event.id);
+                                if (inputRef) inputRef.click();
                               }}
                               disabled={uploadingPhotos && uploadEventId === event.id}
                             >
@@ -612,27 +676,28 @@ export default function Events() {
                 placeholder="Event-Titel"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-date">Datum *</Label>
-              <Input
-                id="edit-date"
-                type="date"
-                value={eventForm.eventDate}
-                onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-date">Datum *</Label>
+                <Input
+                  id="edit-date"
+                  type="date"
+                  value={eventForm.eventDate}
+                  onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-time">Uhrzeit (optional)</Label>
+                <Input
+                  id="edit-time"
+                  type="time"
+                  value={eventForm.eventTime}
+                  onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-time">Uhrzeit (optional)</Label>
-              <Input
-                id="edit-time"
-                type="time"
-                value={eventForm.eventTime}
-                onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
-                placeholder="--:--"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-location">Ort (optional)</Label>
+              <Label htmlFor="edit-location">Ort</Label>
               <Input
                 id="edit-location"
                 value={eventForm.location}
@@ -641,7 +706,7 @@ export default function Events() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-description">Beschreibung (optional)</Label>
+              <Label htmlFor="edit-description">Beschreibung</Label>
               <Textarea
                 id="edit-description"
                 value={eventForm.description}
@@ -655,10 +720,7 @@ export default function Events() {
             <Button variant="outline" onClick={() => setEditEventOpen(false)}>
               Abbrechen
             </Button>
-            <Button 
-              onClick={handleUpdateEvent}
-              disabled={updateEventMutation.isPending}
-            >
+            <Button onClick={handleUpdateEvent} disabled={updateEventMutation.isPending}>
               {updateEventMutation.isPending ? (
                 <><Loader2 className="h-4 w-4 animate-spin mr-2" />Speichern...</>
               ) : "Speichern"}
@@ -691,50 +753,74 @@ export default function Events() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Lightbox Dialog - Full screen with theme support */}
+      {/* Fullscreen Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-background/95 dark:bg-black/95 backdrop-blur-sm border-0">
-          <DialogHeader className="p-4 pb-0">
-            <DialogTitle className="text-foreground dark:text-white">
-              {selectedPhotos[currentPhotoIndex]?.title || "Foto"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="relative">
+        <DialogContent className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 bg-black/95 border-0 rounded-none">
+          {/* Close button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white h-10 w-10"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <X className="h-6 w-6" />
+          </Button>
+
+          {/* Photo info - event name instead of filename */}
+          <div className="absolute top-4 left-4 z-50 text-white">
+            <p className="text-lg font-medium">
+              {currentPhotoEventName || "Foto"}
+            </p>
+            <p className="text-sm text-white/60">
+              {currentPhotoIndex + 1} / {selectedPhotos.length}
+            </p>
+          </div>
+
+          {/* Main image container */}
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {/* Loading spinner */}
+            {imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-white" />
+              </div>
+            )}
+            
             <img
               src={selectedPhotos[currentPhotoIndex]?.imageUrl}
-              alt={selectedPhotos[currentPhotoIndex]?.title || "Event Foto"}
-              className="w-full h-auto max-h-[85vh] object-contain"
+              alt={currentPhotoEventName || "Event Foto"}
+              className={cn(
+                "max-w-full max-h-full object-contain transition-opacity duration-300",
+                imageLoading ? "opacity-0" : "opacity-100"
+              )}
+              onLoad={() => setImageLoading(false)}
             />
+
+            {/* Navigation arrows - smaller and cleaner */}
             {selectedPhotos.length > 1 && (
               <>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white h-14 w-14 shadow-lg border border-white/20"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white h-10 w-10 rounded-full"
                   onClick={prevPhoto}
                 >
-                  <ChevronLeft className="h-10 w-10" />
+                  <ChevronLeft className="h-6 w-6" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white h-14 w-14 shadow-lg border border-white/20"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white h-10 w-10 rounded-full"
                   onClick={nextPhoto}
                 >
-                  <ChevronRight className="h-10 w-10" />
+                  <ChevronRight className="h-6 w-6" />
                 </Button>
               </>
             )}
           </div>
-          {selectedPhotos[currentPhotoIndex]?.description && (
-            <div className="p-4 pt-0">
-              <p className="text-sm text-white/70">
-                {selectedPhotos[currentPhotoIndex].description}
-              </p>
-            </div>
-          )}
-          <div className="p-4 pt-0 text-center text-xs text-white/50">
-            Foto {currentPhotoIndex + 1} von {selectedPhotos.length} | © Manuel Heller
+
+          {/* Footer */}
+          <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-white/50">
+            © Manuel Heller | Pfeiltasten zur Navigation
           </div>
         </DialogContent>
       </Dialog>
