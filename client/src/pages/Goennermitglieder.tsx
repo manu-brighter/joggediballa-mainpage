@@ -43,7 +43,9 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  ArrowUpDown
+  ArrowUpDown,
+  Pencil,
+  Eye
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -89,6 +91,8 @@ export default function Goennermitglieder() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("endDate");
   
@@ -146,6 +150,41 @@ export default function Goennermitglieder() {
       toast.error(`Fehler: ${error.message}`);
     },
   });
+
+  const updateMutation = trpc.goennermitglieder.update.useMutation({
+    onSuccess: () => {
+      utils.goennermitglieder.list.invalidate();
+      toast.success("Mitglied aktualisiert!");
+      setEditDialogOpen(false);
+      setSelectedMember(null);
+      resetForm();
+    },
+    onError: (error) => {
+      toast.error(`Fehler: ${error.message}`);
+    },
+  });
+
+  const openEditDialog = (member: Member) => {
+    setSelectedMember(member);
+    setFormData({
+      firstName: member.firstName,
+      lastName: member.lastName,
+      street: member.street,
+      houseNumber: member.houseNumber,
+      zipCode: member.zipCode,
+      city: member.city,
+      email: member.email || "",
+      phone: member.phone || "",
+      membershipStartDate: new Date(member.membershipStartDate).toISOString().split("T")[0],
+      notes: member.notes || ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const openViewDialog = (member: Member) => {
+    setSelectedMember(member);
+    setViewDialogOpen(true);
+  };
 
   const isMaintainerOrAdmin = user && ["admin", "maintainer"].includes(user.role);
 
@@ -314,33 +353,55 @@ export default function Goennermitglieder() {
             </div>
           </div>
 
-          {isMaintainerOrAdmin && (
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1 text-primary hover:text-primary hover:bg-primary/10"
-                onClick={() => {
-                  setSelectedMember(member);
-                  setExtendDialogOpen(true);
-                }}
-              >
-                <RefreshCw className="h-4 w-4" />
-                +1 Jahr
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={() => {
-                  setSelectedMember(member);
-                  setDeleteDialogOpen(true);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {/* View button - available for all logged in users */}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9"
+              onClick={() => openViewDialog(member)}
+              title="Details anzeigen"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            
+            {isMaintainerOrAdmin && (
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9"
+                  onClick={() => openEditDialog(member)}
+                  title="Bearbeiten"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1 text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={() => {
+                    setSelectedMember(member);
+                    setExtendDialogOpen(true);
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  +1 Jahr
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => {
+                    setSelectedMember(member);
+                    setDeleteDialogOpen(true);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </MotionDiv>
     );
@@ -621,6 +682,202 @@ export default function Goennermitglieder() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Mitglied Details</DialogTitle>
+            <DialogDescription>
+              Alle Informationen zu diesem Gönnermitglied.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedMember && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">Vorname</Label>
+                  <p className="font-medium">{selectedMember.firstName}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Nachname</Label>
+                  <p className="font-medium">{selectedMember.lastName}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Adresse</Label>
+                <p className="font-medium">
+                  {selectedMember.street} {selectedMember.houseNumber}<br />
+                  {selectedMember.zipCode} {selectedMember.city}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">E-Mail</Label>
+                  <p className="font-medium">{selectedMember.email || "-"}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Telefon</Label>
+                  <p className="font-medium">{selectedMember.phone || "-"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">Mitgliedschaft Start</Label>
+                  <p className="font-medium">{new Date(selectedMember.membershipStartDate).toLocaleDateString("de-DE")}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Mitgliedschaft Ende</Label>
+                  <p className="font-medium">{new Date(selectedMember.membershipEndDate).toLocaleDateString("de-DE")}</p>
+                </div>
+              </div>
+              {selectedMember.notes && (
+                <div>
+                  <Label className="text-muted-foreground text-xs">Notizen</Label>
+                  <p className="font-medium whitespace-pre-wrap">{selectedMember.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>Schliessen</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) {
+          setSelectedMember(null);
+          resetForm();
+        }
+      }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Mitglied bearbeiten</DialogTitle>
+            <DialogDescription>
+              Bearbeite die Informationen des Gönnermitglieds.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-firstName">Vorname *</Label>
+                <Input
+                  id="edit-firstName"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  placeholder="Vorname"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-lastName">Nachname *</Label>
+                <Input
+                  id="edit-lastName"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  placeholder="Nachname"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="edit-street">Strasse *</Label>
+                <Input
+                  id="edit-street"
+                  value={formData.street}
+                  onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                  placeholder="Strasse"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-houseNumber">Nr. *</Label>
+                <Input
+                  id="edit-houseNumber"
+                  value={formData.houseNumber}
+                  onChange={(e) => setFormData({ ...formData, houseNumber: e.target.value })}
+                  placeholder="Nr."
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-zipCode">PLZ *</Label>
+                <Input
+                  id="edit-zipCode"
+                  value={formData.zipCode}
+                  onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                  placeholder="PLZ"
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="edit-city">Ort *</Label>
+                <Input
+                  id="edit-city"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="Ort"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">E-Mail</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="email@beispiel.ch"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Telefon</Label>
+                <Input
+                  id="edit-phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+41 79 123 45 67"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-notes">Notizen</Label>
+              <Textarea
+                id="edit-notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Optionale Notizen..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Abbrechen</Button>
+            <Button 
+              onClick={() => {
+                if (!selectedMember) return;
+                updateMutation.mutate({
+                  memberId: selectedMember.id,
+                  firstName: formData.firstName,
+                  lastName: formData.lastName,
+                  street: formData.street,
+                  houseNumber: formData.houseNumber,
+                  zipCode: formData.zipCode,
+                  city: formData.city,
+                  email: formData.email || undefined,
+                  phone: formData.phone || undefined,
+                  notes: formData.notes || undefined
+                });
+              }}
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? "Speichere..." : "Speichern"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
