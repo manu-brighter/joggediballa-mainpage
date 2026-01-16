@@ -17,7 +17,10 @@ import Datenschutz from "./pages/Datenschutz";
 import AdminDashboard from "./pages/admin/Dashboard";
 import Goennermitglieder from "./pages/Goennermitglieder";
 import Profile from "./pages/Profile";
+import MaintenancePage from "./pages/Maintenance";
 import { createContext, useContext, useState, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 // Beamer Mode Context
 interface BeamerModeContextType {
@@ -55,6 +58,16 @@ function Router() {
 function AppContent() {
   const [isBeamerMode, setBeamerMode] = useState(false);
   const [location] = useLocation();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  
+  // Check maintenance mode
+  const { data: maintenanceMode } = trpc.features.get.useQuery(
+    { featureName: "maintenance_mode" },
+    { 
+      staleTime: 30000, // Cache for 30 seconds
+      refetchOnWindowFocus: false 
+    }
+  );
 
   // Exit beamer mode when navigating away from shotcounter
   useEffect(() => {
@@ -73,6 +86,13 @@ function AppContent() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isBeamerMode]);
+
+  // Show maintenance page for non-authenticated users when maintenance mode is enabled
+  const showMaintenancePage = !authLoading && maintenanceMode?.isEnabled && !isAuthenticated;
+
+  if (showMaintenancePage) {
+    return <MaintenancePage />;
+  }
 
   return (
     <BeamerModeContext.Provider value={{ isBeamerMode, setBeamerMode }}>

@@ -47,7 +47,8 @@ import {
   RotateCcw,
   Users2,
   CheckCircle2,
-  XCircle
+  XCircle,
+  AlertTriangle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -70,11 +71,14 @@ const DEFAULT_FEATURES = [
   { name: "maintenance_mode", description: "Wartungsmodus aktivieren (Website für Besucher sperren)" },
 ];
 
+type ResetType = "scores_only" | "everything" | null;
+
 export default function AdminDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetType, setResetType] = useState<ResetType>(null);
 
   const { data: users = [], isLoading: usersLoading } = trpc.users.list.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === "admin",
@@ -91,6 +95,11 @@ export default function AdminDashboard() {
     }
   );
 
+  const { data: teams = [] } = trpc.shotcounter.getTeams.useQuery(
+    { year: new Date().getFullYear() },
+    { enabled: isAuthenticated && user?.role === "admin" }
+  );
+
   const updateRoleMutation = trpc.users.updateRole.useMutation({
     onSuccess: () => {
       utils.users.list.invalidate();
@@ -102,12 +111,37 @@ export default function AdminDashboard() {
   });
 
   const toggleFeatureMutation = trpc.features.toggle.useMutation({
+    onMutate: async ({ featureName, isEnabled }) => {
+      // Cancel outgoing refetches
+      await utils.features.list.cancel();
+      
+      // Snapshot previous value
+      const previousToggles = utils.features.list.getData();
+      
+      // Optimistically update
+      utils.features.list.setData(undefined, (old) => {
+        if (!old) return old;
+        return old.map((f) =>
+          f.featureName === featureName ? { ...f, isEnabled } : f
+        );
+      });
+      
+      return { previousToggles };
+    },
+    onError: (error, _, context) => {
+      // Rollback on error
+      if (context?.previousToggles) {
+        utils.features.list.setData(undefined, context.previousToggles);
+      }
+      toast.error(`Fehler: ${error.message}`);
+    },
     onSuccess: () => {
-      utils.features.list.invalidate();
       toast.success("Feature-Toggle aktualisiert!");
     },
-    onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+    onSettled: () => {
+      // Invalidate to refetch
+      utils.features.list.invalidate();
+      utils.features.get.invalidate();
     },
   });
 
@@ -122,6 +156,19 @@ export default function AdminDashboard() {
       utils.shotcounter.getTeams.invalidate();
       toast.success("Shotcounter erfolgreich zurückgesetzt!");
       setResetDialogOpen(false);
+      setResetType(null);
+    },
+    onError: (error) => {
+      toast.error(`Fehler: ${error.message}`);
+    },
+  });
+
+  const resetScoresMutation = trpc.shotcounter.resetScores.useMutation({
+    onSuccess: () => {
+      utils.shotcounter.getTeams.invalidate();
+      toast.success("Alle Scores wurden auf 0 zurückgesetzt!");
+      setResetDialogOpen(false);
+      setResetType(null);
     },
     onError: (error) => {
       toast.error(`Fehler: ${error.message}`);
@@ -163,9 +210,18 @@ export default function AdminDashboard() {
     return null;
   }
 
-  const handleResetShotcounter = () => {
+  const handleResetChoice = (type: ResetType) => {
+    setResetType(type);
+    setResetDialogOpen(true);
+  };
+
+  const handleConfirmReset = () => {
     const currentYear = new Date().getFullYear();
-    resetYearMutation.mutate({ year: currentYear });
+    if (resetType === "scores_only") {
+      resetScoresMutation.mutate({ year: currentYear });
+    } else if (resetType === "everything") {
+      resetYearMutation.mutate({ year: currentYear });
+    }
   };
 
   const getFeatureToggle = (name: string) => {
@@ -173,21 +229,21 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="container py-8 space-y-8">
+    <div className="container py-8 space-y-8 overflow-x-hidden">
       {/* Header */}
       <MotionDiv
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-4"
       >
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shrink-0">
           <Shield className="h-8 w-8 text-primary" />
         </div>
-        <div>
-          <h1 className="text-4xl font-black">
+        <div className="min-w-0">
+          <h1 className="text-3xl md:text-4xl font-black truncate">
             <span className="gradient-text">Admin Dashboard</span>
           </h1>
-          <p className="text-muted-foreground">Verwaltung und Konfiguration</p>
+          <p className="text-muted-foreground text-sm md:text-base">Verwaltung und Konfiguration</p>
         </div>
       </MotionDiv>
 
@@ -197,16 +253,17 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="min-w-0"
         >
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Benutzerverwaltung
+          <Card className="h-full overflow-hidden">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Users className="h-5 w-5 text-primary shrink-0" />
+                <span className="truncate">Benutzerverwaltung</span>
               </CardTitle>
-              <CardDescription>Verwalte Benutzerrollen und Zugriffsrechte</CardDescription>
+              <CardDescription className="text-sm">Verwalte Benutzerrollen und Zugriffsrechte</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               {usersLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -221,7 +278,7 @@ export default function AdminDashboard() {
                     <div
                       key={u.id}
                       className={cn(
-                        "flex items-center justify-between p-3 rounded-lg border transition-colors",
+                        "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition-colors",
                         u.id === user.id && "bg-primary/5 border-primary/20"
                       )}
                     >
@@ -253,7 +310,7 @@ export default function AdminDashboard() {
                         }
                         disabled={u.id === user.id}
                       >
-                        <SelectTrigger className="w-32 shrink-0">
+                        <SelectTrigger className="w-full sm:w-32 shrink-0">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -276,63 +333,66 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          className="min-w-0"
         >
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5 text-primary" />
-                Berechtigungen
+          <Card className="h-full overflow-hidden">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Key className="h-5 w-5 text-primary shrink-0" />
+                <span className="truncate">Berechtigungen</span>
               </CardTitle>
-              <CardDescription>Übersicht der Rollenberechtigungen</CardDescription>
+              <CardDescription className="text-sm">Übersicht der Rollenberechtigungen</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Berechtigung</TableHead>
-                    <TableHead className="text-center w-20">Admin</TableHead>
-                    <TableHead className="text-center w-20">Maintainer</TableHead>
-                    <TableHead className="text-center w-20">Editor</TableHead>
-                    <TableHead className="text-center w-20">Member</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {PERMISSIONS.map((perm) => (
-                    <TableRow key={perm.key}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <perm.icon className="h-4 w-4 text-muted-foreground" />
-                          {perm.label}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {perm.roles.includes("admin") ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-muted-foreground/30 mx-auto" />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {perm.roles.includes("maintainer") ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-muted-foreground/30 mx-auto" />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {perm.roles.includes("editor") ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-muted-foreground/30 mx-auto" />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <XCircle className="h-5 w-5 text-muted-foreground/30 mx-auto" />
-                      </TableCell>
+            <CardContent className="overflow-x-auto">
+              <div className="min-w-[400px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Berechtigung</TableHead>
+                      <TableHead className="text-center w-14 text-xs">Admin</TableHead>
+                      <TableHead className="text-center w-14 text-xs">Maint.</TableHead>
+                      <TableHead className="text-center w-14 text-xs">Editor</TableHead>
+                      <TableHead className="text-center w-14 text-xs">Member</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {PERMISSIONS.map((perm) => (
+                      <TableRow key={perm.key}>
+                        <TableCell className="font-medium text-xs py-2">
+                          <div className="flex items-center gap-2">
+                            <perm.icon className="h-3 w-3 text-muted-foreground shrink-0" />
+                            <span className="truncate">{perm.label}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center py-2">
+                          {perm.roles.includes("admin") ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center py-2">
+                          {perm.roles.includes("maintainer") ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center py-2">
+                          {perm.roles.includes("editor") ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center py-2">
+                          <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </MotionDiv>
@@ -345,12 +405,12 @@ export default function AdminDashboard() {
         transition={{ delay: 0.3 }}
       >
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <ToggleLeft className="h-5 w-5 text-primary" />
               Feature Toggles
             </CardTitle>
-            <CardDescription>Aktiviere oder deaktiviere Features dynamisch</CardDescription>
+            <CardDescription className="text-sm">Aktiviere oder deaktiviere Features dynamisch</CardDescription>
           </CardHeader>
           <CardContent>
             {featuresLoading ? (
@@ -361,15 +421,15 @@ export default function AdminDashboard() {
               <div className="grid sm:grid-cols-2 gap-4">
                 {/* Beamer Mode Toggle */}
                 <div className="flex items-center justify-between p-4 border rounded-xl hover:border-primary/30 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       <Monitor className="h-5 w-5 text-primary" />
                     </div>
-                    <div>
-                      <Label htmlFor="beamer-toggle" className="font-medium cursor-pointer">
+                    <div className="min-w-0">
+                      <Label htmlFor="beamer-toggle" className="font-medium cursor-pointer block truncate">
                         Beamer-Modus
                       </Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         Button im Shotcounter anzeigen
                       </p>
                     </div>
@@ -388,15 +448,15 @@ export default function AdminDashboard() {
 
                 {/* Maintenance Mode Toggle */}
                 <div className="flex items-center justify-between p-4 border rounded-xl hover:border-primary/30 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
                       <Shield className="h-5 w-5 text-orange-500" />
                     </div>
-                    <div>
-                      <Label htmlFor="maintenance-toggle" className="font-medium cursor-pointer">
+                    <div className="min-w-0">
+                      <Label htmlFor="maintenance-toggle" className="font-medium cursor-pointer block truncate">
                         Wartungsmodus
                       </Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         Website für Besucher sperren
                       </p>
                     </div>
@@ -425,33 +485,48 @@ export default function AdminDashboard() {
         transition={{ delay: 0.4 }}
       >
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Wine className="h-5 w-5 text-primary" />
               Shotcounter Verwaltung
             </CardTitle>
-            <CardDescription>Verwalte den Shotcounter und setze ihn zurück</CardDescription>
+            <CardDescription className="text-sm">Verwalte den Shotcounter und setze ihn zurück</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-4 border border-destructive/20 rounded-xl bg-destructive/5">
-              <div className="flex items-start gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
                   <Trash2 className="h-5 w-5 text-destructive" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-destructive">Shotcounter zurücksetzen</h4>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Setzt alle Teams und Scores für das aktuelle Jahr ({new Date().getFullYear()}) zurück. 
-                    Diese Aktion kann nicht rückgängig gemacht werden!
+                    Wähle, ob nur die Scores oder alles (Teams + Scores) zurückgesetzt werden soll.
+                    {teams.length > 0 && (
+                      <span className="block mt-1 text-xs">
+                        Aktuell: {teams.length} Team{teams.length !== 1 ? "s" : ""} im Jahr {new Date().getFullYear()}
+                      </span>
+                    )}
                   </p>
-                  <Button
-                    variant="destructive"
-                    className="mt-3"
-                    onClick={() => setResetDialogOpen(true)}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Zurücksetzen
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
+                      onClick={() => handleResetChoice("scores_only")}
+                      disabled={teams.length === 0}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Nur Scores zurücksetzen
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleResetChoice("everything")}
+                      disabled={teams.length === 0}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Alles zurücksetzen
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -466,9 +541,9 @@ export default function AdminDashboard() {
         transition={{ delay: 0.5 }}
       >
         <Card>
-          <CardHeader>
-            <CardTitle>Audit Log</CardTitle>
-            <CardDescription>Letzte 50 Aktionen im Shotcounter</CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Audit Log</CardTitle>
+            <CardDescription className="text-sm">Letzte 50 Aktionen im Shotcounter</CardDescription>
           </CardHeader>
           <CardContent>
             {auditLoading ? (
@@ -484,38 +559,38 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Zeitpunkt</TableHead>
-                      <TableHead>Aktion</TableHead>
-                      <TableHead>Betrag</TableHead>
-                      <TableHead>Score</TableHead>
-                      <TableHead>Durchgeführt von</TableHead>
+                      <TableHead className="text-xs">Zeitpunkt</TableHead>
+                      <TableHead className="text-xs">Aktion</TableHead>
+                      <TableHead className="text-xs">Betrag</TableHead>
+                      <TableHead className="text-xs">Score</TableHead>
+                      <TableHead className="text-xs">Durchgeführt von</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {auditLogs.map((log) => (
                       <TableRow key={log.id}>
-                        <TableCell className="text-sm whitespace-nowrap">
+                        <TableCell className="text-xs whitespace-nowrap py-2">
                           {new Date(log.timestamp).toLocaleString("de-DE")}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-xs py-2">
                           <span className="capitalize">{log.action.replace("_", " ")}</span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-2">
                           {log.amount !== null ? (
                             <span className={cn(
-                              "font-medium",
+                              "font-medium text-xs",
                               log.amount > 0 ? "text-green-500" : "text-red-500"
                             )}>
                               {log.amount > 0 ? `+${log.amount}` : log.amount}
                             </span>
                           ) : "-"}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-xs py-2">
                           {log.previousScore !== null && log.newScore !== null
                             ? `${log.previousScore} → ${log.newScore}`
                             : "-"}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground py-2">
                           {log.performedByName || "System"}
                         </TableCell>
                       </TableRow>
@@ -532,21 +607,39 @@ export default function AdminDashboard() {
       <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Shotcounter zurücksetzen?</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              {resetType === "scores_only" ? "Scores zurücksetzen?" : "Alles zurücksetzen?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Möchtest du den Shotcounter für {new Date().getFullYear()} wirklich zurücksetzen? 
-              <strong className="block mt-2 text-destructive">
-                Alle Teams und Scores werden unwiderruflich gelöscht!
-              </strong>
+              {resetType === "scores_only" ? (
+                <>
+                  Alle Scores werden auf 0 zurückgesetzt. Die Teams bleiben erhalten.
+                  <strong className="block mt-2 text-orange-600">
+                    Diese Aktion kann nicht rückgängig gemacht werden!
+                  </strong>
+                </>
+              ) : (
+                <>
+                  Möchtest du den Shotcounter für {new Date().getFullYear()} wirklich vollständig zurücksetzen?
+                  <strong className="block mt-2 text-destructive">
+                    Alle Teams und Scores werden unwiderruflich gelöscht!
+                  </strong>
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setResetType(null)}>Abbrechen</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleResetShotcounter}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmReset}
+              className={cn(
+                resetType === "scores_only" 
+                  ? "bg-orange-500 text-white hover:bg-orange-600" 
+                  : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              )}
             >
-              {resetYearMutation.isPending ? (
+              {(resetYearMutation.isPending || resetScoresMutation.isPending) ? (
                 <><Loader2 className="h-4 w-4 animate-spin mr-2" />Zurücksetzen...</>
               ) : "Ja, zurücksetzen"}
             </AlertDialogAction>

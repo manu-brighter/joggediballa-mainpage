@@ -163,6 +163,13 @@ export const appRouter = router({
         return { success: true };
       }),
     
+    resetScores: adminProcedure
+      .input(z.object({ year: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.resetShotcounterScoresForYear(input.year);
+        return { success: true };
+      }),
+    
     getAuditLog: maintainerProcedure
       .input(z.object({ limit: z.number().optional() }))
       .query(async ({ input }) => {
@@ -354,6 +361,14 @@ export const appRouter = router({
     list: adminProcedure.query(async () => {
       return db.getAllFeatureToggles();
     }),
+    
+    // Public getter for specific feature toggles (for beamer mode, maintenance mode, etc.)
+    get: publicProcedure
+      .input(z.object({ featureName: z.string() }))
+      .query(async ({ input }) => {
+        const toggle = await db.getFeatureToggle(input.featureName);
+        return { isEnabled: toggle?.isEnabled ?? false };
+      }),
     
     toggle: adminProcedure
       .input(z.object({
