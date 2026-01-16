@@ -252,3 +252,66 @@
 ### File Upload
 - [x] Implement self-hosted file upload for photos
 - [x] Create setup guide for root server file upload
+
+
+## Major Update - January 2026
+
+### GitHub & Login
+- [x] 1. Pull GitHub changes and integrate them
+- [x] 2. After login on local dev, stay on localhost:3000 instead of redirecting to live URL
+
+### Homepage & Events
+- [x] 3. "Mehr erfahren" on "Kommendes Event" scrolls to Event card, not "Alle Fotos"
+- [x] 4. Events visible for all users (logged out); photos in "Alle Fotos" remain visible
+- [x] 5. Increase max upload size for Team and Events images
+- [x] 6. Clicking photo in "Alle Fotos" opens bigger almost full-screen preview with modern loader
+- [ ] 7. Event cards: allow selecting thumbnail; loader for card thumbnail prioritized
+
+### Team Tab
+- [ ] 8. Edit button shows icon instead of empty field
+- [x] 9. Mobile: fix cannot remove/edit members
+- [x] 10. Add horizontal padding on member cards images to match top padding
+- [ ] 11. Uploading new member image uses final card format with manual cropping
+- [x] 12. "Neues Mitglied" form always empty, not prefilled with existing member
+- [x] 21. Allow manual reordering of members (logged-in only)
+
+### Events Form
+- [x] 13. Event time optional; Date field uses datepicker
+- [x] 14. Photo view arrows more visible on bright images
+- [x] 15. Photo view respects light/dark mode
+- [ ] 28. Add/remove padding for images in events
+- [ ] 32. Photo upload fix (not always added to the right card)
+- [x] 33. Delete Photos in card edit
+
+### Logos & Theming
+- [x] 16. Small logos default to "JoggediBalla-Logo.PNG"
+- [ ] 17. Homepage large logo default to "Jogge_Di_Balla_Final_Transparent.png"
+- [ ] 18. Default site theme follows system
+
+### Contact Form
+- [x] 19. Adjust email for self-hosted setup; provide setup instructions
+
+### Gönnermitglieder
+- [x] 20. Make counter cards slimmer or redesign; reduce empty space
+- [ ] 31. Click to show details
+
+### Sponsors
+- [x] 22. Add card at bottom: "Werde Sponsor von Jogge di Balla" with Standard & Premium packages
+
+### New Page: Dienstleistungen
+- [x] 23. Create "Dienstleistungen" page with:
+  - Vermietung (Equipment, Beerpong, etc.)
+  - DJ (Kassier - Jan, DJ, image)
+  - Fotografie (Vize-Präsi - Manu, link to events and portfolio)
+  - Contact link for requests
+
+### Startpage
+- [x] 24. Add Gönnermitgliedschaft info: CHF 20.- p.a., giveaways, reduced prices, contact link
+- [x] 25. Add Twitch link next to Instagram; code easy extendable for other platforms
+
+### Shotcounter
+- [x] 29. Fix "Kartengroesse" slider- [x] 30. Fix teams slightly cut off at the bottom in beamer mode
+
+### Navbar & Admin
+- [ ] 26. All navbar links toggleable via admin dashboard except Home, Team, Kontakt
+- [x] 27. Admin mobile: permissions card padding improved similar to Audit Log card

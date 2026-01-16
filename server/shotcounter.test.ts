@@ -109,12 +109,16 @@ describe("shotcounter", () => {
       amount: 3,
     });
 
-    // Check audit log
-    const auditLogs = await caller.shotcounter.getAuditLog({ limit: 10 });
+    // Check audit log - filter by the specific team we created and action type
+    const auditLogs = await caller.shotcounter.getAuditLog({ limit: 50 });
     expect(auditLogs.length).toBeGreaterThan(0);
     
-    const latestLog = auditLogs[0];
-    expect(latestLog.action).toBe("add");
-    expect(latestLog.amount).toBe(3);
+    // Find the audit log entry for our specific team's score update (not create_team)
+    const teamAuditLog = auditLogs.find(
+      log => log.teamId === Number(createResult.teamId) && log.action === "add"
+    );
+    expect(teamAuditLog).toBeDefined();
+    expect(teamAuditLog!.action).toBe("add");
+    expect(teamAuditLog!.amount).toBe(3);
   });
 });
