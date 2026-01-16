@@ -48,6 +48,7 @@ interface EventFormData {
   title: string;
   description: string;
   eventDate: string;
+  eventTime: string;
   location: string;
 }
 
@@ -72,6 +73,7 @@ export default function Events() {
     title: "",
     description: "",
     eventDate: "",
+    eventTime: "",
     location: ""
   });
   
@@ -135,7 +137,7 @@ export default function Events() {
     : allPhotos;
 
   const resetEventForm = () => {
-    setEventForm({ title: "", description: "", eventDate: "", location: "" });
+    setEventForm({ title: "", description: "", eventDate: "", eventTime: "", location: "" });
     setSelectedEvent(null);
   };
 
@@ -158,10 +160,14 @@ export default function Events() {
       toast.error("Bitte Titel und Datum angeben");
       return;
     }
+    // Combine date and optional time
+    const dateStr = eventForm.eventTime 
+      ? `${eventForm.eventDate}T${eventForm.eventTime}` 
+      : `${eventForm.eventDate}T00:00`;
     createEventMutation.mutate({
       title: eventForm.title.trim(),
       description: eventForm.description.trim() || undefined,
-      eventDate: new Date(eventForm.eventDate),
+      eventDate: new Date(dateStr),
       location: eventForm.location.trim() || undefined
     });
   };
@@ -171,21 +177,31 @@ export default function Events() {
       toast.error("Bitte Titel und Datum angeben");
       return;
     }
+    // Combine date and optional time
+    const dateStr = eventForm.eventTime 
+      ? `${eventForm.eventDate}T${eventForm.eventTime}` 
+      : `${eventForm.eventDate}T00:00`;
     updateEventMutation.mutate({
       eventId: selectedEvent.id,
       title: eventForm.title.trim(),
       description: eventForm.description.trim() || undefined,
-      eventDate: new Date(eventForm.eventDate),
+      eventDate: new Date(dateStr),
       location: eventForm.location.trim() || undefined
     });
   };
 
   const openEditEvent = (event: typeof events[0]) => {
     setSelectedEvent({ id: event.id, title: event.title });
+    const eventDate = new Date(event.eventDate);
+    const dateStr = eventDate.toISOString().slice(0, 10);
+    const timeStr = eventDate.getHours() > 0 || eventDate.getMinutes() > 0 
+      ? eventDate.toTimeString().slice(0, 5) 
+      : "";
     setEventForm({
       title: event.title,
       description: event.description || "",
-      eventDate: new Date(event.eventDate).toISOString().slice(0, 16),
+      eventDate: dateStr,
+      eventTime: timeStr,
       location: event.location || ""
     });
     setEditEventOpen(true);
@@ -209,8 +225,8 @@ export default function Events() {
           continue;
         }
 
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name} ist zu groß (max. 10MB)`);
+        if (file.size > 25 * 1024 * 1024) {
+          toast.error(`${file.name} ist zu groß (max. 25MB)`);
           continue;
         }
 
@@ -299,12 +315,22 @@ export default function Events() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="date">Datum & Uhrzeit *</Label>
+                  <Label htmlFor="date">Datum *</Label>
                   <Input
                     id="date"
-                    type="datetime-local"
+                    type="date"
                     value={eventForm.eventDate}
                     onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="time">Uhrzeit (optional)</Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={eventForm.eventTime}
+                    onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
+                    placeholder="--:--"
                   />
                 </div>
                 <div className="space-y-2">
@@ -345,8 +371,8 @@ export default function Events() {
         </div>
       )}
 
-      {/* Events Section */}
-      <section className="space-y-6">
+         {/* Event Cards */}
+      <section id="event-cards" className="space-y-6 scroll-mt-24">
         <h2 className="text-3xl font-bold">Unsere Events</h2>
         {eventsLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -587,12 +613,22 @@ export default function Events() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-date">Datum & Uhrzeit *</Label>
+              <Label htmlFor="edit-date">Datum *</Label>
               <Input
                 id="edit-date"
-                type="datetime-local"
+                type="date"
                 value={eventForm.eventDate}
                 onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-time">Uhrzeit (optional)</Label>
+              <Input
+                id="edit-time"
+                type="time"
+                value={eventForm.eventTime}
+                onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
+                placeholder="--:--"
               />
             </div>
             <div className="space-y-2">
@@ -655,11 +691,11 @@ export default function Events() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Lightbox Dialog */}
+      {/* Lightbox Dialog - Full screen with theme support */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-5xl p-0 bg-black/95">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-background/95 dark:bg-black/95 backdrop-blur-sm border-0">
           <DialogHeader className="p-4 pb-0">
-            <DialogTitle className="text-white">
+            <DialogTitle className="text-foreground dark:text-white">
               {selectedPhotos[currentPhotoIndex]?.title || "Foto"}
             </DialogTitle>
           </DialogHeader>
@@ -667,25 +703,25 @@ export default function Events() {
             <img
               src={selectedPhotos[currentPhotoIndex]?.imageUrl}
               alt={selectedPhotos[currentPhotoIndex]?.title || "Event Foto"}
-              className="w-full h-auto max-h-[70vh] object-contain"
+              className="w-full h-auto max-h-[85vh] object-contain"
             />
             {selectedPhotos.length > 1 && (
               <>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white h-12 w-12"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white h-14 w-14 shadow-lg border border-white/20"
                   onClick={prevPhoto}
                 >
-                  <ChevronLeft className="h-8 w-8" />
+                  <ChevronLeft className="h-10 w-10" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white h-12 w-12"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white h-14 w-14 shadow-lg border border-white/20"
                   onClick={nextPhoto}
                 >
-                  <ChevronRight className="h-8 w-8" />
+                  <ChevronRight className="h-10 w-10" />
                 </Button>
               </>
             )}

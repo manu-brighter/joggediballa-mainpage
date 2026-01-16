@@ -112,8 +112,8 @@ export default function Team() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Das Bild darf maximal 5MB groß sein.");
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("Das Bild darf maximal 25MB groß sein.");
       return;
     }
 
@@ -231,9 +231,13 @@ export default function Team() {
       role: member.role || "",
       bio: member.bio || ""
     });
+    // Set photo preview if member has a photo
     if (member.photoUrl) {
       setPhotoPreview(member.photoUrl);
+    } else {
+      setPhotoPreview(null);
     }
+    setPhotoFile(null); // Reset file selection
     setEditMemberOpen(true);
   };
 
@@ -416,8 +420,8 @@ export default function Team() {
                 transition={{ delay: index * 0.05 }}
               >
                 <Card className="overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
-                  {/* Member Photo */}
-                  <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted to-muted/50 relative">
+                  {/* Member Photo - with consistent padding */}
+                  <div className="aspect-square overflow-hidden bg-gradient-to-br from-muted to-muted/50 relative p-0">
                     {member.photoUrl ? (
                       <img
                         src={member.photoUrl}
@@ -434,9 +438,9 @@ export default function Team() {
                       </div>
                     )}
                     
-                    {/* Edit/Delete Buttons */}
+                    {/* Edit/Delete Buttons - Always visible on mobile */}
                     {canManageTeam && (
-                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="secondary"
                           size="icon"
