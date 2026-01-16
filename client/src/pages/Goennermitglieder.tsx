@@ -509,47 +509,20 @@ export default function Goennermitglieder() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-          <CardContent className="py-6 flex items-center justify-center h-full">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-green-500/20">
-                <CheckCircle className="h-6 w-6 text-green-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{activeMembers.filter(m => getMemberStatus(m) === "active").length}</p>
-                <p className="text-sm text-muted-foreground">Aktiv</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/20">
-          <CardContent className="py-6 flex items-center justify-center h-full">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-yellow-500/20">
-                <AlertTriangle className="h-6 w-6 text-yellow-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{activeMembers.filter(m => getMemberStatus(m) === "expiring").length}</p>
-                <p className="text-sm text-muted-foreground">Läuft bald ab</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
-          <CardContent className="py-6 flex items-center justify-center h-full">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-red-500/20">
-                <XCircle className="h-6 w-6 text-red-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{expiredMembers.length}</p>
-                <p className="text-sm text-muted-foreground">Abgelaufen</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stats Cards - Compact horizontal layout */}
+      <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+          <CheckCircle className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">{activeMembers.filter(m => getMemberStatus(m) === "active").length} Aktiv</span>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20">
+          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          <span className="text-sm font-medium">{activeMembers.filter(m => getMemberStatus(m) === "expiring").length} Läuft bald ab</span>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20">
+          <XCircle className="h-4 w-4 text-red-500" />
+          <span className="text-sm font-medium">{expiredMembers.length} Abgelaufen</span>
+        </div>
       </div>
 
       {/* Active Members */}

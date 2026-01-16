@@ -302,22 +302,28 @@ export default function Shotcounter() {
               exit={{ opacity: 0, x: -20 }}
               className="fixed top-16 left-4 p-4 rounded-xl bg-card/90 backdrop-blur-lg border shadow-lg z-[10000] w-64"
             >
-              <Label className="text-sm font-medium mb-2 block">
+              <Label className="text-sm font-medium mb-3 block">
                 Kartengröße: {beamerScale}%
               </Label>
-              <Slider
-                value={[beamerScale]}
-                onValueChange={(value) => setBeamerScale(value[0])}
-                min={50}
-                max={150}
-                step={5}
-                className="w-full"
-              />
+              <div className="py-2">
+                <Slider
+                  value={[beamerScale]}
+                  onValueChange={(value) => setBeamerScale(value[0])}
+                  min={50}
+                  max={150}
+                  step={5}
+                  className="w-full cursor-pointer"
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>50%</span>
+                <span>150%</span>
+              </div>
             </MotionDiv>
           )}
         </AnimatePresence>
 
-        <div className="container py-8 relative z-10">
+        <div className="container py-8 pb-24 relative z-10">
           {/* Title */}
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-6xl font-black">
@@ -344,7 +350,7 @@ export default function Shotcounter() {
 
           {/* Teams */}
           <LayoutGroup>
-            <div className="space-y-4 max-w-4xl mx-auto">
+            <div className="space-y-4 max-w-4xl mx-auto pb-8">
               <AnimatePresence mode="popLayout">
                 {teams.map((team, index) => (
                   <MotionDiv
