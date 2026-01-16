@@ -145,7 +145,7 @@ export function Footer() {
         {/* Copyright - Both layouts */}
         <div className="mt-8 pt-6 border-t text-center">
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-            © {currentYear} Jogge di Balla. Made with <Heart className="h-3 w-3 text-secondary fill-secondary" /> in Germany
+            © {currentYear} Jogge di Balla. Made with <Heart className="h-3 w-3 text-secondary fill-secondary" /> in Switzerland
           </p>
           <p className="mt-1 text-xs text-muted-foreground/70">
             Fotos © Manuel Heller

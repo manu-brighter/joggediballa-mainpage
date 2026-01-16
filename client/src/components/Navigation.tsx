@@ -33,7 +33,7 @@ export function Navigation() {
     { href: "/", label: "Home" },
     { href: "/shotcounter", label: "Shotcounter" },
     { href: "/team", label: "Team" },
-    { href: "/events", label: "Events" },
+    { href: "/events", label: "Events & Fotos" },
     { href: "/sponsors", label: "Sponsoren" },
     { href: "/contact", label: "Kontakt" },
   ];

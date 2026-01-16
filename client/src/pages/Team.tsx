@@ -258,7 +258,7 @@ export default function Team() {
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Lerne die Menschen kennen, die Jogge di Balla zu dem machen, was es ist – 
-          ein Ort voller Freude, Kreativität und unvergesslicher Momente.
+          ein Ort voller Action, Kreativität und unvergesslicher Momente.
         </p>
       </MotionDiv>
 
@@ -336,7 +336,7 @@ export default function Team() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="nickname">Spitzname (optional)</Label>
+                  <Label htmlFor="nickname">Spitzname</Label>
                   <Input
                     id="nickname"
                     value={memberForm.nickname}
@@ -346,7 +346,7 @@ export default function Team() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="role">Rolle (optional)</Label>
+                  <Label htmlFor="role">Rolle</Label>
                   <Input
                     id="role"
                     value={memberForm.role}
@@ -356,7 +356,7 @@ export default function Team() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Beschreibung (optional)</Label>
+                  <Label htmlFor="bio">Beschreibung</Label>
                   <Textarea
                     id="bio"
                     value={memberForm.bio}

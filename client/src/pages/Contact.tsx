@@ -76,7 +76,7 @@ export default function Contact() {
         <Mail className="h-16 w-16 text-primary mx-auto" />
         <h1 className="text-4xl md:text-5xl font-bold">Kontakt</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Hast du Fragen, Anregungen oder möchtest du Teil von Jogge di Balla werden? 
+          Hast du Fragen, Anregungen oder möchtest auf eines unserer Angebote eingehen?
           Schreib uns eine Nachricht!
         </p>
       </div>
@@ -173,13 +173,6 @@ export default function Contact() {
             </form>
           </CardContent>
         </Card>
-
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>
-            Für Foto-Anfragen oder Bildrechte kontaktiere bitte direkt:{" "}
-            <span className="font-medium">Manuel Heller</span>
-          </p>
-        </div>
       </div>
     </div>
   );

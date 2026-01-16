@@ -45,8 +45,8 @@ export default function Home() {
               </h1>
               
               <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0">
-                Wir bringen Menschen zusammen – für unvergessliche Momente, 
-                großartige Events und jede Menge Spaß!
+                Event- und Kulturverein. Wir bringen Menschen zusammen – für
+                unvergessliche Momente, großartige Events und jede Menge Spaß!
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -119,24 +119,24 @@ export default function Home() {
               {
                 icon: Trophy,
                 title: "Shotcounter",
-                description: "Wer trinkt die meisten Shots bis Silvester? Verfolge den Wettbewerb live!",
+                description: "Welches Team trinkt die meisten Jogge di Balla Shots? Live Wettbewerb!",
                 href: "/shotcounter",
-                delay: 0
+                delay: 0,
               },
               {
                 icon: Calendar,
                 title: "Events & Fotos",
                 description: "Erlebe unsere unvergesslichen Events und entdecke die besten Momente.",
                 href: "/events",
-                delay: 0.1
+                delay: 0.1,
               },
               {
                 icon: Users,
                 title: "Unser Team",
-                description: "Lerne die Menschen hinter Jogge di Balla kennen – voller Leidenschaft!",
+                description: "Lerne das statliche und äusserst attraktive Team hinter Jogge di Balla kennen!",
                 href: "/team",
-                delay: 0.2
-              }
+                delay: 0.2,
+              },
             ].map((feature) => (
               <MotionDiv
                 key={feature.title}
@@ -240,11 +240,12 @@ export default function Home() {
             </div>
             <h2 className="text-3xl md:text-4xl font-bold">Über uns</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Jogge di Balla ist mehr als nur ein Verein – wir sind eine Gemeinschaft von 
-              Menschen, die das Leben feiern. Seit 2022 organisieren wir unvergessliche Events, 
-              pflegen Freundschaften und schaffen Erinnerungen, die ein Leben lang halten. 
-              Ob beim legendären Shotcounter-Wettbewerb oder bei unseren gemeinsamen Feiern – 
-              bei uns steht der Spaß im Vordergrund!
+              Jogge di Balla ist mehr als nur ein Verein! Jedes Jahr
+              organisieren wir besondere Events, die durch ihre einzigartige
+              Atmosphäre, interessante Locations und unvergessliche Erlebnisse
+              begeistern. Unsere Veranstaltungen sind kreativ und
+              abwechslungsreich und bieten immer wieder neue Highlights für
+              alle, die etwas Außergewöhnliches suchen.
             </p>
             <Button 
               variant="outline" 

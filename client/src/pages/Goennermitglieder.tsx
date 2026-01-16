@@ -359,7 +359,7 @@ export default function Goennermitglieder() {
             <span className="gradient-text">Gönnermitglieder</span>
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">
-            Verwaltung der Vereins-Fördermitglieder
+            Verwaltung der Gönnermitgliedschaften
           </p>
         </MotionDiv>
 
@@ -390,7 +390,7 @@ export default function Goennermitglieder() {
                 <DialogHeader>
                   <DialogTitle>Neues Gönnermitglied</DialogTitle>
                   <DialogDescription>
-                    Füge ein neues Fördermitglied hinzu. Die Mitgliedschaft läuft automatisch nach einem Jahr ab.
+                    Füge ein neues Gönnermitglied hinzu. Die Mitgliedschaft läuft automatisch ohne reaktivierung nach einem Jahr ab.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -441,7 +441,7 @@ export default function Goennermitglieder() {
                         id="zipCode"
                         value={formData.zipCode}
                         onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                        placeholder="12345"
+                        placeholder="1234"
                       />
                     </div>
                     <div className="col-span-2 space-y-2">
@@ -471,7 +471,7 @@ export default function Goennermitglieder() {
                         id="phone"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+49 123 456789"
+                        placeholder="+41 12 345 67 89"
                       />
                     </div>
                   </div>

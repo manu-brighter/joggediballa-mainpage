@@ -412,7 +412,7 @@ export default function Shotcounter() {
             Shotcounter <span className="gradient-text">{currentYear}</span>
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">
-            Wer trinkt die meisten Shots bis Silvester?
+            Welches Team trinkt die meisten Shots bis Ende {currentYear}?
           </p>
         </MotionDiv>
         
@@ -444,8 +444,8 @@ export default function Shotcounter() {
                   <Timer className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Countdown bis Silvester</h3>
-                  <p className="text-sm text-muted-foreground">Wer gewinnt dieses Jahr?</p>
+                  <h3 className="font-semibold text-lg">Countdown zum Silvester</h3>
+                  <p className="text-sm text-muted-foreground">Wer gewinnt dieses Jahr? Vielleicht gibt es ein Preis?</p>
                 </div>
               </div>
               

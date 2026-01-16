@@ -12,69 +12,81 @@ export default function Impressum() {
       <div className="max-w-3xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle>Angaben gemäß § 5 TMG</CardTitle>
+            <CardTitle>Impressum</CardTitle>
           </CardHeader>
+
           <CardContent className="space-y-6 text-sm">
             <div>
               <h3 className="font-semibold mb-2">Verein</h3>
               <p>Jogge di Balla</p>
-              <p>Since 2022</p>
+              <p>Event- und Kulturverein</p>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Vertreten durch</h3>
-              <p>[Name des Vorstands/Verantwortlichen]</p>
+              <h3 className="font-semibold mb-2">Vertretungsberechtigte Person</h3>
+              <p>Manuel Heller</p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-2">Adresse</h3>
+              <p>Martisackerweg 18</p>
+              <p>4203 Grellingen</p>
+              <p>Schweiz</p>
             </div>
 
             <div>
               <h3 className="font-semibold mb-2">Kontakt</h3>
-              <p>E-Mail: [kontakt@joggediballa.de]</p>
+              <p>E-Mail: joggediballa@gmail.com</p>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Registereintrag</h3>
-              <p>[Falls eingetragen: Vereinsregister-Nummer]</p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-2">Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h3>
-              <p>[Name und Anschrift des Verantwortlichen]</p>
+              <h3 className="font-semibold mb-2">Vereinsregister</h3>
+              <p>
+                Eintrag im Vereinsregister der Gemeinde Brislach:&nbsp;
+                <a
+                  href="https://www.brislach.ch/vereinsliste/86332"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Zum Registereintrag
+                </a>
+              </p>
             </div>
 
             <div>
               <h3 className="font-semibold mb-2">Haftungsausschluss</h3>
-              <div className="space-y-3 text-muted-foreground">
+              <div className="space-y-4 text-muted-foreground">
                 <div>
                   <h4 className="font-medium text-foreground">Haftung für Inhalte</h4>
                   <p>
-                    Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, 
-                    Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. 
-                    Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten 
-                    nach den allgemeinen Gesetzen verantwortlich.
+                    Die Inhalte dieser Website wurden mit grösstmöglicher Sorgfalt erstellt.
+                    Der Verein Jogge di Balla übernimmt jedoch keine Gewähr für die
+                    Richtigkeit, Vollständigkeit und Aktualität der bereitgestellten Inhalte.
                   </p>
                 </div>
 
                 <div>
                   <h4 className="font-medium text-foreground">Haftung für Links</h4>
                   <p>
-                    Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen 
-                    Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. 
-                    Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der 
-                    Seiten verantwortlich.
+                    Diese Website enthält Links zu externen Websites Dritter, auf deren
+                    Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten
+                    Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich.
                   </p>
                 </div>
 
                 <div>
                   <h4 className="font-medium text-foreground">Urheberrecht</h4>
                   <p>
-                    Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen 
-                    dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art 
-                    der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen 
-                    Zustimmung des jeweiligen Autors bzw. Erstellers.
+                    Die Inhalte und Werke auf dieser Website unterliegen dem
+                    schweizerischen Urheberrecht. Jede Art der Verwertung ausserhalb
+                    der Grenzen des Urheberrechts bedarf der vorherigen schriftlichen
+                    Zustimmung des jeweiligen Rechteinhabers.
                   </p>
                   <p className="mt-2">
-                    <strong>Fotos:</strong> Alle Fotos auf dieser Website sind urheberrechtlich geschützt 
-                    und © Manuel Heller. Jegliche Verwendung bedarf der ausdrücklichen Genehmigung.
+                    <strong>Fotos:</strong> Eigene Fotos auf dieser Website sind urheberrechtlich
+                    geschützt und © Manuel Heller. Die Verwendung von Bildern Dritter erfolgt
+                    mit entsprechender Lizenz oder Genehmigung.
                   </p>
                 </div>
               </div>
