@@ -319,9 +319,9 @@ export async function getAllTeamMembers(activeOnly: boolean = true) {
   const db = await getDb();
   if (!db) return [];
   const query = activeOnly 
-    ? db.select().from(teamMembers).where(eq(teamMembers.isActive, true))
-    : db.select().from(teamMembers);
-  return query.orderBy(teamMembers.displayOrder);
+    ? db.select().from(teamMembers).where(eq(teamMembers.isActive, true)).orderBy(teamMembers.displayOrder)
+    : db.select().from(teamMembers).orderBy(teamMembers.displayOrder);
+  return query;
 }
 
 export async function createTeamMember(member: InsertTeamMember) {
@@ -341,6 +341,18 @@ export async function deleteTeamMember(memberId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(teamMembers).set({ isActive: false }).where(eq(teamMembers.id, memberId));
+}
+
+export async function reorderTeamMembers(memberIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Update displayOrder for each member based on their position in the array
+  for (let i = 0; i < memberIds.length; i++) {
+    await db.update(teamMembers)
+      .set({ displayOrder: i })
+      .where(eq(teamMembers.id, memberIds[i]));
+  }
 }
 
 // ============================================

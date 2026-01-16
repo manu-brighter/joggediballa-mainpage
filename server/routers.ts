@@ -352,6 +352,15 @@ export const appRouter = router({
         await db.deleteTeamMember(input.memberId);
         return { success: true };
       }),
+    
+    reorder: protectedProcedure
+      .input(z.object({
+        memberIds: z.array(z.number())
+      }))
+      .mutation(async ({ input }) => {
+        await db.reorderTeamMembers(input.memberIds);
+        return { success: true };
+      }),
   }),
 
   // ============================================

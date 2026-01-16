@@ -229,7 +229,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="container py-8 space-y-8 overflow-x-hidden">
+    <div className="container py-8 space-y-8 overflow-x-hidden max-w-full">
       {/* Header */}
       <MotionDiv
         initial={{ opacity: 0, y: -20 }}
@@ -247,7 +247,7 @@ export default function AdminDashboard() {
         </div>
       </MotionDiv>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6 w-full">
         {/* User Management */}
         <MotionDiv
           initial={{ opacity: 0, y: 20 }}
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
           transition={{ delay: 0.1 }}
           className="min-w-0"
         >
-          <Card className="h-full overflow-hidden">
+          <Card className="h-full overflow-hidden w-full">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Users className="h-5 w-5 text-primary shrink-0" />
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
               </CardTitle>
               <CardDescription className="text-sm">Verwalte Benutzerrollen und Zugriffsrechte</CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent className="overflow-hidden px-3 sm:px-6">
               {usersLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -335,7 +335,7 @@ export default function AdminDashboard() {
           transition={{ delay: 0.2 }}
           className="min-w-0"
         >
-          <Card className="h-full overflow-hidden">
+          <Card className="h-full overflow-hidden w-full">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Key className="h-5 w-5 text-primary shrink-0" />
@@ -343,8 +343,8 @@ export default function AdminDashboard() {
               </CardTitle>
               <CardDescription className="text-sm">Übersicht der Rollenberechtigungen</CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <div className="min-w-[400px]">
+            <CardContent className="overflow-x-auto px-3 sm:px-6">
+              <div className="min-w-[320px] sm:min-w-[400px]">
                 <Table>
                   <TableHeader>
                     <TableRow>

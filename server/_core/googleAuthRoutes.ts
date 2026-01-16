@@ -95,8 +95,13 @@ export function registerGoogleAuthRoutes(app: Express) {
 
         console.log("[Google OAuth] Cookie set, redirecting to homepage");
 
-        // Redirect to homepage
-        res.redirect("/");
+        // Redirect to the same origin (supports localhost dev and production)
+        // Use the referer or host header to determine the redirect URL
+        const host = req.get('host') || 'localhost:3000';
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+        const redirectUrl = `${protocol}://${host}/`;
+        console.log("[Google OAuth] Redirecting to:", redirectUrl);
+        res.redirect(redirectUrl);
       } catch (error) {
         console.error("[Google OAuth] Error in callback:", error);
         res.redirect("/login-failed");
