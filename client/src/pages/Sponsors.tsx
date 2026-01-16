@@ -25,7 +25,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Heart, Plus, Trash2, ExternalLink, Upload, Image, X, Loader2 } from "lucide-react";
+import { Heart, Plus, Trash2, ExternalLink, Upload, Image, X, Loader2, Star, Crown, Mail } from "lucide-react";
+import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -396,6 +397,90 @@ export default function Sponsors() {
           </AnimatePresence>
         </div>
       )}
+
+      {/* Become a Sponsor CTA */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="mt-12"
+      >
+        <Card className="bg-gradient-to-br from-primary/5 via-secondary/5 to-primary/5 border-primary/20 overflow-hidden">
+          <CardContent className="p-8">
+            <div className="text-center space-y-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20">
+                <Heart className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold">Werde Sponsor von Jogge di Balla</h2>
+                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
+                  Unterstütze unseren Verein und profitiere von exklusiven Vorteilen!
+                </p>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                {/* Standard Package */}
+                <div className="bg-background/50 backdrop-blur-sm rounded-xl p-6 border border-border hover:border-primary/30 transition-all">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Star className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-bold">Standard Paket</h3>
+                  </div>
+                  <ul className="text-sm text-muted-foreground space-y-2 text-left">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      Logo auf unserer Website
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      Erwähnung bei Events
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      Social Media Shoutout
+                    </li>
+                  </ul>
+                </div>
+                
+                {/* Premium Package */}
+                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl p-6 border-2 border-primary/30 hover:border-primary/50 transition-all relative">
+                  <div className="absolute -top-3 right-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
+                    Empfohlen
+                  </div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Crown className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-bold">Premium Paket</h3>
+                  </div>
+                  <ul className="text-sm text-muted-foreground space-y-2 text-left">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      Alles aus Standard
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      Prominente Platzierung
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      Exklusive Event-Einladungen
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      Werbematerial bei Events
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <Button asChild size="lg" className="btn-animate gap-2">
+                <Link href="/contact">
+                  <Mail className="h-5 w-5" />
+                  Jetzt Kontakt aufnehmen
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </MotionDiv>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

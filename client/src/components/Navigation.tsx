@@ -34,6 +34,7 @@ export function Navigation() {
     { href: "/shotcounter", label: "Shotcounter" },
     { href: "/team", label: "Team" },
     { href: "/events", label: "Events & Fotos" },
+    { href: "/dienstleistungen", label: "Dienstleistungen" },
     { href: "/sponsors", label: "Sponsoren" },
     { href: "/contact", label: "Kontakt" },
   ];
@@ -56,7 +57,7 @@ export function Navigation() {
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2 group">
           <img 
-            src="/Jogge_Di_Balla_Final_Transparent.png" 
+            src="/JoggediBalla-Logo.PNG" 
             alt="Jogge di Balla Logo" 
             className="h-8 sm:h-10 w-auto transition-transform duration-300 group-hover:scale-105"
           />
