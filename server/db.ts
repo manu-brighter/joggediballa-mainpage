@@ -163,6 +163,14 @@ export async function resetShotcounterForYear(year: number) {
   await db.delete(shotcounterTeams).where(eq(shotcounterTeams.year, year));
 }
 
+export async function resetShotcounterScoresForYear(year: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(shotcounterTeams)
+    .set({ score: 0, updatedAt: new Date() })
+    .where(eq(shotcounterTeams.year, year));
+}
+
 export async function getShotcounterTeamById(teamId: number) {
   const db = await getDb();
   if (!db) return undefined;

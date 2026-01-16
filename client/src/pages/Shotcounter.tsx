@@ -123,6 +123,13 @@ export default function Shotcounter() {
   const [beamerScale, setBeamerScale] = useState(100);
   const [showBeamerSettings, setShowBeamerSettings] = useState(false);
 
+  // Check if beamer mode feature is enabled
+  const { data: beamerModeFeature } = trpc.features.get.useQuery(
+    { featureName: "beamer_mode" },
+    { staleTime: 30000 }
+  );
+  const isBeamerModeEnabled = beamerModeFeature?.isEnabled ?? true; // Default to true if not set
+
   const utils = trpc.useUtils();
   const { data: teams = [], isLoading } = trpc.shotcounter.getTeams.useQuery({ year: currentYear });
   
@@ -306,94 +313,87 @@ export default function Shotcounter() {
                 step={5}
                 className="w-full"
               />
-              <p className="text-xs text-muted-foreground mt-2">
-                Für viele Teams auf 16:9 Bildschirm verkleinern
-              </p>
             </MotionDiv>
           )}
         </AnimatePresence>
 
-        <div className="min-h-screen flex flex-col items-center justify-start p-8 relative z-10">
-          <MotionDiv
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
-          >
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <img
-                src="/Jogge_Di_Balla_Final_Transparent.png"
-                alt="Jogge di Balla"
-                className="h-16 w-auto"
-              />
-            </div>
-            <h1 className="text-4xl md:text-6xl font-black gradient-text mb-4">
-              Shotcounter {currentYear}
+        <div className="container py-8 relative z-10">
+          {/* Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-6xl font-black">
+              Shotcounter <span className="gradient-text">{currentYear}</span>
             </h1>
-            <div className="flex items-center justify-center gap-4 text-xl md:text-3xl font-bold text-muted-foreground">
-              <Timer className="h-6 w-6 md:h-8 md:w-8" />
-              {timeToNewYear.isNewYear ? (
-                <span className="text-primary">🎉 Frohes Neues Jahr! 🎉</span>
-              ) : (
-                <span className="tabular-nums">
-                  {timeToNewYear.days}T {timeToNewYear.hours}h {timeToNewYear.minutes}m {timeToNewYear.seconds}s
-                </span>
-              )}
-            </div>
-          </MotionDiv>
-          
-          <div className="w-full max-w-6xl">
-            <LayoutGroup>
+          </div>
+
+          {/* Countdown */}
+          <div className="flex justify-center gap-4 md:gap-8 mb-12">
+            {[
+              { value: timeToNewYear.days, label: "Tage" },
+              { value: timeToNewYear.hours, label: "Stunden" },
+              { value: timeToNewYear.minutes, label: "Minuten" },
+              { value: timeToNewYear.seconds, label: "Sekunden" },
+            ].map((item) => (
+              <div key={item.label} className="text-center">
+                <div className="text-4xl md:text-7xl font-black tabular-nums text-primary">
+                  {item.value.toString().padStart(2, "0")}
+                </div>
+                <div className="text-sm md:text-lg text-muted-foreground">{item.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Teams */}
+          <LayoutGroup>
+            <div className="space-y-4 max-w-4xl mx-auto">
               <AnimatePresence mode="popLayout">
                 {teams.map((team, index) => (
                   <MotionDiv
                     key={team.id}
                     layout
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ 
                       type: "spring",
-                      stiffness: 500,
-                      damping: 30,
-                      layout: { type: "spring", stiffness: 300, damping: 30 }
+                      stiffness: 300,
+                      damping: 35,
+                      layout: { type: "spring", stiffness: 200, damping: 35 }
                     }}
-                    style={{ height: `${getCardHeight()}px` }}
                     className={cn(
-                      "flex items-center justify-between px-6 md:px-8 rounded-2xl border-2 transition-all mb-3",
+                      "p-6 md:p-8 rounded-2xl border-2 transition-all",
                       index === 0 
-                        ? "bg-gradient-to-r from-primary/20 to-secondary/20 border-primary glow-primary" 
-                        : "bg-card/80 backdrop-blur-sm border-border"
+                        ? "bg-gradient-to-r from-primary/20 to-secondary/20 border-primary shadow-2xl shadow-primary/20" 
+                        : "bg-card/50 border-border"
                     )}
+                    style={{ minHeight: `${getCardHeight()}px` }}
                   >
-                    <div className="flex items-center gap-4 md:gap-8">
-                      <span className={cn(
-                        "font-black",
-                        index === 0 ? "text-primary" : "text-muted-foreground"
-                      )} style={{ fontSize: `${Math.max(24, beamerScale * 0.4)}px` }}>
-                        {index === 0 ? (
-                          <Crown className="text-yellow-500" style={{ width: `${Math.max(32, beamerScale * 0.5)}px`, height: `${Math.max(32, beamerScale * 0.5)}px` }} />
-                        ) : (
-                          `#${index + 1}`
-                        )}
-                      </span>
-                      <span className="font-bold" style={{ fontSize: `${Math.max(20, beamerScale * 0.35)}px` }}>
-                        {team.name}
-                      </span>
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Rank & Name */}
+                      <div className="flex items-center gap-4 md:gap-6 min-w-0">
+                        <div className={cn(
+                          "flex-shrink-0 w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center font-black text-2xl md:text-4xl",
+                          index === 0 
+                            ? "bg-yellow-500/30 text-yellow-500" 
+                            : "bg-muted text-muted-foreground"
+                        )}>
+                          {index === 0 ? <Crown className="h-8 w-8 md:h-12 md:w-12" /> : index + 1}
+                        </div>
+                        <span className="font-bold text-2xl md:text-4xl truncate">{team.name}</span>
+                      </div>
+                      
+                      {/* Score */}
+                      <InlineScoreEdit
+                        value={team.score}
+                        onSave={(newScore) => handleSetScore(team.id, newScore)}
+                        disabled={!isMaintainerOrAdmin}
+                        isBeamerMode={true}
+                      />
                     </div>
-                    <span 
-                      className={cn(
-                        "font-black tabular-nums",
-                        index === 0 ? "text-primary" : "text-foreground"
-                      )}
-                      style={{ fontSize: `${Math.max(32, beamerScale * 0.6)}px` }}
-                    >
-                      {team.score}
-                    </span>
                   </MotionDiv>
                 ))}
               </AnimatePresence>
-            </LayoutGroup>
-          </div>
+            </div>
+          </LayoutGroup>
         </div>
       </div>
     );
@@ -416,16 +416,18 @@ export default function Shotcounter() {
           </p>
         </MotionDiv>
         
-        {/* Beamer button - hidden on mobile */}
-        <Button 
-          variant="outline" 
-          size="lg" 
-          onClick={() => setBeamerMode(true)}
-          className="hidden md:flex btn-animate gap-2"
-        >
-          <Maximize2 className="h-5 w-5" />
-          Beamer-Modus
-        </Button>
+        {/* Beamer button - only shown when feature is enabled */}
+        {isBeamerModeEnabled && (
+          <Button 
+            variant="outline" 
+            size="lg" 
+            onClick={() => setBeamerMode(true)}
+            className="hidden md:flex btn-animate gap-2"
+          >
+            <Maximize2 className="h-5 w-5" />
+            Beamer-Modus
+          </Button>
+        )}
       </div>
 
       {/* Countdown Card */}
@@ -557,9 +559,9 @@ export default function Shotcounter() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ 
                       type: "spring",
-                      stiffness: 500,
-                      damping: 30,
-                      layout: { type: "spring", stiffness: 300, damping: 30 }
+                      stiffness: 300,
+                      damping: 35,
+                      layout: { type: "spring", stiffness: 200, damping: 35 }
                     }}
                     className={cn(
                       "p-4 md:p-6 rounded-xl border-2 transition-all",
