@@ -210,3 +210,45 @@
 - [x] Session-Management für Self-Hosting optimieren
 - [x] Deployment-Anleitung für Root Server erstellen
 - [x] README mit Google OAuth Setup-Anleitung aktualisieren
+
+
+## Bug Fixes - Self-Hosting
+- [x] Analytics-Platzhalter entfernen (your-analytics-endpoint.com/umami)
+- [x] Login-Redirect für Google OAuth korrigieren (leitet noch zu Manus OAuth)
+
+- [x] Fix Google OAuth redirect_uri_mismatch error - überprüfen ob GOOGLE_CALLBACK_URL korrekt verwendet wird
+
+- [x] Fix Google OAuth session cookie not being set after login - trust proxy hinzugefügt
+
+- [x] Fix "Session payload missing required fields" error after Google OAuth login - appId zum JWT hinzugefügt
+
+- [x] Erstelle README.md mit Projektbeschreibung und Setup-Anleitung
+
+
+## UI/UX Polish & Functional Fixes (Jan 2026)
+
+### Global Fixes
+- [x] Fix nested anchor tag error (<a> cannot contain nested <a>)
+- [x] Profile image cropping: non-square images should be cropped, not stretched
+- [x] Profile image: add manual crop area selection after upload
+
+### Admin Dashboard - Feature Toggles
+- [x] Feature Toggles: instant apply without save button
+- [x] Beamer Mode Toggle: hide beamer button in Shotcounter when disabled
+- [x] Maintenance Mode Toggle: show maintenance page for non-logged-in users
+
+### Shotcounter
+- [x] Slow down rank transition animation slightly
+- [x] Reset dialog: choice between "reset shots only" vs "reset everything"
+
+### Navigation & Visibility
+- [x] Desktop navbar: add Gönnermitgliederverwaltung with divider
+- [x] Divider and menu item hidden for logged-out users
+
+### Mobile Layout Fixes
+- [x] Admin Dashboard: fix card overflow causing horizontal scroll
+- [x] Cards must fit cleanly within viewport
+
+### File Upload
+- [x] Implement self-hosted file upload for photos
+- [x] Create setup guide for root server file upload
