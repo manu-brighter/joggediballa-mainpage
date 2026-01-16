@@ -48,7 +48,10 @@ import {
   Users2,
   CheckCircle2,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Menu,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -69,6 +72,14 @@ const PERMISSIONS = [
 const DEFAULT_FEATURES = [
   { name: "beamer_mode", description: "Beamer-Modus Button im Shotcounter anzeigen" },
   { name: "maintenance_mode", description: "Wartungsmodus aktivieren (Website für Besucher sperren)" },
+];
+
+// Navbar items that can be toggled (Home, Team, Kontakt cannot be disabled)
+const NAVBAR_ITEMS = [
+  { name: "nav_events", label: "Events", canDisable: true },
+  { name: "nav_sponsors", label: "Sponsoren", canDisable: true },
+  { name: "nav_shotcounter", label: "Shotcounter", canDisable: true },
+  { name: "nav_dienstleistungen", label: "Dienstleistungen", canDisable: true },
 ];
 
 type ResetType = "scores_only" | "everything" | null;
@@ -472,6 +483,85 @@ export default function AdminDashboard() {
                     }
                   />
                 </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </MotionDiv>
+
+      {/* Navbar Visibility Toggles */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+      >
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Menu className="h-5 w-5 text-primary" />
+              Navigation Sichtbarkeit
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Steuere welche Seiten in der Navigation sichtbar sind. Deaktivierte Seiten sind nur für eingeloggte Benutzer zugänglich.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {featuresLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Fixed items that cannot be disabled */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                  <span className="font-medium">Immer sichtbar:</span>
+                  <span className="px-2 py-0.5 rounded bg-muted">Home</span>
+                  <span className="px-2 py-0.5 rounded bg-muted">Team</span>
+                  <span className="px-2 py-0.5 rounded bg-muted">Kontakt</span>
+                </div>
+                
+                {/* Toggleable items */}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {NAVBAR_ITEMS.map((item) => {
+                    const isEnabled = getFeatureToggle(item.name)?.isEnabled ?? true;
+                    return (
+                      <div
+                        key={item.name}
+                        className={cn(
+                          "flex items-center justify-between p-3 border rounded-lg transition-colors",
+                          isEnabled ? "border-green-500/30 bg-green-500/5" : "border-muted bg-muted/30"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          {isEnabled ? (
+                            <Eye className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <span className={cn(
+                            "font-medium text-sm",
+                            !isEnabled && "text-muted-foreground"
+                          )}>
+                            {item.label}
+                          </span>
+                        </div>
+                        <Switch
+                          checked={isEnabled}
+                          onCheckedChange={(checked) =>
+                            toggleFeatureMutation.mutate({
+                              featureName: item.name,
+                              isEnabled: checked,
+                            })
+                          }
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <p className="text-xs text-muted-foreground mt-3">
+                  Deaktivierte Seiten werden hinter einem Trenner angezeigt und erfordern eine Anmeldung.
+                </p>
               </div>
             )}
           </CardContent>
