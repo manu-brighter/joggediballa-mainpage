@@ -355,7 +355,7 @@ export default function Team() {
               Unser Team
             </h1>
             <p className="text-lg text-muted-foreground">
-              Die Köpfe hinter Jogge di Balla
+              Wer schmeisst den Laden eigentlich?
             </p>
           </div>
 

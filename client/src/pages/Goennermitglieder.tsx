@@ -457,7 +457,7 @@ export default function Goennermitglieder() {
                 <div className="space-y-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">Vorname *</Label>
+                      <Label htmlFor="firstName">Vorname <span className="text-destructive">*</span></Label>
                       <Input
                         id="firstName"
                         value={formData.firstName}
@@ -466,7 +466,7 @@ export default function Goennermitglieder() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName">Nachname *</Label>
+                      <Label htmlFor="lastName">Nachname <span className="text-destructive">*</span></Label>
                       <Input
                         id="lastName"
                         value={formData.lastName}
@@ -477,7 +477,7 @@ export default function Goennermitglieder() {
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="col-span-2 space-y-2">
-                      <Label htmlFor="street">Straße *</Label>
+                      <Label htmlFor="street">Straße <span className="text-destructive">*</span></Label>
                       <Input
                         id="street"
                         value={formData.street}
@@ -486,7 +486,7 @@ export default function Goennermitglieder() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="houseNumber">Nr. *</Label>
+                      <Label htmlFor="houseNumber">Nr. <span className="text-destructive">*</span></Label>
                       <Input
                         id="houseNumber"
                         value={formData.houseNumber}
@@ -497,7 +497,7 @@ export default function Goennermitglieder() {
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="zipCode">PLZ *</Label>
+                      <Label htmlFor="zipCode">PLZ <span className="text-destructive">*</span></Label>
                       <Input
                         id="zipCode"
                         value={formData.zipCode}
@@ -506,7 +506,7 @@ export default function Goennermitglieder() {
                       />
                     </div>
                     <div className="col-span-2 space-y-2">
-                      <Label htmlFor="city">Stadt *</Label>
+                      <Label htmlFor="city">Stadt <span className="text-destructive">*</span></Label>
                       <Input
                         id="city"
                         value={formData.city}
@@ -537,7 +537,7 @@ export default function Goennermitglieder() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="membershipStartDate">Mitgliedschaft ab *</Label>
+                    <Label htmlFor="membershipStartDate">Mitgliedschaft ab <span className="text-destructive">*</span></Label>
                     <Input
                       id="membershipStartDate"
                       type="date"
@@ -763,7 +763,7 @@ export default function Goennermitglieder() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-firstName">Vorname *</Label>
+                <Label htmlFor="edit-firstName">Vorname <span className="text-destructive">*</span></Label>
                 <Input
                   id="edit-firstName"
                   value={formData.firstName}
@@ -772,7 +772,7 @@ export default function Goennermitglieder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-lastName">Nachname *</Label>
+                <Label htmlFor="edit-lastName">Nachname <span className="text-destructive">*</span></Label>
                 <Input
                   id="edit-lastName"
                   value={formData.lastName}
@@ -783,7 +783,7 @@ export default function Goennermitglieder() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="edit-street">Strasse *</Label>
+                <Label htmlFor="edit-street">Strasse <span className="text-destructive">*</span></Label>
                 <Input
                   id="edit-street"
                   value={formData.street}
@@ -792,7 +792,7 @@ export default function Goennermitglieder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-houseNumber">Nr. *</Label>
+                <Label htmlFor="edit-houseNumber">Nr. <span className="text-destructive">*</span></Label>
                 <Input
                   id="edit-houseNumber"
                   value={formData.houseNumber}
@@ -803,7 +803,7 @@ export default function Goennermitglieder() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-zipCode">PLZ *</Label>
+                <Label htmlFor="edit-zipCode">PLZ <span className="text-destructive">*</span></Label>
                 <Input
                   id="edit-zipCode"
                   value={formData.zipCode}
@@ -812,7 +812,7 @@ export default function Goennermitglieder() {
                 />
               </div>
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="edit-city">Ort *</Label>
+                <Label htmlFor="edit-city">Ort <span className="text-destructive">*</span></Label>
                 <Input
                   id="edit-city"
                   value={formData.city}

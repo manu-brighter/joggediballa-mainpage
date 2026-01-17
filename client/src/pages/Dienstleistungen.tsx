@@ -67,12 +67,12 @@ function ServiceCard({ icon, title, description, person, image, externalLink, de
                 </a>
               </Button>
             )}
-            <Button asChild variant="default" size="sm" className="gap-2">
-              <Link href="/contact">
-                <Mail className="h-4 w-4" />
-                Anfragen
-              </Link>
-            </Button>
+            {/*<Button asChild variant="default" size="sm" className="gap-2">*/}
+            {/*  <Link href="/contact">*/}
+            {/*    <Mail className="h-4 w-4" />*/}
+            {/*    Anfragen*/}
+            {/*  </Link>*/}
+            {/*</Button>*/}
           </div>
         </CardContent>
       </Card>
@@ -85,29 +85,29 @@ export default function Dienstleistungen() {
     {
       icon: <Package className="h-6 w-6" />,
       title: "Vermietung",
-      description: "Wir vermieten hochwertiges Equipment für deine Events! Von Beerpong-Tischen über Partybeleuchtung bis hin zu Sound-Equipment – wir haben alles, was du für eine unvergessliche Feier brauchst.",
-      image: "/images/vermietung.jpg",
+      description: "Wir vermieten hochwertiges Equipment für deine Events! Von Beerpong-Tischen über Sound-Equipment bis hin zu Dekoration und diversem Zubehör.",
+      image: "/images/vermietung.JPEG",
     },
     {
       icon: <Music className="h-6 w-6" />,
       title: "DJ",
-      description: "Professionelle DJ-Services für jeden Anlass. Von Geburtstagen über Firmenevents bis hin zu Hochzeiten – wir sorgen für die perfekte musikalische Untermalung.",
+      description: "Professionelle DJ-Services für jeden Anlass. Unser Kassier Jan legt an unseren Events Musik auf bis die Bude bebt.",
       person: {
-        role: "Kassier",
+        role: "DJ & Kassier",
         name: "Jan",
       },
-      image: "/images/dj.jpg",
+      image: "/images/dj.JPEG",
     },
     {
       icon: <Camera className="h-6 w-6" />,
       title: "Fotografie",
       description: "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Von Veranstaltungen bis hin zu Portraits – wir liefern hochwertige Bilder, die Geschichten erzählen.",
       person: {
-        role: "Vize-Präsident",
+        role: "Fotograf & Vize",
         name: "Manu",
       },
       externalLink: "https://manuelheller.myportfolio.com",
-      image: "/images/fotografie.jpg",
+      image: "/images/fotografie.JPEG",
     },
   ];
 
@@ -156,7 +156,7 @@ export default function Dienstleistungen() {
               Interesse an unseren Dienstleistungen?
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Kontaktiere uns für ein unverbindliches Angebot. 
+              Kontaktiere uns für ein unverbindliches Angebot.
               Wir freuen uns auf deine Anfrage!
             </p>
             <Button asChild size="lg" className="btn-animate gap-2">

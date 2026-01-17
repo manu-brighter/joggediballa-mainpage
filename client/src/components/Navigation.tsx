@@ -264,7 +264,6 @@ export function Navigation() {
                 <Button asChild variant="default" size="sm" className="btn-animate">
                   <a href={getLoginUrl()} className="flex items-center gap-2">
                     <LogIn className="h-4 w-4" />
-                    <span className="hidden sm:inline">Anmelden</span>
                   </a>
                 </Button>
               )}

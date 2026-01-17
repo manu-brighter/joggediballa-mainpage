@@ -214,7 +214,7 @@ export default function Sponsors() {
               <div className="space-y-6 py-4">
                 {/* Name Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
                   <Input
                     id="name"
                     value={name}
@@ -225,7 +225,7 @@ export default function Sponsors() {
 
                 {/* Website Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="website">Website (optional)</Label>
+                  <Label htmlFor="website">Website</Label>
                   <Input
                     id="website"
                     type="url"
@@ -237,7 +237,7 @@ export default function Sponsors() {
 
                 {/* Logo Upload */}
                 <div className="space-y-2">
-                  <Label>Logo (optional)</Label>
+                  <Label>Logo</Label>
                   <p className="text-xs text-muted-foreground mb-2">
                     PNG mit transparentem Hintergrund empfohlen. Max. 5MB.
                   </p>
@@ -414,7 +414,7 @@ export default function Sponsors() {
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold">Werde Sponsor von Jogge di Balla</h2>
                 <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-                  Unterstütze unseren Verein und profitiere von exklusiven Vorteilen!
+                  Unterstütze unseren Verein und profitiere von unseren Werbe-Vorteilen!
                 </p>
               </div>
               
@@ -423,20 +423,13 @@ export default function Sponsors() {
                 <div className="bg-background/50 backdrop-blur-sm rounded-xl p-6 border border-border hover:border-primary/30 transition-all">
                   <div className="flex items-center gap-2 mb-4">
                     <Star className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-bold">Standard Paket</h3>
+                    <h3 className="text-lg font-bold">Standard Paket | CHF 80.-</h3>
+                    <span className="text-muted-foreground sl-2">pro Jahr</span>
                   </div>
                   <ul className="text-sm text-muted-foreground space-y-2 text-left">
                     <li className="flex items-start gap-2">
                       <span className="text-primary">✓</span>
-                      Logo auf unserer Website
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">✓</span>
-                      Erwähnung bei Events
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">✓</span>
-                      Social Media Shoutout
+                      Logo und Name auf unserer Website
                     </li>
                   </ul>
                 </div>
@@ -448,7 +441,8 @@ export default function Sponsors() {
                   </div>
                   <div className="flex items-center gap-2 mb-4">
                     <Crown className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-bold">Premium Paket</h3>
+                    <h3 className="text-lg font-bold">Premium Paket | CHF 140.-</h3>
+                    <span className="text-muted-foreground sl-2">pro Jahr</span>
                   </div>
                   <ul className="text-sm text-muted-foreground space-y-2 text-left">
                     <li className="flex items-start gap-2">
@@ -457,15 +451,11 @@ export default function Sponsors() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary">✓</span>
-                      Prominente Platzierung
+                      Social Media Shoutout
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary">✓</span>
-                      Exklusive Event-Einladungen
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">✓</span>
-                      Werbematerial bei Events
+                      Erwähnung und Werbung an unseren Events
                     </li>
                   </ul>
                 </div>
