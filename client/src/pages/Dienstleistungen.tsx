@@ -13,6 +13,7 @@ interface ServiceCardProps {
   person?: {
     role: string;
     name: string;
+    profileImage?: string;
   };
   image?: string;
   externalLink?: string;
@@ -43,14 +44,22 @@ function ServiceCard({ icon, title, description, person, image, externalLink, de
             </div>
             <CardTitle className="text-xl">{title}</CardTitle>
           </div>
-          <CardDescription className="text-base">{description}</CardDescription>
+          <CardDescription className="text-base whitespace-pre-line">{description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {person && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                {person.name.charAt(0)}
-              </div>
+              {person.profileImage ? (
+                <img 
+                  src={person.profileImage} 
+                  alt={person.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                  {person.name.charAt(0)}
+                </div>
+              )}
               <div>
                 <p className="text-sm font-medium">{person.name}</p>
                 <p className="text-xs text-muted-foreground">{person.role}</p>
@@ -67,12 +76,12 @@ function ServiceCard({ icon, title, description, person, image, externalLink, de
                 </a>
               </Button>
             )}
-            {/*<Button asChild variant="default" size="sm" className="gap-2">*/}
-            {/*  <Link href="/contact">*/}
-            {/*    <Mail className="h-4 w-4" />*/}
-            {/*    Anfragen*/}
-            {/*  </Link>*/}
-            {/*</Button>*/}
+            <Button asChild variant="default" size="sm" className="gap-2">
+              <Link href="/contact">
+                <Mail className="h-4 w-4" />
+                Anfragen
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -85,16 +94,17 @@ export default function Dienstleistungen() {
     {
       icon: <Package className="h-6 w-6" />,
       title: "Vermietung",
-      description: "Wir vermieten hochwertiges Equipment für deine Events! Von Beerpong-Tischen über Sound-Equipment bis hin zu Dekoration und diversem Zubehör.",
+      description: "Wir vermieten hochwertiges Equipment für deine Events!\n\u2022 Stereoanlagen & Zubehör\n\u2022 Beerpong-Tische & Zubehör\n\u2022 Verschiedene Elektronikartikel",
       image: "/images/vermietung.JPEG",
     },
     {
       icon: <Music className="h-6 w-6" />,
       title: "DJ",
-      description: "Professionelle DJ-Services für jeden Anlass. Unser Kassier Jan legt an unseren Events Musik auf bis die Bude bebt.",
+      description: "Professionelle DJ-Services für jeden Anlass. Von Geburtstagen über Firmenevents bis hin zu Hochzeiten – wir sorgen für die perfekte musikalische Untermalung.",
       person: {
-        role: "DJ & Kassier",
+        role: "Kassier",
         name: "Jan",
+        profileImage: "/images/jan.JPEG",
       },
       image: "/images/dj.JPEG",
     },
@@ -103,8 +113,9 @@ export default function Dienstleistungen() {
       title: "Fotografie",
       description: "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Von Veranstaltungen bis hin zu Portraits – wir liefern hochwertige Bilder, die Geschichten erzählen.",
       person: {
-        role: "Fotograf & Vize",
+        role: "Vize-Präsident",
         name: "Manu",
+        profileImage: "/images/manu.JPEG",
       },
       externalLink: "https://manuelheller.myportfolio.com",
       image: "/images/fotografie.JPEG",
@@ -156,7 +167,7 @@ export default function Dienstleistungen() {
               Interesse an unseren Dienstleistungen?
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Kontaktiere uns für ein unverbindliches Angebot.
+              Kontaktiere uns für ein unverbindliches Angebot. 
               Wir freuen uns auf deine Anfrage!
             </p>
             <Button asChild size="lg" className="btn-animate gap-2">
