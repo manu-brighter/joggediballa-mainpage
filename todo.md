@@ -424,3 +424,12 @@
 - [x] Fotoverwaltung Overlay min 90% height and width (on laptop)
 - [x] Individual photos in Fotoverwaltung much larger
 - [x] Photo detail view min 95% viewport width and height
+
+
+## Critical Bugs - Photo Overlays & Team Upload
+
+- [x] Team photo upload error: "Server hat keine JSON-Antwort zurückgegeben"
+- [x] Reorder buttons (ArrowUp/ArrowDown) white on white / black on black - not visible
+- [x] Photo detail view still too narrow - needs to be 95% viewport-width
+- [x] Photo management still too narrow - needs to be 90% viewport-width
+- [x] Individual photos in management need to be twice as large
