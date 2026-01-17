@@ -240,7 +240,7 @@ export default function Team() {
       const formData = new FormData();
       formData.append("file", photoFile);
 
-      const response = await fetch("/api/upload/team-member", {
+      const response = await fetch("/api/upload/team-member-photo", {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -561,22 +561,22 @@ export default function Team() {
                         <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           {index > 0 && (
                             <Button
-                              variant="secondary"
+                              variant="ghost"
                               size="icon"
-                              className="h-8 w-8 bg-background/90 hover:bg-background"
+                              className="h-8 w-8 bg-background/90 hover:bg-background text-foreground"
                               onClick={() => moveMember(member.id, "up")}
                             >
-                              <ArrowUp className="h-4 w-4" />
+                              <ArrowUp className="h-4 w-4 text-foreground" />
                             </Button>
                           )}
                           {index < members.length - 1 && (
                             <Button
-                              variant="secondary"
+                              variant="ghost"
                               size="icon"
-                              className="h-8 w-8 bg-background/90 hover:bg-background"
+                              className="h-8 w-8 bg-background/90 hover:bg-background text-foreground"
                               onClick={() => moveMember(member.id, "down")}
                             >
-                              <ArrowDown className="h-4 w-4" />
+                              <ArrowDown className="h-4 w-4 text-foreground" />
                             </Button>
                           )}
                           <Button

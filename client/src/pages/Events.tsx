@@ -775,7 +775,7 @@ export default function Events() {
 
       {/* Fullscreen Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-4 bg-black/95 border-0 rounded-none">
+        <DialogContent className="w-[95vw] h-[95vh] !max-w-[95vw] p-4 bg-black/95 border-0 rounded-lg" showCloseButton={false}>
           {/* Hidden title and description for accessibility */}
           <DialogTitle className="sr-only">
             {currentPhotoEventName || "Foto"} - Bild {currentPhotoIndex + 1} von {selectedPhotos.length}
@@ -854,7 +854,7 @@ export default function Events() {
 
       {/* Photo Management Dialog */}
       <Dialog open={photoManagementOpen} onOpenChange={setPhotoManagementOpen}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+        <DialogContent className="w-[90vw] h-[90vh] !max-w-[90vw] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Fotos verwalten</DialogTitle>
             <DialogDescription>
@@ -872,7 +872,7 @@ export default function Events() {
                 <p className="text-sm text-muted-foreground">
                   {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"} vorhanden
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                   {eventPhotos.map((photo) => (
                     <div
                       key={photo.id}
