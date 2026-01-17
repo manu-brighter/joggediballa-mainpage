@@ -543,7 +543,6 @@ export default function Goennermitglieder() {
                       type="date"
                       value={formData.membershipStartDate}
                       onChange={(e) => setFormData({ ...formData, membershipStartDate: e.target.value })}
-                      className="dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="space-y-2">

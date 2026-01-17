@@ -360,7 +360,6 @@ export default function Events() {
                       type="date"
                       value={eventForm.eventDate}
                       onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
-                      className="dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="space-y-2">
@@ -370,7 +369,6 @@ export default function Events() {
                       type="time"
                       value={eventForm.eventTime}
                       onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
-                      className="dark:[color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -706,7 +704,6 @@ export default function Events() {
                   type="date"
                   value={eventForm.eventDate}
                   onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
-                  className="dark:[color-scheme:dark]"
                 />
               </div>
               <div className="space-y-2">
@@ -716,7 +713,6 @@ export default function Events() {
                   type="time"
                   value={eventForm.eventTime}
                   onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
-                  className="dark:[color-scheme:dark]"
                 />
               </div>
             </div>
