@@ -13,10 +13,9 @@ export default function Contact() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [honeypot, setHoneypot] = useState(""); // Hidden field for spam protection
   const [submitted, setSubmitted] = useState(false);
 
-  const submitMutation = trpc.contact.submit.useMutation({
+  const submitMutation = trpc.contact.send.useMutation({
     onSuccess: () => {
       setSubmitted(true);
       toast.success("Nachricht erfolgreich gesendet!");
@@ -24,9 +23,8 @@ export default function Contact() {
       setEmail("");
       setSubject("");
       setMessage("");
-      setHoneypot("");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`Fehler: ${error.message}`);
     },
   });
@@ -47,9 +45,8 @@ export default function Contact() {
     submitMutation.mutate({
       name,
       email,
-      subject,
+      subject: subject || "Keine Betreff",
       message,
-      honeypot, // Will be checked server-side
     });
   };
 
@@ -91,20 +88,6 @@ export default function Contact() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Honeypot field - hidden from users */}
-              <div className="hidden" aria-hidden="true">
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  name="website"
-                  type="text"
-                  value={honeypot}
-                  onChange={(e) => setHoneypot(e.target.value)}
-                  tabIndex={-1}
-                  autoComplete="off"
-                />
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="name">
                   Name <span className="text-destructive">*</span>

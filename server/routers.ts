@@ -412,40 +412,24 @@ export const appRouter = router({
   // CONTACT FORM
   // ============================================
   contact: router({
-    submit: publicProcedure
+    send: publicProcedure
       .input(z.object({
-        name: z.string().min(1).max(255),
-        email: z.string().email().max(320),
-        subject: z.string().max(255).optional(),
-        message: z.string().min(1),
-        honeypot: z.string().optional()
+        name: z.string().min(1, "Name ist erforderlich").max(100),
+        email: z.string().email("Ungültige E-Mail-Adresse").max(320),
+        subject: z.string().min(1, "Betreff ist erforderlich").max(200),
+        message: z.string().min(10, "Nachricht muss mindestens 10 Zeichen lang sein").max(5000)
       }))
-      .mutation(async ({ input, ctx }) => {
-        // Honeypot check
-        if (input.honeypot) {
-          return { success: true }; // Fake success for bots
+      .mutation(async ({ input }) => {
+        const { sendContactFormEmail } = await import("./_core/email");
+        const result = await sendContactFormEmail(input);
+        
+        if (!result.success) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: result.error || "E-Mail konnte nicht gesendet werden"
+          });
         }
         
-        const submissionId = await db.createContactSubmission({
-          name: input.name,
-          email: input.email,
-          subject: input.subject,
-          message: input.message,
-          honeypot: input.honeypot,
-          ipAddress: ctx.req.ip || ctx.req.headers['x-forwarded-for'] as string || undefined
-        });
-        
-        return { success: true, submissionId };
-      }),
-    
-    list: adminProcedure.query(async () => {
-      return db.getAllContactSubmissions(false);
-    }),
-    
-    markAsRead: adminProcedure
-      .input(z.object({ submissionId: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.markContactSubmissionAsRead(input.submissionId);
         return { success: true };
       }),
   }),
