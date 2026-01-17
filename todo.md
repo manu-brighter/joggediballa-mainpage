@@ -433,3 +433,8 @@
 - [x] Photo detail view still too narrow - needs to be 95% viewport-width
 - [x] Photo management still too narrow - needs to be 90% viewport-width
 - [x] Individual photos in management need to be twice as large
+
+
+## Documentation Fix
+
+- [x] Correct upload directory path from /var/www/joggediballa/uploads to /var/www/joggediballa-mainpage/uploads in all documentation
