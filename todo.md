@@ -410,3 +410,10 @@
 
 ### Accessibility
 - [x] Fix DialogDescription warning in Events tab
+
+
+## Critical Bug - Events Visibility
+
+- [x] Events not visible for non-logged-in users
+- [x] "Noch keine Events vorhanden" shown when events exist
+- [x] All events should be public and visible to everyone

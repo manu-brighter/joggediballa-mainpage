@@ -214,8 +214,8 @@ export const appRouter = router({
   // ============================================
   events: router({
     list: publicProcedure.query(async ({ ctx }) => {
-      const isAuthenticated = !!ctx.user;
-      return db.getAllEvents(!isAuthenticated);
+      // Show all events to everyone (published and unpublished)
+      return db.getAllEvents(false);
     }),
     
     getById: publicProcedure
