@@ -76,12 +76,12 @@ function ServiceCard({ icon, title, description, person, image, externalLink, de
                 </a>
               </Button>
             )}
-            <Button asChild variant="default" size="sm" className="gap-2">
-              <Link href="/contact">
-                <Mail className="h-4 w-4" />
-                Anfragen
-              </Link>
-            </Button>
+            {/*<Button asChild variant="default" size="sm" className="gap-2">*/}
+            {/*  <Link href="/contact">*/}
+            {/*    <Mail className="h-4 w-4" />*/}
+            {/*    Anfragen*/}
+            {/*  </Link>*/}
+            {/*</Button>*/}
           </div>
         </CardContent>
       </Card>
@@ -94,15 +94,15 @@ export default function Dienstleistungen() {
     {
       icon: <Package className="h-6 w-6" />,
       title: "Vermietung",
-      description: "Wir vermieten hochwertiges Equipment für deine Events!\n\u2022 Stereoanlagen & Zubehör\n\u2022 Beerpong-Tische & Zubehör\n\u2022 Verschiedene Elektronikartikel",
+      description: "Wir vermieten hochwertiges Equipment für deine Events!\n\u2022 Sound-Equipment & Zubehör\n\u2022 Beerpong-Tische & Zubehör\n\u2022 Verschiedene Elektronikartikel",
       image: "/images/vermietung.JPEG",
     },
     {
       icon: <Music className="h-6 w-6" />,
       title: "DJ",
-      description: "Professionelle DJ-Services für jeden Anlass. Von Geburtstagen über Firmenevents bis hin zu Hochzeiten – wir sorgen für die perfekte musikalische Untermalung.",
+      description: "Professionelle DJ-Services für jeden Anlass. Unser Revisor Jan legt an unseren Events Musik auf bis die Bude bebt.\n\Ausserhalb des Vereins selbstständig nebenbei als DJ tätig und offen für Anfragen.",
       person: {
-        role: "Kassier",
+        role: "DJ & Revisor",
         name: "Jan",
         profileImage: "/images/jan.JPEG",
       },
@@ -111,9 +111,9 @@ export default function Dienstleistungen() {
     {
       icon: <Camera className="h-6 w-6" />,
       title: "Fotografie",
-      description: "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Von Veranstaltungen bis hin zu Portraits – wir liefern hochwertige Bilder, die Geschichten erzählen.",
+      description: "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Schau dir gerne den 'Events & Fotos'-Tab oder mein persönliches Portfolio an, um dir ein Eindruck zu verschaffen.\n\Ausserhalb des Vereins selbstständig nebenbei als Fotograf tätig und offen für Anfragen.",
       person: {
-        role: "Vize-Präsident",
+        role: "Social Media & Vize",
         name: "Manu",
         profileImage: "/images/manu.JPEG",
       },

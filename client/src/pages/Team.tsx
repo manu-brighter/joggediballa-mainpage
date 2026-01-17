@@ -441,7 +441,7 @@ export default function Team() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name *</Label>
+                    <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
                     <Input
                       id="name"
                       value={formData.name}
@@ -702,7 +702,7 @@ export default function Team() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Name *</Label>
+                <Label htmlFor="edit-name">Name <span className="text-destructive">*</span></Label>
                 <Input
                   id="edit-name"
                   value={formData.name}
