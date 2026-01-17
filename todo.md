@@ -417,3 +417,10 @@
 - [x] Events not visible for non-logged-in users
 - [x] "Noch keine Events vorhanden" shown when events exist
 - [x] All events should be public and visible to everyone
+
+
+## Overlay Size Improvements
+
+- [x] Fotoverwaltung Overlay min 90% height and width (on laptop)
+- [x] Individual photos in Fotoverwaltung much larger
+- [x] Photo detail view min 95% viewport width and height
