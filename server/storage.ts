@@ -13,7 +13,7 @@ function isSelfHosted(): boolean {
 }
 
 function getSelfHostedConfig(): { uploadDir: string; publicUrl: string } {
-  const uploadDir = process.env.UPLOAD_DIR || '/var/www/joggediballa-mainpage/uploads';
+  const uploadDir = process.env.UPLOAD_DIR || '/var/www/joggediballa/uploads';
   const publicUrl = process.env.PUBLIC_UPLOAD_URL || 'https://joggediballa.ch/uploads';
   return { uploadDir, publicUrl };
 }

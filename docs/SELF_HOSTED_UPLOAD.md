@@ -17,7 +17,7 @@ Füge folgende Umgebungsvariablen zu deiner `.env` Datei hinzu:
 ```bash
 # Self-hosted file storage
 SELF_HOSTED_STORAGE=true
-UPLOAD_DIR=/var/www/joggediballa-mainpage/uploads
+UPLOAD_DIR=/var/www/joggediballa/uploads
 PUBLIC_UPLOAD_URL=https://joggediballa.ch/uploads
 ```
 
@@ -25,16 +25,16 @@ PUBLIC_UPLOAD_URL=https://joggediballa.ch/uploads
 
 ```bash
 # Erstelle das Upload-Verzeichnis
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/profile-pictures
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/sponsors
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/events
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/team-members
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/photos
+sudo mkdir -p /var/www/joggediballa/uploads
+sudo mkdir -p /var/www/joggediballa/uploads/profile-pictures
+sudo mkdir -p /var/www/joggediballa/uploads/sponsors
+sudo mkdir -p /var/www/joggediballa/uploads/events
+sudo mkdir -p /var/www/joggediballa/uploads/team-members
+sudo mkdir -p /var/www/joggediballa/uploads/photos
 
 # Setze die richtigen Berechtigungen
-sudo chown -R www-data:www-data /var/www/joggediballa-mainpage/uploads
-sudo chmod -R 755 /var/www/joggediballa-mainpage/uploads
+sudo chown -R www-data:www-data /var/www/joggediballa/uploads
+sudo chmod -R 755 /var/www/joggediballa/uploads
 ```
 
 ### 3. Nginx Konfiguration
@@ -50,7 +50,7 @@ server {
 
     # Statische Uploads
     location /uploads/ {
-        alias /var/www/joggediballa-mainpage/uploads/;
+        alias /var/www/joggediballa/uploads/;
         expires 30d;
         add_header Cache-Control "public, immutable";
         
@@ -113,7 +113,7 @@ pm2 restart joggediballa
 
 1. **Berechtigungen prüfen:**
    ```bash
-   ls -la /var/www/joggediballa-mainpage/uploads/
+   ls -la /var/www/joggediballa/uploads/
    ```
    Der Node.js-Prozess muss Schreibrechte haben.
 
@@ -137,7 +137,7 @@ pm2 restart joggediballa
 
 Überwache den Speicherplatz regelmäßig:
 ```bash
-du -sh /var/www/joggediballa-mainpage/uploads/
+du -sh /var/www/joggediballa/uploads/
 df -h
 ```
 
@@ -146,7 +146,7 @@ df -h
 Sichere das Upload-Verzeichnis regelmäßig:
 ```bash
 # Beispiel: Tägliches Backup
-tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa-mainpage/uploads/
+tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa/uploads/
 ```
 
 ## Sicherheitshinweise
@@ -161,5 +161,5 @@ tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa-mainpage/u
 | Variable | Beschreibung | Beispiel |
 |----------|--------------|----------|
 | `SELF_HOSTED_STORAGE` | Aktiviert lokalen Speicher | `true` |
-| `UPLOAD_DIR` | Absoluter Pfad zum Upload-Verzeichnis | `/var/www/joggediballa-mainpage/uploads` |
+| `UPLOAD_DIR` | Absoluter Pfad zum Upload-Verzeichnis | `/var/www/joggediballa/uploads` |
 | `PUBLIC_UPLOAD_URL` | Öffentliche URL für Uploads | `https://joggediballa.ch/uploads` |

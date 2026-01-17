@@ -775,11 +775,14 @@ export default function Events() {
 
       {/* Fullscreen Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 bg-black/95 border-0 rounded-none">
-          {/* Hidden title for accessibility */}
+        <DialogContent className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-4 bg-black/95 border-0 rounded-none">
+          {/* Hidden title and description for accessibility */}
           <DialogTitle className="sr-only">
             {currentPhotoEventName || "Foto"} - Bild {currentPhotoIndex + 1} von {selectedPhotos.length}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Vollbild-Ansicht des Fotos. Verwende die Pfeiltasten oder Buttons zum Navigieren.
+          </DialogDescription>
           {/* Close button */}
           <Button
             variant="ghost"
@@ -801,7 +804,7 @@ export default function Events() {
           </div>
 
           {/* Main image container */}
-          <div className="relative w-full h-full flex items-center justify-center p-4">
+          <div className="relative w-full h-full flex items-center justify-center">
             {/* Loading spinner */}
             {imageLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -851,7 +854,7 @@ export default function Events() {
 
       {/* Photo Management Dialog */}
       <Dialog open={photoManagementOpen} onOpenChange={setPhotoManagementOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Fotos verwalten</DialogTitle>
             <DialogDescription>
@@ -869,12 +872,12 @@ export default function Events() {
                 <p className="text-sm text-muted-foreground">
                   {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"} vorhanden
                 </p>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                   {eventPhotos.map((photo) => (
                     <div
                       key={photo.id}
                       className={cn(
-                        "aspect-square overflow-hidden rounded-lg cursor-pointer relative group border-2 transition-all",
+                        "aspect-square overflow-hidden rounded-lg relative group border-2 transition-all",
                         photo.id === event?.thumbnailPhotoId
                           ? "border-primary ring-2 ring-primary/30"
                           : "border-transparent hover:border-muted-foreground/30"
@@ -892,32 +895,33 @@ export default function Events() {
                           Thumbnail
                         </div>
                       )}
-                      {/* Action buttons */}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      {/* Action buttons - always visible on hover */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4">
                         {photo.id !== event?.thumbnailPhotoId && (
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="h-8 gap-1"
+                            className="gap-2 text-sm font-medium"
                             onClick={() => {
                               if (photoManagementEventId) {
                                 setThumbnailMutation.mutate({ eventId: photoManagementEventId, photoId: photo.id });
                               }
                             }}
                           >
-                            <Star className="h-3 w-3" />
-                            Thumbnail
+                            <Star className="h-4 w-4" />
+                            Als Thumbnail
                           </Button>
                         )}
                         <Button
                           variant="destructive"
-                          size="icon"
-                          className="h-8 w-8"
+                          size="sm"
+                          className="gap-2 text-sm font-medium"
                           onClick={() => {
                             deletePhotoMutation.mutate({ photoId: photo.id });
                           }}
                         >
                           <Trash2 className="h-4 w-4" />
+                          Löschen
                         </Button>
                       </div>
                     </div>

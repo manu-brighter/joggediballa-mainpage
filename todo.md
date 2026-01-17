@@ -390,3 +390,23 @@
 - [x] Fix Team photo cropping - currently not working
 - [x] Modernize cropping UI (current looks old and ugly)
 - [x] Ensure cropping is functional and user-friendly
+
+
+## UI/UX Fixes - January 2026 (Part 4)
+
+### Event Form
+- [x] Datepicker and Timepicker icons not visible in dark mode (black on black)
+- [x] Datepicker and Timepicker look outdated - modernize styling
+
+### Photo Management
+- [x] Photo management overlay too small - make much larger
+- [x] Thumbnail and delete buttons not intuitive - show both simultaneously
+- [x] Make photos much larger in photo management overlay
+- [x] Photo view overlay too narrow - make fullscreen with small padding
+
+### Team Tab
+- [x] Edit icon white on white in light mode, black on black in dark mode
+- [x] Team photo upload error: JSON parse error "<!doctype..." not valid JSON
+
+### Accessibility
+- [x] Fix DialogDescription warning in Events tab

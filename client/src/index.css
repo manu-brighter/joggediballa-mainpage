@@ -400,4 +400,28 @@
   .show-mobile {
     @apply block sm:hidden;
   }
+  
+  /* Modern date and time inputs with dark mode support */
+  input[type="date"],
+  input[type="time"] {
+    @apply relative;
+    color-scheme: light;
+  }
+  
+  .dark input[type="date"],
+  .dark input[type="time"] {
+    color-scheme: dark;
+  }
+  
+  /* Style the calendar and clock icons */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    @apply cursor-pointer opacity-70 hover:opacity-100 transition-opacity;
+    filter: none;
+  }
+  
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
 }

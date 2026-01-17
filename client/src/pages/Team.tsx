@@ -247,7 +247,16 @@ export default function Team() {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Upload error response:", errorText);
         throw new Error("Upload fehlgeschlagen");
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Non-JSON response:", text);
+        throw new Error("Server hat keine JSON-Antwort zurückgegeben");
       }
 
       const data = await response.json();
@@ -573,7 +582,7 @@ export default function Team() {
                           <Button
                             variant="secondary"
                             size="icon"
-                            className="h-8 w-8 bg-background/90 hover:bg-background"
+                            className="h-8 w-8 bg-card/90 hover:bg-card text-card-foreground"
                             onClick={() => openEditDialog(member)}
                           >
                             <Pencil className="h-4 w-4" />
