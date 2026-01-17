@@ -352,7 +352,7 @@ export default function Events() {
                     placeholder="Event-Titel"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="date">Datum *</Label>
                     <Input
@@ -360,6 +360,7 @@ export default function Events() {
                       type="date"
                       value={eventForm.eventDate}
                       onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
+                      className="[color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="space-y-2">
@@ -369,6 +370,7 @@ export default function Events() {
                       type="time"
                       value={eventForm.eventTime}
                       onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
+                      className="[color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -696,7 +698,7 @@ export default function Events() {
                 placeholder="Event-Titel"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-date">Datum *</Label>
                 <Input
@@ -704,6 +706,7 @@ export default function Events() {
                   type="date"
                   value={eventForm.eventDate}
                   onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
+                  className="[color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
               <div className="space-y-2">
@@ -713,6 +716,7 @@ export default function Events() {
                   type="time"
                   value={eventForm.eventTime}
                   onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
+                  className="[color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
             </div>

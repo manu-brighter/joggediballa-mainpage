@@ -54,7 +54,7 @@ import { getLoginUrl } from "@/const";
 
 const MotionDiv = motion.div;
 
-type SortOption = "name" | "endDate" | "expiresSoon";
+type SortOption = "endDate" | "firstName" | "lastName";
 
 interface Member {
   id: number;
@@ -205,12 +205,12 @@ export default function Goennermitglieder() {
     // Sort active members
     active.sort((a, b) => {
       switch (sortBy) {
-        case "name":
-          return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
+        case "firstName":
+          return a.firstName.localeCompare(b.firstName);
+        case "lastName":
+          return a.lastName.localeCompare(b.lastName);
         case "endDate":
           return new Date(a.membershipEndDate).getTime() - new Date(b.membershipEndDate).getTime();
-        case "expiresSoon":
-          return getDaysUntilExpiry(a.membershipEndDate) - getDaysUntilExpiry(b.membershipEndDate);
         default:
           return 0;
       }
@@ -424,17 +424,17 @@ export default function Goennermitglieder() {
           </p>
         </MotionDiv>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Sort Dropdown */}
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-            <SelectTrigger className="w-auto min-w-[200px]">
+            <SelectTrigger className="w-full sm:w-auto min-w-[200px] h-11">
               <ArrowUpDown className="h-4 w-4 mr-2 flex-shrink-0" />
               <SelectValue placeholder="Sortieren" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="endDate">Nach Ablaufdatum</SelectItem>
-              <SelectItem value="expiresSoon">Läuft bald ab</SelectItem>
-              <SelectItem value="name">Nach Name</SelectItem>
+              <SelectItem value="firstName">Nach Vorname</SelectItem>
+              <SelectItem value="lastName">Nach Nachname</SelectItem>
             </SelectContent>
           </Select>
 
@@ -442,7 +442,7 @@ export default function Goennermitglieder() {
           {isMaintainerOrAdmin && (
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="lg" className="btn-animate gap-2">
+                <Button size="lg" className="btn-animate gap-2 h-11 w-full sm:w-auto">
                   <Plus className="h-5 w-5" />
                   <span className="hidden sm:inline">Neues Mitglied</span>
                 </Button>
@@ -543,6 +543,7 @@ export default function Goennermitglieder() {
                       type="date"
                       value={formData.membershipStartDate}
                       onChange={(e) => setFormData({ ...formData, membershipStartDate: e.target.value })}
+                      className="[color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
                   <div className="space-y-2">

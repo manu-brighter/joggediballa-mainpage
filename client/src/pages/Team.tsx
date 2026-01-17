@@ -347,7 +347,7 @@ export default function Team() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
           <div className="space-y-2">
             <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
@@ -558,7 +558,7 @@ export default function Team() {
 
                       {/* Action Buttons */}
                       {canManageTeam && (
-                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute top-2 right-2 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           {index > 0 && (
                             <Button
                               variant="ghost"
