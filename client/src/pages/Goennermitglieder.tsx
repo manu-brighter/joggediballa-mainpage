@@ -86,6 +86,118 @@ function getMemberStatus(member: Member): "active" | "expiring" | "expired" {
   return "active";
 }
 
+// MemberCard component defined outside to prevent re-renders
+const MemberCard = React.memo(({ 
+  member, 
+  isExpired = false,
+  isMaintainerOrAdmin,
+  onViewClick,
+  onEditClick,
+  onExtendClick,
+  onDeleteClick
+}: { 
+  member: Member; 
+  isExpired?: boolean;
+  isMaintainerOrAdmin: boolean;
+  onViewClick: (member: Member) => void;
+  onEditClick: (member: Member) => void;
+  onExtendClick: (member: Member) => void;
+  onDeleteClick: (member: Member) => void;
+}) => {
+  const status = getMemberStatus(member);
+  const daysLeft = getDaysUntilExpiry(member.membershipEndDate);
+
+  return (
+    <MotionDiv
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className={cn(
+        "rounded-xl border-2 p-4 transition-all duration-300",
+        status === "expired" && "bg-muted/50 border-muted-foreground/20",
+        status === "expiring" && "bg-yellow-500/10 border-yellow-500/30",
+        status === "active" && "bg-card border-border hover:border-primary/30"
+      )}
+    >
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-lg">
+              {member.firstName} {member.lastName}
+            </h3>
+            {status === "expired" && (
+              <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium">
+                Abgelaufen
+              </span>
+            )}
+            {status === "expiring" && (
+              <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-xs font-medium">
+                {daysLeft} Tage
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {member.street} {member.houseNumber}, {member.zipCode} {member.city}
+          </p>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              Start: {new Date(member.membershipStartDate).toLocaleDateString("de-DE")}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Ende: {new Date(member.membershipEndDate).toLocaleDateString("de-DE")}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-9 w-9"
+            onClick={() => onViewClick(member)}
+            title="Details anzeigen"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          
+          {isMaintainerOrAdmin && (
+            <>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9"
+                onClick={() => onEditClick(member)}
+                title="Bearbeiten"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1 text-primary hover:text-primary hover:bg-primary/10"
+                onClick={() => onExtendClick(member)}
+              >
+                <RefreshCw className="h-4 w-4" />
+                +1 Jahr
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => onDeleteClick(member)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </MotionDiv>
+  );
+});
+
 export default function Goennermitglieder() {
   const { user, isAuthenticated, loading } = useAuth();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -305,107 +417,7 @@ export default function Goennermitglieder() {
     );
   }
 
-  const MemberCard = React.memo(({ member, isExpired = false }: { member: Member; isExpired?: boolean }) => {
-    const status = getMemberStatus(member);
-    const daysLeft = getDaysUntilExpiry(member.membershipEndDate);
 
-    return (
-      <MotionDiv
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        className={cn(
-          "rounded-xl border-2 p-4 transition-all duration-300",
-          status === "expired" && "bg-muted/50 border-muted-foreground/20",
-          status === "expiring" && "bg-yellow-500/10 border-yellow-500/30",
-          status === "active" && "bg-card border-border hover:border-primary/30"
-        )}
-      >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-lg">
-                {member.firstName} {member.lastName}
-              </h3>
-              {status === "expired" && (
-                <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium">
-                  Abgelaufen
-                </span>
-              )}
-              {status === "expiring" && (
-                <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-xs font-medium">
-                  {daysLeft} Tage
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {member.street} {member.houseNumber}, {member.zipCode} {member.city}
-            </p>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                Start: {new Date(member.membershipStartDate).toLocaleDateString("de-DE")}
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                Ende: {new Date(member.membershipEndDate).toLocaleDateString("de-DE")}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* View button - available for all logged in users */}
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-9 w-9"
-              onClick={() => openViewDialog(member)}
-              title="Details anzeigen"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            
-            {isMaintainerOrAdmin && (
-              <>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9"
-                  onClick={() => openEditDialog(member)}
-                  title="Bearbeiten"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1 text-primary hover:text-primary hover:bg-primary/10"
-                  onClick={() => {
-                    setSelectedMember(member);
-                    setExtendDialogOpen(true);
-                  }}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  +1 Jahr
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => {
-                    setSelectedMember(member);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </MotionDiv>
-    );
-  });
 
   return (
     <div className="container py-8 md:py-12 space-y-8">
@@ -614,7 +626,21 @@ export default function Goennermitglieder() {
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
               {activeMembers.map((member) => (
-                <MemberCard key={member.id} member={member as Member} />
+                <MemberCard 
+                  key={member.id} 
+                  member={member as Member}
+                  isMaintainerOrAdmin={isMaintainerOrAdmin}
+                  onViewClick={openViewDialog}
+                  onEditClick={openEditDialog}
+                  onExtendClick={(m) => {
+                    setSelectedMember(m);
+                    setExtendDialogOpen(true);
+                  }}
+                  onDeleteClick={(m) => {
+                    setSelectedMember(m);
+                    setDeleteDialogOpen(true);
+                  }}
+                />
               ))}
             </AnimatePresence>
           </div>
@@ -631,7 +657,22 @@ export default function Goennermitglieder() {
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
               {expiredMembers.map((member) => (
-                <MemberCard key={member.id} member={member as Member} isExpired />
+                <MemberCard 
+                  key={member.id} 
+                  member={member as Member}
+                  isExpired
+                  isMaintainerOrAdmin={isMaintainerOrAdmin}
+                  onViewClick={openViewDialog}
+                  onEditClick={openEditDialog}
+                  onExtendClick={(m) => {
+                    setSelectedMember(m);
+                    setExtendDialogOpen(true);
+                  }}
+                  onDeleteClick={(m) => {
+                    setSelectedMember(m);
+                    setDeleteDialogOpen(true);
+                  }}
+                />
               ))}
             </AnimatePresence>
           </div>
