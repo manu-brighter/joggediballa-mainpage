@@ -81,6 +81,17 @@ export default function UserManagement() {
                   className="flex items-center justify-between p-4 rounded-lg border bg-card"
                 >
                   <div className="flex items-center gap-4">
+                    {user.profilePictureUrl ? (
+                      <img
+                        src={user.profilePictureUrl}
+                        alt={user.name || "User"}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg">
+                        {(user.name || "?").charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <p className="font-medium">{user.name || "Unbekannt"}</p>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -129,6 +140,17 @@ export default function UserManagement() {
                 className="flex items-center justify-between p-4 rounded-lg border bg-card"
               >
                 <div className="flex items-center gap-4">
+                  {user.profilePictureUrl ? (
+                    <img
+                      src={user.profilePictureUrl}
+                      alt={user.name || "User"}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg">
+                      {(user.name || "?").charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{user.name || "Unbekannt"}</p>

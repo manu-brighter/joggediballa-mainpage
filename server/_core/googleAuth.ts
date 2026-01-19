@@ -43,6 +43,7 @@ passport.use(
         const googleId = profile.id;
         const email = profile.emails?.[0]?.value;
         const name = profile.displayName;
+        const profilePictureUrl = profile.photos?.[0]?.value;
         const loginMethod = "google";
 
         // Determine role: ADMIN_EMAIL becomes admin, others start as visitor
@@ -60,6 +61,7 @@ passport.use(
           openId: googleId,
           email: email || null,
           name: name || null,
+          profilePictureUrl: profilePictureUrl || null,
           loginMethod,
           role,
           lastSignedIn: new Date(),

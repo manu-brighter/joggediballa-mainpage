@@ -561,4 +561,12 @@
 - [x] Investigate 500 Internal Server Error on Google OAuth callback
 - [x] Fix visitor role implementation causing OAuth failure (made email async)
 - [x] Test OAuth login with new user (server restarted, ready for testing)
-- [ ] Commit fix to GitHub
+- [x] Commit fix to GitHub
+
+
+## Profile Pictures in User Management - January 2026
+
+- [x] Update Google OAuth to save profile picture URL from Google
+- [x] Display profile pictures in admin user management list
+- [x] Add fallback for users without profile pictures
+- [ ] Commit and push to GitHub
