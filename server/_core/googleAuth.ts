@@ -67,9 +67,11 @@ passport.use(
           lastSignedIn: new Date(),
         });
 
-        // Log login activity
+        // Fetch the complete user record and log activity
         const user = await getUserByOpenId(googleId);
+        
         if (user) {
+          // Log login activity
           await createActivityLog({
             userId: user.id,
             userName: user.name || "Unknown",
@@ -113,9 +115,6 @@ passport.use(
               console.error("[Google OAuth] Email notification error:", emailError);
             });
         }
-
-        // Fetch the complete user record
-        const user = await getUserByOpenId(googleId);
         
         if (!user) {
           return done(new Error("Failed to create or fetch user"));
