@@ -12,6 +12,7 @@ import {
   featureToggles,
   contactSubmissions,
   goennermitglieder,
+  userActivityLog,
   InsertShotcounterTeam,
   InsertShotcounterAuditLog,
   InsertSponsor,
@@ -20,7 +21,8 @@ import {
   InsertTeamMember,
   InsertFeatureToggle,
   InsertContactSubmission,
-  InsertGoennermitglied
+  InsertGoennermitglied,
+  InsertUserActivityLog
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -523,4 +525,59 @@ export async function updateUserProfilePicture(userId: number, profilePictureUrl
   await db.update(users)
     .set({ profilePictureUrl, profilePictureKey })
     .where(eq(users.id, userId));
+}
+
+export async function updateUserProfile(userId: number, displayName?: string, memberSince?: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const updateData: { displayName?: string | null; memberSince?: Date | null } = {};
+  if (displayName !== undefined) {
+    updateData.displayName = displayName || null;
+  }
+  if (memberSince !== undefined) {
+    updateData.memberSince = memberSince || null;
+  }
+  
+  if (Object.keys(updateData).length > 0) {
+    await db.update(users)
+      .set(updateData)
+      .where(eq(users.id, userId));
+  }
+}
+
+// ============================================
+// USER ACTIVITY LOG
+// ============================================
+
+export async function createActivityLog(log: InsertUserActivityLog) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create activity log: database not available");
+    return;
+  }
+  try {
+    await db.insert(userActivityLog).values(log);
+  } catch (error) {
+    console.error("[Database] Failed to create activity log:", error);
+  }
+}
+
+export async function getAllActivityLogs(limit: number = 100) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select()
+    .from(userActivityLog)
+    .orderBy(desc(userActivityLog.timestamp))
+    .limit(limit);
+}
+
+export async function getActivityLogsByUser(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select()
+    .from(userActivityLog)
+    .where(eq(userActivityLog.userId, userId))
+    .orderBy(desc(userActivityLog.timestamp))
+    .limit(limit);
 }

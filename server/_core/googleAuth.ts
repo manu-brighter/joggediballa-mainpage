@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import type { Profile } from "passport-google-oauth20";
-import { upsertUser, getUserByOpenId } from "../db";
+import { upsertUser, getUserByOpenId, createActivityLog } from "../db";
 import type { User } from "../../drizzle/schema";
 import { sendEmail } from "./email";
 
@@ -66,6 +66,19 @@ passport.use(
           role,
           lastSignedIn: new Date(),
         });
+
+        // Log login activity
+        const user = await getUserByOpenId(googleId);
+        if (user) {
+          await createActivityLog({
+            userId: user.id,
+            userName: user.name || "Unknown",
+            action: isNewUser ? "registration" : "login",
+            details: isNewUser ? `New user registered via Google OAuth` : `User logged in via Google OAuth`,
+            ipAddress: null,
+            userAgent: null,
+          });
+        }
 
         // Send email notification for new visitor registrations
         if (isNewUser && role === "visitor") {

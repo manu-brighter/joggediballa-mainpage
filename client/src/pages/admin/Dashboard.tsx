@@ -276,9 +276,14 @@ export default function AdminDashboard() {
                   </CardTitle>
                   <CardDescription className="text-sm">Verwalte Benutzerrollen und Zugriffsrechte</CardDescription>
                 </div>
-                <Button asChild variant="outline" size="sm">
-                  <a href="/admin/users">Alle anzeigen</a>
-                </Button>
+                <div className="flex gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <a href="/admin/activity">Activity Log</a>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <a href="/admin/users">Alle anzeigen</a>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="overflow-hidden px-3 sm:px-6">

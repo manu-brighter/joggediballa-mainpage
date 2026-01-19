@@ -68,8 +68,22 @@ export const appRouter = router({
         userId: z.number(),
         role: z.enum(["admin", "maintainer", "editor", "user"])
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const targetUser = await db.getUserById(input.userId);
+        const oldRole = targetUser?.role || "unknown";
+        
         await db.updateUserRole(input.userId, input.role);
+        
+        // Log role change
+        await db.createActivityLog({
+          userId: input.userId,
+          userName: targetUser?.name || "Unknown",
+          action: "role_change",
+          details: `Role changed from ${oldRole} to ${input.role} by ${ctx.user.name || "Admin"}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        
         return { success: true };
       }),
   }),
@@ -84,7 +98,7 @@ export const appRouter = router({
         return db.getShotcounterTeamsByYear(input.year);
       }),
     
-    createTeam: maintainerProcedure
+    createTeam: editorProcedure
       .input(z.object({
         name: z.string().min(1).max(100),
         year: z.number()
@@ -110,7 +124,7 @@ export const appRouter = router({
         return { teamId };
       }),
     
-    updateScore: maintainerProcedure
+    updateScore: editorProcedure
       .input(z.object({
         teamId: z.number(),
         amount: z.number()
@@ -136,7 +150,7 @@ export const appRouter = router({
         return { success: true, newScore };
       }),
     
-    deleteTeam: maintainerProcedure
+    deleteTeam: editorProcedure
       .input(z.object({ teamId: z.number() }))
       .mutation(async ({ input, ctx }) => {
         const team = await db.getShotcounterTeamById(input.teamId);
@@ -562,6 +576,36 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await db.updateUserProfilePicture(ctx.user.id, input.profilePictureUrl, input.profilePictureKey);
         return { success: true };
+      }),
+    
+    updateProfile: protectedProcedure
+      .input(z.object({
+        displayName: z.string().max(255).optional(),
+        memberSince: z.date().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateUserProfile(ctx.user.id, input.displayName, input.memberSince);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
+  // ACTIVITY LOG (Admin only)
+  // ============================================
+  activityLog: router({
+    list: adminProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.getAllActivityLogs(input.limit);
+      }),
+    
+    getByUser: adminProcedure
+      .input(z.object({ 
+        userId: z.number(),
+        limit: z.number().optional() 
+      }))
+      .query(async ({ input }) => {
+        return db.getActivityLogsByUser(input.userId, input.limit);
       }),
   }),
 });

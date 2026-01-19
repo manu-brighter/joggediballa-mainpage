@@ -1,7 +1,9 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { User, Mail, Shield, Calendar, Camera, ArrowLeft, Upload, Loader2, ZoomIn, Move } from "lucide-react";
+import { User, Mail, Shield, Calendar, Camera, ArrowLeft, Upload, Loader2, ZoomIn, Move, Pencil, Save, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
@@ -27,6 +29,9 @@ export default function Profile() {
   const { user, loading, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editMemberSince, setEditMemberSince] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -52,6 +57,31 @@ export default function Profile() {
       toast.error(`Fehler: ${error.message}`);
     },
   });
+
+  const updateProfileMutation = trpc.profile.updateProfile.useMutation({
+    onSuccess: () => {
+      utils.auth.me.invalidate();
+      toast.success("Profil erfolgreich aktualisiert!");
+      setIsEditingProfile(false);
+    },
+    onError: (error) => {
+      toast.error(`Fehler: ${error.message}`);
+    },
+  });
+
+  useEffect(() => {
+    if (user && isEditingProfile) {
+      setEditDisplayName(user.displayName || user.name || "");
+      setEditMemberSince(user.memberSince ? new Date(user.memberSince).toISOString().split("T")[0] : "");
+    }
+  }, [user, isEditingProfile]);
+
+  const handleSaveProfile = () => {
+    updateProfileMutation.mutate({
+      displayName: editDisplayName || undefined,
+      memberSince: editMemberSince ? new Date(editMemberSince) : undefined,
+    });
+  };
 
   const resetCropState = () => {
     setPreviewUrl(null);
@@ -346,12 +376,63 @@ export default function Profile() {
 
             {/* User Info */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <User className="h-5 w-5 text-primary" />
-                Profil-Informationen
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  Profil-Informationen
+                </h3>
+                {!isEditingProfile ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingProfile(true)}
+                    className="gap-2"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Bearbeiten
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditingProfile(false)}
+                      className="gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Abbrechen
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveProfile}
+                      disabled={updateProfileMutation.isPending}
+                      className="gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      {updateProfileMutation.isPending ? "Speichert..." : "Speichern"}
+                    </Button>
+                  </div>
+                )}
+              </div>
               
               <div className="grid gap-4">
+                {/* Display Name */}
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <User className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Anzeigename</p>
+                    {isEditingProfile ? (
+                      <Input
+                        value={editDisplayName}
+                        onChange={(e) => setEditDisplayName(e.target.value)}
+                        placeholder="Dein Anzeigename"
+                        className="mt-1"
+                      />
+                    ) : (
+                      <p className="font-medium">{user.displayName || user.name || "Nicht gesetzt"}</p>
+                    )}
+                  </div>
+                </div>
                 {user.email && (
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <Mail className="h-5 w-5 text-muted-foreground" />
@@ -370,21 +451,37 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {user.createdAt && (
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Mitglied seit</p>
+                {/* Member Since */}
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Mitglied seit</p>
+                    {isEditingProfile ? (
+                      <Input
+                        type="date"
+                        value={editMemberSince}
+                        onChange={(e) => setEditMemberSince(e.target.value)}
+                        className="mt-1"
+                      />
+                    ) : (
                       <p className="font-medium">
-                        {new Date(user.createdAt).toLocaleDateString("de-DE", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
+                        {user.memberSince
+                          ? new Date(user.memberSince).toLocaleDateString("de-DE", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString("de-DE", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : "Nicht gesetzt"}
                       </p>
-                    </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
 

@@ -8,11 +8,13 @@ export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
+  displayName: varchar("displayName", { length: 255 }), // Custom display name (editable)
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["admin", "maintainer", "editor", "user", "visitor"]).default("visitor").notNull(),
   profilePictureUrl: text("profilePictureUrl"), // S3 URL for profile picture
   profilePictureKey: text("profilePictureKey"), // S3 Key for profile picture
+  memberSince: timestamp("memberSince"), // Custom member since date (editable)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -194,3 +196,20 @@ export const goennermitglieder = mysqlTable("goennermitglieder", {
 
 export type Goennermitglied = typeof goennermitglieder.$inferSelect;
 export type InsertGoennermitglied = typeof goennermitglieder.$inferInsert;
+
+/**
+ * User Activity Log - tracks user logins, role changes, and admin actions
+ */
+export const userActivityLog = mysqlTable("user_activity_log", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").references(() => users.id, { onDelete: "set null" }),
+  userName: varchar("userName", { length: 255 }), // Fallback wenn User gelöscht
+  action: varchar("action", { length: 100 }).notNull(), // "login", "role_change", "admin_action"
+  details: text("details"), // JSON oder Text mit Details
+  ipAddress: varchar("ipAddress", { length: 45 }), // IPv4/IPv6
+  userAgent: text("userAgent"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type UserActivityLog = typeof userActivityLog.$inferSelect;
+export type InsertUserActivityLog = typeof userActivityLog.$inferInsert;

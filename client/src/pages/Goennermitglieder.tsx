@@ -612,7 +612,7 @@ export default function Goennermitglieder() {
           </Card>
         ) : (
           <div className="space-y-3">
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
               {activeMembers.map((member) => (
                 <MemberCard key={member.id} member={member as Member} />
               ))}
@@ -629,7 +629,7 @@ export default function Goennermitglieder() {
             Abgelaufene Mitgliedschaften ({expiredMembers.length})
           </h2>
           <div className="space-y-3">
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
               {expiredMembers.map((member) => (
                 <MemberCard key={member.id} member={member as Member} isExpired />
               ))}
