@@ -65,6 +65,7 @@ export default function Events() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
+  const [imageLoadProgress, setImageLoadProgress] = useState(0);
 
   // Event management state
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -277,13 +278,15 @@ export default function Events() {
           throw new Error(`Upload fehlgeschlagen für ${file.name}`);
         }
 
-        const { url, key } = await response.json();
+        const { url, key, compressedUrl, compressedKey } = await response.json();
 
         // Use the targetEventId that was captured when the button was clicked
         await createPhotoMutation.mutateAsync({
           eventId: targetEventId,
           imageUrl: url,
           imageKey: key,
+          compressedUrl,
+          compressedKey,
           title: file.name.replace(/\.[^/.]+$/, "")
         });
       }
@@ -650,7 +653,7 @@ export default function Events() {
                 onClick={() => openLightbox(index)}
               >
                 <img
-                  src={photo.thumbnailUrl || photo.imageUrl}
+                  src={photo.compressedUrl || photo.imageUrl}
                   alt={photo.title || "Event Foto"}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   loading="lazy"
@@ -805,21 +808,51 @@ export default function Events() {
 
           {/* Main image container */}
           <div className="relative w-full h-full flex items-center justify-center">
-            {/* Loading spinner */}
+            {/* Loading progress */}
             {imageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                 <Loader2 className="h-12 w-12 animate-spin text-white" />
+                <div className="w-64 h-2 bg-white/20 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${imageLoadProgress}%` }}
+                  />
+                </div>
+                <p className="text-white/70 text-sm">{Math.round(imageLoadProgress)}%</p>
               </div>
             )}
             
+            {/* Show compressed version first, then load original */}
             <img
-              src={selectedPhotos[currentPhotoIndex]?.imageUrl}
+              src={imageLoading ? (selectedPhotos[currentPhotoIndex]?.compressedUrl || selectedPhotos[currentPhotoIndex]?.imageUrl) : selectedPhotos[currentPhotoIndex]?.imageUrl}
               alt={currentPhotoEventName || "Event Foto"}
               className={cn(
                 "max-w-full max-h-full object-contain transition-opacity duration-300",
-                imageLoading ? "opacity-0" : "opacity-100"
+                imageLoading ? "opacity-50" : "opacity-100"
               )}
-              onLoad={() => setImageLoading(false)}
+              onLoad={() => {
+                if (!imageLoading) return;
+                // Simulate progress for original image load
+                const img = new Image();
+                img.src = selectedPhotos[currentPhotoIndex]?.imageUrl;
+                
+                // Fake progress animation
+                let progress = 0;
+                const interval = setInterval(() => {
+                  progress += 10;
+                  setImageLoadProgress(progress);
+                  if (progress >= 90) clearInterval(interval);
+                }, 50);
+                
+                img.onload = () => {
+                  clearInterval(interval);
+                  setImageLoadProgress(100);
+                  setTimeout(() => {
+                    setImageLoading(false);
+                    setImageLoadProgress(0);
+                  }, 200);
+                };
+              }}
             />
 
             {/* Navigation arrows - smaller and cleaner */}

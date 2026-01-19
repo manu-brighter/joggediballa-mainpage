@@ -105,9 +105,11 @@ export const photos = mysqlTable("photos", {
   eventId: int("eventId").references(() => events.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }),
   description: text("description"),
-  imageUrl: text("imageUrl").notNull(), // S3 URL
-  imageKey: text("imageKey").notNull(), // S3 Key
-  thumbnailUrl: text("thumbnailUrl"), // Optional: Thumbnail für Performance
+  imageUrl: text("imageUrl").notNull(), // S3 URL - Original high-res image
+  imageKey: text("imageKey").notNull(), // S3 Key - Original high-res image
+  compressedUrl: text("compressedUrl"), // S3 URL - Compressed version for gallery (~2MB)
+  compressedKey: text("compressedKey"), // S3 Key - Compressed version
+  thumbnailUrl: text("thumbnailUrl"), // Optional: Event thumbnail (for event card)
   thumbnailKey: text("thumbnailKey"),
   displayOrder: int("displayOrder").default(0).notNull(),
   isPublished: boolean("isPublished").default(true).notNull(),

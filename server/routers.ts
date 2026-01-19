@@ -307,6 +307,8 @@ export const appRouter = router({
         description: z.string().optional(),
         imageUrl: z.string().url(),
         imageKey: z.string(),
+        compressedUrl: z.string().url().optional(),
+        compressedKey: z.string().optional(),
         thumbnailUrl: z.string().url().optional(),
         thumbnailKey: z.string().optional(),
         displayOrder: z.number().optional()

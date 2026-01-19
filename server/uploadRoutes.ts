@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
+import sharp from "sharp";
 
 const router = Router();
 
@@ -173,14 +174,33 @@ router.post("/event-photo", async (req: Request, res: Response) => {
           return;
         }
 
-        // Generate unique key
+        // Generate unique ID for this photo
+        const photoId = nanoid();
         const ext = fileName.split(".").pop() || "jpg";
-        const uniqueKey = `events/${nanoid()}.${ext}`;
+        
+        // Upload original high-res image
+        const originalKey = `events/original/${photoId}.${ext}`;
+        const { url: originalUrl, key: originalStorageKey } = await storagePut(originalKey, fileBuffer, fileMimeType);
 
-        // Upload to S3
-        const { url, key } = await storagePut(uniqueKey, fileBuffer, fileMimeType);
+        // Generate compressed version (~2MB max, good quality)
+        const compressedBuffer = await sharp(fileBuffer)
+          .resize(2048, 2048, { // Max 2048px on longest side
+            fit: 'inside',
+            withoutEnlargement: true
+          })
+          .jpeg({ quality: 85 }) // High quality JPEG
+          .toBuffer();
 
-        res.json({ url, key });
+        // Upload compressed version
+        const compressedKey = `events/compressed/${photoId}.jpg`;
+        const { url: compressedUrl, key: compressedStorageKey } = await storagePut(compressedKey, compressedBuffer, "image/jpeg");
+
+        res.json({ 
+          url: originalUrl, 
+          key: originalStorageKey,
+          compressedUrl,
+          compressedKey: compressedStorageKey
+        });
       } catch (error) {
         console.error("Event photo upload error:", error);
         res.status(500).json({ error: "Upload failed" });
