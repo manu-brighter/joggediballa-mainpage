@@ -99,6 +99,10 @@ export default function AdminDashboard() {
     enabled: isAuthenticated && user?.role === "admin",
   });
 
+  const { data: dbPermissions = [], isLoading: permissionsLoading } = trpc.permissions.list.useQuery(undefined, {
+    enabled: isAuthenticated && user?.role === "admin",
+  });
+
   const { data: auditLogs = [], isLoading: auditLoading } = trpc.shotcounter.getAuditLog.useQuery(
     { limit: 50 },
     {
@@ -110,6 +114,16 @@ export default function AdminDashboard() {
     { year: new Date().getFullYear() },
     { enabled: isAuthenticated && user?.role === "admin" }
   );
+
+  const togglePermissionMutation = trpc.permissions.toggle.useMutation({
+    onSuccess: () => {
+      utils.permissions.list.invalidate();
+      toast.success("Berechtigung aktualisiert");
+    },
+    onError: (error) => {
+      toast.error(`Fehler: ${error.message}`);
+    },
+  });
 
   const updateRoleMutation = trpc.users.updateRole.useMutation({
     onSuccess: () => {
@@ -387,40 +401,88 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {PERMISSIONS.map((perm) => (
-                      <TableRow key={perm.key}>
-                        <TableCell className="font-medium text-xs py-2">
-                          <div className="flex items-center gap-2">
-                            <perm.icon className="h-3 w-3 text-muted-foreground shrink-0" />
-                            <span className="truncate">{perm.label}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center py-2">
-                          {perm.roles.includes("admin") ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center py-2">
-                          {perm.roles.includes("maintainer") ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center py-2">
-                          {perm.roles.includes("editor") ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center py-2">
-                          <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {PERMISSIONS.map((perm) => {
+                      const hasPermission = (role: string) => {
+                        return dbPermissions.some(
+                          (p) => p.permissionKey === perm.key && p.role === role
+                        );
+                      };
+
+                      const togglePermission = (role: "admin" | "maintainer" | "editor" | "user", enabled: boolean) => {
+                        togglePermissionMutation.mutate({
+                          permissionKey: perm.key,
+                          role,
+                          enabled,
+                        });
+                      };
+
+                      return (
+                        <TableRow key={perm.key}>
+                          <TableCell className="font-medium text-xs py-2">
+                            <div className="flex items-center gap-2">
+                              <perm.icon className="h-3 w-3 text-muted-foreground shrink-0" />
+                              <span className="truncate">{perm.label}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center py-2">
+                            <button
+                              onClick={() => togglePermission("admin", !hasPermission("admin"))}
+                              disabled={togglePermissionMutation.isPending}
+                              className="mx-auto cursor-pointer hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Klicken zum Umschalten"
+                            >
+                              {hasPermission("admin") ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-muted-foreground/30" />
+                              )}
+                            </button>
+                          </TableCell>
+                          <TableCell className="text-center py-2">
+                            <button
+                              onClick={() => togglePermission("maintainer", !hasPermission("maintainer"))}
+                              disabled={togglePermissionMutation.isPending}
+                              className="mx-auto cursor-pointer hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Klicken zum Umschalten"
+                            >
+                              {hasPermission("maintainer") ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-muted-foreground/30" />
+                              )}
+                            </button>
+                          </TableCell>
+                          <TableCell className="text-center py-2">
+                            <button
+                              onClick={() => togglePermission("editor", !hasPermission("editor"))}
+                              disabled={togglePermissionMutation.isPending}
+                              className="mx-auto cursor-pointer hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Klicken zum Umschalten"
+                            >
+                              {hasPermission("editor") ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-muted-foreground/30" />
+                              )}
+                            </button>
+                          </TableCell>
+                          <TableCell className="text-center py-2">
+                            <button
+                              onClick={() => togglePermission("user", !hasPermission("user"))}
+                              disabled={togglePermissionMutation.isPending}
+                              className="mx-auto cursor-pointer hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Klicken zum Umschalten"
+                            >
+                              {hasPermission("user") ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-muted-foreground/30" />
+                              )}
+                            </button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

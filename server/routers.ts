@@ -592,6 +592,29 @@ export const appRouter = router({
   }),
 
   // ============================================
+  // PERMISSIONS (Admin only)
+  // ============================================
+  permissions: router({
+    list: adminProcedure.query(async () => {
+      return db.getAllPermissions();
+    }),
+    
+    toggle: adminProcedure
+      .input(z.object({
+        permissionKey: z.string(),
+        role: z.enum(["admin", "maintainer", "editor", "user"]),
+        enabled: z.boolean(),
+      }))
+      .mutation(async ({ input }) => {
+        if (input.enabled) {
+          return db.addPermission(input.permissionKey, input.role);
+        } else {
+          return db.removePermission(input.permissionKey, input.role);
+        }
+      }),
+  }),
+
+  // ============================================
   // ACTIVITY LOG (Admin only)
   // ============================================
   activityLog: router({

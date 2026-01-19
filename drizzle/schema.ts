@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, bigint } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, bigint, unique } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -215,3 +215,20 @@ export const userActivityLog = mysqlTable("user_activity_log", {
 
 export type UserActivityLog = typeof userActivityLog.$inferSelect;
 export type InsertUserActivityLog = typeof userActivityLog.$inferInsert;
+
+/**
+ * Role Permissions - defines which roles have which permissions
+ */
+export const rolePermissions = mysqlTable("role_permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  permissionKey: varchar("permissionKey", { length: 100 }).notNull(), // e.g. "edit_events"
+  role: mysqlEnum("role", ["admin", "maintainer", "editor", "user"]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  // Unique constraint: each permission-role combination can only exist once
+  uniquePermissionRole: unique().on(table.permissionKey, table.role),
+}));
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = typeof rolePermissions.$inferInsert;

@@ -13,6 +13,7 @@ import {
   contactSubmissions,
   goennermitglieder,
   userActivityLog,
+  rolePermissions,
   InsertShotcounterTeam,
   InsertShotcounterAuditLog,
   InsertSponsor,
@@ -22,7 +23,8 @@ import {
   InsertFeatureToggle,
   InsertContactSubmission,
   InsertGoennermitglied,
-  InsertUserActivityLog
+  InsertUserActivityLog,
+  InsertRolePermission
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -587,4 +589,86 @@ export async function getActivityLogsByUser(userId: number, limit: number = 50) 
     .where(eq(userActivityLog.userId, userId))
     .orderBy(desc(userActivityLog.timestamp))
     .limit(limit);
+}
+
+// ============================================
+// ROLE PERMISSIONS
+// ============================================
+
+export async function getAllPermissions() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(rolePermissions);
+}
+
+export async function addPermission(permissionKey: string, role: "admin" | "maintainer" | "editor" | "user") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  try {
+    await db.insert(rolePermissions).values({
+      permissionKey,
+      role,
+    });
+    return { success: true };
+  } catch (error: any) {
+    // Handle duplicate key error
+    if (error.code === 'ER_DUP_ENTRY') {
+      return { success: false, error: "Permission already exists" };
+    }
+    throw error;
+  }
+}
+
+export async function removePermission(permissionKey: string, role: "admin" | "maintainer" | "editor" | "user") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(rolePermissions)
+    .where(
+      and(
+        eq(rolePermissions.permissionKey, permissionKey),
+        eq(rolePermissions.role, role)
+      )
+    );
+  return { success: true };
+}
+
+export async function initializeDefaultPermissions() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot initialize permissions: database not available");
+    return;
+  }
+
+  // Check if permissions already exist
+  const existing = await db.select().from(rolePermissions).limit(1);
+  if (existing.length > 0) {
+    console.log("[Database] Permissions already initialized");
+    return;
+  }
+
+  // Default permissions based on current PERMISSIONS array in Dashboard
+  const defaultPermissions = [
+    { permissionKey: "edit_events", roles: ["admin", "maintainer", "editor"] },
+    { permissionKey: "manage_sponsors", roles: ["admin", "maintainer"] },
+    { permissionKey: "manage_goennermitglieder", roles: ["admin", "maintainer"] },
+    { permissionKey: "edit_shotcounter", roles: ["admin", "maintainer", "editor"] },
+    { permissionKey: "reset_shotcounter", roles: ["admin"] },
+    { permissionKey: "edit_team", roles: ["admin", "maintainer"] },
+  ];
+
+  try {
+    for (const perm of defaultPermissions) {
+      for (const role of perm.roles) {
+        await db.insert(rolePermissions).values({
+          permissionKey: perm.permissionKey,
+          role: role as "admin" | "maintainer" | "editor" | "user",
+        });
+      }
+    }
+    console.log("[Database] Default permissions initialized successfully");
+  } catch (error) {
+    console.error("[Database] Failed to initialize default permissions:", error);
+  }
 }
