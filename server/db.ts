@@ -120,6 +120,13 @@ export async function getAllUsers() {
   return db.select().from(users).orderBy(desc(users.createdAt));
 }
 
+export async function getUserById(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return result[0] || null;
+}
+
 export async function updateUserRole(userId: number, role: "admin" | "maintainer" | "editor" | "user" | "visitor") {
   const db = await getDb();
   if (!db) return;
