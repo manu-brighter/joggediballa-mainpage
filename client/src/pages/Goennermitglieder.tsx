@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -305,7 +305,7 @@ export default function Goennermitglieder() {
     );
   }
 
-  const MemberCard = ({ member, isExpired = false }: { member: Member; isExpired?: boolean }) => {
+  const MemberCard = React.memo(({ member, isExpired = false }: { member: Member; isExpired?: boolean }) => {
     const status = getMemberStatus(member);
     const daysLeft = getDaysUntilExpiry(member.membershipEndDate);
 
@@ -405,7 +405,7 @@ export default function Goennermitglieder() {
         </div>
       </MotionDiv>
     );
-  };
+  });
 
   return (
     <div className="container py-8 md:py-12 space-y-8">
