@@ -134,7 +134,7 @@ export default function Home() {
               {
                 icon: Users,
                 title: "Unser Team",
-                description: "Lerne das statliche und äusserst attraktive Team hinter Jogge di Balla kennen!",
+                description: "Lerne das stattliche und äusserst attraktive Team hinter Jogge di Balla kennen!",
                 href: "/team",
                 delay: 0.2,
               },
@@ -305,7 +305,7 @@ export default function Home() {
                   className="btn-animate"
                   onClick={() => navigate("/contact")}
                 >
-                  Jetzt Gönner werden
+                  Jetzt Gönner werden, schreib uns!
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </CardContent>
