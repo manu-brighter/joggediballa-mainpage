@@ -508,4 +508,10 @@
 - [x] Add visitor banner to frontend ("Account wartet auf Freischaltung")
 - [x] Restrict visitor access to public pages only (visitor has same access as non-logged-in)
 - [ ] Write tests for visitor role and promotion flow
+- [x] Commit and push to GitHub
+
+
+## Homepage Title Fix - January 2026
+
+- [x] Prevent line break in "Jogge di Balla" text (keep as single unit)
 - [ ] Commit and push to GitHub

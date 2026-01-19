@@ -41,7 +41,7 @@ export default function Home() {
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black leading-[1.1] tracking-tight">
                 Willkommen bei{" "}
-                <span className="gradient-text">Jogge di Balla</span>
+                <span className="gradient-text whitespace-nowrap">Jogge di Balla</span>
               </h1>
               
               <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0">
