@@ -4,8 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Users, Shield, UserCheck, Eye, Clock } from "lucide-react";
+import { Users, Shield, UserCheck, Eye, Clock, ArrowLeft, Trash2 } from "lucide-react";
+import { useLocation } from "wouter";
 
 type UserRole = "admin" | "maintainer" | "editor" | "user" | "visitor";
 
@@ -24,17 +36,32 @@ export default function UserManagement() {
       toast.success("Benutzerrolle erfolgreich aktualisiert");
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error("Fehler beim Aktualisieren der Rolle: " + error.message);
     },
   });
 
+  const deleteUserMutation = trpc.admin.deleteUser.useMutation({
+    onSuccess: () => {
+      toast.success("Benutzer erfolgreich gelöscht");
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error("Fehler beim Löschen: " + error.message);
+    },
+  });
+
   const [changingRole, setChangingRole] = useState<number | null>(null);
+  const [, navigate] = useLocation();
 
   const handleRoleChange = async (userId: number, newRole: UserRole) => {
     setChangingRole(userId);
     await promoteUserMutation.mutateAsync({ userId, role: newRole });
     setChangingRole(null);
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    await deleteUserMutation.mutateAsync({ userId });
   };
 
   const visitors = users?.filter(u => u.role === "visitor") || [];
@@ -52,6 +79,15 @@ export default function UserManagement() {
     <div className="container py-12 space-y-8">
       {/* Header */}
       <div className="space-y-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/admin")}
+          className="mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Zurück zum Admin Dashboard
+        </Button>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Users className="h-8 w-8" />
           Benutzerverwaltung
@@ -60,69 +96,6 @@ export default function UserManagement() {
           Verwalte Benutzerrollen und Zugriffsrechte
         </p>
       </div>
-
-      {/* Pending Visitors */}
-      {visitors.length > 0 && (
-        <Card className="border-orange-200 dark:border-orange-900">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-500" />
-              Wartende Besucher ({visitors.length})
-            </CardTitle>
-            <CardDescription>
-              Diese Benutzer haben sich angemeldet und warten auf Freischaltung
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {visitors.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card"
-                >
-                  <div className="flex items-center gap-4">
-                    {user.profilePictureUrl ? (
-                      <img
-                        src={user.profilePictureUrl}
-                        alt={user.name || "User"}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg">
-                        {(user.name || "?").charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium">{user.name || "Unbekannt"}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={user.role}
-                      onValueChange={(value) => handleRoleChange(user.id, value as UserRole)}
-                      disabled={changingRole === user.id}
-                    >
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">Zu Member</SelectItem>
-                        <SelectItem value="editor">Zu Editor</SelectItem>
-                        <SelectItem value="maintainer">Zu Maintainer</SelectItem>
-                        <SelectItem value="admin">Zu Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* All Members */}
       <Card>
@@ -182,12 +155,117 @@ export default function UserManagement() {
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Benutzer löschen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Möchtest du {user.name || user.email} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">
+                          Löschen
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
+
+      {/* Pending Visitors */}
+      {visitors.length > 0 && (
+        <Card className="border-orange-200 dark:border-orange-900">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-orange-500" />
+              Wartende Besucher ({visitors.length})
+            </CardTitle>
+            <CardDescription>
+              Diese Benutzer haben sich angemeldet und warten auf Freischaltung
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {visitors.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                >
+                  <div className="flex items-center gap-4">
+                    {user.profilePictureUrl ? (
+                      <img
+                        src={user.profilePictureUrl}
+                        alt={user.name || "User"}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg">
+                        {(user.name || "?").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">{user.name || "Unbekannt"}</p>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={user.role}
+                      onValueChange={(value) => handleRoleChange(user.id, value as UserRole)}
+                      disabled={changingRole === user.id}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">Zu Member</SelectItem>
+                        <SelectItem value="editor">Zu Editor</SelectItem>
+                        <SelectItem value="maintainer">Zu Maintainer</SelectItem>
+                        <SelectItem value="admin">Zu Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Benutzer löschen?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Möchtest du {user.name || user.email} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">
+                            Löschen
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

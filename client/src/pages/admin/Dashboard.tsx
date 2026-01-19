@@ -301,11 +301,19 @@ export default function AdminDashboard() {
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
-                          <span className="text-sm font-bold">
-                            {(u.name || "U").charAt(0).toUpperCase()}
-                          </span>
-                        </div>
+                        {u.profilePictureUrl ? (
+                          <img
+                            src={u.profilePictureUrl}
+                            alt={u.name || "User"}
+                            className="w-10 h-10 rounded-full object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
+                            <span className="text-sm font-bold">
+                              {(u.name || "U").charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <p className="font-medium truncate">
                             {u.name || "Unbekannt"}

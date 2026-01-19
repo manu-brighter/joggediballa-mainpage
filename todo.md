@@ -569,4 +569,16 @@
 - [x] Update Google OAuth to save profile picture URL from Google
 - [x] Display profile pictures in admin user management list
 - [x] Add fallback for users without profile pictures
+- [x] Commit and push to GitHub
+
+
+## Admin Dashboard & Profile Improvements - January 2026
+
+- [x] Add profile pictures to admin dashboard user management card
+- [x] Add user deletion feature (admin only)
+- [x] Add "Zurück zum Admin Dashboard" button in /admin/users
+- [x] Reorder cards in /admin/users (All Users first, then Pending Visitors)
+- [ ] Add profile editing: display name and member since date
+- [ ] Add editor role access to shotcounter editing
+- [ ] Implement activity log with login history, role changes, and admin actions
 - [ ] Commit and push to GitHub

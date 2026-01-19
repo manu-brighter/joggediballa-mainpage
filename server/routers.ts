@@ -532,6 +532,22 @@ export const appRouter = router({
         await db.updateUserRole(input.userId, input.role);
         return { success: true };
       }),
+    
+    deleteUser: adminProcedure
+      .input(z.object({
+        userId: z.number()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Prevent deleting yourself
+        if (input.userId === ctx.user.id) {
+          throw new TRPCError({ 
+            code: "BAD_REQUEST", 
+            message: "Du kannst dich nicht selbst löschen" 
+          });
+        }
+        await db.deleteUser(input.userId);
+        return { success: true };
+      }),
   }),
 
   // ============================================
