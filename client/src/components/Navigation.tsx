@@ -102,7 +102,8 @@ export function Navigation() {
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2 group">
           <img 
-            src="/JoggediBalla-Logo.PNG" 
+            src="/JoggediBalla-Logo.PNG"
+            loading="eager" 
             alt="Jogge di Balla Logo" 
             className="h-8 sm:h-10 w-auto transition-transform duration-300 group-hover:scale-105"
           />

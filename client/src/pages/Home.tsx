@@ -82,6 +82,7 @@ export default function Home() {
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl scale-75" />
                 <img
                   src="/Jogge_Di_Balla_Final_Transparent.png"
+                  loading="eager"
                   alt="Jogge di Balla Logo"
                   className="relative w-48 sm:w-64 md:w-80 lg:w-96 drop-shadow-2xl hover:scale-105 transition-transform duration-500"
                 />

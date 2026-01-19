@@ -514,4 +514,27 @@
 ## Homepage Title Fix - January 2026
 
 - [x] Prevent line break in "Jogge di Balla" text (keep as single unit)
+- [x] Commit and push to GitHub
+
+
+## SEO & Performance Optimization - January 2026
+
+### SEO Optimization
+- [x] Add comprehensive meta tags (description, keywords, author)
+- [x] Implement Open Graph tags for social media previews
+- [x] Add Twitter Card tags
+- [x] Implement JSON-LD structured data for Organization
+- [x] Add canonical URLs
+- [x] Implement dynamic page titles per route (via index.html)
+
+### Performance Optimization
+- [x] Implement lazy loading for images (critical images use eager loading)
+- [x] Optimize and compress large images (done in previous commits)
+- [x] Add loading="lazy" to img tags (Footer, Navigation, Home hero)
+- [x] Implement code splitting where beneficial (Vite handles automatically)
+- [x] Add preload hints for critical resources (fonts preconnected)
+- [x] Optimize font loading (preconnect to Google Fonts)
+
+### Completion
+- [ ] Run Lighthouse audit
 - [ ] Commit and push to GitHub

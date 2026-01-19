@@ -29,6 +29,7 @@ export function Footer() {
               src="/Jogge_Di_Balla_Final_Transparent.png" 
               alt="Jogge di Balla Logo" 
               className="h-14 w-auto"
+              loading="lazy"
             />
             <p className="text-sm text-muted-foreground">
               Gemeinsam feiern seit 2022
@@ -101,6 +102,7 @@ export function Footer() {
               src="/Jogge_Di_Balla_Final_Transparent.png" 
               alt="Jogge di Balla Logo" 
               className="h-12 w-auto"
+              loading="lazy"
             />
           </div>
 
