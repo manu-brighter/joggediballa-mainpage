@@ -67,31 +67,36 @@ passport.use(
 
         // Send email notification for new visitor registrations
         if (isNewUser && role === "visitor") {
-          try {
-            await sendEmail({
-              to: process.env.CONTACT_EMAIL_TO || "joggediballa@gmail.com",
-              subject: "Neue Benutzerregistrierung - Freischaltung erforderlich",
-              text: `Neue Benutzerregistrierung: ${name || "Unbekannt"} (${email || "Keine E-Mail"}) wartet auf Freischaltung.`,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2 style="color: #0ea5e9;">Neue Benutzerregistrierung</h2>
-                  <p>Ein neuer Benutzer hat sich auf der Jogge di Balla Website registriert und wartet auf Freischaltung:</p>
-                  <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                    <p><strong>Name:</strong> ${name || "Nicht angegeben"}</p>
-                    <p><strong>E-Mail:</strong> ${email || "Nicht angegeben"}</p>
-                    <p><strong>Login-Methode:</strong> Google OAuth</p>
-                    <p><strong>Status:</strong> Visitor (wartet auf Freischaltung)</p>
-                  </div>
-                  <p>Bitte logge dich ins Admin-Dashboard ein, um den Benutzer freizuschalten:</p>
-                  <p><a href="${process.env.GOOGLE_CALLBACK_URL?.replace('/api/auth/callback/google', '')}/admin/users" style="background-color: #0ea5e9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Zur Benutzerverwaltung</a></p>
+          // Send email asynchronously without blocking authentication
+          sendEmail({
+            to: process.env.CONTACT_EMAIL_TO || "joggediballa@gmail.com",
+            subject: "Neue Benutzerregistrierung - Freischaltung erforderlich",
+            text: `Neue Benutzerregistrierung: ${name || "Unbekannt"} (${email || "Keine E-Mail"}) wartet auf Freischaltung.`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #0ea5e9;">Neue Benutzerregistrierung</h2>
+                <p>Ein neuer Benutzer hat sich auf der Jogge di Balla Website registriert und wartet auf Freischaltung:</p>
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                  <p><strong>Name:</strong> ${name || "Nicht angegeben"}</p>
+                  <p><strong>E-Mail:</strong> ${email || "Nicht angegeben"}</p>
+                  <p><strong>Login-Methode:</strong> Google OAuth</p>
+                  <p><strong>Status:</strong> Visitor (wartet auf Freischaltung)</p>
                 </div>
-              `,
+                <p>Bitte logge dich ins Admin-Dashboard ein, um den Benutzer freizuschalten:</p>
+                <p><a href="${process.env.GOOGLE_CALLBACK_URL?.replace('/api/auth/callback/google', '')}/admin/users" style="background-color: #0ea5e9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Zur Benutzerverwaltung</a></p>
+              </div>
+            `,
+          })
+            .then((result) => {
+              if (result.success) {
+                console.log("[Google OAuth] New visitor notification email sent");
+              } else {
+                console.warn("[Google OAuth] Failed to send notification email:", result.error);
+              }
+            })
+            .catch((emailError) => {
+              console.error("[Google OAuth] Email notification error:", emailError);
             });
-            console.log("[Google OAuth] New visitor notification email sent");
-          } catch (emailError) {
-            console.error("[Google OAuth] Failed to send notification email:", emailError);
-            // Don't fail authentication if email fails
-          }
         }
 
         // Fetch the complete user record

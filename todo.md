@@ -553,4 +553,12 @@
 - [x] Include dynamic content (Events, Team members, Sponsors)
 - [x] Add robots.txt with sitemap reference
 - [x] Test sitemap accessibility
-- [ ] Commit and push to GitHub
+- [x] Commit and push to GitHub
+
+
+## Google OAuth Callback Error Fix - January 2026
+
+- [x] Investigate 500 Internal Server Error on Google OAuth callback
+- [x] Fix visitor role implementation causing OAuth failure (made email async)
+- [x] Test OAuth login with new user (server restarted, ready for testing)
+- [ ] Commit fix to GitHub
