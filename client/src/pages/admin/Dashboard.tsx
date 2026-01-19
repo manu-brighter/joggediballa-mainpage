@@ -63,7 +63,7 @@ const PERMISSIONS = [
   { key: "edit_events", label: "Events bearbeiten", icon: Calendar, roles: ["admin", "maintainer", "editor"] },
   { key: "manage_sponsors", label: "Sponsoren verwalten", icon: Image, roles: ["admin", "maintainer"] },
   { key: "manage_goennermitglieder", label: "Gönnermitglieder verwalten", icon: UserCog, roles: ["admin", "maintainer"] },
-  { key: "edit_shotcounter", label: "Shotcounter bearbeiten", icon: Wine, roles: ["admin", "maintainer"] },
+  { key: "edit_shotcounter", label: "Shotcounter bearbeiten", icon: Wine, roles: ["admin", "maintainer", "editor"] },
   { key: "reset_shotcounter", label: "Shotcounter zurücksetzen", icon: RotateCcw, roles: ["admin"] },
   { key: "edit_team", label: "Team bearbeiten", icon: Users2, roles: ["admin", "maintainer"] },
 ];
@@ -321,7 +321,7 @@ export default function AdminDashboard() {
                         )}
                         <div className="min-w-0">
                           <p className="font-medium truncate">
-                            {u.name || "Unbekannt"}
+                            {u.displayName || u.name || "Unbekannt"}
                             {u.id === user.id && (
                               <span className="text-xs text-primary ml-2">(Du)</span>
                             )}

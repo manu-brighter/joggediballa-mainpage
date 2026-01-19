@@ -126,7 +126,7 @@ export default function UserManagement() {
                   )}
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{user.name || "Unbekannt"}</p>
+                      <p className="font-medium">{user.displayName || user.name || "Unbekannt"}</p>
                       <Badge className={`${roleConfig[user.role as UserRole].color} text-white`}>
                         <span className="mr-1">{roleConfig[user.role as UserRole].icon}</span>
                         {roleConfig[user.role as UserRole].label}
@@ -215,7 +215,7 @@ export default function UserManagement() {
                       </div>
                     )}
                     <div>
-                      <p className="font-medium">{user.name || "Unbekannt"}</p>
+                      <p className="font-medium">{user.displayName || user.name || "Unbekannt"}</p>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                       <p className="text-xs text-muted-foreground">
                         Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}

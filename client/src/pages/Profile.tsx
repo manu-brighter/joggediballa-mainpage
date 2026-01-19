@@ -365,7 +365,10 @@ export default function Profile() {
                 </div>
               </button>
             </div>
-            <CardTitle className="text-2xl">{user.name || "Unbekannter Benutzer"}</CardTitle>
+            <CardTitle className="text-2xl">{user.displayName || user.name || "Unbekannter Benutzer"}</CardTitle>
+            {user.displayName && user.name && user.displayName !== user.name && (
+              <p className="text-sm text-muted-foreground mt-1">({user.name})</p>
+            )}
             <div className="flex justify-center mt-2">
               {getRoleBadge(user.role)}
             </div>
