@@ -1,0 +1,10 @@
+# robots.txt for joggediballa.ch
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://joggediballa.ch/sitemap.xml
+
+# Disallow admin and API routes
+Disallow: /api/
+Disallow: /admin/
