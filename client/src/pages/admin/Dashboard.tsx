@@ -268,11 +268,18 @@ export default function AdminDashboard() {
         >
           <Card className="h-full overflow-hidden w-full">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5 text-primary shrink-0" />
-                <span className="truncate">Benutzerverwaltung</span>
-              </CardTitle>
-              <CardDescription className="text-sm">Verwalte Benutzerrollen und Zugriffsrechte</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Users className="h-5 w-5 text-primary shrink-0" />
+                    <span className="truncate">Benutzerverwaltung</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm">Verwalte Benutzerrollen und Zugriffsrechte</CardDescription>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <a href="/admin/users">Alle anzeigen</a>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="overflow-hidden px-3 sm:px-6">
               {usersLoading ? (

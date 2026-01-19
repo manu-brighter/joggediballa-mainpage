@@ -15,6 +15,7 @@ import Contact from "./pages/Contact";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import AdminDashboard from "./pages/admin/Dashboard";
+import UserManagement from "./pages/admin/UserManagement";
 import Goennermitglieder from "./pages/Goennermitglieder";
 import Profile from "./pages/Profile";
 import Dienstleistungen from "./pages/Dienstleistungen";
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/impressum" component={Impressum} />
       <Route path="/datenschutz" component={Datenschutz} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/users" component={UserManagement} />
       <Route path="/goennermitglieder" component={Goennermitglieder} />
       <Route path="/profile" component={Profile} />
       <Route path="/dienstleistungen" component={Dienstleistungen} />

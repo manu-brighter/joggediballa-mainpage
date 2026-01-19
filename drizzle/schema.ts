@@ -10,7 +10,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["admin", "maintainer", "editor", "user"]).default("user").notNull(),
+  role: mysqlEnum("role", ["admin", "maintainer", "editor", "user", "visitor"]).default("visitor").notNull(),
   profilePictureUrl: text("profilePictureUrl"), // S3 URL for profile picture
   profilePictureKey: text("profilePictureKey"), // S3 Key for profile picture
   createdAt: timestamp("createdAt").defaultNow().notNull(),

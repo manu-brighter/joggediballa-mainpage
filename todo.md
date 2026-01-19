@@ -438,3 +438,74 @@
 ## Documentation Fix
 
 - [x] Correct upload directory path from /var/www/joggediballa/uploads to /var/www/joggediballa-mainpage/uploads in all documentation
+
+
+## Mobile UI & Dark Mode Fixes - January 2026 (Part 5)
+
+- [x] Event Form: Date/Time picker icons white in dark mode (currently black on black)
+- [x] Team Mobile: Edit/Delete/Move buttons visible on mobile
+- [x] Team Mobile: "+ Neues Mitglied" button below title (not beside)
+- [x] Event Form Mobile: Date/Time fields narrower (currently clipping)
+- [x] Gönnermitglieder: "+" button aligned right (not center)
+- [x] Gönnermitglieder: Sort options "Nach Vorname", "Nach Nachname" (not "Läuft bald ab")
+- [x] Gönnermitglieder: "+" button same height as sort dropdown
+- [x] Gönnermitglieder: Datepicker icon white in dark mode
+
+
+## Datepicker Icon Fix Verification - January 2026
+
+- [x] Fix datepicker/timepicker icons to be white in dark mode using CSS filter invert (color-scheme property does not work)
+
+
+## Contact Form Email Integration - January 2026
+
+- [x] Register SMTP ENV variables in server/_core/env.ts
+- [x] Install nodemailer package
+- [x] Implement email sending helper function
+- [x] Create tRPC mutation for contact form submission
+- [x] Update Kontakt.tsx to use tRPC mutation
+- [x] Write vitest test for email functionality
+- [x] Test email sending with Gmail SMTP
+
+
+## Contact Form Email Integration - January 2026
+
+- [x] Register SMTP ENV variables in server/_core/env.ts
+- [x] Install nodemailer package
+- [x] Implement email sending helper function
+- [x] Create tRPC mutation for contact form submission
+- [x] Update Kontakt.tsx to use tRPC mutation
+- [x] Write vitest test for email functionality
+- [x] Test email sending with Gmail SMTP
+
+
+## GitHub Integration & Dienstleistungen Updates - January 2026
+
+- [x] Pull user's GitHub changes and merge with local
+- [x] Clean up repository structure (remove duplicates, fix file locations)
+- [x] Update Vermietung card text in Dienstleistungen page
+- [x] Add profile image support for persons in Dienstleistungen
+- [x] Test with jan.JPEG and manu.JPEG images
+- [x] Commit and push all changes to GitHub
+
+
+## GitHub Repository Cleanup - January 2026
+
+- [x] Inspect GitHub repository root for misplaced files
+- [x] Remove duplicate Team.tsx and Events.tsx from root
+- [x] Remove duplicate pages folder from root
+- [x] Verify all files are in correct locations (client/src/)
+- [x] Commit and push cleanup to GitHub
+
+
+## Visitor Role System with Admin Approval - January 2026
+
+- [x] Update user role enum in schema to include 'visitor'
+- [x] Set default role to 'visitor' for new Google OAuth registrations
+- [x] Create admin dashboard page for user management
+- [x] Add "Promote to Member" functionality in admin dashboard
+- [x] Add email notification when new visitor registers (to joggediballa@gmail.com)
+- [x] Add visitor banner to frontend ("Account wartet auf Freischaltung")
+- [x] Restrict visitor access to public pages only (visitor has same access as non-logged-in)
+- [ ] Write tests for visitor role and promotion flow
+- [ ] Commit and push to GitHub

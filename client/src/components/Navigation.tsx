@@ -93,10 +93,11 @@ export function Navigation() {
   const isAdminOrMaintainer = isAuthenticated && user && ["admin", "maintainer"].includes(user.role);
 
   return (
-    <nav className={cn(
-      "sticky top-0 z-40 w-full border-b backdrop-blur-lg supports-[backdrop-filter]:bg-background/60",
-      "bg-background/80 dark:bg-background/70 dark:border-primary/10"
-    )}>
+    <>
+      <nav className={cn(
+        "sticky top-0 z-40 w-full border-b backdrop-blur-lg supports-[backdrop-filter]:bg-background/60",
+        "bg-background/80 dark:bg-background/70 dark:border-primary/10"
+      )}>
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2 group">
@@ -264,6 +265,7 @@ export function Navigation() {
                 <Button asChild variant="default" size="sm" className="btn-animate">
                   <a href={getLoginUrl()} className="flex items-center gap-2">
                     <LogIn className="h-4 w-4" />
+                    <span className="hidden sm:inline">Anmelden</span>
                   </a>
                 </Button>
               )}
@@ -350,5 +352,20 @@ export function Navigation() {
         </div>
       )}
     </nav>
+      
+      {/* Visitor Banner */}
+      {isAuthenticated && user?.role === "visitor" && (
+        <div className="bg-orange-500/10 border-b border-orange-500/20 py-3">
+          <div className="container">
+            <div className="flex items-center justify-center gap-2 text-sm">
+              <Lock className="h-4 w-4 text-orange-500" />
+              <span className="text-orange-700 dark:text-orange-300">
+                Dein Account wartet auf Freischaltung. Du hast derzeit eingeschränkten Zugriff.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

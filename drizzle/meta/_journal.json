@@ -43,6 +43,13 @@
       "when": 1768593191568,
       "tag": "0005_vengeful_microchip",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1768825113903,
+      "tag": "0006_material_fallen_one",
+      "breakpoints": true
     }
   ]
 }

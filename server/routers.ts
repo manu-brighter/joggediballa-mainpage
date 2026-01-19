@@ -514,6 +514,27 @@ export const appRouter = router({
   }),
 
   // ============================================
+  // ADMIN - USER MANAGEMENT
+  // ============================================
+  admin: router({
+    getAllUsers: adminProcedure
+      .query(async () => {
+        const users = await db.getAllUsers();
+        return users;
+      }),
+    
+    promoteUser: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        role: z.enum(["admin", "maintainer", "editor", "user", "visitor"])
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateUserRole(input.userId, input.role);
+        return { success: true };
+      }),
+  }),
+
+  // ============================================
   // USER PROFILE
   // ============================================
   profile: router({

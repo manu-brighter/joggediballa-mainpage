@@ -45,7 +45,7 @@ export default function Contact() {
     submitMutation.mutate({
       name,
       email,
-      subject: subject || "Kein Betreff",
+      subject: subject || "Keine Betreff",
       message,
     });
   };

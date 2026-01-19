@@ -344,7 +344,7 @@ export default function Events() {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Titel <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="title">Titel *</Label>
                   <Input
                     id="title"
                     value={eventForm.title}
@@ -354,7 +354,7 @@ export default function Events() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="date">Datum <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="date">Datum *</Label>
                     <Input
                       id="date"
                       type="date"
@@ -363,7 +363,7 @@ export default function Events() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="time">Uhrzeit</Label>
+                    <Label htmlFor="time">Uhrzeit (optional)</Label>
                     <Input
                       id="time"
                       type="time"
@@ -688,7 +688,7 @@ export default function Events() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-title">Titel <span className="text-destructive">*</span></Label>
+              <Label htmlFor="edit-title">Titel *</Label>
               <Input
                 id="edit-title"
                 value={eventForm.title}
@@ -698,7 +698,7 @@ export default function Events() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-date">Datum <span className="text-destructive">*</span></Label>
+                <Label htmlFor="edit-date">Datum *</Label>
                 <Input
                   id="edit-date"
                   type="date"
@@ -707,7 +707,7 @@ export default function Events() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-time">Uhrzeit</Label>
+                <Label htmlFor="edit-time">Uhrzeit (optional)</Label>
                 <Input
                   id="edit-time"
                   type="time"
