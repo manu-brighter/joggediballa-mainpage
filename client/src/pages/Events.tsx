@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +39,8 @@ import {
   Upload,
   X,
   Loader2,
-  Star
+  Star,
+  Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -323,6 +325,21 @@ export default function Events() {
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Erlebe unsere unvergesslichen Momente und entdecke die Highlights unserer Events.
         </p>
+      </MotionDiv>
+
+      {/* Datenschutz-Hinweis */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="max-w-4xl mx-auto"
+      >
+        <Alert className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-sm text-muted-foreground ml-2">
+            <strong className="text-foreground">Fotografie an Veranstaltungen:</strong> An unseren Veranstaltungen werden Fotos und Videos erstellt, welche für unsere Website, Social Media sowie Vereinskommunikation verwendet werden. Die Veröffentlichung erfolgt auf Grundlage unseres berechtigten Interesses an der Öffentlichkeitsarbeit. Personen, die nicht fotografiert werden möchten oder mit einer Veröffentlichung nicht einverstanden sind, können dies jederzeit unserem Team mitteilen oder eine nachträgliche Entfernung verlangen.
+          </AlertDescription>
+        </Alert>
       </MotionDiv>
 
       {/* Add Event Button */}

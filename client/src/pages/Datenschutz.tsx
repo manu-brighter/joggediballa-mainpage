@@ -92,7 +92,25 @@ export default function Datenschutz() {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">7. Bildrechte</h3>
+              <h3 className="font-semibold mb-2">7. Fotografie an Veranstaltungen</h3>
+              <p className="text-muted-foreground">
+                An unseren Veranstaltungen werden Fotos und Videos erstellt, welche
+                für unsere Website, Social Media sowie Vereinskommunikation verwendet
+                werden. Die Veröffentlichung erfolgt auf Grundlage unseres berechtigten
+                Interesses an der Öffentlichkeitsarbeit gemäss Art. 6 Abs. 1 lit. f DSGVO
+                bzw. Art. 13 DSG (Schweiz).
+              </p>
+              <p className="text-muted-foreground mt-2">
+                Personen, die nicht fotografiert werden möchten oder mit einer
+                Veröffentlichung nicht einverstanden sind, können dies jederzeit unserem
+                Team vor Ort mitteilen oder nachträglich eine Entfernung der Aufnahmen
+                verlangen. Wenden Sie sich hierzu bitte an die oben angegebene
+                Kontaktadresse.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-2">8. Bildrechte</h3>
               <p className="text-muted-foreground">
                 Eigene Fotos auf dieser Website sind urheberrechtlich geschützt
                 und © Manuel Heller. Die Verwendung von Bildern Dritter erfolgt
