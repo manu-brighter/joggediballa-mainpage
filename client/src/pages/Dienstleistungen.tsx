@@ -6,6 +6,11 @@ import { motion } from "framer-motion";
 
 const MotionDiv = motion.div;
 
+type ExternalLinkItem = {
+  href: string;
+  label: string;
+};
+
 interface ServiceCardProps {
   icon: React.ReactNode;
   title: string;
@@ -16,12 +21,19 @@ interface ServiceCardProps {
     profileImage?: string;
   };
   image?: string;
-  externalLink?: string;
-  externalLinkDescription?: string;
+  externalLinks?: ExternalLinkItem[];
   delay?: number;
 }
 
-function ServiceCard({ icon, title, description, person, image, externalLink, externalLinkDescription, delay = 0 }: ServiceCardProps) {
+function ServiceCard({
+  icon,
+  title,
+  description,
+  person,
+  image,
+  externalLinks,
+  delay = 0,
+}: ServiceCardProps) {
   return (
     <MotionDiv
       initial={{ opacity: 0, y: 20 }}
@@ -67,23 +79,25 @@ function ServiceCard({ icon, title, description, person, image, externalLink, ex
               </div>
             </div>
           )}
-          
-          <div className="flex flex-wrap gap-2">
-            {externalLink && externalLinkDescription && (
-              <Button asChild variant="outline" size="sm" className="gap-2">
-                <a href={externalLink} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4" />
-                  {externalLinkDescription}
-                </a>
-              </Button>
-            )}
-            {/*<Button asChild variant="default" size="sm" className="gap-2">*/}
-            {/*  <Link href="/contact">*/}
-            {/*    <Mail className="h-4 w-4" />*/}
-            {/*    Anfragen*/}
-            {/*  </Link>*/}
-            {/*</Button>*/}
-          </div>
+
+          {!!externalLinks?.length && (
+            <div className="flex flex-wrap gap-2">
+              {externalLinks.map((linkItem) => (
+                <Button
+                  key={`${title}-${linkItem.href}`}
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <a href={linkItem.href} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                    {linkItem.label}
+                  </a>
+                </Button>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </MotionDiv>
@@ -107,8 +121,10 @@ export default function Dienstleistungen() {
         name: "Jan",
         profileImage: "/images/jan_dienstleistungen_small.jpeg",
       },
-      externalLink: "https://www.instagram.com/dj_jayjay2001",
-      externalLinkDescription: 'Instagram',
+      externalLinks: [
+        { href: "https://www.instagram.com/dj_jayjay2001", label: "Instagram" },
+        { href: "https://www.youtube.com/@djjayjay2001", label: "Youtube" }
+      ],
       image: "/images/dj.JPEG",
     },
     {
@@ -120,8 +136,9 @@ export default function Dienstleistungen() {
         name: "Manu",
         profileImage: "/images/manu_dienstleistungen_small.jpg",
       },
-      externalLink: "https://manuelheller.myportfolio.com",
-      externalLinkDescription: 'Portfolio ansehen',
+      externalLinks: [
+        { href: "https://manuelheller.myportfolio.com", label: "Portfolio ansehen" },
+      ],
       image: "/images/fotografie.JPEG",
     },
   ];
