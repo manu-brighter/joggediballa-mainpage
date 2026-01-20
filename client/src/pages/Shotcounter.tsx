@@ -77,7 +77,7 @@ function InlineScoreEdit({ value, onSave, disabled, isBeamerMode }: InlineEditPr
     return (
       <span className={cn(
         "font-black tabular-nums text-primary",
-        isBeamerMode ? "text-5xl md:text-8xl" : "text-3xl md:text-4xl"
+        isBeamerMode ? "text-5xl md:text-8xl" : "text-xl md:text-3xl lg:text-4xl"
       )}>
         {value}
       </span>
@@ -93,7 +93,7 @@ function InlineScoreEdit({ value, onSave, disabled, isBeamerMode }: InlineEditPr
         onChange={(e) => setEditValue(e.target.value)}
         onBlur={handleSave}
         onKeyDown={handleKeyDown}
-        className="w-24 text-3xl md:text-4xl font-black text-center h-14 tabular-nums"
+        className="w-16 md:w-24 text-xl md:text-3xl lg:text-4xl font-black text-center h-10 md:h-14 tabular-nums"
       />
     );
   }
@@ -101,7 +101,7 @@ function InlineScoreEdit({ value, onSave, disabled, isBeamerMode }: InlineEditPr
   return (
     <button
       onClick={() => setIsEditing(true)}
-      className="text-3xl md:text-4xl font-black tabular-nums text-primary hover:text-primary/80 transition-colors cursor-pointer hover:bg-primary/10 px-3 py-1 rounded-lg"
+      className="text-xl md:text-3xl lg:text-4xl font-black tabular-nums text-primary hover:text-primary/80 transition-colors cursor-pointer hover:bg-primary/10 px-2 md:px-3 py-1 rounded-lg"
       title="Klicken zum Bearbeiten"
     >
       {value}
@@ -131,7 +131,14 @@ export default function Shotcounter() {
   const isBeamerModeEnabled = beamerModeFeature?.isEnabled ?? true; // Default to true if not set
 
   const utils = trpc.useUtils();
-  const { data: teams = [], isLoading } = trpc.shotcounter.getTeams.useQuery({ year: currentYear });
+  const { data: teams = [], isLoading } = trpc.shotcounter.getTeams.useQuery(
+    { year: currentYear },
+    {
+      // Real-time updates: Poll every 2 seconds for instant synchronization
+      refetchInterval: 2000,
+      refetchIntervalInBackground: true,
+    }
+  );
   
   const createTeamMutation = trpc.shotcounter.createTeam.useMutation({
     onSuccess: () => {
@@ -613,50 +620,52 @@ export default function Shotcounter() {
                         : "bg-card border-border hover:border-muted-foreground/30"
                     )}
                   >
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-2 md:gap-4">
                       {/* Rank & Name */}
-                      <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                      <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
                         <div className={cn(
-                          "flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-black text-lg",
+                          "flex-shrink-0 w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center font-black text-sm md:text-lg",
                           index === 0 
                             ? "bg-yellow-500/20 text-yellow-500" 
                             : "bg-muted text-muted-foreground"
                         )}>
-                          {index === 0 ? <Crown className="h-5 w-5 md:h-6 md:w-6" /> : index + 1}
+                          {index === 0 ? <Crown className="h-4 w-4 md:h-6 md:w-6" /> : index + 1}
                         </div>
-                        <span className="font-bold text-lg md:text-xl truncate">{team.name}</span>
+                        <span className="font-bold text-base md:text-xl truncate">{team.name}</span>
                       </div>
                       
                       {/* Score & Actions */}
-                      <div className="flex items-center gap-2 md:gap-4">
-                        <InlineScoreEdit
-                          value={team.score}
-                          onSave={(newScore) => handleSetScore(team.id, newScore)}
-                          disabled={!isMaintainerOrAdmin}
-                        />
+                      <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
+                        <div className="flex-shrink-0">
+                          <InlineScoreEdit
+                            value={team.score}
+                            onSave={(newScore) => handleSetScore(team.id, newScore)}
+                            disabled={!isMaintainerOrAdmin}
+                          />
+                        </div>
                         
                         {isMaintainerOrAdmin && (
-                          <div className="flex items-center gap-1 md:gap-2">
+                          <div className="flex items-center gap-0.5 md:gap-2">
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-9 w-9 md:h-10 md:w-10"
+                              className="h-8 w-8 md:h-10 md:w-10"
                               onClick={() => handleUpdateScore(team.id, -1)}
                             >
-                              <Minus className="h-4 w-4" />
+                              <Minus className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-9 w-9 md:h-10 md:w-10"
+                              className="h-8 w-8 md:h-10 md:w-10"
                               onClick={() => handleUpdateScore(team.id, 1)}
                             >
-                              <Plus className="h-4 w-4" />
+                              <Plus className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                             <Button
                               variant="secondary"
                               size="sm"
-                              className="h-9 md:h-10 px-3"
+                              className="h-8 md:h-10 px-2 md:px-3 text-xs md:text-sm"
                               onClick={() => handleUpdateScore(team.id, 5)}
                             >
                               +5
@@ -664,10 +673,10 @@ export default function Shotcounter() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 md:h-10 md:w-10 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              className="h-8 w-8 md:h-10 md:w-10 text-destructive hover:text-destructive hover:bg-destructive/10"
                               onClick={() => handleDeleteTeam(team)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                           </div>
                         )}
