@@ -17,10 +17,11 @@ interface ServiceCardProps {
   };
   image?: string;
   externalLink?: string;
+  externalLinkDescription?: string;
   delay?: number;
 }
 
-function ServiceCard({ icon, title, description, person, image, externalLink, delay = 0 }: ServiceCardProps) {
+function ServiceCard({ icon, title, description, person, image, externalLink, externalLinkDescription, delay = 0 }: ServiceCardProps) {
   return (
     <MotionDiv
       initial={{ opacity: 0, y: 20 }}
@@ -68,11 +69,11 @@ function ServiceCard({ icon, title, description, person, image, externalLink, de
           )}
           
           <div className="flex flex-wrap gap-2">
-            {externalLink && (
+            {externalLink && externalLinkDescription && (
               <Button asChild variant="outline" size="sm" className="gap-2">
                 <a href={externalLink} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4" />
-                  Portfolio ansehen
+                  {externalLinkDescription}
                 </a>
               </Button>
             )}
@@ -104,8 +105,10 @@ export default function Dienstleistungen() {
       person: {
         role: "DJ & Revisor",
         name: "Jan",
-        profileImage: "/images/jan.JPEG",
+        profileImage: "/images/jan_dienstleistungen_small.jpeg",
       },
+      externalLink: "https://www.instagram.com/dj_jayjay2001",
+      externalLinkDescription: 'Instagram',
       image: "/images/dj.JPEG",
     },
     {
@@ -115,9 +118,10 @@ export default function Dienstleistungen() {
       person: {
         role: "Social Media & Vize",
         name: "Manu",
-        profileImage: "/images/manu.JPEG",
+        profileImage: "/images/manu_dienstleistungen_small.jpg",
       },
       externalLink: "https://manuelheller.myportfolio.com",
+      externalLinkDescription: 'Portfolio ansehen',
       image: "/images/fotografie.JPEG",
     },
   ];
