@@ -182,13 +182,13 @@ router.post("/event-photo", async (req: Request, res: Response) => {
         const originalKey = `events/original/${photoId}.${ext}`;
         const { url: originalUrl, key: originalStorageKey } = await storagePut(originalKey, fileBuffer, fileMimeType);
 
-        // Generate compressed version (~2MB max, good quality)
+        // Generate compressed version (~1MB max, good quality)
         const compressedBuffer = await sharp(fileBuffer)
-          .resize(2048, 2048, { // Max 2048px on longest side
+          .resize(1024, 1024, { // Max 1024px on longest side
             fit: 'inside',
             withoutEnlargement: true
           })
-          .jpeg({ quality: 85 }) // High quality JPEG
+          .jpeg({ quality: 65 }) // High quality JPEG
           .toBuffer();
 
         // Upload compressed version
