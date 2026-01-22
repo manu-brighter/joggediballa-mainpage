@@ -35,6 +35,7 @@ export const shotcounterTeams = mysqlTable("shotcounter_teams", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdBy: int("createdBy").references(() => users.id),
+  deletedAt: timestamp("deletedAt"),
 });
 
 export type ShotcounterTeam = typeof shotcounterTeams.$inferSelect;
@@ -73,6 +74,7 @@ export const sponsors = mysqlTable("sponsors", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdBy: int("createdBy").references(() => users.id),
+  deletedAt: timestamp("deletedAt"),
 });
 
 export type Sponsor = typeof sponsors.$inferSelect;
@@ -92,6 +94,7 @@ export const events = mysqlTable("events", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdBy: int("createdBy").references(() => users.id),
+  deletedAt: timestamp("deletedAt"),
 });
 
 export type Event = typeof events.$inferSelect;
@@ -194,6 +197,7 @@ export const goennermitglieder = mysqlTable("goennermitglieder", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdBy: int("createdBy").references(() => users.id),
+  deletedAt: timestamp("deletedAt"),
 });
 
 export type Goennermitglied = typeof goennermitglieder.$inferSelect;

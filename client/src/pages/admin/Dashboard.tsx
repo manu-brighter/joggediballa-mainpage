@@ -732,6 +732,7 @@ export default function AdminDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-xs">Zeitpunkt</TableHead>
+                      <TableHead className="text-xs">Team</TableHead>
                       <TableHead className="text-xs">Aktion</TableHead>
                       <TableHead className="text-xs">Betrag</TableHead>
                       <TableHead className="text-xs">Score</TableHead>
@@ -743,6 +744,9 @@ export default function AdminDashboard() {
                       <TableRow key={log.id}>
                         <TableCell className="text-xs whitespace-nowrap py-2">
                           {new Date(log.timestamp).toLocaleString("de-DE")}
+                        </TableCell>
+                        <TableCell className="text-xs py-2 font-medium">
+                          {log.teamName || "-"}
                         </TableCell>
                         <TableCell className="text-xs py-2">
                           <span className="capitalize">{log.action.replace("_", " ")}</span>

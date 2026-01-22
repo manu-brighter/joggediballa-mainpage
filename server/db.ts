@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lt } from "drizzle-orm";
+import { eq, desc, and, gte, lt, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -149,7 +149,10 @@ export async function getShotcounterTeamsByYear(year: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(shotcounterTeams)
-    .where(eq(shotcounterTeams.year, year))
+    .where(and(
+      eq(shotcounterTeams.year, year),
+      isNull(shotcounterTeams.deletedAt)
+    ))
     .orderBy(desc(shotcounterTeams.score));
 }
 
@@ -171,7 +174,7 @@ export async function updateShotcounterScore(teamId: number, newScore: number) {
 export async function deleteShotcounterTeam(teamId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.delete(shotcounterTeams).where(eq(shotcounterTeams.id, teamId));
+  await db.update(shotcounterTeams).set({ deletedAt: new Date() }).where(eq(shotcounterTeams.id, teamId));
 }
 
 export async function resetShotcounterForYear(year: number) {
