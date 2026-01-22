@@ -298,7 +298,7 @@ export default function Goennermitglieder() {
     setViewDialogOpen(true);
   };
 
-  const isMaintainerOrAdmin = user && ["admin", "maintainer"].includes(user.role);
+  const isMaintainerOrAdmin = !!(user && ["admin", "maintainer"].includes(user.role));
 
   // Sort and filter members
   const { activeMembers, expiredMembers } = useMemo(() => {
