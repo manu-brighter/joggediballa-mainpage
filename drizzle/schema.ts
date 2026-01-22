@@ -74,7 +74,6 @@ export const sponsors = mysqlTable("sponsors", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdBy: int("createdBy").references(() => users.id),
-  deletedAt: timestamp("deletedAt"),
 });
 
 export type Sponsor = typeof sponsors.$inferSelect;
