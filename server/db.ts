@@ -149,10 +149,7 @@ export async function getShotcounterTeamsByYear(year: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(shotcounterTeams)
-    .where(and(
-      eq(shotcounterTeams.year, year),
-      isNull(shotcounterTeams.deletedAt)
-    ))
+    .where(and(eq(shotcounterTeams.year, year), isNull(shotcounterTeams.deletedAt)))
     .orderBy(desc(shotcounterTeams.score));
 }
 
