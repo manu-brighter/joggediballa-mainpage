@@ -93,7 +93,6 @@ export const events = mysqlTable("events", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdBy: int("createdBy").references(() => users.id),
-  deletedAt: timestamp("deletedAt"),
 });
 
 export type Event = typeof events.$inferSelect;
@@ -196,7 +195,6 @@ export const goennermitglieder = mysqlTable("goennermitglieder", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdBy: int("createdBy").references(() => users.id),
-  deletedAt: timestamp("deletedAt"),
 });
 
 export type Goennermitglied = typeof goennermitglieder.$inferSelect;
