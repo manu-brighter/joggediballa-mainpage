@@ -4,14 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Link, useLocation } from "wouter";
 import { Calendar, Trophy, Users, Heart, ArrowRight, Instagram, Sparkles, Gift, Twitch } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTheme } from "@/components/theme-provider";
 
 const MotionDiv = motion.div;
 
 export default function Home() {
   const { data: events = [] } = trpc.events.list.useQuery();
   const [, navigate] = useLocation();
+  const { theme, resolvedTheme } = useTheme();
   
   const nextEvent = events.find((event) => new Date(event.eventDate) > new Date());
+
+  // Determine which logo to show based on theme
+  const isDark = resolvedTheme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const logoSrc = isDark ? "/JoggediBalla-Logo.PNG" : "/Jogge_Di_Balla_Final_Transparent.png";
 
   return (
     <div className="space-y-0">
@@ -19,6 +25,15 @@ export default function Home() {
       <section className="relative min-h-[85vh] flex items-center overflow-hidden pt-20 md:pt-0">
         {/* Animated Background */}
         <div className="absolute inset-0 hero-gradient" />
+        {/* Pattern Overlay - only over gradient */}
+        <div 
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" 
+          style={{
+            backgroundImage: 'url(/pattern-overlay.png)',
+            backgroundRepeat: 'repeat',
+            backgroundSize: '512px 512px'
+          }}
+        />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.55_0.14_195_/_0.15),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,oklch(0.68_0.18_18_/_0.1),transparent_50%)]" />
         
@@ -81,10 +96,10 @@ export default function Home() {
                 {/* Glow effect behind logo */}
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl scale-75" />
                 <img
-                  src="/Jogge_Di_Balla_Final_Transparent.png"
+                  src={logoSrc}
                   loading="eager"
                   alt="Jogge di Balla Logo"
-                  className="relative w-48 sm:w-64 md:w-80 lg:w-96 drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                  className="relative w-56 sm:w-72 md:w-96 lg:w-[28rem] xl:w-[32rem] drop-shadow-2xl hover:scale-105 transition-transform duration-500"
                 />
               </div>
             </MotionDiv>

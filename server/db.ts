@@ -216,9 +216,28 @@ export async function getAuditLogsByTeam(teamId: number) {
 export async function getAllAuditLogs(limit: number = 100) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(shotcounterAuditLog)
+  
+  const logs = await db
+    .select({
+      id: shotcounterAuditLog.id,
+      teamId: shotcounterAuditLog.teamId,
+      teamName: shotcounterTeams.name,
+      action: shotcounterAuditLog.action,
+      amount: shotcounterAuditLog.amount,
+      previousScore: shotcounterAuditLog.previousScore,
+      newScore: shotcounterAuditLog.newScore,
+      performedBy: shotcounterAuditLog.performedBy,
+      performedByName: shotcounterAuditLog.performedByName,
+      timestamp: shotcounterAuditLog.timestamp,
+      note: shotcounterAuditLog.note,
+    })
+    .from(shotcounterAuditLog)
+    .leftJoin(shotcounterTeams, eq(shotcounterAuditLog.teamId, shotcounterTeams.id))
     .orderBy(desc(shotcounterAuditLog.timestamp))
     .limit(limit);
+    
+  return logs;
+}
 }
 
 // ============================================

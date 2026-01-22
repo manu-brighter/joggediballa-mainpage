@@ -714,7 +714,7 @@ export default function AdminDashboard() {
       >
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Audit Log</CardTitle>
+            <CardTitle className="text-lg">Shotcounter Audit Log</CardTitle>
             <CardDescription className="text-sm">Letzte 50 Aktionen im Shotcounter</CardDescription>
           </CardHeader>
           <CardContent>

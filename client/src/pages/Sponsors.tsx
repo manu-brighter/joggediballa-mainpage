@@ -1,8 +1,7 @@
-import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Heart, Plus, Trash2, ExternalLink, Upload, Image, X, Loader2, Star, Crown, Mail } from "lucide-react";
+import { Heart, Gift, Trophy, ArrowRight, Plus, Trash2, ExternalLink, Upload, Image, X, Loader2, Star, Crown, Mail } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -34,6 +33,7 @@ const MotionDiv = motion.div;
 
 export default function Sponsors() {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSponsor, setSelectedSponsor] = useState<{ id: number; name: string } | null>(null);
@@ -454,6 +454,55 @@ export default function Sponsors() {
                       Social Media Shoutout
                     </li>
                     <li className="flex items-start gap-2">
+
+      {/* Werde Gönnermitglied Section */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+        className="max-w-3xl mx-auto mt-20"
+      >
+        <Card className="border-2 border-primary/30 overflow-hidden">
+          <CardHeader className="text-center pb-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Gift className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl md:text-3xl">Werde Gönnermitglied!</CardTitle>
+            <CardDescription className="text-lg">
+              Unterstütze Jogge di Balla und profitiere von exklusiven Vorteilen
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-6">
+            <div className="inline-block px-6 py-3 rounded-full bg-primary/10 border border-primary/20">
+              <span className="text-3xl font-bold text-primary">CHF 20.-</span>
+              <span className="text-muted-foreground ml-2">pro Jahr</span>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4 text-sm">
+              <div className="p-4 rounded-lg bg-muted/50">
+                <Gift className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="font-medium">Exklusive Giveaways</p>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <Trophy className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="font-medium">Reduzierte Preise</p>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <Heart className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="font-medium">Verein unterstützen</p>
+              </div>
+            </div>
+            <Button 
+              size="lg" 
+              className="btn-animate"
+              onClick={() => navigate("/contact")}
+            >
+              Jetzt Gönner werden, schreib uns!
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </CardContent>
+        </Card>
+      </MotionDiv>
                       <span className="text-primary">✓</span>
                       Erwähnung und Werbung an unseren Events
                     </li>
