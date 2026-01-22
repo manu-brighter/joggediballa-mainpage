@@ -914,24 +914,24 @@ export default function Events() {
       {/* Photo Management Dialog */}
       <Dialog open={photoManagementOpen} onOpenChange={setPhotoManagementOpen}>
         <DialogContent className="w-[90vw] h-[90vh] !max-w-[90vw] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Fotos verwalten</DialogTitle>
-            <DialogDescription>
-              Wähle ein Thumbnail oder lösche Fotos für dieses Event.
-            </DialogDescription>
-          </DialogHeader>
+          <DialogHeader className="top-0 bg-background mb-8 pb-8 border-b border-muted/20">
+             <DialogTitle>Fotos verwalten</DialogTitle>
+             <DialogDescription>
+               Wähle ein Thumbnail oder lösche Fotos für dieses Event.
+             </DialogDescription>
+           </DialogHeader>
           {(() => {
-            const eventPhotos = photoManagementEventId
-              ? allPhotos.filter((p) => p.eventId === photoManagementEventId)
-              : [];
-            const event = events.find((e) => e.id === photoManagementEventId);
-            
-            return (
+             const eventPhotos = photoManagementEventId
+               ? allPhotos.filter((p) => p.eventId === photoManagementEventId)
+               : [];
+             const event = events.find((e) => e.id === photoManagementEventId);
+
+             return (
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"} vorhanden
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                 <p className="text-sm text-muted-foreground">
+                   {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"} vorhanden
+                 </p>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                   {eventPhotos.map((photo) => (
                     <div
                       key={photo.id}
