@@ -28,7 +28,7 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { Plus, Minus, Trash2, Maximize2, X, Trophy, Crown, Timer, Sparkles, Settings2 } from "lucide-react";
 import { useBeamerMode } from "@/App";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const MotionDiv = motion.div;
@@ -383,9 +383,8 @@ export default function Shotcounter() {
           </div>
 
           {/* Teams */}
-          <LayoutGroup>
-            <div className="space-y-1 w-full max-w-5xl mx-auto pb-8">
-              <AnimatePresence mode="popLayout">
+          <div className="space-y-1 w-full max-w-5xl mx-auto pb-8">
+            <AnimatePresence mode="popLayout">
                 {teams.map((team, index) => (
                   <MotionDiv
                     key={team.id}
@@ -441,9 +440,8 @@ export default function Shotcounter() {
                     </div>
                   </MotionDiv>
                 ))}
-              </AnimatePresence>
-            </div>
-          </LayoutGroup>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     );
@@ -597,9 +595,8 @@ export default function Shotcounter() {
             </CardContent>
           </Card>
         ) : (
-          <LayoutGroup>
-            <div className="space-y-3">
-              <AnimatePresence mode="popLayout">
+          <div className="space-y-3">
+            <AnimatePresence mode="popLayout">
                 {teams.map((team, index) => (
                   <MotionDiv
                     key={team.id}
@@ -684,9 +681,8 @@ export default function Shotcounter() {
                     </div>
                   </MotionDiv>
                 ))}
-              </AnimatePresence>
-            </div>
-          </LayoutGroup>
+            </AnimatePresence>
+          </div>
         )}
       </div>
 

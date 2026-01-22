@@ -282,15 +282,15 @@ export default function AdminDashboard() {
         >
           <Card className="h-full overflow-hidden w-full">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Users className="h-5 w-5 text-primary shrink-0" />
                     <span className="truncate">Benutzerverwaltung</span>
                   </CardTitle>
                   <CardDescription className="text-sm">Verwalte Benutzerrollen und Zugriffsrechte</CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   <Button asChild variant="outline" size="sm">
                     <a href="/admin/activity">Activity Log</a>
                   </Button>
