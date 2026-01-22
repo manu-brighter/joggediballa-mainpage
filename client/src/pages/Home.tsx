@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Link, useLocation } from "wouter";
 import { Calendar, Trophy, Users, Heart, ArrowRight, Instagram, Sparkles, Gift, Twitch } from "lucide-react";
 import { motion } from "framer-motion";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const MotionDiv = motion.div;
 
