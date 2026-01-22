@@ -425,7 +425,7 @@ export default function Sponsors() {
                 <div className="bg-background/50 backdrop-blur-sm rounded-xl p-6 border border-border hover:border-primary/30 transition-all">
                   <div className="flex items-center gap-2 mb-4">
                     <Star className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-bold">Standard Paket | CHF 80.-</h3>
+                    <h3 className="text-lg font-bold">Standard Paket | CHF 50.-</h3>
                     <span className="text-muted-foreground sl-2">pro Jahr</span>
                   </div>
                   <ul className="text-sm text-muted-foreground space-y-2 text-left">
@@ -443,7 +443,7 @@ export default function Sponsors() {
                   </div>
                   <div className="flex items-center gap-2 mb-4">
                     <Crown className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-bold">Premium Paket | CHF 140.-</h3>
+                    <h3 className="text-lg font-bold">Premium Paket | CHF 100.-</h3>
                     <span className="text-muted-foreground sl-2">pro Jahr</span>
                   </div>
                   <ul className="text-sm text-muted-foreground space-y-2 text-left">
@@ -479,7 +479,7 @@ export default function Sponsors() {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.3 }}
         className="max-w-3xl mx-auto mt-20"
       >
         <Card className="border-2 border-primary/30 overflow-hidden">
