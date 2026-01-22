@@ -238,7 +238,6 @@ export async function getAllAuditLogs(limit: number = 100) {
     
   return logs;
 }
-}
 
 // ============================================
 // SPONSORS
