@@ -27,11 +27,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { 
-  Calendar, 
-  MapPin, 
-  Image as ImageIcon, 
-  ChevronLeft, 
+import {
+  Calendar,
+  MapPin,
+  Image as ImageIcon,
+  ChevronLeft,
   ChevronRight,
   Plus,
   Pencil,
@@ -414,8 +414,6 @@ export default function Events() {
 
       {/* Events Grid */}
       <section id="event-cards" className="space-y-6">
-        <h2 className="text-3xl font-bold">Unsere Events</h2>
-        
         {eventsLoading ? (
           <div className="grid md:grid-cols-2 gap-6">
             {[1, 2].map((i) => (
@@ -650,15 +648,7 @@ export default function Events() {
       {/* All Photos Gallery */}
       {allPhotos.length > 0 && (
         <section className="space-y-6">
-          <div>
-            <h2 className="text-3xl font-bold">Alle Fotos</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Fotos © Manuel Heller | Für Anfragen:{" "}
-              <a href="/contact" className="text-primary hover:underline">
-                Kontakt
-              </a>
-            </p>
-          </div>
+          <h2 className="text-3xl font-bold">Alle Fotos</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {allPhotos.map((photo, index) => (
               <MotionDiv

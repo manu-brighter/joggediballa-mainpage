@@ -601,7 +601,7 @@ export default function Goennermitglieder() {
       {/* Active Members */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <CheckCircle className="h-5 w-5 text-green-500" />
+          <CheckCircle className="h-5 w-5 text-primary" />
           Aktive Mitglieder ({activeMembers.length})
         </h2>
         
