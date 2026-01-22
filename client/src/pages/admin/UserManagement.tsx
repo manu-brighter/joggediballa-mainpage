@@ -110,14 +110,14 @@ export default function UserManagement() {
             {members.map((user) => (
               <div
                 key={user.id}
-                className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-card gap-4"
               >
                 <div className="flex items-center gap-4">
                   {user.profilePictureUrl ? (
                     <img
                       src={user.profilePictureUrl}
                       alt={user.name || "User"}
-                      className="w-12 h-12 rounded-full object-cover"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0"
                     />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg">
@@ -138,13 +138,13 @@ export default function UserManagement() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                   <Select
                     value={user.role}
                     onValueChange={(value) => handleRoleChange(user.id, value as UserRole)}
                     disabled={changingRole === user.id}
                   >
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="w-full sm:w-[140px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -214,9 +214,9 @@ export default function UserManagement() {
                         {(user.name || "?").charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <div>
-                      <p className="font-medium">{user.displayName || user.name || "Unbekannt"}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{user.displayName || user.name || "Unbekannt"}</p>
+                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                       <p className="text-xs text-muted-foreground">
                         Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}
                       </p>
