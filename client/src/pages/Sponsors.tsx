@@ -456,13 +456,30 @@ export default function Sponsors() {
                       Social Media Shoutout
                     </li>
                     <li className="flex items-start gap-2">
+                      <span className="text-primary">✓</span>
+                      Erwähnung und Werbung an unseren Events
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <Button asChild size="lg" className="btn-animate gap-2">
+                <Link href="/contact">
+                  <Mail className="h-5 w-5" />
+                  Jetzt Kontakt aufnehmen
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </MotionDiv>
 
       {/* Werde Gönnermitglied Section */}
       <MotionDiv
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
+        transition={{ delay: 0.5 }}
         className="max-w-3xl mx-auto mt-20"
       >
         <Card className="border-2 border-primary/30 overflow-hidden">
@@ -494,31 +511,14 @@ export default function Sponsors() {
                 <p className="font-medium">Verein unterstützen</p>
               </div>
             </div>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="btn-animate"
               onClick={() => navigate("/contact")}
             >
               Jetzt Gönner werden, schreib uns!
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
-          </CardContent>
-        </Card>
-      </MotionDiv>
-                      <span className="text-primary">✓</span>
-                      Erwähnung und Werbung an unseren Events
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              
-              <Button asChild size="lg" className="btn-animate gap-2">
-                <Link href="/contact">
-                  <Mail className="h-5 w-5" />
-                  Jetzt Kontakt aufnehmen
-                </Link>
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </MotionDiv>
