@@ -264,7 +264,7 @@ export default function Events() {
         }
 
         if (file.size > 25 * 1024 * 1024) {
-          toast.error(`${file.name} ist zu groß (max. 25MB)`);
+          toast.error(`${file.name} ist zu gross (max. 25MB)`);
           continue;
         }
 

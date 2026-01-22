@@ -93,7 +93,7 @@ describe("goennermitglieder router", () => {
         caller.goennermitglieder.create({
           firstName: "Max",
           lastName: "Mustermann",
-          street: "Teststraße",
+          street: "Teststrasse",
           houseNumber: "1",
           zipCode: "12345",
           city: "Teststadt",
@@ -113,7 +113,7 @@ describe("goennermitglieder router", () => {
         const result = await caller.goennermitglieder.create({
           firstName: "Max",
           lastName: "Mustermann",
-          street: "Teststraße",
+          street: "Teststrasse",
           houseNumber: "1",
           zipCode: "12345",
           city: "Teststadt",
@@ -135,7 +135,7 @@ describe("goennermitglieder router", () => {
         caller.goennermitglieder.create({
           firstName: "",
           lastName: "Mustermann",
-          street: "Teststraße",
+          street: "Teststrasse",
           houseNumber: "1",
           zipCode: "12345",
           city: "Teststadt",
@@ -157,7 +157,7 @@ describe("goennermitglieder router", () => {
         await caller.goennermitglieder.create({
           firstName: "Test",
           lastName: "User",
-          street: "Teststraße",
+          street: "Teststrasse",
           houseNumber: "1",
           zipCode: "12345",
           city: "Teststadt",

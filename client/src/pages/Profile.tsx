@@ -101,7 +101,7 @@ export default function Profile() {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Das Bild darf maximal 5MB groß sein.");
+      toast.error("Das Bild darf maximal 5MB gross sein.");
       return;
     }
 

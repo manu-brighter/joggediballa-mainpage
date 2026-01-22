@@ -40,7 +40,7 @@
 - [x] Gewinner-Popup bei Jahreswechsel
 - [x] Manueller Reset (nur Admin)
 - [x] Audit-Log für alle Änderungen
-- [x] Beamer-Modus (Vollbild, große Schrift)
+- [x] Beamer-Modus (Vollbild, grosse Schrift)
 - [x] Shotcounter-Frontend-UI
 
 ## Phase 6: Admin-Dashboard
@@ -124,7 +124,7 @@
 ### Mobile UX
 - [x] Bessere Abstände und Skalierung
 - [x] Kleineres Logo
-- [x] Größere Tap-Targets für Buttons
+- [x] Grössere Tap-Targets für Buttons
 - [x] Footer kompakt und zentriert
 
 ### Profilbild-Upload

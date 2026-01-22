@@ -489,12 +489,12 @@ export default function Goennermitglieder() {
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="col-span-2 space-y-2">
-                      <Label htmlFor="street">Straße <span className="text-destructive">*</span></Label>
+                      <Label htmlFor="street">Strasse <span className="text-destructive">*</span></Label>
                       <Input
                         id="street"
                         value={formData.street}
                         onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                        placeholder="Musterstraße"
+                        placeholder="Musterstrasse"
                       />
                     </div>
                     <div className="space-y-2">

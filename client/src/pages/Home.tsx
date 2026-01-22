@@ -45,8 +45,8 @@ export default function Home() {
               </h1>
               
               <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0">
-                Event- und Kulturverein. Wir bringen Menschen zusammen – für
-                unvergessliche Momente, großartige Events und jede Menge Spaß!
+                Event- und Kulturverein. Wir bringen Menschen zusammen für
+                unvergessliche Momente, grossartige Events und jede Menge Spass!
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -246,7 +246,7 @@ export default function Home() {
               Atmosphäre, interessante Locations und unvergessliche Erlebnisse
               begeistern. Unsere Veranstaltungen sind kreativ und
               abwechslungsreich und bieten immer wieder neue Highlights für
-              alle, die etwas Außergewöhnliches suchen.
+              alle, die etwas Aussergewöhnliches suchen.
             </p>
             <Button 
               variant="outline" 

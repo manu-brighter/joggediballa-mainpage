@@ -81,7 +81,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
         
-        # Größere Uploads erlauben
+        # Grössere Uploads erlauben
         client_max_body_size 50M;
     }
 
@@ -135,7 +135,7 @@ pm2 restart joggediballa
 
 ### Speicherplatz
 
-Überwache den Speicherplatz regelmäßig:
+Überwache den Speicherplatz regelmässig:
 ```bash
 du -sh /var/www/joggediballa-mainpage/uploads/
 df -h
@@ -143,7 +143,7 @@ df -h
 
 ## Backup
 
-Sichere das Upload-Verzeichnis regelmäßig:
+Sichere das Upload-Verzeichnis regelmässig:
 ```bash
 # Beispiel: Tägliches Backup
 tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa-mainpage/uploads/
@@ -152,7 +152,7 @@ tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa-mainpage/u
 ## Sicherheitshinweise
 
 1. **Dateitypen einschränken:** Nur Bilder erlauben (bereits in Nginx konfiguriert)
-2. **Dateigröße begrenzen:** `client_max_body_size` in Nginx
+2. **Dateigrösse begrenzen:** `client_max_body_size` in Nginx
 3. **Validierung:** Die Upload-Endpunkte validieren den MIME-Type
 4. **Keine ausführbaren Dateien:** Nginx blockiert alle Nicht-Bild-Dateien
 

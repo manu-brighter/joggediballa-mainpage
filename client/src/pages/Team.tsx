@@ -187,7 +187,7 @@ export default function Team() {
 
     // Validate file size (25MB max)
     if (file.size > 25 * 1024 * 1024) {
-      toast.error("Datei zu groß. Maximal 25MB erlaubt.");
+      toast.error("Datei zu gross. Maximal 25MB erlaubt.");
       return;
     }
 

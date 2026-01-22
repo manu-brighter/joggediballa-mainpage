@@ -334,7 +334,7 @@ export default function Shotcounter() {
               className="fixed top-16 left-4 p-4 rounded-xl bg-card/90 backdrop-blur-lg border shadow-lg z-[10000] w-64"
             >
               <Label className="text-sm font-medium mb-3 block">
-                Zeilengröße: {beamerRowHeight}%
+                Zeilengrösse: {beamerRowHeight}%
               </Label>
               <div className="py-2">
                 <Slider
@@ -724,7 +724,7 @@ export default function Shotcounter() {
           </div>
           <DialogFooter>
             <Button onClick={() => setWinnerDialogOpen(false)} className="w-full">
-              Schließen
+              Schliessen
             </Button>
           </DialogFooter>
         </DialogContent>

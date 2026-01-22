@@ -92,7 +92,7 @@ export default function Sponsors() {
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Das Bild darf maximal 5MB groß sein.");
+      toast.error("Das Bild darf maximal 5MB gross sein.");
       return;
     }
 
@@ -187,7 +187,7 @@ export default function Sponsors() {
           <span className="gradient-text">Unsere Sponsoren</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Ein großes Dankeschön an alle, die uns unterstützen und unsere Events möglich machen!
+          Ein grosses Dankeschön an alle, die uns unterstützen und unsere Events möglich machen!
         </p>
       </MotionDiv>
 
