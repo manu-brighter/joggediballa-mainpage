@@ -419,15 +419,24 @@ export default function Sponsors() {
                   Unterstütze unseren Verein und profitiere von unseren Werbe-Vorteilen!
                 </p>
               </div>
-              
-              <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+
+              <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
                 {/* Standard Package */}
-                <div className="bg-background/50 backdrop-blur-sm rounded-xl p-6 border border-border hover:border-primary/30 transition-all">
-                  <div className="flex items-center gap-2 mb-4">
+                <div className="bg-background/50 backdrop-blur-sm rounded-xl p-6 border border-border hover:border-primary/30 transition-all relative">
+
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-2">
                     <Star className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-bold">Standard Paket | CHF 50.-</h3>
-                    <span className="text-muted-foreground sl-2">pro Jahr</span>
+                    <h3 className="text-lg font-bold">Standard Paket</h3>
                   </div>
+
+                  {/* Preis rechts oben */}
+                  <div className="absolute top-6 right-6 text-right">
+                    <div className="text-lg font-bold">CHF 50.-</div>
+                    <div className="text-sm text-muted-foreground">pro Jahr</div>
+                  </div>
+
+                  {/* Liste */}
                   <ul className="text-sm text-muted-foreground space-y-2 text-left">
                     <li className="flex items-start gap-2">
                       <span className="text-primary">✓</span>
@@ -441,11 +450,20 @@ export default function Sponsors() {
                   <div className="absolute -top-3 right-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
                     Empfohlen
                   </div>
-                  <div className="flex items-center gap-2 mb-4">
+
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-2">
                     <Crown className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-bold">Premium Paket | CHF 100.-</h3>
-                    <span className="text-muted-foreground sl-2">pro Jahr</span>
+                    <h3 className="text-lg font-bold">Premium Paket</h3>
                   </div>
+
+                  {/* Preis rechts oben */}
+                  <div className="absolute top-6 right-6 text-right">
+                    <div className="text-lg font-bold">CHF 100.-</div>
+                    <div className="text-sm text-muted-foreground">pro Jahr</div>
+                  </div>
+
+                  {/* Liste */}
                   <ul className="text-sm text-muted-foreground space-y-2 text-left">
                     <li className="flex items-start gap-2">
                       <span className="text-primary">✓</span>
