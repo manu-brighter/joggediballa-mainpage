@@ -70,6 +70,7 @@ interface Member {
   membershipEndDate: Date;
   notes: string | null;
   isActive: boolean;
+  createdAt: Date;
 }
 
 function getDaysUntilExpiry(endDate: Date): number {
@@ -78,6 +79,25 @@ function getDaysUntilExpiry(endDate: Date): number {
   const diff = end.getTime() - now.getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
+
+function getDaysSinceExpiry(endDate: Date): number {
+  const now = new Date();
+  const end = new Date(endDate);
+  const diff = now.getTime() - end.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function getDaysSinceCreation(createdAt: Date): number {
+  const now = new Date();
+  const created = new Date(createdAt);
+  const diff = now.getTime() - created.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function isNewMember(member: Member): boolean {
+  return getDaysSinceCreation(member.createdAt) <= 30;
+}
+
 
 function getMemberStatus(member: Member): "active" | "expiring" | "expired" {
   const days = getDaysUntilExpiry(member.membershipEndDate);
@@ -127,12 +147,17 @@ const MemberCard = React.memo(({
             </h3>
             {status === "expired" && (
               <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium">
-                Abgelaufen
+                Abgelaufen seit {getDaysSinceExpiry(member.membershipEndDate)} Tagen
               </span>
             )}
             {status === "expiring" && (
               <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-xs font-medium">
                 {daysLeft} Tage
+              </span>
+            )}
+            {isNewMember(member) && status !== "expired" && (
+              <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-600 dark:text-green-400 text-xs font-medium">
+                Neu
               </span>
             )}
           </div>
@@ -891,6 +916,15 @@ export default function Goennermitglieder() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Optionale Notizen..."
                 rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-membershipStartDate">Startdatum Mitgliedschaft <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-membershipStartDate"
+                type="date"
+                value={formData.membershipStartDate}
+                onChange={(e) => setFormData({ ...formData, membershipStartDate: e.target.value })}
               />
             </div>
           </div>
