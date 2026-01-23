@@ -463,10 +463,6 @@ export default function Sponsors() {
                       <div className="text-xs text-muted-foreground">pro Jahr</div>
                     </div>
                   </div>
-                    <div className="text-lg font-bold">CHF 100.-</div>
-                    <div className="text-sm text-muted-foreground">pro Jahr</div>
-                  </div>
-
                   {/* Liste */}
                   <ul className="text-sm text-muted-foreground space-y-2 text-left">
                     <li className="flex items-start gap-2">
