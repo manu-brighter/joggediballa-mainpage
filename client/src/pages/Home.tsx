@@ -27,7 +27,7 @@ export default function Home() {
         <div className="absolute inset-0 hero-gradient" />
         {/* Pattern Overlay - only over gradient */}
         <div 
-          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" 
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0]"
           style={{
             backgroundImage: 'url(/pattern-overlay.png)',
             backgroundRepeat: 'repeat',
