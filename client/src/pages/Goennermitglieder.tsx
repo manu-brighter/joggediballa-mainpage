@@ -918,15 +918,6 @@ export default function Goennermitglieder() {
                 rows={3}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-membershipStartDate">Startdatum Mitgliedschaft <span className="text-destructive">*</span></Label>
-              <Input
-                id="edit-membershipStartDate"
-                type="date"
-                value={formData.membershipStartDate}
-                onChange={(e) => setFormData({ ...formData, membershipStartDate: e.target.value })}
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Abbrechen</Button>
