@@ -365,7 +365,14 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { memberId, ...data } = input;
-        await db.updateTeamMember(memberId, data);
+        // Convert empty strings to null for optional fields
+        const cleanedData = {
+          ...data,
+          nickname: data.nickname === "" ? null : data.nickname,
+          role: data.role === "" ? null : data.role,
+          bio: data.bio === "" ? null : data.bio,
+        };
+        await db.updateTeamMember(memberId, cleanedData);
         return { success: true };
       }),
     

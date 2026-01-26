@@ -388,15 +388,13 @@ export default function Shotcounter() {
                 {teams.map((team, index) => (
                   <MotionDiv
                     key={team.id}
-                    layout
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                     transition={{ 
                       type: "spring",
                       stiffness: 400,
-                      damping: 40,
-                      layout: { type: "spring", stiffness: 300, damping: 40 }
+                      damping: 40
                     }}
                     className={cn(
                       "rounded-lg border transition-all",
@@ -600,15 +598,13 @@ export default function Shotcounter() {
                 {teams.map((team, index) => (
                   <MotionDiv
                     key={team.id}
-                    layout
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ 
                       type: "spring",
                       stiffness: 300,
-                      damping: 35,
-                      layout: { type: "spring", stiffness: 200, damping: 35 }
+                      damping: 35
                     }}
                     className={cn(
                       "p-4 md:p-6 rounded-xl border-2 transition-all",
