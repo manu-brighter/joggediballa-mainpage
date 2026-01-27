@@ -132,6 +132,8 @@ export const teamMembers = mysqlTable("team_members", {
   bio: text("bio"),
   photoUrl: text("photoUrl"), // S3 URL
   photoKey: text("photoKey"), // S3 Key
+  compressedPhotoUrl: text("compressedPhotoUrl"), // S3 URL for compressed/thumbnail version
+  compressedPhotoKey: text("compressedPhotoKey"), // S3 Key for compressed version
   displayOrder: int("displayOrder").default(0).notNull(),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

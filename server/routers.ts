@@ -345,6 +345,8 @@ export const appRouter = router({
         bio: z.string().optional(),
         photoUrl: z.string().url().optional(),
         photoKey: z.string().optional(),
+        compressedPhotoUrl: z.string().url().optional(),
+        compressedPhotoKey: z.string().optional(),
         displayOrder: z.number().optional()
       }))
       .mutation(async ({ input }) => {
@@ -361,17 +363,18 @@ export const appRouter = router({
         bio: z.string().optional(),
         photoUrl: z.string().url().optional(),
         photoKey: z.string().optional(),
+        compressedPhotoUrl: z.string().url().optional(),
+        compressedPhotoKey: z.string().optional(),
         displayOrder: z.number().optional()
       }))
       .mutation(async ({ input }) => {
         const { memberId, ...data } = input;
         // Convert empty strings to null for optional fields
-        const cleanedData = {
-          ...data,
-          nickname: data.nickname === "" ? null : data.nickname,
-          role: data.role === "" ? null : data.role,
-          bio: data.bio === "" ? null : data.bio,
-        };
+        const cleanedData: any = {};
+        for (const [key, value] of Object.entries(data)) {
+          // Set null for empty strings, otherwise keep the value
+          cleanedData[key] = value === "" ? null : value;
+        }
         await db.updateTeamMember(memberId, cleanedData);
         return { success: true };
       }),

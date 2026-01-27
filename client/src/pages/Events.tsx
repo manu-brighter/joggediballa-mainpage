@@ -194,6 +194,15 @@ export default function Events() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightboxOpen, selectedPhotos.length]);
 
+  // Cleanup: Abort image loading when component unmounts or page changes
+  useEffect(() => {
+    return () => {
+      // Cancel any pending image loads by resetting state
+      setImageLoading(false);
+      setImageLoadProgress(0);
+    };
+  }, []);
+
   const handleCreateEvent = () => {
     if (!eventForm.title.trim() || !eventForm.eventDate) {
       toast.error("Bitte Titel und Datum angeben");

@@ -165,6 +165,7 @@ export default function Team() {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [croppedImageUrl, setCroppedImageUrl] = useState<string>("");
+  const [imageLoadingStates, setImageLoadingStates] = useState<Record<number, boolean>>({});
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -542,11 +543,22 @@ export default function Team() {
                   <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
                     <CardHeader className="relative p-0">
                       {member.photoUrl && (
-                        <div className="aspect-square overflow-hidden">
+                        <div className="aspect-square overflow-hidden relative">
+                          {/* Show compressed thumbnail first, then load original */}
                           <img
-                            src={member.photoUrl}
+                            src={imageLoadingStates[member.id] !== false && (member as any).compressedPhotoUrl ? (member as any).compressedPhotoUrl : member.photoUrl}
                             alt={member.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${imageLoadingStates[member.id] !== false ? 'blur-sm' : ''}`}
+                            onLoad={() => {
+                              // Load original image in background
+                              if ((member as any).compressedPhotoUrl && imageLoadingStates[member.id] !== false) {
+                                const img = new Image();
+                                img.src = member.photoUrl;
+                                img.onload = () => {
+                                  setImageLoadingStates(prev => ({ ...prev, [member.id]: false }));
+                                };
+                              }
+                            }}
                           />
                         </div>
                       )}
