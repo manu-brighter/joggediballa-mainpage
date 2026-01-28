@@ -546,11 +546,11 @@ export default function Team() {
                         <div className="aspect-square overflow-hidden relative">
                           {/* Show compressed thumbnail first, then load original */}
                           <img
-                            src={imageLoadingStates[member.id] !== false && (member as any).compressedPhotoUrl ? (member as any).compressedPhotoUrl : member.photoUrl}
+                            src={(member as any).compressedPhotoUrl && imageLoadingStates[member.id] !== false ? (member as any).compressedPhotoUrl : member.photoUrl}
                             alt={member.name}
-                            className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${imageLoadingStates[member.id] !== false ? 'blur-sm' : ''}`}
+                            className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${(member as any).compressedPhotoUrl && imageLoadingStates[member.id] !== false ? 'blur-sm' : ''}`}
                             onLoad={() => {
-                              // Load original image in background
+                              // Load original image in background only if compressed version exists
                               if ((member as any).compressedPhotoUrl && imageLoadingStates[member.id] !== false) {
                                 const img = new Image();
                                 img.src = member.photoUrl;
