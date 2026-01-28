@@ -115,7 +115,7 @@ export default function Dienstleistungen() {
     {
       icon: <Music className="h-6 w-6" />,
       title: "DJ",
-      description: "Professionelle DJ-Services für jeden Anlass. Unser Revisor Jan legt an unseren Events Musik auf bis die Bude bebt.\n\Ausserhalb des Vereins selbstständig nebenbei als DJ tätig und offen für Anfragen.",
+      description: "Professionelle DJ-Services für jeden Anlass. Unser Revisor Jan legt an unseren Events Musik auf bis die Bude bebt.\n\ \n\Ausserhalb des Vereins selbstständig nebenbei als DJ tätig und offen für Anfragen.",
       person: {
         role: "DJ & Revisor",
         name: "Jan",
@@ -130,7 +130,7 @@ export default function Dienstleistungen() {
     {
       icon: <Camera className="h-6 w-6" />,
       title: "Fotografie",
-      description: "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Schau dir gerne den 'Events & Fotos'-Tab oder mein persönliches Portfolio an, um dir ein Eindruck zu verschaffen.\n\Ausserhalb des Vereins selbstständig nebenbei als Fotograf tätig und offen für Anfragen.",
+      description: "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Schau dir gerne den 'Events & Fotos'-Tab oder mein persönliches Portfolio an, um dir ein Eindruck zu verschaffen.\n\ \n\Ausserhalb des Vereins selbstständig nebenbei als Fotograf tätig und offen für Anfragen.",
       person: {
         role: "Social Media & Vize",
         name: "Manu",
@@ -158,10 +158,6 @@ export default function Dienstleistungen() {
         <h1 className="text-4xl md:text-5xl font-black">
           <span className="gradient-text">Dienstleistungen</span>
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Neben unseren Events bieten wir verschiedene Dienstleistungen an. 
-          Kontaktiere uns für individuelle Anfragen und Angebote!
-        </p>
       </MotionDiv>
 
       {/* Services Grid */}
