@@ -289,9 +289,9 @@ export default function Team() {
       updateMutation.mutate({
         memberId: selectedMember.id,
         name: formData.name,
-        nickname: formData.nickname || undefined,
-        role: formData.role || undefined,
-        bio: formData.bio || undefined,
+        nickname: formData.nickname,
+        role: formData.role,
+        bio: formData.bio,
         photoUrl: photoUrl || undefined,
       });
     } else {
