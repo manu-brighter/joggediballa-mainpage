@@ -46,15 +46,19 @@ passport.use(
         const profilePictureUrl = profile.photos?.[0]?.value;
         const loginMethod = "google";
 
-        // Determine role: ADMIN_EMAIL becomes admin, others start as visitor
-        let role: "admin" | "maintainer" | "editor" | "user" | "visitor" = "visitor";
-        if (email && ADMIN_EMAIL && email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-          role = "admin";
-        }
-
         // Check if user exists to determine if this is a new registration
         const existingUser = await getUserByOpenId(googleId);
         const isNewUser = !existingUser;
+
+        // Determine role: ADMIN_EMAIL becomes admin, others start as visitor
+        // IMPORTANT: Only set role for NEW users, preserve existing user roles
+        let role: "admin" | "maintainer" | "editor" | "user" | "visitor" | undefined = undefined;
+        if (isNewUser) {
+          role = "visitor";
+          if (email && ADMIN_EMAIL && email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            role = "admin";
+          }
+        }
 
         // Upsert user in database
         await upsertUser({
@@ -63,7 +67,7 @@ passport.use(
           name: name || null,
           profilePictureUrl: profilePictureUrl || null,
           loginMethod,
-          role,
+          ...(role !== undefined && { role }), // Only include role for new users
           lastSignedIn: new Date(),
         });
 
@@ -83,7 +87,7 @@ passport.use(
         }
 
         // Send email notification for new visitor registrations
-        if (isNewUser && role === "visitor") {
+        if (isNewUser && role === "visitor" && user) {
           // Send email asynchronously without blocking authentication
           sendEmail({
             to: process.env.CONTACT_EMAIL_TO || "joggediballa@gmail.com",
