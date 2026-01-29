@@ -582,3 +582,11 @@
 - [ ] Add editor role access to shotcounter editing
 - [ ] Implement activity log with login history, role changes, and admin actions
 - [ ] Commit and push to GitHub
+
+
+## Critical Bug Fix - User Role Preservation - January 2026
+
+- [x] Fix Google OAuth bug: Users lose permissions on re-login
+- [x] Preserve existing user roles during OAuth authentication
+- [x] Only set role for new users, not existing users
+- [x] Commit and push to GitHub
