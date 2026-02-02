@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -170,7 +171,7 @@ export default function Team() {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const isLoggedIn = !!user;
-  const canManageTeam = user && ["admin", "maintainer", "editor"].includes(user.role);
+  const canManageTeam = usePermission("edit_team");
 
   const resetForm = () => {
     setFormData({ name: "", nickname: "", role: "", bio: "" });

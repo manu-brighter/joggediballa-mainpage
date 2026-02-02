@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -73,7 +74,7 @@ export default function Sponsors() {
     },
   });
 
-  const isMaintainerOrAdmin = user && ["admin", "maintainer"].includes(user.role);
+  const canManageSponsors = usePermission("manage_sponsors");
 
   const resetForm = () => {
     setName("");
@@ -194,7 +195,7 @@ export default function Sponsors() {
       </MotionDiv>
 
       {/* Add Sponsor Button */}
-      {isMaintainerOrAdmin && (
+      {canManageSponsors && (
         <div className="flex justify-center">
           <Dialog open={createDialogOpen} onOpenChange={(open) => {
             setCreateDialogOpen(open);
@@ -331,7 +332,7 @@ export default function Sponsors() {
             <p className="text-muted-foreground text-lg">
               Noch keine Sponsoren vorhanden.
             </p>
-            {isMaintainerOrAdmin && (
+            {canManageSponsors && (
               <p className="text-sm text-muted-foreground mt-2">
                 Füge den ersten Sponsor hinzu!
               </p>
@@ -382,7 +383,7 @@ export default function Sponsors() {
                           </a>
                         </Button>
                       )}
-                      {isMaintainerOrAdmin && (
+                      {canManageSponsors && (
                         <Button
                           variant="destructive"
                           size="sm"

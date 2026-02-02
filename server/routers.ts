@@ -5,11 +5,15 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
+import { hasPermission } from "./permissions";
 
 // ============================================
 // ROLE-BASED MIDDLEWARE
 // ============================================
 
+/**
+ * Admin-only procedure (hardcoded, not dynamic)
+ */
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
     throw new TRPCError({ 
@@ -20,6 +24,10 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+/**
+ * Legacy procedures - kept for backwards compatibility
+ * Use requirePermission() for new procedures
+ */
 const maintainerProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (!["admin", "maintainer"].includes(ctx.user.role)) {
     throw new TRPCError({ 
@@ -39,6 +47,25 @@ const editorProcedure = protectedProcedure.use(({ ctx, next }) => {
   }
   return next({ ctx });
 });
+
+/**
+ * Dynamic permission-based middleware
+ * Checks permissions from database based on user role
+ */
+const requirePermission = (permissionKey: string) => {
+  return protectedProcedure.use(async ({ ctx, next }) => {
+    const allowed = await hasPermission(ctx.user.role, permissionKey);
+    
+    if (!allowed) {
+      throw new TRPCError({ 
+        code: "FORBIDDEN", 
+        message: `Permission '${permissionKey}' required` 
+      });
+    }
+    
+    return next({ ctx });
+  });
+};
 
 // ============================================
 // ROUTERS
@@ -98,7 +125,7 @@ export const appRouter = router({
         return db.getShotcounterTeamsByYear(input.year);
       }),
     
-    createTeam: editorProcedure
+    createTeam: requirePermission("edit_shotcounter")
       .input(z.object({
         name: z.string().min(1).max(100),
         year: z.number()
@@ -124,7 +151,7 @@ export const appRouter = router({
         return { teamId };
       }),
     
-    updateScore: editorProcedure
+    updateScore: requirePermission("edit_shotcounter")
       .input(z.object({
         teamId: z.number(),
         amount: z.number()
@@ -150,7 +177,7 @@ export const appRouter = router({
         return { success: true, newScore };
       }),
     
-    deleteTeam: editorProcedure
+    deleteTeam: requirePermission("edit_shotcounter")
       .input(z.object({ teamId: z.number() }))
       .mutation(async ({ input, ctx }) => {
         const team = await db.getShotcounterTeamById(input.teamId);
@@ -170,21 +197,21 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    resetYear: adminProcedure
+    resetYear: requirePermission("reset_shotcounter")
       .input(z.object({ year: z.number() }))
       .mutation(async ({ input, ctx }) => {
         await db.resetShotcounterForYear(input.year);
         return { success: true };
       }),
     
-    resetScores: adminProcedure
+    resetScores: requirePermission("reset_shotcounter")
       .input(z.object({ year: z.number() }))
       .mutation(async ({ input, ctx }) => {
         await db.resetShotcounterScoresForYear(input.year);
         return { success: true };
       }),
     
-    getAuditLog: maintainerProcedure
+    getAuditLog: adminProcedure
       .input(z.object({ limit: z.number().optional() }))
       .query(async ({ input }) => {
         return db.getAllAuditLogs(input.limit);
@@ -199,7 +226,7 @@ export const appRouter = router({
       return db.getAllSponsors();
     }),
     
-    create: maintainerProcedure
+    create: requirePermission("manage_sponsors")
       .input(z.object({
         name: z.string().min(1).max(255),
         logoUrl: z.string().url().optional(),
@@ -215,7 +242,7 @@ export const appRouter = router({
         return { sponsorId };
       }),
     
-    delete: maintainerProcedure
+    delete: requirePermission("manage_sponsors")
       .input(z.object({ sponsorId: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteSponsor(input.sponsorId);
@@ -238,7 +265,7 @@ export const appRouter = router({
         return db.getEventById(input.eventId);
       }),
     
-    create: editorProcedure
+    create: requirePermission("edit_events")
       .input(z.object({
         title: z.string().min(1).max(255),
         description: z.string().optional(),
@@ -254,7 +281,7 @@ export const appRouter = router({
         return { eventId };
       }),
     
-    update: editorProcedure
+    update: requirePermission("edit_events")
       .input(z.object({
         eventId: z.number(),
         title: z.string().min(1).max(255).optional(),
@@ -269,14 +296,14 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    delete: editorProcedure
+    delete: requirePermission("edit_events")
       .input(z.object({ eventId: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteEvent(input.eventId);
         return { success: true };
       }),
 
-    setThumbnail: editorProcedure
+    setThumbnail: requirePermission("edit_events")
       .input(z.object({ eventId: z.number(), photoId: z.number() }))
       .mutation(async ({ input }) => {
         await db.setEventThumbnail(input.eventId, input.photoId);
@@ -300,7 +327,7 @@ export const appRouter = router({
       return db.getAllPhotos(!isAuthenticated);
     }),
     
-    create: editorProcedure
+    create: requirePermission("edit_events")
       .input(z.object({
         eventId: z.number().optional(),
         title: z.string().max(255).optional(),
@@ -321,7 +348,7 @@ export const appRouter = router({
         return { photoId };
       }),
     
-    delete: editorProcedure
+    delete: requirePermission("edit_events")
       .input(z.object({ photoId: z.number() }))
       .mutation(async ({ input }) => {
         await db.deletePhoto(input.photoId);
@@ -337,7 +364,7 @@ export const appRouter = router({
       return db.getAllTeamMembers(true);
     }),
     
-    create: editorProcedure
+    create: requirePermission("edit_team")
       .input(z.object({
         name: z.string().min(1).max(255),
         nickname: z.string().max(100).optional(),
@@ -354,7 +381,7 @@ export const appRouter = router({
         return { memberId };
       }),
     
-    update: editorProcedure
+    update: requirePermission("edit_team")
       .input(z.object({
         memberId: z.number(),
         name: z.string().min(1).max(255).optional(),
@@ -379,14 +406,14 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    delete: editorProcedure
+    delete: requirePermission("edit_team")
       .input(z.object({ memberId: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteTeamMember(input.memberId);
         return { success: true };
       }),
     
-    reorder: protectedProcedure
+    reorder: requirePermission("edit_team")
       .input(z.object({
         memberIds: z.array(z.number())
       }))
@@ -476,7 +503,7 @@ export const appRouter = router({
       return db.getExpiredGoennermitglieder();
     }),
     
-    create: maintainerProcedure
+    create: requirePermission("manage_goennermitglieder")
       .input(z.object({
         firstName: z.string().min(1).max(100),
         lastName: z.string().min(1).max(100),
@@ -502,7 +529,7 @@ export const appRouter = router({
         return { memberId };
       }),
     
-    update: maintainerProcedure
+    update: requirePermission("manage_goennermitglieder")
       .input(z.object({
         memberId: z.number(),
         firstName: z.string().min(1).max(100).optional(),
@@ -521,7 +548,7 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    extend: maintainerProcedure
+    extend: requirePermission("manage_goennermitglieder")
       .input(z.object({
         memberId: z.number(),
         years: z.number().min(1).max(10).default(1)
@@ -531,7 +558,7 @@ export const appRouter = router({
         return { success: true, newEndDate };
       }),
     
-    delete: maintainerProcedure
+    delete: requirePermission("manage_goennermitglieder")
       .input(z.object({ memberId: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteGoennermitglied(input.memberId);
@@ -607,6 +634,32 @@ export const appRouter = router({
   permissions: router({
     list: adminProcedure.query(async () => {
       return db.getAllPermissions();
+    }),
+    
+    // Get permissions for current user's role
+    getMyPermissions: protectedProcedure.query(async ({ ctx }) => {
+      // Admin has all permissions
+      if (ctx.user.role === "admin") {
+        return [
+          "edit_events",
+          "manage_sponsors",
+          "manage_goennermitglieder",
+          "edit_shotcounter",
+          "reset_shotcounter",
+          "edit_team",
+        ];
+      }
+      
+      // Visitor has no permissions
+      if (ctx.user.role === "visitor") {
+        return [];
+      }
+      
+      // Get permissions from database for this role
+      const allPermissions = await db.getAllPermissions();
+      return allPermissions
+        .filter((p) => p.role === ctx.user.role)
+        .map((p) => p.permissionKey);
     }),
     
     toggle: adminProcedure

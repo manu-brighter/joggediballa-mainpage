@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -94,7 +95,7 @@ export default function Events() {
   const [photoManagementEventId, setPhotoManagementEventId] = useState<number | null>(null);
 
   const isLoggedIn = !!user;
-  const canManageEvents = user && ["admin", "maintainer", "editor"].includes(user.role);
+  const canManageEvents = usePermission("edit_events");
 
   // Mutations
   const createEventMutation = trpc.events.create.useMutation({

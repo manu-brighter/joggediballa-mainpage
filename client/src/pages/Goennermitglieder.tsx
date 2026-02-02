@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -110,7 +111,7 @@ function getMemberStatus(member: Member): "active" | "expiring" | "expired" {
 const MemberCard = React.memo(({ 
   member, 
   isExpired = false,
-  isMaintainerOrAdmin,
+  canManageGoennermitglieder,
   onViewClick,
   onEditClick,
   onExtendClick,
@@ -118,7 +119,7 @@ const MemberCard = React.memo(({
 }: { 
   member: Member; 
   isExpired?: boolean;
-  isMaintainerOrAdmin: boolean;
+  canManageGoennermitglieder: boolean;
   onViewClick: (member: Member) => void;
   onEditClick: (member: Member) => void;
   onExtendClick: (member: Member) => void;
@@ -187,7 +188,7 @@ const MemberCard = React.memo(({
             <Eye className="h-4 w-4" />
           </Button>
           
-          {isMaintainerOrAdmin && (
+          {canManageGoennermitglieder && (
             <>
               <Button
                 size="icon"
@@ -323,7 +324,7 @@ export default function Goennermitglieder() {
     setViewDialogOpen(true);
   };
 
-  const isMaintainerOrAdmin = !!(user && ["admin", "maintainer"].includes(user.role));
+  const canManageGoennermitglieder = usePermission("manage_goennermitglieder");
 
   // Sort and filter members
   const { activeMembers, expiredMembers } = useMemo(() => {
@@ -476,7 +477,7 @@ export default function Goennermitglieder() {
           </Select>
 
           {/* Create Button */}
-          {isMaintainerOrAdmin && (
+          {canManageGoennermitglieder && (
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="lg" className="btn-animate gap-2 h-11 w-full sm:w-auto">
@@ -654,7 +655,7 @@ export default function Goennermitglieder() {
                 <MemberCard 
                   key={member.id} 
                   member={member as Member}
-                  isMaintainerOrAdmin={isMaintainerOrAdmin}
+                  canManageGoennermitglieder={canManageGoennermitglieder}
                   onViewClick={openViewDialog}
                   onEditClick={openEditDialog}
                   onExtendClick={(m) => {
@@ -686,7 +687,7 @@ export default function Goennermitglieder() {
                   key={member.id} 
                   member={member as Member}
                   isExpired
-                  isMaintainerOrAdmin={isMaintainerOrAdmin}
+                  canManageGoennermitglieder={canManageGoennermitglieder}
                   onViewClick={openViewDialog}
                   onEditClick={openEditDialog}
                   onExtendClick={(m) => {
