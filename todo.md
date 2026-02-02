@@ -590,3 +590,14 @@
 - [x] Preserve existing user roles during OAuth authentication
 - [x] Only set role for new users, not existing users
 - [x] Commit and push to GitHub
+
+
+## Role Permissions Alignment Fix - January 2026
+
+- [x] Identify inconsistencies between frontend and backend role checks
+- [x] Fix Events: Allow editor role to create/update/delete (was maintainer-only)
+- [x] Fix Photos: Allow editor role to upload/delete (was maintainer-only)
+- [x] Fix Team: Allow editor role to manage members (was admin-only)
+- [x] Fix Shotcounter: Update frontend to allow editor role (backend was correct)
+- [x] Fix TypeScript error in Team.tsx (photoUrl nullable)
+- [x] Commit and push to GitHub
