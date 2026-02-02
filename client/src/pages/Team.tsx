@@ -553,7 +553,7 @@ export default function Team() {
                               // Load original image in background only if compressed version exists
                               if ((member as any).compressedPhotoUrl && imageLoadingStates[member.id] !== false) {
                                 const img = new Image();
-                                img.src = member.photoUrl;
+                                img.src = member.photoUrl || '';
                                 img.onload = () => {
                                   setImageLoadingStates(prev => ({ ...prev, [member.id]: false }));
                                 };

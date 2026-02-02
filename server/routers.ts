@@ -238,7 +238,7 @@ export const appRouter = router({
         return db.getEventById(input.eventId);
       }),
     
-    create: maintainerProcedure
+    create: editorProcedure
       .input(z.object({
         title: z.string().min(1).max(255),
         description: z.string().optional(),
@@ -254,7 +254,7 @@ export const appRouter = router({
         return { eventId };
       }),
     
-    update: maintainerProcedure
+    update: editorProcedure
       .input(z.object({
         eventId: z.number(),
         title: z.string().min(1).max(255).optional(),
@@ -269,14 +269,14 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    delete: maintainerProcedure
+    delete: editorProcedure
       .input(z.object({ eventId: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteEvent(input.eventId);
         return { success: true };
       }),
 
-    setThumbnail: maintainerProcedure
+    setThumbnail: editorProcedure
       .input(z.object({ eventId: z.number(), photoId: z.number() }))
       .mutation(async ({ input }) => {
         await db.setEventThumbnail(input.eventId, input.photoId);
@@ -300,7 +300,7 @@ export const appRouter = router({
       return db.getAllPhotos(!isAuthenticated);
     }),
     
-    create: maintainerProcedure
+    create: editorProcedure
       .input(z.object({
         eventId: z.number().optional(),
         title: z.string().max(255).optional(),
@@ -321,7 +321,7 @@ export const appRouter = router({
         return { photoId };
       }),
     
-    delete: maintainerProcedure
+    delete: editorProcedure
       .input(z.object({ photoId: z.number() }))
       .mutation(async ({ input }) => {
         await db.deletePhoto(input.photoId);
@@ -337,7 +337,7 @@ export const appRouter = router({
       return db.getAllTeamMembers(true);
     }),
     
-    create: adminProcedure
+    create: editorProcedure
       .input(z.object({
         name: z.string().min(1).max(255),
         nickname: z.string().max(100).optional(),
@@ -354,7 +354,7 @@ export const appRouter = router({
         return { memberId };
       }),
     
-    update: adminProcedure
+    update: editorProcedure
       .input(z.object({
         memberId: z.number(),
         name: z.string().min(1).max(255).optional(),
@@ -379,7 +379,7 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    delete: adminProcedure
+    delete: editorProcedure
       .input(z.object({ memberId: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteTeamMember(input.memberId);

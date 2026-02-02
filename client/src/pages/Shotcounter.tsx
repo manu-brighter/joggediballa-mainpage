@@ -189,7 +189,7 @@ export default function Shotcounter() {
     },
   });
 
-  const isMaintainerOrAdmin = user && ["admin", "maintainer"].includes(user.role);
+  const canEditShotcounter = user && ["admin", "maintainer", "editor"].includes(user.role);
 
   const handleCreateTeam = () => {
     if (!newTeamName.trim()) {
@@ -531,7 +531,7 @@ export default function Shotcounter() {
             Teams
           </h2>
           
-          {isMaintainerOrAdmin && (
+          {canEditShotcounter && (
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="btn-animate gap-2">
@@ -582,7 +582,7 @@ export default function Shotcounter() {
             <CardContent className="py-12 text-center">
               <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Noch keine Teams vorhanden.</p>
-              {isMaintainerOrAdmin && (
+              {canEditShotcounter && (
                 <Button 
                   className="mt-4 btn-animate" 
                   onClick={() => setCreateDialogOpen(true)}
@@ -633,11 +633,11 @@ export default function Shotcounter() {
                           <InlineScoreEdit
                             value={team.score}
                             onSave={(newScore) => handleSetScore(team.id, newScore)}
-                            disabled={!isMaintainerOrAdmin}
+                            disabled={!canEditShotcounter}
                           />
                         </div>
                         
-                        {isMaintainerOrAdmin && (
+                        {canEditShotcounter && (
                           <div className="flex items-center gap-0.5 md:gap-2">
                             <Button
                               variant="outline"
