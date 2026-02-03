@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { useTheme } from "@/contexts/ThemeContext";
+import { usePermission } from "@/hooks/usePermissions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,7 +91,7 @@ export function Navigation() {
     return <Sun className="h-4 w-4" />;
   };
 
-  const isAdminOrMaintainer = isAuthenticated && user && ["admin", "maintainer"].includes(user.role);
+  const canViewGoennermitglieder = usePermission("manage_goennermitglieder");
 
   return (
     <>
@@ -149,8 +150,8 @@ export function Navigation() {
             </>
           )}
           
-          {/* Divider and Gönnermitglieder - only visible for admin/maintainer */}
-          {isAdminOrMaintainer && (
+          {/* Divider and Gönnermitglieder - only visible with permission */}
+          {canViewGoennermitglieder && (
             <>
               <div className="h-6 w-px bg-border mx-2" />
               <Link 
@@ -329,8 +330,8 @@ export function Navigation() {
               </>
             )}
             
-            {/* Gönnermitglieder for admin/maintainer */}
-            {isAdminOrMaintainer && (
+            {/* Gönnermitglieder - only visible with permission */}
+            {canViewGoennermitglieder && (
               <>
                 <div className="h-px bg-border my-2" />
                 <Link
