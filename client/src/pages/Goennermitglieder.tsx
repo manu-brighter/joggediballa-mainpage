@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/lib/errorMessages";
 import { 
   Plus, 
   Trash2, 
@@ -261,7 +262,7 @@ export default function Goennermitglieder() {
       resetForm();
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 
@@ -273,7 +274,7 @@ export default function Goennermitglieder() {
       setSelectedMember(null);
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 
@@ -285,7 +286,7 @@ export default function Goennermitglieder() {
       setSelectedMember(null);
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 
@@ -298,7 +299,7 @@ export default function Goennermitglieder() {
       resetForm();
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 

@@ -27,6 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/lib/errorMessages";
 import { Heart, Gift, Trophy, ArrowRight, Plus, Trash2, ExternalLink, Upload, Image, X, Loader2, Star, Crown, Mail } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -58,7 +59,7 @@ export default function Sponsors() {
       setCreateDialogOpen(false);
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 
@@ -70,7 +71,7 @@ export default function Sponsors() {
       setSelectedSponsor(null);
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 

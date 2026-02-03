@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/lib/errorMessages";
 import { Plus, Minus, Trash2, Maximize2, X, Trophy, Crown, Timer, Sparkles, Settings2 } from "lucide-react";
 import { useBeamerMode } from "@/App";
 import { motion, AnimatePresence } from "framer-motion";
@@ -148,7 +149,7 @@ export default function Shotcounter() {
       setCreateDialogOpen(false);
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 
@@ -170,7 +171,7 @@ export default function Shotcounter() {
       if (context?.previousTeams) {
         utils.shotcounter.getTeams.setData({ year: currentYear }, context.previousTeams);
       }
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
     onSettled: () => {
       utils.shotcounter.getTeams.invalidate();
@@ -185,7 +186,7 @@ export default function Shotcounter() {
       setTeamToDelete(null);
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 

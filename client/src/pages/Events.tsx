@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermissions";
+import { parseErrorMessage } from "@/lib/errorMessages";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -105,7 +106,7 @@ export default function Events() {
       setCreateEventOpen(false);
       resetEventForm();
     },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
+    onError: (error) => toast.error(parseErrorMessage(error))
   });
 
   const updateEventMutation = trpc.events.update.useMutation({
@@ -115,7 +116,7 @@ export default function Events() {
       setEditEventOpen(false);
       resetEventForm();
     },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
+    onError: (error) => toast.error(parseErrorMessage(error))
   });
 
   const deleteEventMutation = trpc.events.delete.useMutation({
@@ -126,14 +127,14 @@ export default function Events() {
       setDeleteEventOpen(false);
       setSelectedEvent(null);
     },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
+    onError: (error) => toast.error(parseErrorMessage(error))
   });
 
   const createPhotoMutation = trpc.photos.create.useMutation({
     onSuccess: () => {
       utils.photos.listAll.invalidate();
     },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
+    onError: (error) => toast.error(parseErrorMessage(error))
   });
 
   const deletePhotoMutation = trpc.photos.delete.useMutation({
@@ -141,7 +142,7 @@ export default function Events() {
       utils.photos.listAll.invalidate();
       toast.success("Foto gelöscht!");
     },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
+    onError: (error) => toast.error(parseErrorMessage(error))
   });
 
   const setThumbnailMutation = trpc.events.setThumbnail.useMutation({
@@ -149,7 +150,7 @@ export default function Events() {
       utils.events.list.invalidate();
       toast.success("Thumbnail gesetzt!");
     },
-    onError: (error) => toast.error(`Fehler: ${error.message}`)
+    onError: (error) => toast.error(parseErrorMessage(error))
   });
 
   const selectedPhotos = selectedEventId

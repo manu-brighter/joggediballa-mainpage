@@ -22,6 +22,7 @@ import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/lib/errorMessages";
 
 const MotionDiv = motion.div;
 
@@ -54,7 +55,7 @@ export default function Profile() {
       resetCropState();
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 
@@ -65,7 +66,7 @@ export default function Profile() {
       setIsEditingProfile(false);
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 

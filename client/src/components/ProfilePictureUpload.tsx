@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/lib/errorMessages";
 import { Camera, Upload, Loader2, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +46,7 @@ export function ProfilePictureUpload({
       onUploadComplete?.();
     },
     onError: (error) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 

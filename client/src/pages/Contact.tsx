@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/lib/errorMessages";
 import { Mail, Send, CheckCircle } from "lucide-react";
 
 export default function Contact() {
@@ -25,7 +26,7 @@ export default function Contact() {
       setMessage("");
     },
     onError: (error: any) => {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(parseErrorMessage(error));
     },
   });
 
