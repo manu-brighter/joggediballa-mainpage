@@ -514,7 +514,8 @@ export const appRouter = router({
         email: z.string().email().max(320).optional(),
         phone: z.string().max(50).optional(),
         membershipStartDate: z.date(),
-        notes: z.string().optional()
+        notes: z.string().optional(),
+        paymentStatus: z.enum(["paid", "pending"]).default("paid")
       }))
       .mutation(async ({ input, ctx }) => {
         // Default end date is start date + 1 year
@@ -524,6 +525,7 @@ export const appRouter = router({
         const memberId = await db.createGoennermitglied({
           ...input,
           membershipEndDate: endDate,
+          paymentPendingSince: input.paymentStatus === "pending" ? new Date() : null,
           createdBy: ctx.user.id
         });
         return { memberId };
@@ -551,11 +553,30 @@ export const appRouter = router({
     extend: requirePermission("manage_goennermitglieder")
       .input(z.object({
         memberId: z.number(),
-        years: z.number().min(1).max(10).default(1)
+        years: z.number().min(1).max(10).default(1),
+        paymentStatus: z.enum(["paid", "pending"]).default("paid")
       }))
       .mutation(async ({ input }) => {
         const newEndDate = await db.extendGoennermitgliedschaft(input.memberId, input.years);
+        // Update payment status
+        await db.updateGoennermitglied(input.memberId, {
+          paymentStatus: input.paymentStatus,
+          paymentPendingSince: input.paymentStatus === "pending" ? new Date() : null
+        });
         return { success: true, newEndDate };
+      }),
+    
+    confirmPayment: requirePermission("manage_goennermitglieder")
+      .input(z.object({ memberId: z.number() }))
+      .mutation(async ({ input }) => {
+        // Set payment to paid and update start date to now
+        await db.updateGoennermitglied(input.memberId, {
+          paymentStatus: "paid",
+          paymentPendingSince: null,
+          membershipStartDate: new Date(),
+          isActive: true
+        });
+        return { success: true };
       }),
     
     delete: requirePermission("manage_goennermitglieder")

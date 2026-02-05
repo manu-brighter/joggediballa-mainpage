@@ -194,6 +194,8 @@ export const goennermitglieder = mysqlTable("goennermitglieder", {
   membershipEndDate: timestamp("membershipEndDate").notNull(), // Default: start + 1 year
   notes: text("notes"),
   isActive: boolean("isActive").default(true).notNull(),
+  paymentStatus: mysqlEnum("paymentStatus", ["paid", "pending"]).default("paid").notNull(), // Zahlungsstatus
+  paymentPendingSince: timestamp("paymentPendingSince"), // Datum wenn Zahlung noch aussteht
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdBy: int("createdBy").references(() => users.id),

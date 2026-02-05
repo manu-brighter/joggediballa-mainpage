@@ -72,6 +72,8 @@ interface Member {
   membershipEndDate: Date;
   notes: string | null;
   isActive: boolean;
+  paymentStatus: "paid" | "pending";
+  paymentPendingSince: Date | null;
   createdAt: Date;
 }
 
@@ -96,6 +98,14 @@ function getDaysSinceCreation(createdAt: Date): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+function getDaysSincePaymentPending(pendingSince: Date | null): number {
+  if (!pendingSince) return 0;
+  const now = new Date();
+  const pending = new Date(pendingSince);
+  const diff = now.getTime() - pending.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
 function isNewMember(member: Member): boolean {
   return getDaysSinceCreation(member.createdAt) <= 30;
 }
@@ -116,7 +126,8 @@ const MemberCard = React.memo(({
   onViewClick,
   onEditClick,
   onExtendClick,
-  onDeleteClick
+  onDeleteClick,
+  onConfirmPayment
 }: { 
   member: Member; 
   isExpired?: boolean;
@@ -125,6 +136,7 @@ const MemberCard = React.memo(({
   onEditClick: (member: Member) => void;
   onExtendClick: (member: Member) => void;
   onDeleteClick: (member: Member) => void;
+  onConfirmPayment: (member: Member) => void;
 }) => {
   const status = getMemberStatus(member);
   const daysLeft = getDaysUntilExpiry(member.membershipEndDate);
@@ -157,9 +169,15 @@ const MemberCard = React.memo(({
                 {daysLeft} Tage
               </span>
             )}
-            {isNewMember(member) && status !== "expired" && (
+            {isNewMember(member) && status !== "expired" && member.paymentStatus === "paid" && (
               <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary dark:text-primary text-xs font-medium">
                 Neu
+              </span>
+            )}
+            {member.paymentStatus === "pending" && (
+              <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-medium flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Zahlung fällig seit {getDaysSincePaymentPending(member.paymentPendingSince)} Tagen
               </span>
             )}
           </div>
@@ -191,6 +209,18 @@ const MemberCard = React.memo(({
           
           {canManageGoennermitglieder && (
             <>
+              {member.paymentStatus === "pending" && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="gap-1 bg-green-600 hover:bg-green-700"
+                  onClick={() => onConfirmPayment(member)}
+                  title="Zahlung bestätigen"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Zahlung bestätigen
+                </Button>
+              )}
               <Button
                 size="icon"
                 variant="ghost"
@@ -232,6 +262,10 @@ export default function Goennermitglieder() {
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [paymentStatusDialogOpen, setPaymentStatusDialogOpen] = useState(false);
+  const [pendingPaymentStatus, setPendingPaymentStatus] = useState<"paid" | "pending">("paid");
+  const [currentAction, setCurrentAction] = useState<"create" | "extend" | null>(null);
+  const [showPendingMembers, setShowPendingMembers] = useState(true);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("endDate");
   
@@ -303,6 +337,17 @@ export default function Goennermitglieder() {
     },
   });
 
+  const confirmPaymentMutation = trpc.goennermitglieder.confirmPayment.useMutation({
+    onSuccess: () => {
+      utils.goennermitglieder.list.invalidate();
+      toast.success("Zahlung bestätigt! Mitgliedschaft ist jetzt aktiv.");
+      setSelectedMember(null);
+    },
+    onError: (error) => {
+      toast.error(parseErrorMessage(error));
+    },
+  });
+
   const openEditDialog = (member: Member) => {
     setSelectedMember(member);
     setFormData({
@@ -333,11 +378,18 @@ export default function Goennermitglieder() {
     const expired: Member[] = [];
 
     allMembers.forEach((member) => {
-      const status = getMemberStatus(member as Member);
+      const typedMember = member as Member;
+      
+      // Filter out pending members if checkbox is unchecked
+      if (!showPendingMembers && typedMember.paymentStatus === "pending") {
+        return;
+      }
+      
+      const status = getMemberStatus(typedMember);
       if (status === "expired") {
-        expired.push(member as Member);
+        expired.push(typedMember);
       } else {
-        active.push(member as Member);
+        active.push(typedMember);
       }
     });
 
@@ -361,7 +413,7 @@ export default function Goennermitglieder() {
     );
 
     return { activeMembers: active, expiredMembers: expired };
-  }, [allMembers, sortBy]);
+  }, [allMembers, sortBy, showPendingMembers]);
 
   const resetForm = () => {
     setFormData({
@@ -378,13 +430,18 @@ export default function Goennermitglieder() {
     });
   };
 
-  const handleCreate = () => {
+  const handleCreateClick = () => {
     if (!formData.firstName || !formData.lastName || !formData.street || 
         !formData.houseNumber || !formData.zipCode || !formData.city) {
       toast.error("Bitte alle Pflichtfelder ausfüllen");
       return;
     }
-    
+    // Open payment status dialog
+    setCurrentAction("create");
+    setPaymentStatusDialogOpen(true);
+  };
+
+  const handleCreate = () => {
     createMutation.mutate({
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -395,14 +452,32 @@ export default function Goennermitglieder() {
       email: formData.email || undefined,
       phone: formData.phone || undefined,
       membershipStartDate: new Date(formData.membershipStartDate),
-      notes: formData.notes || undefined
+      notes: formData.notes || undefined,
+      paymentStatus: pendingPaymentStatus
     });
+    setPaymentStatusDialogOpen(false);
+  };
+
+  const handleExtendClick = (member: Member) => {
+    setSelectedMember(member);
+    setCurrentAction("extend");
+    setPaymentStatusDialogOpen(true);
   };
 
   const handleExtend = () => {
     if (selectedMember) {
-      extendMutation.mutate({ memberId: selectedMember.id, years: 1 });
+      extendMutation.mutate({ 
+        memberId: selectedMember.id, 
+        years: 1,
+        paymentStatus: pendingPaymentStatus
+      });
+      setPaymentStatusDialogOpen(false);
+      setExtendDialogOpen(false);
     }
+  };
+
+  const handleConfirmPayment = (member: Member) => {
+    confirmPaymentMutation.mutate({ memberId: member.id });
   };
 
   const handleDelete = () => {
@@ -464,6 +539,19 @@ export default function Goennermitglieder() {
         </MotionDiv>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {/* Show Pending Members Checkbox */}
+          {canManageGoennermitglieder && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showPendingMembers}
+                onChange={(e) => setShowPendingMembers(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <span className="text-sm">Provisorische Mitglieder anzeigen</span>
+            </label>
+          )}
+          
           {/* Sort Dropdown */}
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
             <SelectTrigger className="w-full sm:w-auto min-w-[200px] h-11">
@@ -599,7 +687,7 @@ export default function Goennermitglieder() {
                   <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
                     Abbrechen
                   </Button>
-                  <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                  <Button onClick={handleCreateClick} disabled={createMutation.isPending}>
                     {createMutation.isPending ? "Erstelle..." : "Hinzufügen"}
                   </Button>
                 </DialogFooter>
@@ -626,7 +714,7 @@ export default function Goennermitglieder() {
       </div>
 
       {/* Active Members */}
-      <div className="space-y-4">
+      <section className="space-y-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <CheckCircle className="h-5 w-5 text-primary" />
           Aktive Mitglieder ({activeMembers.length})
@@ -659,26 +747,23 @@ export default function Goennermitglieder() {
                   canManageGoennermitglieder={canManageGoennermitglieder}
                   onViewClick={openViewDialog}
                   onEditClick={openEditDialog}
-                  onExtendClick={(m) => {
-                    setSelectedMember(m);
-                    setExtendDialogOpen(true);
-                  }}
+                  onExtendClick={handleExtendClick}
                   onDeleteClick={(m) => {
                     setSelectedMember(m);
                     setDeleteDialogOpen(true);
                   }}
+                  onConfirmPayment={handleConfirmPayment}
                 />
               ))}
             </AnimatePresence>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Expired Members */}
+      {/* Expired Members Section */}
       {expiredMembers.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <XCircle className="h-5 w-5 text-destructive" />
+        <section>
+          <h2 className="text-2xl font-bold mb-4 text-muted-foreground">
             Abgelaufene Mitgliedschaften ({expiredMembers.length})
           </h2>
           <div className="space-y-3">
@@ -691,19 +776,17 @@ export default function Goennermitglieder() {
                   canManageGoennermitglieder={canManageGoennermitglieder}
                   onViewClick={openViewDialog}
                   onEditClick={openEditDialog}
-                  onExtendClick={(m) => {
-                    setSelectedMember(m);
-                    setExtendDialogOpen(true);
-                  }}
+                  onExtendClick={handleExtendClick}
                   onDeleteClick={(m) => {
                     setSelectedMember(m);
                     setDeleteDialogOpen(true);
                   }}
+                  onConfirmPayment={handleConfirmPayment}
                 />
               ))}
             </AnimatePresence>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Extend Confirmation Dialog */}
@@ -946,6 +1029,77 @@ export default function Goennermitglieder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Payment Status Dialog */}
+      <AlertDialog open={paymentStatusDialogOpen} onOpenChange={setPaymentStatusDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Zahlungsstatus</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hat das Mitglied den Mitgliederbeitrag bereits bezahlt?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => setPendingPaymentStatus("paid")}
+                className={cn(
+                  "flex items-center gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer",
+                  pendingPaymentStatus === "paid" 
+                    ? "border-green-500 bg-green-500/10" 
+                    : "border-border hover:border-green-500/50"
+                )}
+              >
+                <CheckCircle className={cn(
+                  "h-5 w-5",
+                  pendingPaymentStatus === "paid" ? "text-green-600" : "text-muted-foreground"
+                )} />
+                <div className="text-left">
+                  <p className="font-semibold">Ja, bereits bezahlt</p>
+                  <p className="text-sm text-muted-foreground">Mitgliedschaft wird sofort aktiviert</p>
+                </div>
+              </button>
+              <button
+                onClick={() => setPendingPaymentStatus("pending")}
+                className={cn(
+                  "flex items-center gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer",
+                  pendingPaymentStatus === "pending" 
+                    ? "border-orange-500 bg-orange-500/10" 
+                    : "border-border hover:border-orange-500/50"
+                )}
+              >
+                <AlertTriangle className={cn(
+                  "h-5 w-5",
+                  pendingPaymentStatus === "pending" ? "text-orange-600" : "text-muted-foreground"
+                )} />
+                <div className="text-left">
+                  <p className="font-semibold">Nein, Zahlung ausständig</p>
+                  <p className="text-sm text-muted-foreground">Mitgliedschaft wird als provisorisch markiert</p>
+                </div>
+              </button>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setPaymentStatusDialogOpen(false);
+              if (currentAction === "create") {
+                // Stay in create dialog
+              } else if (currentAction === "extend") {
+                setExtendDialogOpen(false);
+              }
+            }}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (currentAction === "create") {
+                handleCreate();
+              } else if (currentAction === "extend") {
+                handleExtend();
+              }
+            }}>
+              Bestätigen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
