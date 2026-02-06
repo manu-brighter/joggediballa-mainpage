@@ -148,10 +148,10 @@ const MemberCard = React.memo(({
       exit={{ opacity: 0, y: -10 }}
       className={cn(
         "rounded-xl border-2 p-4 transition-all duration-300 cursor-pointer",
-        status === "expired" && "bg-muted/50 border-muted-foreground/20 hover:bg-muted/70 hover:border-muted-foreground/30",
-        status === "expiring" && "bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/20 hover:border-yellow-500/40",
+        status === "expired" && "bg-muted/50 border-muted-foreground/20 hover:bg-muted/90 hover:border-red-500/30",
+        status === "expiring" && "bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20 hover:border-yellow-500/40",
         status === "active" && member.paymentStatus === "pending" && "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20 hover:border-orange-500/40",
-        status === "active" && member.paymentStatus === "paid" && "bg-card border-border hover:border-primary/30 hover:bg-accent/50"
+        status === "active" && member.paymentStatus === "paid" && "bg-card border-border hover:bg-muted/90 hover:border-teal-500/30"
       )}
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -198,6 +198,18 @@ const MemberCard = React.memo(({
         </div>
 
         <div className="flex items-center gap-2">
+          {canManageGoennermitglieder && member.paymentStatus === "pending" && (
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-1 bg-primary hover:bg-primary/80"
+              onClick={() => onConfirmPayment(member)}
+              title="Zahlung bestätigen"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Zahlung bestätigen
+            </Button>
+          )}
           <Button
             size="icon"
             variant="ghost"
@@ -210,18 +222,6 @@ const MemberCard = React.memo(({
           
           {canManageGoennermitglieder && (
             <>
-              {member.paymentStatus === "pending" && (
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="gap-1 bg-green-600 hover:bg-green-700"
-                  onClick={() => onConfirmPayment(member)}
-                  title="Zahlung bestätigen"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  Zahlung bestätigen
-                </Button>
-              )}
               <Button
                 size="icon"
                 variant="ghost"
@@ -233,7 +233,7 @@ const MemberCard = React.memo(({
               </Button>
               <Button
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 className="gap-1 text-primary hover:text-primary hover:bg-primary/10"
                 onClick={() => onExtendClick(member)}
               >
@@ -793,7 +793,8 @@ export default function Goennermitglieder() {
       {/* Expired Members Section */}
       {expiredMembers.length > 0 && (
         <section>
-          <h2 className="text-2xl font-bold mb-4 text-muted-foreground">
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-red-500/70">
+            <XCircle className="h-6 w-6 text-red-500/70" />
             Abgelaufene Mitgliedschaften ({expiredMembers.length})
           </h2>
           <div className="space-y-3">
