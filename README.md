@@ -41,6 +41,13 @@ git clone https://github.com/manu-brighter/joggediballa-mainpage.git
 cd joggediballa-mainpage
 ```
 
+### 1.5. SSH Tunnel einrichten (falls nötig)
+
+```
+ssh -L 3307:127.0.0.1:3306 root@[server-ip] -N
+```
+
+
 ### 2. Dependencies installieren
 
 ```bash
