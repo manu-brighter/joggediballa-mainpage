@@ -147,10 +147,11 @@ const MemberCard = React.memo(({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       className={cn(
-        "rounded-xl border-2 p-4 transition-all duration-300",
-        status === "expired" && "bg-muted/50 border-muted-foreground/20",
-        status === "expiring" && "bg-yellow-500/10 border-yellow-500/30",
-        status === "active" && "bg-card border-border hover:border-primary/30"
+        "rounded-xl border-2 p-4 transition-all duration-300 cursor-pointer",
+        status === "expired" && "bg-muted/50 border-muted-foreground/20 hover:bg-muted/70 hover:border-muted-foreground/30",
+        status === "expiring" && "bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/20 hover:border-yellow-500/40",
+        status === "active" && member.paymentStatus === "pending" && "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20 hover:border-orange-500/40",
+        status === "active" && member.paymentStatus === "paid" && "bg-card border-border hover:border-primary/30 hover:bg-accent/50"
       )}
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -265,7 +266,6 @@ export default function Goennermitglieder() {
   const [paymentStatusDialogOpen, setPaymentStatusDialogOpen] = useState(false);
   const [pendingPaymentStatus, setPendingPaymentStatus] = useState<"paid" | "pending">("paid");
   const [currentAction, setCurrentAction] = useState<"create" | "extend" | null>(null);
-  const [showPendingMembers, setShowPendingMembers] = useState(true);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("endDate");
   
@@ -372,23 +372,26 @@ export default function Goennermitglieder() {
 
   const canManageGoennermitglieder = usePermission("manage_goennermitglieder");
 
-  // Sort and filter members
-  const { activeMembers, expiredMembers } = useMemo(() => {
+  // Sort and filter members into 3 categories
+  const { activeMembers, pendingMembers, expiredMembers } = useMemo(() => {
     const active: Member[] = [];
+    const pending: Member[] = [];
     const expired: Member[] = [];
 
     allMembers.forEach((member) => {
       const typedMember = member as Member;
       
-      // Filter out pending members if checkbox is unchecked
-      if (!showPendingMembers && typedMember.paymentStatus === "pending") {
-        return;
-      }
-      
+      // Separate by payment status and expiry
       const status = getMemberStatus(typedMember);
-      if (status === "expired") {
+      
+      if (typedMember.paymentStatus === "pending") {
+        // Provisorische Mitglieder (pending payment)
+        pending.push(typedMember);
+      } else if (status === "expired") {
+        // Abgelaufene Mitglieder
         expired.push(typedMember);
       } else {
+        // Aktive Mitglieder (paid and not expired)
         active.push(typedMember);
       }
     });
@@ -407,13 +410,20 @@ export default function Goennermitglieder() {
       }
     });
 
+    // Sort pending members by payment pending date (oldest first)
+    pending.sort((a, b) => {
+      const aDate = a.paymentPendingSince ? new Date(a.paymentPendingSince).getTime() : 0;
+      const bDate = b.paymentPendingSince ? new Date(b.paymentPendingSince).getTime() : 0;
+      return aDate - bDate;
+    });
+
     // Sort expired by most recently expired first
     expired.sort((a, b) => 
       new Date(b.membershipEndDate).getTime() - new Date(a.membershipEndDate).getTime()
     );
 
-    return { activeMembers: active, expiredMembers: expired };
-  }, [allMembers, sortBy, showPendingMembers]);
+    return { activeMembers: active, pendingMembers: pending, expiredMembers: expired };
+  }, [allMembers, sortBy]);
 
   const resetForm = () => {
     setFormData({
@@ -538,20 +548,7 @@ export default function Goennermitglieder() {
           </p>
         </MotionDiv>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Show Pending Members Checkbox */}
-          {canManageGoennermitglieder && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showPendingMembers}
-                onChange={(e) => setShowPendingMembers(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <span className="text-sm">Provisorische Mitglieder anzeigen</span>
-            </label>
-          )}
-          
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
           {/* Sort Dropdown */}
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
             <SelectTrigger className="w-full sm:w-auto min-w-[200px] h-11">
@@ -707,6 +704,10 @@ export default function Goennermitglieder() {
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
           <span className="text-sm font-medium">{activeMembers.filter(m => getMemberStatus(m) === "expiring").length} Läuft bald ab</span>
         </div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20">
+          <Clock className="h-4 w-4 text-orange-500" />
+          <span className="text-sm font-medium">{pendingMembers.length} Provisorisch</span>
+        </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20">
           <XCircle className="h-4 w-4 text-red-500" />
           <span className="text-sm font-medium">{expiredMembers.length} Abgelaufen</span>
@@ -759,6 +760,35 @@ export default function Goennermitglieder() {
           </div>
         )}
       </section>
+
+      {/* Provisorische Mitglieder Section */}
+      {pendingMembers.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <Clock className="h-6 w-6 text-orange-500" />
+            <span className="text-orange-500">Provisorische Mitglieder ({pendingMembers.length})</span>
+          </h2>
+          <div className="space-y-3">
+            <AnimatePresence mode="popLayout">
+              {pendingMembers.map((member) => (
+                <MemberCard 
+                  key={member.id} 
+                  member={member as Member}
+                  canManageGoennermitglieder={canManageGoennermitglieder}
+                  onViewClick={openViewDialog}
+                  onEditClick={openEditDialog}
+                  onExtendClick={handleExtendClick}
+                  onDeleteClick={(m) => {
+                    setSelectedMember(m);
+                    setDeleteDialogOpen(true);
+                  }}
+                  onConfirmPayment={handleConfirmPayment}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        </section>
+      )}
 
       {/* Expired Members Section */}
       {expiredMembers.length > 0 && (
