@@ -234,7 +234,7 @@ const MemberCard = React.memo(({
               <Button
                 size="sm"
                 variant="ghost"
-                className="gap-1 text-primary hover:text-primary hover:bg-primary/10"
+                className="gap-1 hover:bg-muted"
                 onClick={() => onExtendClick(member)}
               >
                 <RefreshCw className="h-4 w-4" />
@@ -571,7 +571,7 @@ export default function Goennermitglieder() {
                   <span className="hidden sm:inline">Neues Mitglied</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" onEnterKey={handleCreateClick}>
                 <DialogHeader>
                   <DialogTitle>Neues Gönnermitglied</DialogTitle>
                   <DialogDescription>
@@ -845,7 +845,7 @@ export default function Goennermitglieder() {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent onEnterKey={handleDelete}>
           <AlertDialogHeader>
             <AlertDialogTitle>Mitglied löschen?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1063,7 +1063,13 @@ export default function Goennermitglieder() {
 
       {/* Payment Status Dialog */}
       <AlertDialog open={paymentStatusDialogOpen} onOpenChange={setPaymentStatusDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent onEnterKey={() => {
+          if (currentAction === "create") {
+            handleCreate();
+          } else if (currentAction === "extend") {
+            handleExtend();
+          }
+        }}>
           <AlertDialogHeader>
             <AlertDialogTitle>Zahlungsstatus</AlertDialogTitle>
             <AlertDialogDescription>

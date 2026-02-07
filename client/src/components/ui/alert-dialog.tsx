@@ -44,8 +44,33 @@ function AlertDialogOverlay({
 
 function AlertDialogContent({
   className,
+  onEnterKey,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
+  onEnterKey?: () => void;
+}) {
+  // Handle Enter key to trigger primary action
+  React.useEffect(() => {
+    if (!onEnterKey) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger on Enter key, not in textarea, and not with modifiers
+      if (
+        e.key === "Enter" &&
+        !e.shiftKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !(e.target instanceof HTMLTextAreaElement)
+      ) {
+        e.preventDefault();
+        onEnterKey();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onEnterKey]);
+
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />

@@ -94,9 +94,11 @@ function DialogContent({
   children,
   showCloseButton = true,
   onEscapeKeyDown,
+  onEnterKey,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  onEnterKey?: () => void;
 }) {
   const { isComposing } = useDialogComposition();
 
@@ -117,6 +119,32 @@ function DialogContent({
     },
     [isComposing, onEscapeKeyDown]
   );
+
+  // Handle Enter key to trigger primary action
+  React.useEffect(() => {
+    if (!onEnterKey) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if IME is composing
+      const isCurrentlyComposing = (e as any).isComposing || isComposing();
+      
+      // Only trigger on Enter key, not composing, and not in textarea
+      if (
+        e.key === "Enter" &&
+        !isCurrentlyComposing &&
+        !e.shiftKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !(e.target instanceof HTMLTextAreaElement)
+      ) {
+        e.preventDefault();
+        onEnterKey();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onEnterKey, isComposing]);
 
   return (
     <DialogPortal data-slot="dialog-portal">

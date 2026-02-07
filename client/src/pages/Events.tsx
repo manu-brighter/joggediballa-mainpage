@@ -353,7 +353,7 @@ export default function Events() {
                 Event erstellen
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent onEnterKey={handleCreateEvent}>
               <DialogHeader>
                 <DialogTitle>Neues Event erstellen</DialogTitle>
                 <DialogDescription>
@@ -719,7 +719,7 @@ export default function Events() {
         setEditEventOpen(open);
         if (!open) resetEventForm();
       }}>
-        <DialogContent>
+          <DialogContent onEnterKey={handleUpdateEvent}>
           <DialogHeader>
             <DialogTitle>Event bearbeiten</DialogTitle>
             <DialogDescription>
@@ -815,7 +815,7 @@ export default function Events() {
 
       {/* Fullscreen Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="w-[95vw] h-[95vh] !max-w-[95vw] p-4 bg-black/95 border-0 rounded-lg" showCloseButton={false}>
+        <DialogContent onEnterKey={() => {}} className="w-[95vw] h-[95vh] !max-w-[95vw] p-4 bg-black/95 border-0 rounded-lg" showCloseButton={false}>
           {/* Hidden title and description for accessibility */}
           <DialogTitle className="sr-only">
             {currentPhotoEventName || "Foto"} - Bild {currentPhotoIndex + 1} von {selectedPhotos.length}
