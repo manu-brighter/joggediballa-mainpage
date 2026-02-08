@@ -234,7 +234,7 @@ const MemberCard = React.memo(({
               <Button
                 size="sm"
                 variant="ghost"
-                className="gap-1 text-primary hover:!bg-primary/15 hover:!text-primary hover:scale-105 transition-all duration-200 font-medium"
+                className="gap-1 text-primary hover:!bg-primary/15 hover:!text-primary transition-all duration-200 font-medium"
                 onClick={() => onExtendClick(member)}
               >
                 <RefreshCw className="h-4 w-4" />
