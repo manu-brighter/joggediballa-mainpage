@@ -75,15 +75,23 @@ export function Navigation() {
     const hidden: typeof allNavLinks = [];
 
     allNavLinks.forEach(link => {
-      if (ALWAYS_VISIBLE.includes(link.href) || isNavEnabled(link.href)) {
+      // Always visible items are always shown
+      if (ALWAYS_VISIBLE.includes(link.href)) {
         visible.push(link);
-      } else {
+      }
+      // Feature-toggled items
+      else if (isNavEnabled(link.href)) {
+        visible.push(link);
+      }
+      // Disabled items - only show to authenticated users (with lock icon)
+      else if (isAuthenticated) {
         hidden.push(link);
       }
+      // For non-authenticated users, disabled items are completely hidden
     });
 
     return { visibleLinks: visible, hiddenLinks: hidden };
-  }, [featureToggles]);
+  }, [featureToggles, isAuthenticated]);
 
   const ThemeIcon = () => {
     if (theme === "system") return <Monitor className="h-4 w-4" />;
