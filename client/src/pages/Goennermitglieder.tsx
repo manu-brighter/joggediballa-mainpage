@@ -213,7 +213,7 @@ const MemberCard = React.memo(({
           <Button
             size="icon"
             variant="ghost"
-            className="h-9 w-9 hover:!bg-muted hover:!text-foreground"
+            className="h-9 w-9 text-muted-foreground hover:!bg-primary/10 hover:!text-primary transition-all duration-200"
             onClick={() => onViewClick(member)}
             title="Details anzeigen"
           >
@@ -225,7 +225,7 @@ const MemberCard = React.memo(({
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-9 w-9 hover:!bg-muted hover:!text-foreground"
+                className="h-9 w-9 text-muted-foreground hover:!bg-primary/10 hover:!text-primary transition-all duration-200"
                 onClick={() => onEditClick(member)}
                 title="Bearbeiten"
               >
@@ -234,7 +234,7 @@ const MemberCard = React.memo(({
               <Button
                 size="sm"
                 variant="ghost"
-                className="gap-1 text-primary hover:text-primary hover:bg-primary/10 focus-visible:ring-primary/20"
+                className="gap-1 text-primary hover:!bg-primary/15 hover:!text-primary hover:scale-105 transition-all duration-200 font-medium"
                 onClick={() => onExtendClick(member)}
               >
                 <RefreshCw className="h-4 w-4" />
@@ -243,7 +243,7 @@ const MemberCard = React.memo(({
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-9 w-9 text-muted-foreground hover:!bg-destructive/10 hover:!text-destructive transition-all duration-200"
                 onClick={() => onDeleteClick(member)}
               >
                 <Trash2 className="h-4 w-4" />
