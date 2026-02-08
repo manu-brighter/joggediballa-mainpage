@@ -213,7 +213,7 @@ const MemberCard = React.memo(({
           <Button
             size="icon"
             variant="ghost"
-            className="h-9 w-9 hover:bg-accent hover:text-accent-foreground"
+            className="h-9 w-9 !hover:bg-muted !hover:text-foreground"
             onClick={() => onViewClick(member)}
             title="Details anzeigen"
           >
@@ -225,7 +225,7 @@ const MemberCard = React.memo(({
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-9 w-9 hover:bg-accent hover:text-accent-foreground"
+                className="h-9 w-9 !hover:bg-muted !hover:text-foreground"
                 onClick={() => onEditClick(member)}
                 title="Bearbeiten"
               >
