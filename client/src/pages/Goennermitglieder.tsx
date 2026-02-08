@@ -213,7 +213,7 @@ const MemberCard = React.memo(({
           <Button
             size="icon"
             variant="ghost"
-            className="h-9 w-9"
+            className="h-9 w-9 hover:bg-accent hover:text-accent-foreground"
             onClick={() => onViewClick(member)}
             title="Details anzeigen"
           >
@@ -225,7 +225,7 @@ const MemberCard = React.memo(({
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-9 w-9"
+                className="h-9 w-9 hover:bg-accent hover:text-accent-foreground"
                 onClick={() => onEditClick(member)}
                 title="Bearbeiten"
               >
@@ -234,7 +234,7 @@ const MemberCard = React.memo(({
               <Button
                 size="sm"
                 variant="ghost"
-                className="gap-1 hover:bg-muted"
+                className="gap-1 text-primary hover:text-primary hover:bg-primary/10 focus-visible:ring-primary/20"
                 onClick={() => onExtendClick(member)}
               >
                 <RefreshCw className="h-4 w-4" />
