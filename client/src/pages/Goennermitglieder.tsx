@@ -207,7 +207,8 @@ const MemberCard = React.memo(({
               title="Zahlung bestätigen"
             >
               <CheckCircle className="h-4 w-4" />
-              Zahlung bestätigen
+              <span className="hidden sm:inline">Zahlung bestätigen</span>
+              <span className="sm:hidden">Bestätigen</span>
             </Button>
           )}
           <Button

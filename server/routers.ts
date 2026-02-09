@@ -427,7 +427,7 @@ export const appRouter = router({
   // FEATURE TOGGLES (Admin only)
   // ============================================
   features: router({
-    list: adminProcedure.query(async () => {
+    list: publicProcedure.query(async () => {
       return db.getAllFeatureToggles();
     }),
     
