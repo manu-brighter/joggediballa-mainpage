@@ -664,13 +664,13 @@ export default function Goennermitglieder() {
                     </div>
                   </div>
 
-                  {/* Währung */}
+                  {/* Betrag */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Währung</Label>
+                    <Label className="text-sm font-medium">Betrag</Label>
                     <Input 
-                      value="CHF" 
+                      value="mind. CHF 20.- pro Jahr" 
                       readOnly 
-                      className="bg-muted/50 w-24"
+                      className="bg-muted/50"
                     />
                   </div>
                 </div>
