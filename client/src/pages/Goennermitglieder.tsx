@@ -557,7 +557,7 @@ export default function Goennermitglieder() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
           {/* Sort Dropdown */}
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-            <SelectTrigger className="w-full sm:w-auto min-w-[200px] h-11">
+            <SelectTrigger className="w-full sm:w-auto min-w-[200px] h-10">
               <ArrowUpDown className="h-4 w-4 mr-2 flex-shrink-0" />
               <SelectValue placeholder="Sortieren" />
             </SelectTrigger>
@@ -568,15 +568,17 @@ export default function Goennermitglieder() {
             </SelectContent>
           </Select>
 
-          {/* Payment Info Button */}
-          <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="lg" variant="outline" className="gap-2 h-11 w-full sm:w-auto">
-                <Banknote className="h-5 w-5" />
-                <span className="hidden sm:inline">Einzahlen</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+          {/* Action Buttons - Side by side on mobile */}
+          <div className="flex gap-2">
+            {/* Payment Info Button */}
+            <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2 h-10 flex-1 sm:flex-initial sm:w-auto">
+                  <Banknote className="h-4 w-4" />
+                  <span className="hidden sm:inline">Einzahlen</span>
+                </Button>
+              </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Banknote className="h-5 w-5" />
@@ -587,17 +589,17 @@ export default function Goennermitglieder() {
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-6 py-4">
+              <div className="space-y-4 sm:space-y-6 py-2 sm:py-4">
                 {/* QR Code Section */}
-                <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-lg">
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="flex flex-col items-center justify-center p-3 sm:p-6 bg-muted/30 rounded-lg">
+                  <div className="bg-white p-2 sm:p-4 rounded-lg shadow-sm">
                     <img 
                       src="/images/swiss_qr_payment.png" 
                       alt="Swiss QR Payment" 
-                      className="w-48 h-48 sm:w-64 sm:h-64"
+                      className="w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64"
                     />
                   </div>
-                  <p className="text-sm text-muted-foreground mt-4 text-center">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-2 sm:mt-4 text-center">
                     Swiss QR-Rechnung
                   </p>
                 </div>
@@ -685,15 +687,15 @@ export default function Goennermitglieder() {
             </DialogContent>
           </Dialog>
 
-          {/* Create Button */}
-          {canManageGoennermitglieder && (
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="lg" className="btn-animate gap-2 h-11 w-full sm:w-auto">
-                  <Plus className="h-5 w-5" />
-                  <span className="hidden sm:inline">Neues Mitglied</span>
-                </Button>
-              </DialogTrigger>
+            {/* Create Button */}
+            {canManageGoennermitglieder && (
+              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="btn-animate gap-2 h-10 flex-1 sm:flex-initial sm:w-auto">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Neues Mitglied</span>
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" onEnterKey={handleCreateClick}>
                 <DialogHeader>
                   <DialogTitle>Neues Gönnermitglied</DialogTitle>
@@ -814,6 +816,7 @@ export default function Goennermitglieder() {
               </DialogContent>
             </Dialog>
           )}
+          </div>
         </div>
       </div>
 
