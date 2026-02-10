@@ -573,7 +573,7 @@ export default function Goennermitglieder() {
             {/* Payment Info Button */}
             <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 h-10 flex-1 sm:flex-initial sm:w-auto">
+                <Button variant="outline" className="gap-2 h-9.5 flex-1 sm:flex-initial sm:w-auto">
                   <Banknote className="h-4 w-4" />
                   <span className="hidden sm:inline">Einzahlen</span>
                 </Button>
@@ -584,7 +584,7 @@ export default function Goennermitglieder() {
                   <Banknote className="h-5 w-5" />
                   Gönnermitgliedschaft Einzahlung
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-left">
                   Scanne den QR-Code mit deiner Banking-App oder verwende die untenstehenden Zahlungsinformationen.
                 </DialogDescription>
               </DialogHeader>
@@ -594,7 +594,7 @@ export default function Goennermitglieder() {
                 <div className="flex flex-col items-center justify-center p-3 sm:p-6 bg-muted/30 rounded-lg">
                   <div className="bg-white p-2 sm:p-4 rounded-lg shadow-sm">
                     <img 
-                      src="/images/swiss_qr_payment.png" 
+                      src="/images/Einzahlungs-QR-Code.png"
                       alt="Swiss QR Payment" 
                       className="w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64"
                     />
@@ -691,7 +691,7 @@ export default function Goennermitglieder() {
             {canManageGoennermitglieder && (
               <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="btn-animate gap-2 h-10 flex-1 sm:flex-initial sm:w-auto">
+                  <Button className="btn-animate gap-2 h-9.5 flex-1 sm:flex-initial sm:w-auto">
                     <Plus className="h-4 w-4" />
                     <span className="hidden sm:inline">Neues Mitglied</span>
                   </Button>
@@ -844,7 +844,7 @@ export default function Goennermitglieder() {
       <section className="space-y-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <CheckCircle className="h-5 w-5 text-primary" />
-          Aktive Mitglieder ({activeMembers.length})
+          <span className="text-primary">Aktive Mitglieder ({activeMembers.length})</span>
         </h2>
         
         {isLoading ? (
