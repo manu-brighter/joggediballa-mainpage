@@ -47,7 +47,10 @@ import {
   XCircle,
   ArrowUpDown,
   Pencil,
-  Eye
+  Eye,
+  Banknote,
+  Copy,
+  Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -267,6 +270,8 @@ export default function Goennermitglieder() {
   const [paymentStatusDialogOpen, setPaymentStatusDialogOpen] = useState(false);
   const [pendingPaymentStatus, setPendingPaymentStatus] = useState<"paid" | "pending">("paid");
   const [currentAction, setCurrentAction] = useState<"create" | "extend" | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("endDate");
   
@@ -562,6 +567,123 @@ export default function Goennermitglieder() {
               <SelectItem value="lastName">Nach Nachname</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Payment Info Button */}
+          <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" variant="outline" className="gap-2 h-11 w-full sm:w-auto">
+                <Banknote className="h-5 w-5" />
+                <span className="hidden sm:inline">Einzahlen</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Banknote className="h-5 w-5" />
+                  Gönnermitgliedschaft Einzahlung
+                </DialogTitle>
+                <DialogDescription>
+                  Scanne den QR-Code mit deiner Banking-App oder verwende die untenstehenden Zahlungsinformationen.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6 py-4">
+                {/* QR Code Section */}
+                <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-lg">
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <img 
+                      src="/images/swiss_qr_payment.png" 
+                      alt="Swiss QR Payment" 
+                      className="w-48 h-48 sm:w-64 sm:h-64"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-4 text-center">
+                    Swiss QR-Rechnung
+                  </p>
+                </div>
+
+                {/* Payment Details */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Zahlungsinformationen</h3>
+                  
+                  {/* IBAN */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">IBAN</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        value="CH98 0076 9438 7141 3200 1" 
+                        readOnly 
+                        className="font-mono bg-muted/50"
+                      />
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText("CH9800769438714132001");
+                          setCopiedField("iban");
+                          toast.success("IBAN kopiert");
+                          setTimeout(() => setCopiedField(null), 2000);
+                        }}
+                      >
+                        {copiedField === "iban" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Empfänger */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Empfänger</Label>
+                    <div className="p-3 bg-muted/50 rounded-md">
+                      <p className="font-medium">Jogge di Balla</p>
+                      <p className="text-sm text-muted-foreground">Breitenbacherstrasse 24</p>
+                      <p className="text-sm text-muted-foreground">4225 Brislach</p>
+                    </div>
+                  </div>
+
+                  {/* Referenz */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Zahlungszweck</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        value="Gönnermitgliedschaft" 
+                        readOnly 
+                        className="bg-muted/50"
+                      />
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText("Gönnermitgliedschaft");
+                          setCopiedField("reference");
+                          toast.success("Zahlungszweck kopiert");
+                          setTimeout(() => setCopiedField(null), 2000);
+                        }}
+                      >
+                        {copiedField === "reference" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Währung */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Währung</Label>
+                    <Input 
+                      value="CHF" 
+                      readOnly 
+                      className="bg-muted/50 w-24"
+                    />
+                  </div>
+                </div>
+
+                {/* Info Box */}
+                <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                  <p className="text-sm text-foreground">
+                    <strong>Hinweis:</strong> Nach Zahlungseingang wird die Mitgliedschaft vom Admin bestätigt und aktiviert.
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Create Button */}
           {canManageGoennermitglieder && (
