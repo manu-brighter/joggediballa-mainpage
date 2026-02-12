@@ -26,7 +26,7 @@ export function Footer() {
           {/* Logo & About */}
           <div className="space-y-4">
             <img 
-              src="/Jogge_Di_Balla_Final_Transparent.png" 
+              src="/JoggediBalla-Logo.PNG"
               alt="Jogge di Balla Logo" 
               className="h-14 w-auto"
               loading="lazy"
