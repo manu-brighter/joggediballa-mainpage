@@ -515,7 +515,8 @@ export const appRouter = router({
         phone: z.string().max(50).optional(),
         membershipStartDate: z.date(),
         notes: z.string().optional(),
-        paymentStatus: z.enum(["paid", "pending"]).default("paid")
+        paymentStatus: z.enum(["paid", "pending"]).default("paid"),
+        contributionAmount: z.number().min(1).default(20)
       }))
       .mutation(async ({ input, ctx }) => {
         // Default end date is start date + 1 year
@@ -542,7 +543,8 @@ export const appRouter = router({
         city: z.string().min(1).max(100).optional(),
         email: z.string().email().max(320).optional(),
         phone: z.string().max(50).optional(),
-        notes: z.string().optional()
+        notes: z.string().optional(),
+        contributionAmount: z.number().min(1).optional()
       }))
       .mutation(async ({ input }) => {
         const { memberId, ...data } = input;

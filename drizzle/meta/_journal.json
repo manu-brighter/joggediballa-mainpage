@@ -64,6 +64,13 @@
       "when": 1768830912523,
       "tag": "0008_stale_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1770886432139,
+      "tag": "0009_wild_zodiak",
+      "breakpoints": true
     }
   ]
 }

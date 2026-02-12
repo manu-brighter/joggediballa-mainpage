@@ -77,6 +77,7 @@ interface Member {
   isActive: boolean;
   paymentStatus: "paid" | "pending";
   paymentPendingSince: Date | null;
+  contributionAmount: number;
   createdAt: Date;
 }
 
@@ -286,7 +287,8 @@ export default function Goennermitglieder() {
     email: "",
     phone: "",
     membershipStartDate: new Date().toISOString().split("T")[0],
-    notes: ""
+    notes: "",
+    contributionAmount: "20"
   });
 
   const utils = trpc.useUtils();
@@ -366,7 +368,8 @@ export default function Goennermitglieder() {
       email: member.email || "",
       phone: member.phone || "",
       membershipStartDate: new Date(member.membershipStartDate).toISOString().split("T")[0],
-      notes: member.notes || ""
+      notes: member.notes || "",
+      contributionAmount: member.contributionAmount.toString()
     });
     setEditDialogOpen(true);
   };
@@ -431,6 +434,11 @@ export default function Goennermitglieder() {
     return { activeMembers: active, pendingMembers: pending, expiredMembers: expired };
   }, [allMembers, sortBy]);
 
+  // Calculate total contribution amount from active members only
+  const totalActiveContributions = useMemo(() => {
+    return activeMembers.reduce((sum, member) => sum + (member.contributionAmount || 0), 0);
+  }, [activeMembers]);
+
   const resetForm = () => {
     setFormData({
       firstName: "",
@@ -442,7 +450,8 @@ export default function Goennermitglieder() {
       email: "",
       phone: "",
       membershipStartDate: new Date().toISOString().split("T")[0],
-      notes: ""
+      notes: "",
+      contributionAmount: "20"
     });
   };
 
@@ -469,7 +478,8 @@ export default function Goennermitglieder() {
       phone: formData.phone || undefined,
       membershipStartDate: new Date(formData.membershipStartDate),
       notes: formData.notes || undefined,
-      paymentStatus: pendingPaymentStatus
+      paymentStatus: pendingPaymentStatus,
+      contributionAmount: parseFloat(formData.contributionAmount) || 20
     });
     setPaymentStatusDialogOpen(false);
   };
@@ -795,6 +805,18 @@ export default function Goennermitglieder() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="contributionAmount">Gönnerbeitrag (CHF) *</Label>
+                    <Input
+                      id="contributionAmount"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={formData.contributionAmount}
+                      onChange={(e) => setFormData({ ...formData, contributionAmount: e.target.value })}
+                      placeholder="20"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="notes">Notizen</Label>
                     <Textarea
                       id="notes"
@@ -821,6 +843,33 @@ export default function Goennermitglieder() {
       </div>
 
       {/* Stats Cards - Compact horizontal layout */}
+      {/* Total Contributions Card */}
+      <MotionDiv
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card className="bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border-teal-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Gesamtsumme aktive Mitglieder</p>
+                <p className="text-3xl font-bold text-teal-600 dark:text-teal-400 mt-1">
+                  CHF {totalActiveContributions.toLocaleString('de-CH')}.-
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {activeMembers.length} {activeMembers.length === 1 ? 'Mitglied' : 'Mitglieder'}
+                </p>
+              </div>
+              <div className="h-16 w-16 rounded-full bg-teal-500/20 flex items-center justify-center">
+                <Banknote className="h-8 w-8 text-teal-600 dark:text-teal-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </MotionDiv>
+
+      {/* Stats Badges */}
       <div className="flex flex-wrap gap-3 justify-center md:justify-start">
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
           <CheckCircle className="h-4 w-4 text-primary" />
@@ -1039,6 +1088,10 @@ export default function Goennermitglieder() {
                   <p className="font-medium">{new Date(selectedMember.membershipEndDate).toLocaleDateString("de-DE")}</p>
                 </div>
               </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Gönnerbeitrag</Label>
+                <p className="font-medium">CHF {selectedMember.contributionAmount}.-</p>
+              </div>
               {selectedMember.notes && (
                 <div>
                   <Label className="text-muted-foreground text-xs">Notizen</Label>
@@ -1151,6 +1204,18 @@ export default function Goennermitglieder() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="edit-contributionAmount">Gönnerbeitrag (CHF) <span className="text-destructive">*</span></Label>
+              <Input
+                id="edit-contributionAmount"
+                type="number"
+                min="1"
+                step="1"
+                value={formData.contributionAmount}
+                onChange={(e) => setFormData({ ...formData, contributionAmount: e.target.value })}
+                placeholder="20"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="edit-notes">Notizen</Label>
               <Textarea
                 id="edit-notes"
@@ -1176,7 +1241,8 @@ export default function Goennermitglieder() {
                   city: formData.city,
                   email: formData.email || undefined,
                   phone: formData.phone || undefined,
-                  notes: formData.notes || undefined
+                  notes: formData.notes || undefined,
+                  contributionAmount: parseFloat(formData.contributionAmount) || 20
                 });
               }}
               disabled={updateMutation.isPending}

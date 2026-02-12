@@ -196,6 +196,7 @@ export const goennermitglieder = mysqlTable("goennermitglieder", {
   isActive: boolean("isActive").default(true).notNull(),
   paymentStatus: mysqlEnum("paymentStatus", ["paid", "pending"]).default("paid").notNull(), // Zahlungsstatus
   paymentPendingSince: timestamp("paymentPendingSince"), // Datum wenn Zahlung noch aussteht
+  contributionAmount: int("contributionAmount").default(20).notNull(), // Gönnerbeitrag in CHF
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdBy: int("createdBy").references(() => users.id),
