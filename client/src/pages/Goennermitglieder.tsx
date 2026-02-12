@@ -850,10 +850,10 @@ export default function Goennermitglieder() {
         transition={{ delay: 0.1 }}
       >
         <Card className="bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border-teal-500/20">
-          <CardContent className="pt-6">
+          <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Gesamtsumme aktive Mitglieder</p>
+                <p className="text-sm font-medium text-muted-foreground">Gesamtsumme aktiver Mitglieder</p>
                 <p className="text-3xl font-bold text-teal-600 dark:text-teal-400 mt-1">
                   CHF {totalActiveContributions.toLocaleString('de-CH')}.-
                 </p>
