@@ -5,6 +5,7 @@ import { Link, useLocation } from "wouter";
 import { Calendar, Trophy, Users, Heart, ArrowRight, Instagram, Sparkles, Gift, Twitch } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useSEO } from "@/hooks/useSEO";
 
 const MotionDiv = motion.div;
 
@@ -14,6 +15,15 @@ export default function Home() {
   const { theme, resolvedTheme } = useTheme();
   
   const nextEvent = events.find((event) => new Date(event.eventDate) > new Date());
+
+  // SEO Meta Tags
+  useSEO({
+    title: "Jogge di Balla - Event- und Kulturverein seit 2022",
+    description: "Event- und Kulturverein aus Brislach. Wir bringen Menschen zusammen für unvergessliche Momente, grossartige Events und jede Menge Spass! Shotcounter, Gönnermitglieder, DJ & Fotografie Services.",
+    keywords: "Jogge di Balla, Verein, Events, Brislach, Baselland, Laufental, Shotcounter, Party, Community, DJ, Fotografie, Vermietung, Beerpong",
+    ogUrl: "https://joggediballa.ch/",
+    ogImage: "https://joggediballa.ch/JoggediBalla-Logo.PNG"
+  });
 
   // Determine which logo to show based on theme
   const isDark = resolvedTheme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);

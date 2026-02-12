@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermissions";
+import { useSEO } from "@/hooks/useSEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -76,6 +77,15 @@ export default function Sponsors() {
   });
 
   const canManageSponsors = usePermission("manage_sponsors");
+
+  // SEO Meta Tags for Google Search Results
+  useSEO({
+    title: "Unsere Sponsoren - Jogge di Balla",
+    description: "Entdecke die Unternehmen und Partner, die Jogge di Balla unterstützen. Gemeinsam schaffen wir unvergessliche Events und stärken unsere Community in Brislach und dem Laufental.",
+    keywords: "Jogge di Balla, Sponsoren, Partner, Brislach, Laufental, Event-Sponsoring, Community Support",
+    ogUrl: "https://joggediballa.ch/sponsors",
+    ogImage: "https://joggediballa.ch/JoggediBalla-Logo.PNG"
+  });
 
   const resetForm = () => {
     setName("");
