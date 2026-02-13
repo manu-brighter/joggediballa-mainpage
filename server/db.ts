@@ -269,6 +269,16 @@ export async function createSponsor(sponsor: InsertSponsor) {
 export async function updateSponsor(sponsorId: number, data: Partial<InsertSponsor>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // If logoKey is being updated, delete the old logo from storage
+  if (data.logoKey) {
+    const oldSponsor = await db.select().from(sponsors).where(eq(sponsors.id, sponsorId)).limit(1);
+    if (oldSponsor.length > 0 && oldSponsor[0].logoKey && oldSponsor[0].logoKey !== data.logoKey) {
+      const { storageDelete } = await import('./storage');
+      await storageDelete(oldSponsor[0].logoKey);
+    }
+  }
+  
   await db.update(sponsors).set(data).where(eq(sponsors.id, sponsorId));
 }
 
@@ -431,6 +441,23 @@ export async function createTeamMember(member: InsertTeamMember) {
 export async function updateTeamMember(memberId: number, data: Partial<InsertTeamMember>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // If photoKey is being updated, delete the old photos from storage
+  if (data.photoKey || data.compressedPhotoKey) {
+    const oldMember = await db.select().from(teamMembers).where(eq(teamMembers.id, memberId)).limit(1);
+    if (oldMember.length > 0) {
+      const { storageDelete } = await import('./storage');
+      // Delete old original photo if new one is provided
+      if (data.photoKey && oldMember[0].photoKey && oldMember[0].photoKey !== data.photoKey) {
+        await storageDelete(oldMember[0].photoKey);
+      }
+      // Delete old compressed photo if new one is provided
+      if (data.compressedPhotoKey && oldMember[0].compressedPhotoKey && oldMember[0].compressedPhotoKey !== data.compressedPhotoKey) {
+        await storageDelete(oldMember[0].compressedPhotoKey);
+      }
+    }
+  }
+  
   await db.update(teamMembers).set(data).where(eq(teamMembers.id, memberId));
 }
 
@@ -620,6 +647,14 @@ export async function deleteGoennermitglied(memberId: number) {
 export async function updateUserProfilePicture(userId: number, profilePictureUrl: string, profilePictureKey: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // Delete old profile picture from storage
+  const oldUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (oldUser.length > 0 && oldUser[0].profilePictureKey && oldUser[0].profilePictureKey !== profilePictureKey) {
+    const { storageDelete } = await import('./storage');
+    await storageDelete(oldUser[0].profilePictureKey);
+  }
+  
   await db.update(users)
     .set({ profilePictureUrl, profilePictureKey })
     .where(eq(users.id, userId));

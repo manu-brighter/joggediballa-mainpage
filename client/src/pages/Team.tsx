@@ -168,6 +168,7 @@ export default function Team() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [croppedImageUrl, setCroppedImageUrl] = useState<string>("");
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<number, boolean>>({});
+  const [uploadedPhotoData, setUploadedPhotoData] = useState<{ url: string; key: string; compressedUrl: string; compressedKey: string } | null>(null);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -182,6 +183,7 @@ export default function Team() {
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
+    setUploadedPhotoData(null);
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -263,6 +265,13 @@ export default function Team() {
       }
 
       const data = await response.json();
+      // Store both URLs for later use
+      setUploadedPhotoData({
+        url: data.url,
+        key: data.key,
+        compressedUrl: data.compressedUrl,
+        compressedKey: data.compressedKey
+      });
       return data.url;
     } catch (error) {
       console.error("Upload error:", error);
@@ -280,10 +289,17 @@ export default function Team() {
     }
 
     let photoUrl = selectedMember?.photoUrl || "";
+    let photoKey = selectedMember?.photoKey || "";
+    let compressedPhotoUrl = (selectedMember as any)?.compressedPhotoUrl || "";
+    let compressedPhotoKey = (selectedMember as any)?.compressedPhotoKey || "";
+    
     if (photoFile) {
       const uploadedUrl = await handlePhotoUpload();
-      if (uploadedUrl) {
-        photoUrl = uploadedUrl;
+      if (uploadedUrl && uploadedPhotoData) {
+        photoUrl = uploadedPhotoData.url;
+        photoKey = uploadedPhotoData.key;
+        compressedPhotoUrl = uploadedPhotoData.compressedUrl;
+        compressedPhotoKey = uploadedPhotoData.compressedKey;
       }
     }
 
@@ -295,6 +311,9 @@ export default function Team() {
         role: formData.role,
         bio: formData.bio,
         photoUrl: photoUrl || undefined,
+        photoKey: photoKey || undefined,
+        compressedPhotoUrl: compressedPhotoUrl || undefined,
+        compressedPhotoKey: compressedPhotoKey || undefined,
       });
     } else {
       createMutation.mutate({
@@ -303,6 +322,9 @@ export default function Team() {
         role: formData.role || undefined,
         bio: formData.bio || undefined,
         photoUrl: photoUrl || undefined,
+        photoKey: photoKey || undefined,
+        compressedPhotoUrl: compressedPhotoUrl || undefined,
+        compressedPhotoKey: compressedPhotoKey || undefined,
       });
     }
   };

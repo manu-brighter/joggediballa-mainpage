@@ -182,13 +182,13 @@ router.post("/event-photo", async (req: Request, res: Response) => {
         const originalKey = `events/original/${photoId}.${ext}`;
         const { url: originalUrl, key: originalStorageKey } = await storagePut(originalKey, fileBuffer, fileMimeType);
 
-        // Generate compressed version (~1MB max, good quality)
+        // Generate compressed version (optimized for fast loading)
         const compressedBuffer = await sharp(fileBuffer)
-          .resize(1024, 1024, { // Max 1024px on longest side
+          .resize(800, 800, { // Max 800px on longest side (reduced from 1024)
             fit: 'inside',
             withoutEnlargement: true
           })
-          .jpeg({ quality: 65 }) // High quality JPEG
+          .jpeg({ quality: 50 }) // Lower quality for faster loading (reduced from 65)
           .toBuffer();
 
         // Upload compressed version
@@ -244,14 +244,33 @@ router.post("/team-member-photo", async (req: Request, res: Response) => {
           return;
         }
 
-        // Generate unique key
+        // Generate unique ID for both versions
+        const photoId = nanoid();
         const ext = fileName.split(".").pop() || "jpg";
-        const uniqueKey = `team-members/${nanoid()}.${ext}`;
+        
+        // Upload original high-res image
+        const originalKey = `team-members/original/${photoId}.${ext}`;
+        const { url: originalUrl, key: originalStorageKey } = await storagePut(originalKey, fileBuffer, fileMimeType);
 
-        // Upload to S3
-        const { url, key } = await storagePut(uniqueKey, fileBuffer, fileMimeType);
+        // Generate compressed version (max 512px, lower quality for faster loading)
+        const compressedBuffer = await sharp(fileBuffer)
+          .resize(512, 512, { // Max 512px on longest side
+            fit: 'inside',
+            withoutEnlargement: true
+          })
+          .jpeg({ quality: 70 }) // Good quality JPEG
+          .toBuffer();
 
-        res.json({ url, key });
+        // Upload compressed version
+        const compressedKey = `team-members/compressed/${photoId}.jpg`;
+        const { url: compressedUrl, key: compressedStorageKey } = await storagePut(compressedKey, compressedBuffer, "image/jpeg");
+
+        res.json({ 
+          url: originalUrl, 
+          key: originalStorageKey,
+          compressedUrl,
+          compressedKey: compressedStorageKey
+        });
       } catch (error) {
         console.error("Team member photo upload error:", error);
         res.status(500).json({ error: "Upload failed" });
