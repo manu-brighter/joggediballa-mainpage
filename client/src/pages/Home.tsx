@@ -37,11 +37,11 @@ export default function Home() {
         <div className="absolute inset-0 hero-gradient" />
         {/* Pattern Overlay - only over gradient */}
         <div 
-          className="absolute inset-0 opacity-[0.03] dark:opacity-[0]"
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.5]"
           style={{
-            backgroundImage: 'url(/pattern-overlay.png)',
+            backgroundImage: 'url(/joggediballa-pattern.png)',
             backgroundRepeat: 'repeat',
-            backgroundSize: '512px 512px'
+            backgroundSize: '1129px 610px'
           }}
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.55_0.14_195_/_0.15),transparent_50%)]" />
