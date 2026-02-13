@@ -588,7 +588,7 @@ export default function Goennermitglieder() {
                   <span className="hidden sm:inline">Einzahlen</span>
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Banknote className="h-5 w-5" />
