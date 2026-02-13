@@ -138,6 +138,14 @@ export async function updateUserRole(userId: number, role: "admin" | "maintainer
 export async function deleteUser(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // Get user data to delete profile picture from storage
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (user.length > 0 && user[0].profilePictureKey) {
+    const { storageDelete } = await import('./storage');
+    await storageDelete(user[0].profilePictureKey);
+  }
+  
   await db.delete(users).where(eq(users.id, userId));
 }
 
@@ -267,6 +275,14 @@ export async function updateSponsor(sponsorId: number, data: Partial<InsertSpons
 export async function deleteSponsor(sponsorId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // Get sponsor data to delete logo from storage
+  const sponsor = await db.select().from(sponsors).where(eq(sponsors.id, sponsorId)).limit(1);
+  if (sponsor.length > 0 && sponsor[0].logoKey) {
+    const { storageDelete } = await import('./storage');
+    await storageDelete(sponsor[0].logoKey);
+  }
+  
   await db.update(sponsors).set({ isActive: false }).where(eq(sponsors.id, sponsorId));
 }
 
@@ -306,6 +322,27 @@ export async function updateEvent(eventId: number, data: Partial<InsertEvent>) {
 export async function deleteEvent(eventId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // Get all photos for this event to delete from storage
+  const eventPhotos = await db.select().from(photos).where(eq(photos.eventId, eventId));
+  const { storageDelete } = await import('./storage');
+  
+  for (const photo of eventPhotos) {
+    // Delete original image
+    if (photo.imageKey) {
+      await storageDelete(photo.imageKey);
+    }
+    // Delete compressed version
+    if (photo.compressedKey) {
+      await storageDelete(photo.compressedKey);
+    }
+    // Delete thumbnail
+    if (photo.thumbnailKey) {
+      await storageDelete(photo.thumbnailKey);
+    }
+  }
+  
+  // Delete event (photos will be cascade deleted by DB)
   await db.delete(events).where(eq(events.id, eventId));
 }
 
@@ -349,6 +386,25 @@ export async function createPhoto(photo: InsertPhoto) {
 export async function deletePhoto(photoId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // Get photo data to delete from storage
+  const photo = await db.select().from(photos).where(eq(photos.id, photoId)).limit(1);
+  if (photo.length > 0) {
+    const { storageDelete } = await import('./storage');
+    // Delete original image
+    if (photo[0].imageKey) {
+      await storageDelete(photo[0].imageKey);
+    }
+    // Delete compressed version
+    if (photo[0].compressedKey) {
+      await storageDelete(photo[0].compressedKey);
+    }
+    // Delete thumbnail
+    if (photo[0].thumbnailKey) {
+      await storageDelete(photo[0].thumbnailKey);
+    }
+  }
+  
   await db.delete(photos).where(eq(photos.id, photoId));
 }
 
@@ -381,6 +437,21 @@ export async function updateTeamMember(memberId: number, data: Partial<InsertTea
 export async function deleteTeamMember(memberId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  
+  // Get team member data to delete photo from storage
+  const member = await db.select().from(teamMembers).where(eq(teamMembers.id, memberId)).limit(1);
+  if (member.length > 0) {
+    const { storageDelete } = await import('./storage');
+    // Delete original photo
+    if (member[0].photoKey) {
+      await storageDelete(member[0].photoKey);
+    }
+    // Delete compressed photo
+    if (member[0].compressedPhotoKey) {
+      await storageDelete(member[0].compressedPhotoKey);
+    }
+  }
+  
   await db.update(teamMembers).set({ isActive: false }).where(eq(teamMembers.id, memberId));
 }
 

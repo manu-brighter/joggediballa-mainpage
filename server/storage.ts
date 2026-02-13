@@ -13,7 +13,7 @@ function isSelfHosted(): boolean {
 }
 
 function getSelfHostedConfig(): { uploadDir: string; publicUrl: string } {
-  const uploadDir = process.env.UPLOAD_DIR || '/var/www/joggediballa/uploads';
+  const uploadDir = process.env.UPLOAD_DIR || '/var/www/joggediballa-mainpage/uploads';
   const publicUrl = process.env.PUBLIC_UPLOAD_URL || 'https://joggediballa.ch/uploads';
   return { uploadDir, publicUrl };
 }
@@ -165,4 +165,60 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
     return storageGetLocal(relKey);
   }
   return storageGetS3(relKey);
+}
+
+// Delete file from storage
+async function storageDeleteLocal(relKey: string): Promise<void> {
+  const { uploadDir } = getSelfHostedConfig();
+  const key = normalizeKey(relKey);
+  const filePath = path.join(uploadDir, key);
+  
+  // Check if file exists before deleting
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+    console.log(`[Storage] Deleted local file: ${filePath}`);
+  } else {
+    console.warn(`[Storage] File not found for deletion: ${filePath}`);
+  }
+}
+
+async function storageDeleteS3(relKey: string): Promise<void> {
+  const { baseUrl, apiKey } = getStorageConfig();
+  const key = normalizeKey(relKey);
+  
+  const deleteUrl = new URL("v1/storage/delete", ensureTrailingSlash(baseUrl));
+  deleteUrl.searchParams.set("path", key);
+  
+  const response = await fetch(deleteUrl, {
+    method: "DELETE",
+    headers: buildAuthHeaders(apiKey),
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => response.statusText);
+    console.error(`[Storage] S3 delete failed (${response.status}): ${message}`);
+    throw new Error(
+      `Storage delete failed (${response.status} ${response.statusText}): ${message}`
+    );
+  }
+  
+  console.log(`[Storage] Deleted S3 file: ${key}`);
+}
+
+export async function storageDelete(relKey: string): Promise<void> {
+  if (!relKey) {
+    console.warn("[Storage] Attempted to delete empty key, skipping");
+    return;
+  }
+  
+  try {
+    if (isSelfHosted()) {
+      await storageDeleteLocal(relKey);
+    } else {
+      await storageDeleteS3(relKey);
+    }
+  } catch (error) {
+    console.error(`[Storage] Failed to delete file ${relKey}:`, error);
+    // Don't throw - we don't want to fail the entire delete operation if storage cleanup fails
+  }
 }
