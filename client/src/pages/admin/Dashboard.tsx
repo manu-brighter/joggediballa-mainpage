@@ -47,6 +47,7 @@ import {
   Wine,
   RotateCcw,
   Users2,
+  ClipboardList,
   CheckCircle2,
   XCircle,
   AlertTriangle,
@@ -67,6 +68,7 @@ const PERMISSIONS = [
   { key: "edit_shotcounter", label: "Shotcounter bearbeiten", icon: Wine, roles: ["admin", "maintainer", "editor"] },
   { key: "reset_shotcounter", label: "Shotcounter zurücksetzen", icon: RotateCcw, roles: ["admin"] },
   { key: "edit_team", label: "Team bearbeiten", icon: Users2, roles: ["admin", "maintainer"] },
+  { key: "manage_attendance", label: "Anwesenheitsliste verwalten", icon: ClipboardList, roles: ["admin", "maintainer"] },
 ];
 
 // Default feature toggles

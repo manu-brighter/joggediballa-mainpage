@@ -18,6 +18,8 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import ActivityLog from "./pages/admin/ActivityLog";
 import Goennermitglieder from "./pages/Goennermitglieder";
+import Attendance from "./pages/Attendance";
+import AttendanceStatistics from "./pages/AttendanceStatistics";
 import Profile from "./pages/Profile";
 import Dienstleistungen from "./pages/Dienstleistungen";
 import MaintenancePage from "./pages/Maintenance";
@@ -53,6 +55,8 @@ function Router() {
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/activity" component={ActivityLog} />
       <Route path="/goennermitglieder" component={Goennermitglieder} />
+      <Route path="/attendance" component={Attendance} />
+      <Route path="/attendance/statistics" component={AttendanceStatistics} />
       <Route path="/profile" component={Profile} />
       <Route path="/dienstleistungen" component={Dienstleistungen} />
       <Route path="/404" component={NotFound} />

@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { attendanceRouter } from "./attendance_router";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -73,6 +74,7 @@ const requirePermission = (permissionKey: string) => {
 
 export const appRouter = router({
   system: systemRouter,
+  attendance: attendanceRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

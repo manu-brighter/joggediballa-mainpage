@@ -1,0 +1,817 @@
+import { useState, useMemo } from "react";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermissions";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { parseErrorMessage } from "@/lib/errorMessages";
+import { 
+  Calendar, 
+  Plus, 
+  Pencil, 
+  Trash2, 
+  Users, 
+  CheckCircle, 
+  AlertTriangle, 
+  XCircle,
+  BarChart3,
+  ClipboardList,
+  UserPlus,
+  UserMinus,
+  Eye
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Link } from "wouter";
+
+const MotionCard = motion(Card);
+
+interface Session {
+  id: number;
+  date: Date;
+  title: string;
+  type: "meeting" | "event";
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface Member {
+  id: number;
+  name: string;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface AttendanceRecord {
+  id: number;
+  sessionId: number;
+  memberId: number;
+  status: "present" | "partial" | "absent";
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface AttendanceFormData {
+  [memberId: number]: {
+    status: "present" | "partial" | "absent";
+    notes: string;
+  };
+}
+
+export default function Attendance() {
+  const { user } = useAuth();
+  const utils = trpc.useUtils();
+  const canManageAttendance = usePermission("manage_attendance");
+
+  // Filter state
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState<number | "all">(currentYear);
+  const [typeFilter, setTypeFilter] = useState<"all" | "meeting" | "event">("all");
+
+  // Dialog states
+  const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
+  const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
+  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [isEdit, setIsEdit] = useState(false);
+
+  // Form state
+  const [sessionForm, setSessionForm] = useState({
+    date: new Date().toISOString().split("T")[0],
+    title: "",
+    type: "meeting" as "meeting" | "event",
+    notes: "",
+  });
+
+  const [memberForm, setMemberForm] = useState({
+    name: "",
+  });
+
+  const [attendanceForm, setAttendanceForm] = useState<AttendanceFormData>({});
+
+  // Queries
+  const { data: sessions = [], isLoading: sessionsLoading } = trpc.attendance.listSessions.useQuery({
+    year: selectedYear === "all" ? undefined : selectedYear,
+  });
+
+  const { data: members = [], isLoading: membersLoading } = trpc.attendance.listMembers.useQuery({
+    activeOnly: true,
+  });
+
+  const { data: records = [] } = trpc.attendance.listRecords.useQuery(
+    { sessionId: selectedSession?.id || 0 },
+    { enabled: !!selectedSession }
+  );
+
+  // Mutations
+  const createSessionMutation = trpc.attendance.createSession.useMutation({
+    onSuccess: () => {
+      utils.attendance.listSessions.invalidate();
+      toast.success("Meeting/Event erfolgreich erstellt");
+      setSessionDialogOpen(false);
+      resetSessionForm();
+    },
+    onError: (error) => {
+      toast.error(parseErrorMessage(error));
+    },
+  });
+
+  const updateSessionMutation = trpc.attendance.updateSession.useMutation({
+    onSuccess: () => {
+      utils.attendance.listSessions.invalidate();
+      toast.success("Meeting/Event erfolgreich aktualisiert");
+      setSessionDialogOpen(false);
+      resetSessionForm();
+    },
+    onError: (error) => {
+      toast.error(parseErrorMessage(error));
+    },
+  });
+
+  const deleteSessionMutation = trpc.attendance.deleteSession.useMutation({
+    onSuccess: () => {
+      utils.attendance.listSessions.invalidate();
+      toast.success("Meeting/Event erfolgreich gelöscht");
+      setDeleteDialogOpen(false);
+      setSelectedSession(null);
+    },
+    onError: (error) => {
+      toast.error(parseErrorMessage(error));
+    },
+  });
+
+  const createMemberMutation = trpc.attendance.createMember.useMutation({
+    onSuccess: () => {
+      utils.attendance.listMembers.invalidate();
+      toast.success("Mitglied erfolgreich hinzugefügt");
+      setMemberDialogOpen(false);
+      resetMemberForm();
+    },
+    onError: (error) => {
+      toast.error(parseErrorMessage(error));
+    },
+  });
+
+  const saveAttendanceMutation = trpc.attendance.saveAttendance.useMutation({
+    onSuccess: () => {
+      utils.attendance.listRecords.invalidate();
+      toast.success("Anwesenheit erfolgreich gespeichert");
+      setAttendanceDialogOpen(false);
+      setSelectedSession(null);
+      setAttendanceForm({});
+    },
+    onError: (error) => {
+      toast.error(parseErrorMessage(error));
+    },
+  });
+
+  // Handlers
+  const resetSessionForm = () => {
+    setSessionForm({
+      date: new Date().toISOString().split("T")[0],
+      title: "",
+      type: "meeting",
+      notes: "",
+    });
+    setIsEdit(false);
+  };
+
+  const resetMemberForm = () => {
+    setMemberForm({ name: "" });
+  };
+
+  const handleCreateSession = () => {
+    if (!sessionForm.title.trim()) {
+      toast.error("Titel ist erforderlich");
+      return;
+    }
+    createSessionMutation.mutate(sessionForm);
+  };
+
+  const handleUpdateSession = () => {
+    if (!selectedSession) return;
+    if (!sessionForm.title.trim()) {
+      toast.error("Titel ist erforderlich");
+      return;
+    }
+    updateSessionMutation.mutate({
+      sessionId: selectedSession.id,
+      ...sessionForm,
+    });
+  };
+
+  const handleDeleteSession = () => {
+    if (!selectedSession) return;
+    deleteSessionMutation.mutate({ sessionId: selectedSession.id });
+  };
+
+  const handleCreateMember = () => {
+    if (!memberForm.name.trim()) {
+      toast.error("Name ist erforderlich");
+      return;
+    }
+    createMemberMutation.mutate(memberForm);
+  };
+
+  const handleOpenAttendance = (session: Session) => {
+    setSelectedSession(session);
+    
+    // Initialize form with existing records or default to absent
+    const initialForm: AttendanceFormData = {};
+    members.forEach(member => {
+      const record = records.find(r => r.memberId === member.id);
+      initialForm[member.id] = {
+        status: record?.status || "absent",
+        notes: record?.notes || "",
+      };
+    });
+    setAttendanceForm(initialForm);
+    setAttendanceDialogOpen(true);
+  };
+
+  const handleSaveAttendance = () => {
+    if (!selectedSession) return;
+    
+    const recordsToSave = Object.entries(attendanceForm).map(([memberId, data]) => ({
+      memberId: parseInt(memberId),
+      status: data.status,
+      notes: data.notes || undefined,
+    }));
+    
+    saveAttendanceMutation.mutate({
+      sessionId: selectedSession.id,
+      records: recordsToSave,
+    });
+  };
+
+  const handleEditSession = (session: Session) => {
+    setSelectedSession(session);
+    setSessionForm({
+      date: new Date(session.date).toISOString().split("T")[0],
+      title: session.title,
+      type: session.type,
+      notes: session.notes || "",
+    });
+    setIsEdit(true);
+    setSessionDialogOpen(true);
+  };
+
+  const handleViewSession = (session: Session) => {
+    setSelectedSession(session);
+    setViewDialogOpen(true);
+  };
+
+  // Filtered sessions
+  const filteredSessions = useMemo(() => {
+    return sessions.filter(session => {
+      if (typeFilter !== "all" && session.type !== typeFilter) return false;
+      return true;
+    });
+  }, [sessions, typeFilter]);
+
+  // Available years
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    sessions.forEach(session => {
+      const year = new Date(session.date).getFullYear();
+      years.add(year);
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [sessions]);
+
+  if (!canManageAttendance) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Keine Berechtigung</CardTitle>
+            <CardDescription>
+              Du hast keine Berechtigung, die Anwesenheitsliste zu verwalten.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Anwesenheitsliste</h1>
+            <p className="text-muted-foreground">
+              Verwalte Meetings, Events und Anwesenheit
+            </p>
+          </div>
+          <Link href="/attendance/statistics">
+            <Button variant="outline" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Statistiken
+            </Button>
+          </Link>
+        </div>
+
+        {/* Filters and Actions */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Year Filter */}
+          <Select
+            value={selectedYear.toString()}
+            onValueChange={(value) => setSelectedYear(value === "all" ? "all" : parseInt(value))}
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Jahre</SelectItem>
+              {availableYears.map(year => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Type Filter */}
+          <Select
+            value={typeFilter}
+            onValueChange={(value: "all" | "meeting" | "event") => setTypeFilter(value)}
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Typen</SelectItem>
+              <SelectItem value="meeting">Meetings</SelectItem>
+              <SelectItem value="event">Events</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex gap-2 ml-auto">
+            {/* Add Member Button */}
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setMemberDialogOpen(true)}
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Mitglied</span>
+            </Button>
+
+            {/* Create Session Button */}
+            <Button
+              className="gap-2"
+              onClick={() => {
+                resetSessionForm();
+                setSessionDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              Meeting/Event
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sessions List */}
+      {sessionsLoading ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Lädt...</p>
+        </div>
+      ) : filteredSessions.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">
+              Keine Meetings/Events gefunden
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout">
+            {filteredSessions.map((session) => (
+              <MotionCard
+                key={session.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+                className="hover:shadow-lg transition-shadow"
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{session.title}</CardTitle>
+                      <CardDescription className="flex items-center gap-2 mt-1">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(session.date).toLocaleDateString("de-CH", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}
+                      </CardDescription>
+                    </div>
+                    <Badge
+                      variant={session.type === "event" ? "default" : "secondary"}
+                      className={cn(
+                        session.type === "event" && "bg-teal-500 hover:bg-teal-600"
+                      )}
+                    >
+                      {session.type === "event" ? "Event" : "Meeting"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="flex-1 gap-1"
+                      onClick={() => handleOpenAttendance(session)}
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      Anwesenheit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewSession(session)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditSession(session)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedSession(session);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </MotionCard>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Create/Edit Session Dialog */}
+      <Dialog open={sessionDialogOpen} onOpenChange={setSessionDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {isEdit ? "Meeting/Event bearbeiten" : "Meeting/Event erstellen"}
+            </DialogTitle>
+            <DialogDescription>
+              {isEdit ? "Bearbeite die Details" : "Erstelle ein neues Meeting oder Event"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="date">Datum *</Label>
+              <Input
+                id="date"
+                type="date"
+                value={sessionForm.date}
+                onChange={(e) => setSessionForm({ ...sessionForm, date: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="title">Titel *</Label>
+              <Input
+                id="title"
+                value={sessionForm.title}
+                onChange={(e) => setSessionForm({ ...sessionForm, title: e.target.value })}
+                placeholder="z.B. Jahressitzung"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="type">Typ *</Label>
+              <Select
+                value={sessionForm.type}
+                onValueChange={(value: "meeting" | "event") =>
+                  setSessionForm({ ...sessionForm, type: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="event">Event</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notizen</Label>
+              <Textarea
+                id="notes"
+                value={sessionForm.notes}
+                onChange={(e) => setSessionForm({ ...sessionForm, notes: e.target.value })}
+                placeholder="Optionale Notizen zum Meeting/Event"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSessionDialogOpen(false);
+                resetSessionForm();
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button onClick={isEdit ? handleUpdateSession : handleCreateSession}>
+              {isEdit ? "Speichern" : "Erstellen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Attendance Dialog */}
+      <Dialog open={attendanceDialogOpen} onOpenChange={setAttendanceDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              Anwesenheit erfassen: {selectedSession?.title}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedSession && new Date(selectedSession.date).toLocaleDateString("de-CH", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {members.map((member) => (
+              <div
+                key={member.id}
+                className="p-4 border rounded-lg space-y-3 bg-card"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{member.name}</span>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={attendanceForm[member.id]?.status === "present" ? "default" : "outline"}
+                      className={cn(
+                        "gap-1",
+                        attendanceForm[member.id]?.status === "present" && "bg-green-500 hover:bg-green-600"
+                      )}
+                      onClick={() =>
+                        setAttendanceForm({
+                          ...attendanceForm,
+                          [member.id]: {
+                            ...attendanceForm[member.id],
+                            status: "present",
+                          },
+                        })
+                      }
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Anwesend
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={attendanceForm[member.id]?.status === "partial" ? "default" : "outline"}
+                      className={cn(
+                        "gap-1",
+                        attendanceForm[member.id]?.status === "partial" && "bg-orange-500 hover:bg-orange-600"
+                      )}
+                      onClick={() =>
+                        setAttendanceForm({
+                          ...attendanceForm,
+                          [member.id]: {
+                            ...attendanceForm[member.id],
+                            status: "partial",
+                          },
+                        })
+                      }
+                    >
+                      <AlertTriangle className="h-4 w-4" />
+                      Teilweise
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={attendanceForm[member.id]?.status === "absent" ? "default" : "outline"}
+                      className={cn(
+                        "gap-1",
+                        attendanceForm[member.id]?.status === "absent" && "bg-red-500 hover:bg-red-600"
+                      )}
+                      onClick={() =>
+                        setAttendanceForm({
+                          ...attendanceForm,
+                          [member.id]: {
+                            ...attendanceForm[member.id],
+                            status: "absent",
+                          },
+                        })
+                      }
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Abwesend
+                    </Button>
+                  </div>
+                </div>
+                <Input
+                  placeholder="Notiz (optional, z.B. Grund für Abwesenheit)"
+                  value={attendanceForm[member.id]?.notes || ""}
+                  onChange={(e) =>
+                    setAttendanceForm({
+                      ...attendanceForm,
+                      [member.id]: {
+                        ...attendanceForm[member.id],
+                        status: attendanceForm[member.id]?.status || "absent",
+                        notes: e.target.value,
+                      },
+                    })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAttendanceDialogOpen(false);
+                setSelectedSession(null);
+                setAttendanceForm({});
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveAttendance}>
+              Speichern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Member Dialog */}
+      <Dialog open={memberDialogOpen} onOpenChange={setMemberDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mitglied hinzufügen</DialogTitle>
+            <DialogDescription>
+              Füge ein neues Mitglied oder temporären Helfer hinzu
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="memberName">Name *</Label>
+              <Input
+                id="memberName"
+                value={memberForm.name}
+                onChange={(e) => setMemberForm({ name: e.target.value })}
+                placeholder="z.B. Max Mustermann"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMemberDialogOpen(false);
+                resetMemberForm();
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button onClick={handleCreateMember}>
+              Hinzufügen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Session Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Meeting/Event Details</DialogTitle>
+          </DialogHeader>
+          {selectedSession && (
+            <div className="space-y-4 py-4">
+              <div>
+                <Label className="text-muted-foreground">Titel</Label>
+                <p className="font-medium">{selectedSession.title}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Datum</Label>
+                <p className="font-medium">
+                  {new Date(selectedSession.date).toLocaleDateString("de-CH", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Typ</Label>
+                <div className="mt-1">
+                  <Badge
+                    variant={selectedSession.type === "event" ? "default" : "secondary"}
+                    className={cn(
+                      selectedSession.type === "event" && "bg-teal-500"
+                    )}
+                  >
+                    {selectedSession.type === "event" ? "Event" : "Meeting"}
+                  </Badge>
+                </div>
+              </div>
+              {selectedSession.notes && (
+                <div>
+                  <Label className="text-muted-foreground">Notizen</Label>
+                  <p className="mt-1 text-sm whitespace-pre-wrap">{selectedSession.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setViewDialogOpen(false)}>
+              Schliessen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Meeting/Event löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bist du sicher, dass du "{selectedSession?.title}" löschen möchtest?
+              Alle Anwesenheitseinträge werden ebenfalls gelöscht.
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedSession(null)}>
+              Abbrechen
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSession}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

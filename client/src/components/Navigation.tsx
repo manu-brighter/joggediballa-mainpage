@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Sun, Moon, Monitor, Settings, LogOut, Users, LogIn, Lock } from "lucide-react";
+import { Menu, X, Sun, Moon, Monitor, Settings, LogOut, Users, LogIn, Lock, ClipboardList } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -100,6 +100,7 @@ export function Navigation() {
   };
 
   const canViewGoennermitglieder = usePermission("manage_goennermitglieder");
+  const canViewAttendance = usePermission("manage_attendance");
 
   return (
     <>
@@ -173,6 +174,25 @@ export function Navigation() {
               >
                 <Users className="h-4 w-4" />
                 Gönner
+              </Link>
+            </>
+          )}
+          
+          {/* Divider and Anwesenheit - only visible with permission */}
+          {canViewAttendance && (
+            <>
+              <div className="h-6 w-px bg-border mx-2" />
+              <Link 
+                href="/attendance"
+                className={cn(
+                  "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5",
+                  location === "/attendance" 
+                    ? "text-primary bg-primary/10" 
+                    : "text-foreground/70 hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <ClipboardList className="h-4 w-4" />
+                Anwesenheit
               </Link>
             </>
           )}
@@ -354,6 +374,26 @@ export function Navigation() {
                 >
                   <Users className="h-4 w-4" />
                   Gönnermitglieder
+                </Link>
+              </>
+            )}
+            
+            {/* Anwesenheit - only visible with permission */}
+            {canViewAttendance && (
+              <>
+                <div className="h-px bg-border my-2" />
+                <Link
+                  href="/attendance"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                    location === "/attendance" 
+                      ? "text-primary bg-primary/10" 
+                      : "text-foreground/70 hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Anwesenheitsliste
                 </Link>
               </>
             )}
