@@ -421,13 +421,11 @@ export default function AttendanceStatistics() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, value }) => ({
-                    value: `${name}: ${value}`,
-                    fill: isDarkMode ? '#f3f4f6' : '#000000'
-                  })}
+                  label={(entry) => `${entry.name}: ${entry.value}`}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
+                  style={{ fill: isDarkMode ? '#f3f4f6' : '#000000' }}
                 >
                   {sessionTypeData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -437,7 +435,12 @@ export default function AttendanceStatistics() {
                   contentStyle={{
                     backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
                     border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
-                    borderRadius: '6px',
+                    borderRadius: '6px'
+                  }}
+                  itemStyle={{
+                    color: isDarkMode ? '#f3f4f6' : '#000000'
+                  }}
+                  labelStyle={{
                     color: isDarkMode ? '#f3f4f6' : '#000000'
                   }}
                 />
