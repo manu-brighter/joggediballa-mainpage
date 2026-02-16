@@ -141,7 +141,7 @@ export function AttendanceMembersManagement({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[80vw] min-w-[80vw] lg:min-w-[800px] max-w-[1600px] max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+        <DialogContent className="w-[100vw] sm:w-[80vw] lg:min-w-[800px] max-w-[1600px] max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader>
             <DialogTitle>Mitglieder verwalten</DialogTitle>
             <DialogDescription>
@@ -210,10 +210,11 @@ export function AttendanceMembersManagement({
               ))
             )}
           </div>
-          <DialogFooter className="flex justify-between">
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+            <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Schliessen</Button>
             <Button
               variant="outline"
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
               onClick={() => {
                 onOpenChange(false);
                 if (onCreateMember) {
@@ -224,7 +225,6 @@ export function AttendanceMembersManagement({
               <UserPlus className="h-4 w-4" />
               Neues Mitglied
             </Button>
-            <Button onClick={() => onOpenChange(false)}>Schliessen</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
