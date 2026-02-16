@@ -688,6 +688,7 @@ export const appRouter = router({
           "edit_shotcounter",
           "reset_shotcounter",
           "edit_team",
+          "manage_attendance",
         ];
       }
       
