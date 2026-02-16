@@ -421,11 +421,28 @@ export default function AttendanceStatistics() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry) => `${entry.name}: ${entry.value}`}
+                  label={(props) => {
+                    const { cx, cy, midAngle, innerRadius, outerRadius, name, value } = props;
+                    const RADIAN = Math.PI / 180;
+                    const radius = outerRadius + 25;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill={isDarkMode ? '#f3f4f6' : '#000000'}
+                        textAnchor={x > cx ? 'start' : 'end'}
+                        dominantBaseline="central"
+                        fontSize="14"
+                      >
+                        {`${name}: ${value}`}
+                      </text>
+                    );
+                  }}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
-                  style={{ fill: isDarkMode ? '#f3f4f6' : '#000000' }}
                 >
                   {sessionTypeData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />

@@ -65,13 +65,20 @@ export function AttendanceSessionCard({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg">{session.title}</CardTitle>
-            <CardDescription className="flex items-center gap-2 mt-1">
-              <Calendar className="h-3 w-3" />
-              {new Date(session.date).toLocaleDateString("de-CH", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              })}
+            <CardDescription className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-3 w-3" />
+                {new Date(session.date).toLocaleDateString("de-CH", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })}
+              </div>
+              {session.notes && (
+                <div className="text-xs line-clamp-2">
+                  {session.notes}
+                </div>
+              )}
             </CardDescription>
           </div>
           <Badge
