@@ -373,44 +373,43 @@ export function Navigation() {
               </>
             )}
             
+            {/* Admin Links - only visible with permission */}
+            {(canViewGoennermitglieder || canViewAttendance) && (
+              <div className="h-px bg-border my-2" />
+            )}
+            
             {/* Gönnermitglieder - only visible with permission */}
             {canViewGoennermitglieder && (
-              <>
-                <div className="h-px bg-border my-2" />
-                <Link
-                  href="/goennermitglieder"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                    location === "/goennermitglieder" 
-                      ? "text-primary bg-primary/10" 
-                      : "text-foreground/70 hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Users className="h-4 w-4" />
-                  Gönnermitglieder
-                </Link>
-              </>
+              <Link
+                href="/goennermitglieder"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                  location === "/goennermitglieder" 
+                    ? "text-primary bg-primary/10" 
+                    : "text-foreground/70 hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <Users className="h-4 w-4" />
+                Gönnermitglieder
+              </Link>
             )}
             
             {/* Anwesenheit - only visible with permission */}
             {canViewAttendance && (
-              <>
-                <div className="h-px bg-border my-2" />
-                <Link
-                  href="/attendance"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                    location === "/attendance" 
-                      ? "text-primary bg-primary/10" 
-                      : "text-foreground/70 hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <ClipboardList className="h-4 w-4" />
-                  Anwesenheitsliste
-                </Link>
-              </>
+              <Link
+                href="/attendance"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                  location === "/attendance" 
+                    ? "text-primary bg-primary/10" 
+                    : "text-foreground/70 hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <ClipboardList className="h-4 w-4" />
+                Anwesenheitsliste
+              </Link>
             )}
           </div>
         </div>

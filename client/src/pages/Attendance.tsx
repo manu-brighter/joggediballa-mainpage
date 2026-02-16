@@ -552,7 +552,7 @@ export default function Attendance() {
 
       {/* Attendance Dialog */}
       <Dialog open={attendanceDialogOpen} onOpenChange={setAttendanceDialogOpen}>
-        <DialogContent className="w-[90vw] min-w-[90vw] lg:min-w-[1000px] max-w-[1600px] max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+        <DialogContent className="w-[100vw] sm:w-[90vw] lg:min-w-[1000px] max-w-[1600px] max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardList className="h-5 w-5" />
@@ -566,20 +566,20 @@ export default function Attendance() {
               })}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-4">
+          <div className="space-y-2 sm:space-y-3 py-2 sm:py-4">
             {members.map((member) => (
               <div
                 key={member.id}
-                className="p-4 border rounded-lg space-y-3 bg-card"
+                className="p-2 sm:p-4 border rounded-lg space-y-2 sm:space-y-3 bg-card"
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{member.name}</span>
-                  <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <span className="font-medium text-sm sm:text-base">{member.name}</span>
+                  <div className="flex gap-1 sm:gap-2">
                     <Button
                       size="sm"
                       variant={attendanceForm[member.id]?.status === "present" ? "default" : "outline"}
                       className={cn(
-                        "gap-1",
+                        "gap-1 flex-1 sm:flex-none",
                         attendanceForm[member.id]?.status === "present" && "bg-green-500 hover:bg-green-600"
                       )}
                       onClick={() =>
@@ -593,13 +593,13 @@ export default function Attendance() {
                       }
                     >
                       <CheckCircle className="h-4 w-4" />
-                      Anwesend
+                      <span className="hidden sm:inline">Anwesend</span>
                     </Button>
                     <Button
                       size="sm"
                       variant={attendanceForm[member.id]?.status === "partial" ? "default" : "outline"}
                       className={cn(
-                        "gap-1",
+                        "gap-1 flex-1 sm:flex-none",
                         attendanceForm[member.id]?.status === "partial" && "bg-orange-500 hover:bg-orange-600"
                       )}
                       onClick={() =>
@@ -613,13 +613,13 @@ export default function Attendance() {
                       }
                     >
                       <AlertTriangle className="h-4 w-4" />
-                      Teilweise
+                      <span className="hidden sm:inline">Teilweise</span>
                     </Button>
                     <Button
                       size="sm"
                       variant={attendanceForm[member.id]?.status === "absent" ? "default" : "outline"}
                       className={cn(
-                        "gap-1",
+                        "gap-1 flex-1 sm:flex-none",
                         attendanceForm[member.id]?.status === "absent" && "bg-red-500 hover:bg-red-600"
                       )}
                       onClick={() =>
@@ -633,12 +633,13 @@ export default function Attendance() {
                       }
                     >
                       <XCircle className="h-4 w-4" />
-                      Abwesend
+                      <span className="hidden sm:inline">Abwesend</span>
                     </Button>
                   </div>
                 </div>
                 <Input
-                  placeholder="Notiz (optional, z.B. Grund für Abwesenheit)"
+                  placeholder="Notiz (optional)"
+                  className="text-sm"
                   value={attendanceForm[member.id]?.notes || ""}
                   onChange={(e) =>
                     setAttendanceForm({

@@ -51,6 +51,7 @@ export function AttendanceSessionCard({
   const absentCount = records.filter((r) => r.status === "absent").length;
   const totalMembers = members.length;
   const recordedCount = records.length;
+  const actuallyPresentCount = presentCount + partialCount; // Only count present + partial
 
   return (
     <MotionCard
@@ -96,7 +97,7 @@ export function AttendanceSessionCard({
         {recordedCount > 0 && (
           <div className="mb-4 space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Anwesenheit ({recordedCount}/{totalMembers})</span>
+              <span>Anwesenheit ({actuallyPresentCount}/{totalMembers})</span>
             </div>
             <div className="flex gap-2">
               {presentCount > 0 && (
