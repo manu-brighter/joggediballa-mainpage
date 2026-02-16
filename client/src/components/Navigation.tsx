@@ -284,6 +284,14 @@ export function Navigation() {
                         </Link>
                       </DropdownMenuItem>
                     )}
+                    {canViewAttendance && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/attendance" className="w-full cursor-pointer flex items-center">
+                          <ClipboardList className="mr-2 h-4 w-4" />
+                          Anwesenheit
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />

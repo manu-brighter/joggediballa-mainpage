@@ -266,13 +266,14 @@ export default function Team() {
 
       const data = await response.json();
       // Store both URLs for later use
-      setUploadedPhotoData({
+      const photoData = {
         url: data.url,
         key: data.key,
         compressedUrl: data.compressedUrl,
         compressedKey: data.compressedKey
-      });
-      return data.url;
+      };
+      setUploadedPhotoData(photoData);
+      return photoData;
     } catch (error) {
       console.error("Upload error:", error);
       toast.error("Fehler beim Hochladen des Bildes");
@@ -294,12 +295,12 @@ export default function Team() {
     let compressedPhotoKey = (selectedMember as any)?.compressedPhotoKey || "";
     
     if (photoFile) {
-      await handlePhotoUpload();
-      if (uploadedPhotoData) {
-        photoUrl = uploadedPhotoData.url;
-        photoKey = uploadedPhotoData.key;
-        compressedPhotoUrl = uploadedPhotoData.compressedUrl;
-        compressedPhotoKey = uploadedPhotoData.compressedKey;
+      const uploadResult = await handlePhotoUpload();
+      if (uploadResult) {
+        photoUrl = uploadResult.url;
+        photoKey = uploadResult.key;
+        compressedPhotoUrl = uploadResult.compressedUrl;
+        compressedPhotoKey = uploadResult.compressedKey;
       }
     }
 
