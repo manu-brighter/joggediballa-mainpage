@@ -479,12 +479,12 @@ export default function Attendance() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="date">Datum <span className="text-red-500">*</span></Label>
+              <Label htmlFor="title">Titel <span className="text-red-500">*</span></Label>
               <Input
-                id="sessionDate"
-                type="date"
-                value={sessionForm.date}
-                onChange={(e) => setSessionForm({ ...sessionForm, date: e.target.value })}
+                id="title"
+                value={sessionForm.title}
+                onChange={(e) => setSessionForm({ ...sessionForm, title: e.target.value })}
+                placeholder="z.B. Jahressitzung"
                 autoFocus={!isMobile}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -495,12 +495,12 @@ export default function Attendance() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="title">Titel <span className="text-red-500">*</span></Label>
+              <Label htmlFor="date">Datum <span className="text-red-500">*</span></Label>
               <Input
-                id="title"
-                value={sessionForm.title}
-                onChange={(e) => setSessionForm({ ...sessionForm, title: e.target.value })}
-                placeholder="z.B. Jahressitzung"
+                id="sessionDate"
+                type="date"
+                value={sessionForm.date}
+                onChange={(e) => setSessionForm({ ...sessionForm, date: e.target.value })}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();

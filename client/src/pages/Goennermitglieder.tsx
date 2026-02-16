@@ -198,6 +198,10 @@ const MemberCard = React.memo(({
               <Clock className="h-3 w-3" />
               Ende: {new Date(member.membershipEndDate).toLocaleDateString("de-DE")}
             </span>
+            <span className="flex items-center gap-1">
+              <Banknote className="h-3 w-3" />
+              CHF {member.contributionAmount.toFixed(2)}
+            </span>
           </div>
         </div>
 
