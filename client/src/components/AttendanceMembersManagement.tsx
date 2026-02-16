@@ -141,7 +141,7 @@ export function AttendanceMembersManagement({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+        <DialogContent className="w-[80vw] min-w-[80vw] lg:min-w-[800px] max-w-[1600px] max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader>
             <DialogTitle>Mitglieder verwalten</DialogTitle>
             <DialogDescription>
@@ -156,7 +156,7 @@ export function AttendanceMembersManagement({
             ) : (
               sortedMembers.map((member, index) => (
                 <Card key={member.id} className="border-0 shadow-none bg-muted/30">
-                  <CardContent className="p-2 py-2">
+                  <CardContent className="p-2 py-0">
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col gap-1">
                         <Button
