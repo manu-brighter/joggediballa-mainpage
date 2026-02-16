@@ -106,7 +106,7 @@ export default function UserManagement() {
             Übersicht aller registrierten Benutzer mit ihren Rollen
           </CardDescription>
         </CardHeader>
-        <CardContent className="max-h-[600px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+        <CardContent>
           <div className="space-y-3">
             {members.map((user) => (
               <div

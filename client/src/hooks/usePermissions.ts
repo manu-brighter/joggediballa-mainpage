@@ -13,7 +13,8 @@ export function usePermission(permissionKey: string): boolean {
   // Fetch user's permissions from database
   const { data: userPermissions = [] } = trpc.permissions.getMyPermissions.useQuery(undefined, {
     enabled: isAuthenticated && !!user,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 30 * 1000, // Cache for 30 seconds (shorter for faster permission updates)
+    refetchOnMount: true, // Always refetch on component mount
   });
 
   return useMemo(() => {
@@ -35,7 +36,8 @@ export function useUserPermissions(): string[] {
   
   const { data: userPermissions = [] } = trpc.permissions.getMyPermissions.useQuery(undefined, {
     enabled: isAuthenticated && !!user,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnMount: true,
   });
 
   return userPermissions;

@@ -6,6 +6,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
+import { contactSubmissions } from "../drizzle/schema";
 import { hasPermission } from "./permissions";
 
 // ============================================
@@ -474,7 +475,22 @@ export const appRouter = router({
         subject: z.string().min(1, "Betreff ist erforderlich").max(200),
         message: z.string().min(10, "Nachricht muss mindestens 10 Zeichen lang sein").max(5000)
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        // Save to database
+        const database = await db.getDb();
+        if (database) {
+          await database.insert(contactSubmissions).values({
+            name: input.name,
+            email: input.email,
+            subject: input.subject,
+            message: input.message,
+            ipAddress: ctx.req?.ip || ctx.req?.headers['x-forwarded-for'] as string || null,
+            isRead: false,
+            isArchived: false,
+          });
+        }
+        
+        // Send email
         const { sendContactFormEmail } = await import("./_core/email");
         const result = await sendContactFormEmail(input);
         
