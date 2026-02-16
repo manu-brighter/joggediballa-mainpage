@@ -99,7 +99,7 @@ export function Footer() {
           {/* Logo */}
           <div className="flex justify-center">
             <img 
-              src="/Jogge_Di_Balla_Final_Transparent.png" 
+              src="/JoggediBalla-Logo.PNG"
               alt="Jogge di Balla Logo" 
               className="h-12 w-auto"
               loading="lazy"
