@@ -155,8 +155,8 @@ export function AttendanceMembersManagement({
               </p>
             ) : (
               sortedMembers.map((member, index) => (
-                <Card key={member.id}>
-                  <CardContent className="p-3">
+                <Card key={member.id} className="border-0 shadow-none bg-muted/30">
+                  <CardContent className="p-2 py-2">
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col gap-1">
                         <Button
@@ -235,7 +235,7 @@ export function AttendanceMembersManagement({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="editName">Name *</Label>
+              <Label htmlFor="editName">Name <span className="text-red-500">*</span></Label>
               <Input
                 id="editName"
                 value={editForm.name}

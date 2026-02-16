@@ -264,13 +264,16 @@ export default function Attendance() {
     createMemberMutation.mutate(memberForm);
   };
 
-  const handleOpenAttendance = (session: Session) => {
+  const handleOpenAttendance = async (session: Session) => {
     setSelectedSession(session);
+    
+    // Wait for records to be loaded
+    const sessionRecords = await utils.attendance.listRecords.fetch({ sessionId: session.id });
     
     // Initialize form with existing records only
     const initialForm: AttendanceFormData = {};
     members.forEach(member => {
-      const record = records.find(r => r.memberId === member.id);
+      const record = sessionRecords.find(r => r.memberId === member.id);
       if (record) {
         initialForm[member.id] = {
           status: record.status,
@@ -473,7 +476,7 @@ export default function Attendance() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="date">Datum *</Label>
+              <Label htmlFor="date">Datum <span className="text-red-500">*</span></Label>
               <Input
                 id="sessionDate"
                 type="date"
@@ -488,7 +491,7 @@ export default function Attendance() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="title">Titel *</Label>
+              <Label htmlFor="title">Titel <span className="text-red-500">*</span></Label>
               <Input
                 id="title"
                 value={sessionForm.title}
@@ -503,7 +506,7 @@ export default function Attendance() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="type">Typ *</Label>
+              <Label htmlFor="type">Typ <span className="text-red-500">*</span></Label>
               <Select
                 value={sessionForm.type}
                 onValueChange={(value: "meeting" | "event") =>
@@ -549,7 +552,7 @@ export default function Attendance() {
 
       {/* Attendance Dialog */}
       <Dialog open={attendanceDialogOpen} onOpenChange={setAttendanceDialogOpen}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+        <DialogContent className="w-[95vw] max-w-[1400px] max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardList className="h-5 w-5" />
@@ -680,7 +683,7 @@ export default function Attendance() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="memberName">Name *</Label>
+              <Label htmlFor="memberName">Name <span className="text-red-500">*</span></Label>
               <Input
                 id="memberName"
                 value={memberForm.name}

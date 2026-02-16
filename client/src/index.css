@@ -152,6 +152,11 @@
   --sidebar-accent-foreground: oklch(0.92 0.01 250);
   --sidebar-border: oklch(0.28 0.015 260);
   --sidebar-ring: oklch(0.65 0.14 195);
+  
+  /* Chart tooltip colors for dark mode */
+  --tooltip-bg: oklch(0.20 0.015 260);
+  --tooltip-border: oklch(0.35 0.015 260);
+  --tooltip-text: oklch(0.92 0.01 250);
 }
 
 @layer base {
