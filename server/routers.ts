@@ -677,27 +677,14 @@ export const appRouter = router({
       return db.getAllPermissions();
     }),
     
-    // Get permissions for current user's role
+    // Get permissions for current user's role (fully dynamic from database)
     getMyPermissions: protectedProcedure.query(async ({ ctx }) => {
-      // Admin has all permissions
-      if (ctx.user.role === "admin") {
-        return [
-          "edit_events",
-          "manage_sponsors",
-          "manage_goennermitglieder",
-          "edit_shotcounter",
-          "reset_shotcounter",
-          "edit_team",
-          "manage_attendance",
-        ];
-      }
-      
       // Visitor has no permissions
       if (ctx.user.role === "visitor") {
         return [];
       }
       
-      // Get permissions from database for this role
+      // Get permissions from database for this role (including admin)
       const allPermissions = await db.getAllPermissions();
       return allPermissions
         .filter((p) => p.role === ctx.user.role)

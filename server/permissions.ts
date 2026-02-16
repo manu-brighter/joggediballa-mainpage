@@ -10,17 +10,12 @@ export async function hasPermission(
   userRole: "admin" | "maintainer" | "editor" | "user" | "visitor",
   permissionKey: string
 ): Promise<boolean> {
-  // Admin always has all permissions
-  if (userRole === "admin") {
-    return true;
-  }
-
   // Visitor never has any permissions (except public access)
   if (userRole === "visitor") {
     return false;
   }
 
-  // Check database for permission
+  // Check database for permission (including admin)
   const permissions = await db.getAllPermissions();
   return permissions.some(
     (p) => p.permissionKey === permissionKey && p.role === userRole
@@ -35,24 +30,12 @@ export async function hasPermission(
 export async function getUserPermissions(
   userRole: "admin" | "maintainer" | "editor" | "user" | "visitor"
 ): Promise<string[]> {
-  // Admin has all permissions
-  if (userRole === "admin") {
-    return [
-      "edit_events",
-      "manage_sponsors",
-      "manage_goennermitglieder",
-      "edit_shotcounter",
-      "reset_shotcounter",
-      "edit_team",
-    ];
-  }
-
   // Visitor has no permissions
   if (userRole === "visitor") {
     return [];
   }
 
-  // Get permissions from database
+  // Get permissions from database (including admin)
   const permissions = await db.getAllPermissions();
   return permissions
     .filter((p) => p.role === userRole)
