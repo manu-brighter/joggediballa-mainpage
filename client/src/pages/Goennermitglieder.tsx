@@ -263,6 +263,10 @@ const MemberCard = React.memo(({
 
 export default function Goennermitglieder() {
   const { user, isAuthenticated, loading } = useAuth();
+  
+  // Detect if device is mobile to prevent auto-focus
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
@@ -722,6 +726,7 @@ export default function Goennermitglieder() {
                         value={formData.firstName}
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                         placeholder="Max"
+                        autoFocus={!isMobile}
                       />
                     </div>
                     <div className="space-y-2">

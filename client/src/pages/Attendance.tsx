@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermissions";
@@ -98,6 +98,9 @@ export default function Attendance() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const canManageAttendance = usePermission("manage_attendance");
+  
+  // Detect if device is mobile to prevent auto-focus
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   // Filter state
   const currentYear = new Date().getFullYear();
@@ -482,6 +485,7 @@ export default function Attendance() {
                 type="date"
                 value={sessionForm.date}
                 onChange={(e) => setSessionForm({ ...sessionForm, date: e.target.value })}
+                autoFocus={!isMobile}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
