@@ -421,10 +421,25 @@ export default function AttendanceStatistics() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, value }) => ({
-                    value: `${name}: ${value}`,
-                    fill: isDarkMode ? '#f3f4f6' : '#000000'
-                  })}
+                  label={(props) => {
+                    const { cx, cy, midAngle, innerRadius, outerRadius, name, value } = props;
+                    const RADIAN = Math.PI / 180;
+                    const radius = outerRadius + 25;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill={isDarkMode ? '#f3f4f6' : '#000000'}
+                        textAnchor={x > cx ? 'start' : 'end'}
+                        dominantBaseline="central"
+                        fontSize="14"
+                      >
+                        {`${name}: ${value}`}
+                      </text>
+                    );
+                  }}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -437,7 +452,12 @@ export default function AttendanceStatistics() {
                   contentStyle={{
                     backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
                     border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
-                    borderRadius: '6px',
+                    borderRadius: '6px'
+                  }}
+                  itemStyle={{
+                    color: isDarkMode ? '#f3f4f6' : '#000000'
+                  }}
+                  labelStyle={{
                     color: isDarkMode ? '#f3f4f6' : '#000000'
                   }}
                 />

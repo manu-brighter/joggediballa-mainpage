@@ -156,26 +156,26 @@ export function AttendanceMembersManagement({
             ) : (
               sortedMembers.map((member, index) => (
                 <Card key={member.id} className="border-0 shadow-none bg-muted/30">
-                  <CardContent className="p-2 py-0">
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col gap-1">
+                  <CardContent className="px-3 py-0">
+                    <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-0.5">
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-6 w-6 p-0"
+                          className="h-5 w-5 p-0"
                           onClick={() => handleMoveUp(member, index)}
                           disabled={index === 0}
                         >
-                          <ChevronUp className="h-4 w-4" />
+                          <ChevronUp className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-6 w-6 p-0"
+                          className="h-5 w-5 p-0"
                           onClick={() => handleMoveDown(member, index)}
                           disabled={index === sortedMembers.length - 1}
                         >
-                          <ChevronDown className="h-4 w-4" />
+                          <ChevronDown className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                       <div className="flex-1">
@@ -186,20 +186,22 @@ export function AttendanceMembersManagement({
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1">
                         <Button
                           size="sm"
                           variant="outline"
+                          className="h-7 px-2"
                           onClick={() => handleEditClick(member)}
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
+                          className="h-7 px-2"
                           onClick={() => handleDeleteClick(member)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
