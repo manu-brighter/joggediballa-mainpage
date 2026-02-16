@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermissions";
@@ -67,6 +67,18 @@ export default function AttendanceStatistics() {
   const [selectedYear, setSelectedYear] = useState<number | "all">(currentYear);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [eventWeight, setEventWeight] = useState("2.0");
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Detect dark mode
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Queries
   const { data: stats, isLoading } = trpc.attendance.getStatistics.useQuery({
@@ -346,16 +358,17 @@ export default function AttendanceStatistics() {
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={attendanceRateData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" domain={[0, 100]} />
-                <YAxis dataKey="name" type="category" width={100} />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
+                <XAxis type="number" domain={[0, 100]} tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fill: isDarkMode ? '#e5e7eb' : '#374151' }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--tooltip-bg, #ffffff)',
-                    border: '1px solid var(--tooltip-border, #e5e7eb)',
+                    backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                    border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
                     borderRadius: '6px',
-                    color: 'var(--tooltip-text, #000000)'
+                    color: isDarkMode ? '#f3f4f6' : '#000000'
                   }}
+                  cursor={{ fill: isDarkMode ? 'rgba(75, 85, 99, 0.3)' : 'rgba(229, 231, 235, 0.5)' }}
                 />
                 <Bar dataKey="rate" fill={COLORS.present} name="Anwesenheit %" />
               </BarChart>
@@ -374,16 +387,17 @@ export default function AttendanceStatistics() {
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={absenceData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={100} />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
+                <XAxis type="number" tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fill: isDarkMode ? '#e5e7eb' : '#374151' }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--tooltip-bg, #ffffff)',
-                    border: '1px solid var(--tooltip-border, #e5e7eb)',
+                    backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                    border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
                     borderRadius: '6px',
-                    color: 'var(--tooltip-text, #000000)'
+                    color: isDarkMode ? '#f3f4f6' : '#000000'
                   }}
+                  cursor={{ fill: isDarkMode ? 'rgba(75, 85, 99, 0.3)' : 'rgba(229, 231, 235, 0.5)' }}
                 />
                 <Bar dataKey="weighted" fill={COLORS.absent} name="Gewichtete Fehlzeiten" />
               </BarChart>
@@ -407,7 +421,10 @@ export default function AttendanceStatistics() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
+                  label={({ name, value }) => ({
+                    value: `${name}: ${value}`,
+                    fill: isDarkMode ? '#f3f4f6' : '#000000'
+                  })}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -418,10 +435,10 @@ export default function AttendanceStatistics() {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--tooltip-bg, #ffffff)',
-                    border: '1px solid var(--tooltip-border, #e5e7eb)',
+                    backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                    border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
                     borderRadius: '6px',
-                    color: 'var(--tooltip-text, #000000)'
+                    color: isDarkMode ? '#f3f4f6' : '#000000'
                   }}
                 />
               </PieChart>
@@ -440,18 +457,19 @@ export default function AttendanceStatistics() {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthlyActivity}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
+                <XAxis dataKey="month" tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
+                <YAxis tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--tooltip-bg, #ffffff)',
-                    border: '1px solid var(--tooltip-border, #e5e7eb)',
+                    backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                    border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
                     borderRadius: '6px',
-                    color: 'var(--tooltip-text, #000000)'
+                    color: isDarkMode ? '#f3f4f6' : '#000000'
                   }}
+                  cursor={{ fill: isDarkMode ? 'rgba(75, 85, 99, 0.3)' : 'rgba(229, 231, 235, 0.5)' }}
                 />
-                <Legend />
+                <Legend wrapperStyle={{ color: isDarkMode ? '#f3f4f6' : '#000000' }} />
                 <Line type="monotone" dataKey="meetings" stroke={COLORS.meeting} name="Meetings" />
                 <Line type="monotone" dataKey="events" stroke={COLORS.event} name="Events" />
               </LineChart>
