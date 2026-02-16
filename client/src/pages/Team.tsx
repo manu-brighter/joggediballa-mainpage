@@ -294,8 +294,8 @@ export default function Team() {
     let compressedPhotoKey = (selectedMember as any)?.compressedPhotoKey || "";
     
     if (photoFile) {
-      const uploadedUrl = await handlePhotoUpload();
-      if (uploadedUrl && uploadedPhotoData) {
+      await handlePhotoUpload();
+      if (uploadedPhotoData) {
         photoUrl = uploadedPhotoData.url;
         photoKey = uploadedPhotoData.key;
         compressedPhotoUrl = uploadedPhotoData.compressedUrl;

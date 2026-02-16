@@ -6,6 +6,7 @@ import { Calendar, Trophy, Users, Heart, ArrowRight, Instagram, Sparkles, Gift, 
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useSEO } from "@/hooks/useSEO";
+import { useNavVisibility } from "@/hooks/useNavVisibility";
 
 const MotionDiv = motion.div;
 
@@ -15,6 +16,9 @@ export default function Home() {
   const { theme, resolvedTheme } = useTheme();
   
   const nextEvent = events.find((event) => new Date(event.eventDate) > new Date());
+  
+  // Check navigation visibility
+  const isEventsVisible = useNavVisibility("/events");
 
   // SEO Meta Tags
   useSEO({
@@ -84,15 +88,17 @@ export default function Home() {
                   Zum Shotcounter
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="btn-animate text-base h-12 px-8 bg-background/50 backdrop-blur-sm w-full sm:w-auto"
-                  onClick={() => navigate("/events")}
-                >
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Unsere Events
-                </Button>
+                {isEventsVisible && (
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="btn-animate text-base h-12 px-8 bg-background/50 backdrop-blur-sm w-full sm:w-auto"
+                    onClick={() => navigate("/events")}
+                  >
+                    <Calendar className="h-5 w-5 mr-2" />
+                    Unsere Events
+                  </Button>
+                )}
               </div>
             </MotionDiv>
             
@@ -163,7 +169,12 @@ export default function Home() {
                 href: "/team",
                 delay: 0.2,
               },
-            ].map((feature) => (
+            ].filter((feature) => {
+              // Filter out features that are not visible
+              if (feature.href === "/events") return isEventsVisible;
+              // Add more filters here if needed
+              return true;
+            }).map((feature) => (
               <MotionDiv
                 key={feature.title}
                 initial={{ opacity: 0, y: 20 }}
@@ -198,7 +209,7 @@ export default function Home() {
       </section>
 
       {/* Next Event Section */}
-      {nextEvent && (
+      {nextEvent && isEventsVisible && (
         <section className="py-20">
           <div className="container">
             <MotionDiv 
