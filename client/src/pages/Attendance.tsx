@@ -267,14 +267,16 @@ export default function Attendance() {
   const handleOpenAttendance = (session: Session) => {
     setSelectedSession(session);
     
-    // Initialize form with existing records or default to absent
+    // Initialize form with existing records only
     const initialForm: AttendanceFormData = {};
     members.forEach(member => {
       const record = records.find(r => r.memberId === member.id);
-      initialForm[member.id] = {
-        status: record?.status || "absent",
-        notes: record?.notes || "",
-      };
+      if (record) {
+        initialForm[member.id] = {
+          status: record.status,
+          notes: record.notes || "",
+        };
+      }
     });
     setAttendanceForm(initialForm);
     setAttendanceDialogOpen(true);
@@ -400,16 +402,6 @@ export default function Attendance() {
           </Select>
 
           <div className="flex gap-2 ml-auto">
-            {/* Add Member Button */}
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setMemberDialogOpen(true)}
-            >
-              <UserPlus className="h-4 w-4" />
-              <span className="hidden sm:inline">Mitglied</span>
-            </Button>
-
             <Button
               variant="outline"
               className="gap-2"
@@ -457,7 +449,6 @@ export default function Attendance() {
                 session={session}
                 members={members}
                 onOpenAttendance={handleOpenAttendance}
-                onViewSession={handleViewSession}
                 onEditSession={handleEditSession}
                 onDeleteSession={(session) => {
                   setSelectedSession(session);
@@ -558,7 +549,7 @@ export default function Attendance() {
 
       {/* Attendance Dialog */}
       <Dialog open={attendanceDialogOpen} onOpenChange={setAttendanceDialogOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardList className="h-5 w-5" />
@@ -802,6 +793,7 @@ export default function Attendance() {
         open={membersManagementOpen}
         onOpenChange={setMembersManagementOpen}
         members={allMembers}
+        onCreateMember={() => setMemberDialogOpen(true)}
       />
     </div>
   );

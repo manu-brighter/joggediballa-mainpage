@@ -29,7 +29,6 @@ interface AttendanceSessionCardProps {
   session: Session;
   members: Member[];
   onOpenAttendance: (session: Session) => void;
-  onViewSession: (session: Session) => void;
   onEditSession: (session: Session) => void;
   onDeleteSession: (session: Session) => void;
 }
@@ -38,7 +37,6 @@ export function AttendanceSessionCard({
   session,
   members,
   onOpenAttendance,
-  onViewSession,
   onEditSession,
   onDeleteSession,
 }: AttendanceSessionCardProps) {
@@ -115,7 +113,7 @@ export function AttendanceSessionCard({
             </div>
             {/* Member Names Preview */}
             <div className="flex flex-wrap gap-1 mt-2">
-              {records.slice(0, 5).map((record) => {
+              {records.map((record) => {
                 const member = members.find((m) => m.id === record.memberId);
                 if (!member) return null;
                 return (
@@ -133,11 +131,6 @@ export function AttendanceSessionCard({
                   </Badge>
                 );
               })}
-              {records.length > 5 && (
-                <Badge variant="outline" className="text-xs">
-                  +{records.length - 5}
-                </Badge>
-              )}
             </div>
           </div>
         )}
@@ -147,18 +140,11 @@ export function AttendanceSessionCard({
           <Button
             size="sm"
             variant="default"
-            className="flex-1 gap-1"
+            className="gap-1"
             onClick={() => onOpenAttendance(session)}
           >
             <ClipboardList className="h-4 w-4" />
             Anwesenheit
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onViewSession(session)}
-          >
-            <Eye className="h-4 w-4" />
           </Button>
           <Button
             size="sm"

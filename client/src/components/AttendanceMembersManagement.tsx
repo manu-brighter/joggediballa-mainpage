@@ -26,7 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { parseErrorMessage } from "@/lib/errorMessages";
-import { Pencil, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Pencil, Trash2, ChevronUp, ChevronDown, UserPlus } from "lucide-react";
 
 interface Member {
   id: number;
@@ -41,12 +41,14 @@ interface AttendanceMembersManagementProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   members: Member[];
+  onCreateMember?: () => void;
 }
 
 export function AttendanceMembersManagement({
   open,
   onOpenChange,
   members,
+  onCreateMember,
 }: AttendanceMembersManagementProps) {
   const utils = trpc.useUtils();
   
@@ -139,14 +141,14 @@ export function AttendanceMembersManagement({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader>
             <DialogTitle>Mitglieder verwalten</DialogTitle>
             <DialogDescription>
               Bearbeite Mitglieder, ändere die Reihenfolge oder lösche sie
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 py-4">
+          <div className="space-y-2 py-2">
             {sortedMembers.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
                 Keine Mitglieder vorhanden
@@ -154,7 +156,7 @@ export function AttendanceMembersManagement({
             ) : (
               sortedMembers.map((member, index) => (
                 <Card key={member.id}>
-                  <CardContent className="p-4">
+                  <CardContent className="p-3">
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col gap-1">
                         <Button
@@ -206,7 +208,20 @@ export function AttendanceMembersManagement({
               ))
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex justify-between">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                onOpenChange(false);
+                if (onCreateMember) {
+                  onCreateMember();
+                }
+              }}
+            >
+              <UserPlus className="h-4 w-4" />
+              Neues Mitglied
+            </Button>
             <Button onClick={() => onOpenChange(false)}>Schliessen</Button>
           </DialogFooter>
         </DialogContent>

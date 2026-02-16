@@ -346,10 +346,18 @@ export default function AttendanceStatistics() {
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={attendanceRateData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" domain={[0, 100]} />
-                <YAxis dataKey="name" type="category" width={100} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" className="dark:stroke-gray-700" />
+                <XAxis type="number" domain={[0, 100]} className="dark:fill-gray-300" />
+                <YAxis dataKey="name" type="category" width={100} className="dark:fill-gray-300" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                  cursor={{ fill: 'hsl(var(--accent))' }}
+                />
                 <Bar dataKey="rate" fill={COLORS.present} name="Anwesenheit %" />
               </BarChart>
             </ResponsiveContainer>
@@ -367,10 +375,18 @@ export default function AttendanceStatistics() {
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={absenceData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={100} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" className="dark:stroke-gray-700" />
+                <XAxis type="number" className="dark:fill-gray-300" />
+                <YAxis dataKey="name" type="category" width={100} className="dark:fill-gray-300" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                  cursor={{ fill: 'hsl(var(--accent))' }}
+                />
                 <Bar dataKey="weighted" fill={COLORS.absent} name="Gewichtete Fehlzeiten" />
               </BarChart>
             </ResponsiveContainer>
@@ -402,7 +418,14 @@ export default function AttendanceStatistics() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -419,11 +442,19 @@ export default function AttendanceStatistics() {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthlyActivity}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
+                <CartesianGrid strokeDasharray="3 3" className="dark:stroke-gray-700" />
+                <XAxis dataKey="month" className="dark:fill-gray-300" />
+                <YAxis className="dark:fill-gray-300" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--foreground))'
+                  }}
+                  cursor={{ fill: 'hsl(var(--accent))' }}
+                />
+                <Legend wrapperStyle={{ color: 'hsl(var(--foreground))' }} />
                 <Line type="monotone" dataKey="meetings" stroke={COLORS.meeting} name="Meetings" />
                 <Line type="monotone" dataKey="events" stroke={COLORS.event} name="Events" />
               </LineChart>
@@ -460,6 +491,7 @@ export default function AttendanceStatistics() {
                 step="0.1"
                 value={eventWeight}
                 onChange={(e) => setEventWeight(e.target.value)}
+                className="[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
               <p className="text-sm text-muted-foreground">
                 Events werden mit diesem Faktor gewichtet (z.B. 2.0 = doppelt so wichtig wie Meetings)
