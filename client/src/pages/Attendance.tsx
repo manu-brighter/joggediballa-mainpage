@@ -53,6 +53,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+import { AttendanceMembersManagement } from "@/components/AttendanceMembersManagement";
+import { AttendanceSessionCard } from "@/components/AttendanceSessionCard";
 
 const MotionCard = motion(Card);
 
@@ -106,9 +108,13 @@ export default function Attendance() {
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
+  const [membersManagementOpen, setMembersManagementOpen] = useState(false);
+  const [editMemberDialogOpen, setEditMemberDialogOpen] = useState(false);
+  const [deleteMemberDialogOpen, setDeleteMemberDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isEdit, setIsEdit] = useState(false);
 
   // Form state
@@ -123,6 +129,11 @@ export default function Attendance() {
     name: "",
   });
 
+  const [editMemberForm, setEditMemberForm] = useState({
+    name: "",
+    isActive: true,
+  });
+
   const [attendanceForm, setAttendanceForm] = useState<AttendanceFormData>({});
 
   // Queries
@@ -132,6 +143,10 @@ export default function Attendance() {
 
   const { data: members = [], isLoading: membersLoading } = trpc.attendance.listMembers.useQuery({
     activeOnly: true,
+  });
+
+  const { data: allMembers = [] } = trpc.attendance.listMembers.useQuery({
+    activeOnly: false,
   });
 
   const { data: records = [] } = trpc.attendance.listRecords.useQuery(
@@ -395,6 +410,15 @@ export default function Attendance() {
               <span className="hidden sm:inline">Mitglied</span>
             </Button>
 
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setMembersManagementOpen(true)}
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Verwalten</span>
+            </Button>
+
             {/* Create Session Button */}
             <Button
               className="gap-2"
@@ -425,79 +449,21 @@ export default function Attendance() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-1">
           <AnimatePresence mode="popLayout">
             {filteredSessions.map((session) => (
-              <MotionCard
+              <AttendanceSessionCard
                 key={session.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.2 }}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{session.title}</CardTitle>
-                      <CardDescription className="flex items-center gap-2 mt-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(session.date).toLocaleDateString("de-CH", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
-                      </CardDescription>
-                    </div>
-                    <Badge
-                      variant={session.type === "event" ? "default" : "secondary"}
-                      className={cn(
-                        session.type === "event" && "bg-teal-500 hover:bg-teal-600"
-                      )}
-                    >
-                      {session.type === "event" ? "Event" : "Meeting"}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="flex-1 gap-1"
-                      onClick={() => handleOpenAttendance(session)}
-                    >
-                      <ClipboardList className="h-4 w-4" />
-                      Anwesenheit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewSession(session)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEditSession(session)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedSession(session);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </MotionCard>
+                session={session}
+                members={members}
+                onOpenAttendance={handleOpenAttendance}
+                onViewSession={handleViewSession}
+                onEditSession={handleEditSession}
+                onDeleteSession={(session) => {
+                  setSelectedSession(session);
+                  setDeleteDialogOpen(true);
+                }}
+              />
             ))}
           </AnimatePresence>
         </div>
@@ -592,7 +558,7 @@ export default function Attendance() {
 
       {/* Attendance Dialog */}
       <Dialog open={attendanceDialogOpen} onOpenChange={setAttendanceDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardList className="h-5 w-5" />
@@ -830,6 +796,13 @@ export default function Attendance() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Members Management Dialog */}
+      <AttendanceMembersManagement
+        open={membersManagementOpen}
+        onOpenChange={setMembersManagementOpen}
+        members={allMembers}
+      />
     </div>
   );
 }
