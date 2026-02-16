@@ -518,10 +518,16 @@ export default function Attendance() {
             <div className="space-y-2">
               <Label htmlFor="date">Datum *</Label>
               <Input
-                id="date"
+                id="sessionDate"
                 type="date"
                 value={sessionForm.date}
                 onChange={(e) => setSessionForm({ ...sessionForm, date: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    isEdit ? handleUpdateSession() : handleCreateSession();
+                  }
+                }}
               />
             </div>
             <div className="space-y-2">
@@ -531,6 +537,12 @@ export default function Attendance() {
                 value={sessionForm.title}
                 onChange={(e) => setSessionForm({ ...sessionForm, title: e.target.value })}
                 placeholder="z.B. Jahressitzung"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    isEdit ? handleUpdateSession() : handleCreateSession();
+                  }
+                }}
               />
             </div>
             <div className="space-y-2">
@@ -717,6 +729,12 @@ export default function Attendance() {
                 value={memberForm.name}
                 onChange={(e) => setMemberForm({ name: e.target.value })}
                 placeholder="z.B. Max Mustermann"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleCreateMember();
+                  }
+                }}
               />
             </div>
           </div>

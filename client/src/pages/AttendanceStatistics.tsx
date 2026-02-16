@@ -450,6 +450,12 @@ export default function AttendanceStatistics() {
                 id="weight"
                 type="number"
                 min="1"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleUpdateWeight();
+                  }
+                }}
                 max="10"
                 step="0.1"
                 value={eventWeight}
