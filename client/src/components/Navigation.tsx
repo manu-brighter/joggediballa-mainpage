@@ -159,42 +159,41 @@ export function Navigation() {
             </>
           )}
           
-          {/* Divider and Gönnermitglieder - only visible with permission */}
-          {canViewGoennermitglieder && (
-            <>
-              <div className="h-6 w-px bg-border mx-2" />
-              <Link 
-                href="/goennermitglieder"
-                className={cn(
-                  "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5",
-                  location === "/goennermitglieder" 
-                    ? "text-primary bg-primary/10" 
-                    : "text-foreground/70 hover:text-foreground hover:bg-muted"
-                )}
-              >
-                <Users className="h-4 w-4" />
-                Gönner
-              </Link>
-            </>
+          {/* Divider and Admin Links - only visible with permission */}
+          {(canViewGoennermitglieder || canViewAttendance) && (
+            <div className="h-6 w-px bg-border mx-2" />
           )}
           
-          {/* Divider and Anwesenheit - only visible with permission */}
+          {/* Gönnermitglieder - only visible with permission */}
+          {canViewGoennermitglieder && (
+            <Link 
+              href="/goennermitglieder"
+              className={cn(
+                "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5",
+                location === "/goennermitglieder" 
+                  ? "text-primary bg-primary/10" 
+                  : "text-foreground/70 hover:text-foreground hover:bg-muted"
+              )}
+            >
+              <Users className="h-4 w-4" />
+              Gönner
+            </Link>
+          )}
+          
+          {/* Anwesenheit - only visible with permission */}
           {canViewAttendance && (
-            <>
-              <div className="h-6 w-px bg-border mx-2" />
-              <Link 
-                href="/attendance"
-                className={cn(
-                  "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5",
-                  location === "/attendance" 
-                    ? "text-primary bg-primary/10" 
-                    : "text-foreground/70 hover:text-foreground hover:bg-muted"
-                )}
-              >
-                <ClipboardList className="h-4 w-4" />
-                Anwesenheit
-              </Link>
-            </>
+            <Link 
+              href="/attendance"
+              className={cn(
+                "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1.5",
+                location === "/attendance" 
+                  ? "text-primary bg-primary/10" 
+                  : "text-foreground/70 hover:text-foreground hover:bg-muted"
+              )}
+            >
+              <ClipboardList className="h-4 w-4" />
+              Anwesenheit
+            </Link>
           )}
         </div>
 
@@ -281,6 +280,14 @@ export function Navigation() {
                         <Link href="/admin" className="w-full cursor-pointer flex items-center">
                           <Settings className="mr-2 h-4 w-4" />
                           Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {canViewGoennermitglieder && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/goennermitglieder" className="w-full cursor-pointer flex items-center">
+                          <Users className="mr-2 h-4 w-4" />
+                          Gönnermitglieder
                         </Link>
                       </DropdownMenuItem>
                     )}

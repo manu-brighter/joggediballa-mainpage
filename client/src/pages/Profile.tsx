@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermissions";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { User, Mail, Shield, Calendar, Camera, ArrowLeft, Upload, Loader2, ZoomIn, Move, Pencil, Save, X } from "lucide-react";
+import { User, Mail, Shield, Calendar, Camera, ArrowLeft, Upload, Loader2, ZoomIn, Move, Pencil, Save, X, Users, ClipboardList } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
@@ -28,6 +29,8 @@ const MotionDiv = motion.div;
 
 export default function Profile() {
   const { user, loading, isAuthenticated } = useAuth();
+  const canViewGoennermitglieder = usePermission("manage_goennermitglieder");
+  const canViewAttendance = usePermission("manage_attendance");
   const [, navigate] = useLocation();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -490,7 +493,7 @@ export default function Profile() {
             </div>
 
             {/* Quick Links for Admins/Maintainers */}
-            {(user.role === "admin" || user.role === "maintainer") && (
+            {(user.role === "admin" || canViewGoennermitglieder || canViewAttendance) && (
               <>
                 <Separator />
                 <div className="space-y-4">
@@ -506,14 +509,26 @@ export default function Profile() {
                         Admin-Dashboard
                       </Button>
                     )}
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => navigate("/goennermitglieder")}
-                    >
-                      <User className="h-4 w-4 mr-2" />
-                      Gönnermitglieder
-                    </Button>
+                    {canViewGoennermitglieder && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={() => navigate("/goennermitglieder")}
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Gönnermitglieder
+                      </Button>
+                    )}
+                    {canViewAttendance && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={() => navigate("/attendance")}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Anwesenheit
+                      </Button>
+                    )}
                   </div>
                 </div>
               </>
