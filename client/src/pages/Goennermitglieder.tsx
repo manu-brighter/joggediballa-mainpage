@@ -283,6 +283,7 @@ export default function Goennermitglieder() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("endDate");
+  const [filterYear, setFilterYear] = useState<number | "all">("all");
   
   // Form state
   const [formData, setFormData] = useState({
@@ -389,7 +390,16 @@ export default function Goennermitglieder() {
 
   const canManageGoennermitglieder = usePermission("manage_goennermitglieder");
 
-  // Sort and filter members into 3 categories
+  // Get available years from all members
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    allMembers.forEach((member) => {
+      const startYear = new Date(member.membershipStartDate).getFullYear();
+      years.add(startYear);
+    });
+    return Array.from(years).sort((a, b) => b - a); // Newest first
+  }, [allMembers]);
+
   const { activeMembers, pendingMembers, expiredMembers } = useMemo(() => {
     const active: Member[] = [];
     const pending: Member[] = [];
@@ -397,12 +407,18 @@ export default function Goennermitglieder() {
 
     allMembers.forEach((member) => {
       const typedMember = member as Member;
-      
-      // Separate by payment status and expiry
       const status = getMemberStatus(typedMember);
       
+      // Filter by year if selected
+      if (filterYear !== "all") {
+        const startYear = new Date(typedMember.membershipStartDate).getFullYear();
+        if (startYear !== filterYear) {
+          return; // Skip this member
+        }
+      }
+      
       if (typedMember.paymentStatus === "pending") {
-        // Provisorische Mitglieder (pending payment)
+        // Ausstehende Zahlungen
         pending.push(typedMember);
       } else if (status === "expired") {
         // Abgelaufene Mitglieder
@@ -440,7 +456,7 @@ export default function Goennermitglieder() {
     );
 
     return { activeMembers: active, pendingMembers: pending, expiredMembers: expired };
-  }, [allMembers, sortBy]);
+  }, [allMembers, sortBy, filterYear]);
 
   // Calculate total contribution amount from active members only
   const totalActiveContributions = useMemo(() => {
@@ -573,18 +589,35 @@ export default function Goennermitglieder() {
         </MotionDiv>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
-          {/* Sort Dropdown */}
-          <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-            <SelectTrigger className="w-full sm:w-auto min-w-[200px] h-10">
-              <ArrowUpDown className="h-4 w-4 mr-2 flex-shrink-0" />
-              <SelectValue placeholder="Sortieren" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="endDate">Nach Ablaufdatum</SelectItem>
-              <SelectItem value="firstName">Nach Vorname</SelectItem>
-              <SelectItem value="lastName">Nach Nachname</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Filter and Sort Dropdowns - Side by side on mobile */}
+          <div className="flex gap-2">
+            {/* Year Filter Dropdown */}
+            <Select value={filterYear.toString()} onValueChange={(value) => setFilterYear(value === "all" ? "all" : parseInt(value))}>
+              <SelectTrigger className="w-full sm:w-auto min-w-[140px] h-10">
+                <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                <SelectValue placeholder="Jahr" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Jahre</SelectItem>
+                {availableYears.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Sort Dropdown */}
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+              <SelectTrigger className="w-full sm:w-auto min-w-[140px] h-10">
+                <ArrowUpDown className="h-4 w-4 mr-2 flex-shrink-0" />
+                <SelectValue placeholder="Sortieren" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="endDate">Nach Ablaufdatum</SelectItem>
+                <SelectItem value="firstName">Nach Vorname</SelectItem>
+                <SelectItem value="lastName">Nach Nachname</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Action Buttons - Side by side on mobile */}
           <div className="flex gap-2">
