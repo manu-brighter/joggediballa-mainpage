@@ -512,7 +512,6 @@ export default function Attendance() {
             <div className="space-y-2">
               <Label htmlFor="type">Typ <span className="text-red-500">*</span></Label>
               <Select
-                key={`session-type-${sessionForm.type}`}
                 value={sessionForm.type}
                 onValueChange={(value: "meeting" | "event") =>
                   setSessionForm({ ...sessionForm, type: value })
@@ -521,7 +520,7 @@ export default function Attendance() {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" sideOffset={4}>
                   <SelectItem value="meeting">Meeting</SelectItem>
                   <SelectItem value="event">Event</SelectItem>
                 </SelectContent>

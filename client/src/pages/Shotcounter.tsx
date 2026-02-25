@@ -385,22 +385,11 @@ export default function Shotcounter() {
 
           {/* Teams */}
           <div className="space-y-1 w-full max-w-5xl mx-auto pb-8">
-            <AnimatePresence mode="sync">
                 {teams.map((team, index) => (
-                  <MotionDiv
-                    key={`beamer-team-${team.id}`}
-                    layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ 
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 40,
-                      layout: { duration: 0.3 }
-                    }}
+                  <div
+                    key={team.id}
                     className={cn(
-                      "rounded-lg border transition-all",
+                      "rounded-lg border transition-all duration-300",
                       index === 0 
                         ? "bg-gradient-to-r from-primary/20 to-secondary/20 border-primary" 
                         : "bg-card/50 border-border"
@@ -439,9 +428,8 @@ export default function Shotcounter() {
                         {team.score}
                       </span>
                     </div>
-                  </MotionDiv>
+                  </div>
                 ))}
-            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -597,22 +585,11 @@ export default function Shotcounter() {
           </Card>
         ) : (
           <div className="space-y-3">
-            <AnimatePresence mode="sync">
                 {teams.map((team, index) => (
-                  <MotionDiv
-                    key={`normal-team-${team.id}`}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ 
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 35,
-                      layout: { duration: 0.3 }
-                    }}
+                  <div
+                    key={team.id}
                     className={cn(
-                      "p-4 md:p-6 rounded-xl border-2 transition-all",
+                      "p-4 md:p-6 rounded-xl border-2 transition-all duration-300",
                       index === 0 
                         ? "bg-gradient-to-r from-primary/10 to-secondary/10 border-primary shadow-lg shadow-primary/10" 
                         : "bg-card border-border hover:border-muted-foreground/30"
@@ -680,9 +657,8 @@ export default function Shotcounter() {
                         )}
                       </div>
                     </div>
-                  </MotionDiv>
+                  </div>
                 ))}
-            </AnimatePresence>
           </div>
         )}
       </div>
