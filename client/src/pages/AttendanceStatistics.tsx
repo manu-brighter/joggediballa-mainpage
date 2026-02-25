@@ -145,6 +145,12 @@ export default function AttendanceStatistics() {
     }));
   }, [stats]);
 
+  // Calculate max weighted absence for domain
+  const maxWeightedAbsence = useMemo(() => {
+    if (!absenceData.length) return 10;
+    return Math.max(...absenceData.map(d => d.weighted));
+  }, [absenceData]);
+
   const sessionTypeData = useMemo(() => {
     if (!stats) return [];
     return [
@@ -388,7 +394,7 @@ export default function AttendanceStatistics() {
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={absenceData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
-                <XAxis type="number" tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
+                <XAxis type="number" domain={[0, maxWeightedAbsence]} tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
                 <YAxis dataKey="name" type="category" width={100} tick={{ fill: isDarkMode ? '#e5e7eb' : '#374151' }} />
                 <Tooltip
                   contentStyle={{
