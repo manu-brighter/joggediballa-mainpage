@@ -385,17 +385,19 @@ export default function Shotcounter() {
 
           {/* Teams */}
           <div className="space-y-1 w-full max-w-5xl mx-auto pb-8">
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="sync">
                 {teams.map((team, index) => (
                   <MotionDiv
-                    key={team.id}
+                    key={`beamer-team-${team.id}`}
+                    layout
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ 
                       type: "spring",
                       stiffness: 400,
-                      damping: 40
+                      damping: 40,
+                      layout: { duration: 0.3 }
                     }}
                     className={cn(
                       "rounded-lg border transition-all",
@@ -595,17 +597,19 @@ export default function Shotcounter() {
           </Card>
         ) : (
           <div className="space-y-3">
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="sync">
                 {teams.map((team, index) => (
                   <MotionDiv
-                    key={team.id}
+                    key={`normal-team-${team.id}`}
+                    layout
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ 
                       type: "spring",
                       stiffness: 300,
-                      damping: 35
+                      damping: 35,
+                      layout: { duration: 0.3 }
                     }}
                     className={cn(
                       "p-4 md:p-6 rounded-xl border-2 transition-all",

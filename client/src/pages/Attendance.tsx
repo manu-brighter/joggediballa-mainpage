@@ -512,6 +512,7 @@ export default function Attendance() {
             <div className="space-y-2">
               <Label htmlFor="type">Typ <span className="text-red-500">*</span></Label>
               <Select
+                key={`session-type-${sessionForm.type}`}
                 value={sessionForm.type}
                 onValueChange={(value: "meeting" | "event") =>
                   setSessionForm({ ...sessionForm, type: value })
