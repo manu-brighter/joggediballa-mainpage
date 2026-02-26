@@ -511,20 +511,17 @@ export default function Attendance() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">Typ <span className="text-red-500">*</span></Label>
-              <Select
+              <select
+                id="type"
                 value={sessionForm.type}
-                onValueChange={(value: "meeting" | "event") =>
-                  setSessionForm({ ...sessionForm, type: value })
+                onChange={(e) =>
+                  setSessionForm({ ...sessionForm, type: e.target.value as "meeting" | "event" })
                 }
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  <SelectItem value="meeting">Meeting</SelectItem>
-                  <SelectItem value="event">Event</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="meeting">Meeting</option>
+                <option value="event">Event</option>
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notizen</Label>
