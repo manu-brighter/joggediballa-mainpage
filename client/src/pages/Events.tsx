@@ -845,52 +845,47 @@ export default function Events() {
 
           {/* Main image container */}
           <div className="relative w-full h-full flex items-center justify-center">
-            {/* Loading progress */}
-            {imageLoading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                <Loader2 className="h-12 w-12 animate-spin text-white" />
-                <div className="w-64 h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${imageLoadProgress}%` }}
+            {/* Thumbnail/compressed image shown immediately, blurred while full res loads */}
+            {selectedPhotos[currentPhotoIndex] && (() => {
+              const photo = selectedPhotos[currentPhotoIndex];
+              const thumbSrc = photo.compressedUrl || photo.thumbnailUrl || photo.imageUrl;
+              const fullSrc = photo.imageUrl;
+              const isSameUrl = thumbSrc === fullSrc;
+              return (
+                <>
+                  {/* Thumbnail layer - always visible, blurred when full res is loading */}
+                  <img
+                    key={`thumb-${currentPhotoIndex}`}
+                    src={thumbSrc}
+                    alt={currentPhotoEventName || "Event Foto"}
+                    className={cn(
+                      "absolute max-w-full max-h-full object-contain transition-all duration-500",
+                      imageLoading && !isSameUrl ? "blur-sm scale-105 opacity-100" : "blur-0 scale-100 opacity-0 pointer-events-none"
+                    )}
                   />
-                </div>
-                <p className="text-white/70 text-sm">{Math.round(imageLoadProgress)}%</p>
-              </div>
-            )}
-            
-            {/* Show compressed version first, then load original */}
-            <img
-              src={imageLoading ? (selectedPhotos[currentPhotoIndex]?.compressedUrl || selectedPhotos[currentPhotoIndex]?.imageUrl) : selectedPhotos[currentPhotoIndex]?.imageUrl}
-              alt={currentPhotoEventName || "Event Foto"}
-              className={cn(
-                "max-w-full max-h-full object-contain transition-opacity duration-300",
-                imageLoading ? "opacity-50" : "opacity-100"
-              )}
-              onLoad={() => {
-                if (!imageLoading) return;
-                // Simulate progress for original image load
-                const img = new Image();
-                img.src = selectedPhotos[currentPhotoIndex]?.imageUrl;
-                
-                // Fake progress animation
-                let progress = 0;
-                const interval = setInterval(() => {
-                  progress += 10;
-                  setImageLoadProgress(progress);
-                  if (progress >= 90) clearInterval(interval);
-                }, 50);
-                
-                img.onload = () => {
-                  clearInterval(interval);
-                  setImageLoadProgress(100);
-                  setTimeout(() => {
-                    setImageLoading(false);
-                    setImageLoadProgress(0);
-                  }, 200);
-                };
-              }}
-            />
+                  {/* Full resolution image - fades in on top */}
+                  <img
+                    key={`full-${currentPhotoIndex}`}
+                    src={fullSrc}
+                    alt={currentPhotoEventName || "Event Foto"}
+                    className={cn(
+                      "max-w-full max-h-full object-contain transition-opacity duration-500",
+                      imageLoading ? "opacity-0" : "opacity-100"
+                    )}
+                    onLoad={() => {
+                      setImageLoading(false);
+                      setImageLoadProgress(0);
+                    }}
+                  />
+                  {/* Small loading indicator in corner */}
+                  {imageLoading && (
+                    <div className="absolute bottom-4 right-4 z-10">
+                      <Loader2 className="h-5 w-5 animate-spin text-white/60" />
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {/* Navigation arrows - smaller and cleaner */}
             {selectedPhotos.length > 1 && (
