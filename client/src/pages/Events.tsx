@@ -585,8 +585,8 @@ export default function Events() {
                                 </div>
                               ))}
                             </div>
-                            {/* Expand button to show all photos */}
-                            {eventPhotos.length > 4 && canManageEvents && (
+                            {/* Expand button to show all photos - always visible for admins */}
+                            {canManageEvents && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -853,15 +853,16 @@ export default function Events() {
               const isSameUrl = thumbSrc === fullSrc;
               return (
                 <>
-                  {/* Thumbnail layer - always visible, blurred when full res is loading */}
+                  {/* Thumbnail layer - same size as full res, blurred while loading */}
                   <img
                     key={`thumb-${currentPhotoIndex}`}
                     src={thumbSrc}
                     alt={currentPhotoEventName || "Event Foto"}
                     className={cn(
                       "absolute max-w-full max-h-full object-contain transition-all duration-500",
-                      imageLoading && !isSameUrl ? "blur-sm scale-105 opacity-100" : "blur-0 scale-100 opacity-0 pointer-events-none"
+                      imageLoading && !isSameUrl ? "blur-md opacity-100" : "blur-0 opacity-0 pointer-events-none"
                     )}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />
                   {/* Full resolution image - fades in on top */}
                   <img
@@ -912,7 +913,7 @@ export default function Events() {
 
           {/* Footer */}
           <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-white/50">
-            © Manuel Heller | Pfeiltasten zur Navigation
+            © Manuel Heller
           </div>
         </DialogContent>
       </Dialog>
