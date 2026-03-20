@@ -413,19 +413,35 @@
     color-scheme: light;
   }
   
-  /* Style the calendar and clock icons - Light Mode */
+  /* Dark mode color-scheme */
+  .dark input[type="date"],
+  .dark input[type="time"] {
+    color-scheme: dark;
+  }
+
+  /* Style the calendar and clock icons */
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    border-radius: 3px;
+    @apply cursor-pointer rounded;
     opacity: 0.6;
     padding: 2px;
     transition: opacity 0.2s;
-    filter: none;
   }
   
   input[type="date"]:hover::-webkit-calendar-picker-indicator,
   input[type="time"]:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
+  }
+
+  /* Dark mode: invert icons so they appear light */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(0.85);
+    opacity: 0.7;
+  }
+
+  .dark input[type="date"]:hover::-webkit-calendar-picker-indicator,
+  .dark input[type="time"]:hover::-webkit-calendar-picker-indicator {
     opacity: 1;
   }
 
@@ -440,30 +456,4 @@
   }
 }
 
-/* ===== DATEPICKER / TIMEPICKER DARK MODE ICON FIX =====
-   Using both html.dark and .dark selectors to cover all cases.
-   These are outside @layer to ensure maximum specificity. */
 
-html.dark input[type="date"],
-html.dark input[type="time"],
-.dark input[type="date"],
-.dark input[type="time"] {
-  color-scheme: dark;
-}
-
-html.dark input[type="date"]::-webkit-calendar-picker-indicator,
-html.dark input[type="time"]::-webkit-calendar-picker-indicator,
-.dark input[type="date"]::-webkit-calendar-picker-indicator,
-.dark input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(2);
-  opacity: 0.85;
-  cursor: pointer;
-}
-
-html.dark input[type="date"]:hover::-webkit-calendar-picker-indicator,
-html.dark input[type="time"]:hover::-webkit-calendar-picker-indicator,
-.dark input[type="date"]:hover::-webkit-calendar-picker-indicator,
-.dark input[type="time"]:hover::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(2);
-  opacity: 1;
-}
