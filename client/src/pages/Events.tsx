@@ -963,9 +963,9 @@ export default function Events() {
 
                   {/* Subtle loading indicator — small spinner bottom-right */}
                   {!fullResLoaded && !isAlreadyFull && (
-                    <div className="absolute bottom-6 right-6 z-10 flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full">
-                      <Loader2 className="h-4 w-4 animate-spin text-white/70" />
-                      <span className="text-xs text-white/50">HD laden...</span>
+                    <div className="absolute bottom-6 right-6 z-10 flex items-center gap-2.5 bg-black/40 px-4 py-2 rounded-full">
+                      <Loader2 className="h-5 w-5 animate-spin text-white/70" />
+                      <span className="text-sm text-white/50">HD laden...</span>
                     </div>
                   )}
                 </>
