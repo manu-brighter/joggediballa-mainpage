@@ -61,9 +61,10 @@ export default function Harassenlauf() {
     captainFirstName: "",
     captainLastName: "",
     captainPhone: "",
-    wurstKalb: 0,
-    wurstKloepfer: 0,
-    wurstVegi: 0,
+    // Wurst fields stored as strings so the user can clear them while typing
+    wurstKalb: "0",
+    wurstKloepfer: "0",
+    wurstVegi: "0",
     additionalInfo: "",
   });
 
@@ -103,7 +104,10 @@ export default function Harassenlauf() {
   };
 
   const memberCountNum = parseInt(form.memberCount) || 0;
-  const wurstTotal = form.wurstKalb + form.wurstKloepfer + form.wurstVegi;
+  const wurstKalbNum = parseInt(form.wurstKalb) || 0;
+  const wurstKloepferNum = parseInt(form.wurstKloepfer) || 0;
+  const wurstVegiNum = parseInt(form.wurstVegi) || 0;
+  const wurstTotal = wurstKalbNum + wurstKloepferNum + wurstVegiNum;
   const wurstMax = memberCountNum;
   const showWurstSection = memberCountNum >= 1 && memberCountNum <= 5;
 
@@ -119,7 +123,7 @@ export default function Harassenlauf() {
   const handleMemberCountChange = (val: string) => {
     setMemberCountError("");
     if (val === "") {
-      setForm({ ...form, memberCount: "", wurstKalb: 0, wurstKloepfer: 0, wurstVegi: 0 });
+      setForm({ ...form, memberCount: "", wurstKalb: "0", wurstKloepfer: "0", wurstVegi: "0" });
       return;
     }
     const num = parseInt(val);
@@ -129,21 +133,31 @@ export default function Harassenlauf() {
       return;
     }
     // Reduce wurst if total exceeds new memberCount
-    const newTotal = form.wurstKalb + form.wurstKloepfer + form.wurstVegi;
+    const newTotal = wurstKalbNum + wurstKloepferNum + wurstVegiNum;
     if (newTotal > num) {
-      setForm({ ...form, memberCount: val, wurstKalb: 0, wurstKloepfer: 0, wurstVegi: 0 });
+      setForm({ ...form, memberCount: val, wurstKalb: "0", wurstKloepfer: "0", wurstVegi: "0" });
     } else {
       setForm({ ...form, memberCount: val });
     }
   };
 
-  const handleWurstChange = (key: "wurstKalb" | "wurstKloepfer" | "wurstVegi", val: number) => {
-    const others = Object.entries({ wurstKalb: form.wurstKalb, wurstKloepfer: form.wurstKloepfer, wurstVegi: form.wurstVegi })
-      .filter(([k]) => k !== key)
-      .reduce((sum, [, v]) => sum + v, 0);
-    const maxForThis = wurstMax - others;
-    const clamped = Math.max(0, Math.min(val, maxForThis));
-    setForm({ ...form, [key]: clamped });
+  // While typing: allow any string (including empty) so the user can clear the field
+  const handleWurstChange = (key: "wurstKalb" | "wurstKloepfer" | "wurstVegi", val: string) => {
+    setForm({ ...form, [key]: val });
+  };
+
+  // On blur: clamp to valid range and fall back to 0 if empty/invalid
+  const handleWurstBlur = (key: "wurstKalb" | "wurstKloepfer" | "wurstVegi") => {
+    const parsed = parseInt(form[key]);
+    const current = isNaN(parsed) ? 0 : parsed;
+    const others = (
+      key === "wurstKalb" ? wurstKloepferNum + wurstVegiNum :
+      key === "wurstKloepfer" ? wurstKalbNum + wurstVegiNum :
+      wurstKalbNum + wurstKloepferNum
+    );
+    const maxForThis = Math.max(0, wurstMax - others);
+    const clamped = Math.max(0, Math.min(current, maxForThis));
+    setForm({ ...form, [key]: String(clamped) });
   };
 
   const isFormValid =
@@ -170,9 +184,9 @@ export default function Harassenlauf() {
       captainFirstName: form.captainFirstName,
       captainLastName: form.captainLastName,
       captainPhone: form.captainPhone,
-      wurstKalb: form.wurstKalb,
-      wurstKloepfer: form.wurstKloepfer,
-      wurstVegi: form.wurstVegi,
+      wurstKalb: wurstKalbNum,
+      wurstKloepfer: wurstKloepferNum,
+      wurstVegi: wurstVegiNum,
       additionalInfo: form.additionalInfo || undefined,
     });
   };
@@ -468,11 +482,17 @@ export default function Harassenlauf() {
                                     min="0"
                                     max={wurstMax}
                                     value={form[key]}
-                                    onChange={(e) => handleWurstChange(key, parseInt(e.target.value) || 0)}
+                                    onChange={(e) => handleWurstChange(key, e.target.value)}
+                                    onBlur={() => handleWurstBlur(key)}
+                                    onFocus={(e) => {
+                                      // Select all text on focus so the user can immediately type a new value
+                                      e.target.select();
+                                    }}
                                     className="text-center"
                                   />
                                 </div>
                               ))}
+                            
                             </div>
                             <p className="text-xs text-muted-foreground">
                               Anzahl Würste entspricht Anzahl Teilnehmer.
