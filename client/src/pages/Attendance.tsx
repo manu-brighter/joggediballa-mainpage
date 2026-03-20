@@ -31,6 +31,7 @@ import {
 import { SafeSelect } from "@/components/ui/safe-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-time-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -497,9 +498,8 @@ export default function Attendance() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="date">Datum <span className="text-red-500">*</span></Label>
-              <Input
+              <DateInput
                 id="sessionDate"
-                type="date"
                 value={sessionForm.date}
                 onChange={(e) => setSessionForm({ ...sessionForm, date: e.target.value })}
                 onKeyDown={(e) => {

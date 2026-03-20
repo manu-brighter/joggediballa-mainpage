@@ -4,6 +4,7 @@ import { usePermission } from "@/hooks/usePermissions";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-time-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -464,11 +465,10 @@ export default function Profile() {
                   <div className="flex-1">
                     <p className="text-sm text-muted-foreground">Mitglied seit</p>
                     {isEditingProfile ? (
-                      <Input
-                        type="date"
+                      <DateInput
                         value={editMemberSince}
                         onChange={(e) => setEditMemberSince(e.target.value)}
-                        className="mt-1"
+                        wrapperClassName="mt-1"
                       />
                     ) : (
                       <p className="font-medium">

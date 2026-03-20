@@ -85,6 +85,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
+import { TimeInput } from "@/components/ui/date-time-input";
 import {
   InputOTP,
   InputOTPGroup,
@@ -501,8 +502,7 @@ export default function ComponentsShowcase() {
                             Time
                           </Label>
                           <div className="flex gap-2">
-                            <Input
-                              type="time"
+                            <TimeInput
                               value={
                                 datePickerDate
                                   ? format(datePickerDate, "HH:mm")

@@ -439,24 +439,3 @@
   }
 }
 
-/* ===== DATEPICKER DARK MODE =====
-   Written outside all @layer blocks so Tailwind v4 does not transform these selectors.
-   The .dark class is added to <html> by ThemeContext.tsx */
-
-:is(html.dark) input[type="date"],
-:is(html.dark) input[type="time"] {
-  color-scheme: dark;
-}
-
-:is(html.dark) input[type="date"]::-webkit-calendar-picker-indicator,
-:is(html.dark) input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(0.85);
-  opacity: 0.7;
-  cursor: pointer;
-}
-
-:is(html.dark) input[type="date"]:hover::-webkit-calendar-picker-indicator,
-:is(html.dark) input[type="time"]:hover::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(0.85);
-  opacity: 1;
-}

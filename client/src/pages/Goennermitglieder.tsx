@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-time-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -839,9 +840,8 @@ export default function Goennermitglieder() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="membershipStartDate">Mitgliedschaft ab *</Label>
-                    <Input
+                    <DateInput
                       id="membershipStartDate"
-                      type="date"
                       value={formData.membershipStartDate}
                       onChange={(e) => setFormData({ ...formData, membershipStartDate: e.target.value })}
                     />

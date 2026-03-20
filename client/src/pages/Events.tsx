@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput, TimeInput } from "@/components/ui/date-time-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -375,18 +376,16 @@ export default function Events() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="date">Datum <span className="text-destructive">*</span></Label>
-                    <Input
+                    <DateInput
                       id="date"
-                      type="date"
                       value={eventForm.eventDate}
                       onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="time">Uhrzeit</Label>
-                    <Input
+                    <TimeInput
                       id="time"
-                      type="time"
                       value={eventForm.eventTime}
                       onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
                     />
@@ -704,18 +703,16 @@ export default function Events() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-date">Datum <span className="text-destructive">*</span></Label>
-                <Input
+                <DateInput
                   id="edit-date"
-                  type="date"
                   value={eventForm.eventDate}
                   onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-time">Uhrzeit</Label>
-                <Input
+                <TimeInput
                   id="edit-time"
-                  type="time"
                   value={eventForm.eventTime}
                   onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
                 />
