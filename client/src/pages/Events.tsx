@@ -64,9 +64,7 @@ export default function Events() {
   const utils = trpc.useUtils();
   
   const { data: events = [], isLoading: eventsLoading } = trpc.events.list.useQuery();
-
-  // Build allPhotos from events data (already loaded) to avoid a separate query
-  const allPhotos = events.flatMap((e) => (e as any).photos ?? []);
+  const { data: allPhotos = [] } = trpc.photos.listAll.useQuery();
   
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -124,6 +122,7 @@ export default function Events() {
   const deleteEventMutation = trpc.events.delete.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
+      utils.photos.listAll.invalidate();
       toast.success("Event gelöscht!");
       setDeleteEventOpen(false);
       setSelectedEvent(null);
@@ -134,6 +133,7 @@ export default function Events() {
   const createPhotoMutation = trpc.photos.create.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
+      utils.photos.listAll.invalidate();
     },
     onError: (error) => toast.error(parseErrorMessage(error))
   });
@@ -141,6 +141,7 @@ export default function Events() {
   const deletePhotoMutation = trpc.photos.delete.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
+      utils.photos.listAll.invalidate();
       toast.success("Foto gelöscht!");
     },
     onError: (error) => toast.error(parseErrorMessage(error))
