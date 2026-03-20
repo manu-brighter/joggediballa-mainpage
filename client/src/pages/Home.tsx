@@ -84,39 +84,44 @@ export default function Home() {
                 unvergessliche Momente, grossartige Events und jede Menge Spass!
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start flex-wrap">
-                {/* Temp Button - only shown when feature toggle is enabled */}
+              <div className="flex flex-col gap-3 justify-center lg:justify-start">
+                {/* Temp Button - only shown when feature toggle is enabled, on its own row */}
                 {tempButtonEnabled && (
-                  <Button
-                    size="lg"
-                    className="btn-animate text-base h-14 px-8 w-full sm:w-auto font-bold bg-gradient-to-r from-secondary to-orange-500 hover:from-secondary/90 hover:to-orange-500/90 text-white shadow-lg shadow-secondary/30 hover:shadow-secondary/50 border-0 animate-pulse hover:animate-none"
-                    onClick={() => navigate(TEMP_BUTTON_URL)}
+                  <div className="flex justify-center lg:justify-start">
+                    <Button
+                      size="lg"
+                      className="btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-secondary to-orange-500 hover:from-secondary/90 hover:to-orange-500/90 text-white shadow-lg shadow-secondary/30 hover:shadow-secondary/50 border-0 animate-pulse hover:animate-none"
+                      onClick={() => navigate(TEMP_BUTTON_URL)}
+                    >
+                      <Zap className="h-5 w-5 mr-2" />
+                      {TEMP_BUTTON_TEXT}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                )}
+                {/* Shotcounter and Events on same row */}
+                <div className="flex flex-row gap-3 justify-center lg:justify-start flex-wrap">
+                  <Button 
+                    size="lg" 
+                    className="btn-animate text-base h-12 px-8 flex-1 sm:flex-none"
+                    onClick={() => navigate("/shotcounter")}
                   >
-                    <Zap className="h-5 w-5 mr-2" />
-                    {TEMP_BUTTON_TEXT}
+                    <Trophy className="h-5 w-5 mr-2" />
+                    Zum Shotcounter
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
-                )}
-                <Button 
-                  size="lg" 
-                  className="btn-animate text-base h-12 px-8 w-full sm:w-auto"
-                  onClick={() => navigate("/shotcounter")}
-                >
-                  <Trophy className="h-5 w-5 mr-2" />
-                  Zum Shotcounter
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-                {isEventsVisible && (
-                  <Button 
-                    variant="outline" 
-                    size="lg" 
-                    className="btn-animate text-base h-12 px-8 bg-background/50 backdrop-blur-sm w-full sm:w-auto"
-                    onClick={() => navigate(nextEvent ? `/events` : "/events")}
-                  >
-                    <Calendar className="h-5 w-5 mr-2" />
-                    {nextEvent ? "Nächstes Event" : "Unsere Events"}
-                  </Button>
-                )}
+                  {isEventsVisible && (
+                    <Button 
+                      variant="outline" 
+                      size="lg" 
+                      className="btn-animate text-base h-12 px-8 bg-background/50 backdrop-blur-sm flex-1 sm:flex-none"
+                      onClick={() => navigate(nextEvent ? `/events` : "/events")}
+                    >
+                      <Calendar className="h-5 w-5 mr-2" />
+                      {nextEvent ? "Nächstes Event" : "Unsere Events"}
+                    </Button>
+                  )}
+                </div>
               </div>
             </MotionDiv>
             

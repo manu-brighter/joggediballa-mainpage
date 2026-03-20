@@ -413,18 +413,21 @@
     color-scheme: light;
   }
   
-  .dark input[type="date"],
-  .dark input[type="time"] {
+  /* Dark mode color-scheme on html.dark element */
+  html.dark input[type="date"],
+  html.dark input[type="time"] {
     color-scheme: dark;
   }
   
-  /* Style the calendar and clock icons */
+  /* Style the calendar and clock icons - Light Mode */
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
-    @apply cursor-pointer rounded;
+    cursor: pointer;
+    border-radius: 3px;
     opacity: 0.6;
     padding: 2px;
     transition: opacity 0.2s;
+    filter: none;
   }
   
   input[type="date"]:hover::-webkit-calendar-picker-indicator,
@@ -433,15 +436,25 @@
   }
   
   /* Dark mode: invert icons so they appear white */
-  .dark input[type="date"]::-webkit-calendar-picker-indicator,
-  .dark input[type="time"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-    opacity: 0.75;
+  html.dark input[type="date"]::-webkit-calendar-picker-indicator,
+  html.dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.5);
+    opacity: 0.8;
   }
   
-  .dark input[type="date"]:hover::-webkit-calendar-picker-indicator,
-  .dark input[type="time"]:hover::-webkit-calendar-picker-indicator {
-    filter: invert(1);
+  html.dark input[type="date"]:hover::-webkit-calendar-picker-indicator,
+  html.dark input[type="time"]:hover::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.5);
     opacity: 1;
+  }
+
+  /* Number input: hide default spin buttons */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
   }
 }

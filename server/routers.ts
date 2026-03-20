@@ -6,7 +6,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
-import { contactSubmissions } from "../drizzle/schema";
+import { contactSubmissions, harassenlaufRegistrations } from "../drizzle/schema";
 import { hasPermission } from "./permissions";
 
 // ============================================
@@ -466,6 +466,52 @@ export const appRouter = router({
 
   // ============================================
   // CONTACT FORM
+  // ============================================
+  // HARASSENLAUF REGISTRATION
+  // ============================================
+  harassenlauf: router({
+    register: publicProcedure
+      .input(z.object({
+        teamName: z.string().min(1, "Teamname ist erforderlich").max(255),
+        memberCount: z.number().int().min(1).max(5),
+        captainFirstName: z.string().min(1, "Vorname ist erforderlich").max(100),
+        captainLastName: z.string().min(1, "Nachname ist erforderlich").max(100),
+        captainPhone: z.string().min(1, "Telefonnummer ist erforderlich").max(50),
+        wurstKalb: z.number().int().min(0).max(10),
+        wurstKloepfer: z.number().int().min(0).max(10),
+        wurstVegi: z.number().int().min(0).max(10),
+        additionalInfo: z.string().max(2000).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Primary: Save to database
+        const database = await db.getDb();
+        if (database) {
+          await database.insert(harassenlaufRegistrations).values({
+            teamName: input.teamName,
+            memberCount: input.memberCount,
+            captainFirstName: input.captainFirstName,
+            captainLastName: input.captainLastName,
+            captainPhone: input.captainPhone,
+            wurstKalb: input.wurstKalb,
+            wurstKloepfer: input.wurstKloepfer,
+            wurstVegi: input.wurstVegi,
+            additionalInfo: input.additionalInfo || null,
+          });
+        }
+
+        // Secondary: Send notification email (non-blocking)
+        try {
+          const { sendHarassenlaufEmail } = await import("./_core/email");
+          await sendHarassenlaufEmail(input);
+        } catch (emailError) {
+          console.error("Harassenlauf notification email failed:", emailError);
+          // Don't throw - DB save was successful
+        }
+
+        return { success: true };
+      }),
+  }),
+
   // ============================================
   contact: router({
     send: publicProcedure

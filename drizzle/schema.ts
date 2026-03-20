@@ -315,3 +315,24 @@ export const attendanceSettings = mysqlTable("attendance_settings", {
 
 export type AttendanceSetting = typeof attendanceSettings.$inferSelect;
 export type InsertAttendanceSetting = typeof attendanceSettings.$inferInsert;
+
+/**
+ * Harassenlauf Registrations - stores team registrations for the Harassenlauf event
+ */
+export const harassenlaufRegistrations = mysqlTable("harassenlauf_registrations", {
+  id: int("id").autoincrement().primaryKey(),
+  teamName: varchar("teamName", { length: 255 }).notNull(),
+  memberCount: int("memberCount").notNull(),
+  captainFirstName: varchar("captainFirstName", { length: 100 }).notNull(),
+  captainLastName: varchar("captainLastName", { length: 100 }).notNull(),
+  captainPhone: varchar("captainPhone", { length: 50 }).notNull(),
+  wurstKalb: int("wurstKalb").default(0).notNull(),
+  wurstKloepfer: int("wurstKloepfer").default(0).notNull(),
+  wurstVegi: int("wurstVegi").default(0).notNull(),
+  additionalInfo: text("additionalInfo"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type HarassenlaufRegistration = typeof harassenlaufRegistrations.$inferSelect;
+export type InsertHarassenlaufRegistration = typeof harassenlaufRegistrations.$inferInsert;
