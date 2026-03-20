@@ -84,6 +84,13 @@ export default function Harassenlauf() {
 
   const handlePhoneChange = (val: string) => {
     setForm({ ...form, captainPhone: val });
+    // Clear error while typing so it doesn't persist after correction
+    if (phoneError && validatePhone(val)) {
+      setPhoneError("");
+    }
+  };
+
+  const handlePhoneBlur = (val: string) => {
     if (val.trim() === "") {
       setPhoneError("");
       return;
@@ -420,6 +427,7 @@ export default function Harassenlauf() {
                           placeholder="+41 79 123 45 67"
                           value={form.captainPhone}
                           onChange={(e) => handlePhoneChange(e.target.value)}
+                          onBlur={(e) => handlePhoneBlur(e.target.value)}
                           className={cn(phoneError && "border-destructive focus-visible:ring-destructive")}
                           required
                         />
