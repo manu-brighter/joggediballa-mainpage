@@ -87,7 +87,7 @@ export function SafeSelect({
           "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
           "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          "hover:bg-accent/30 transition-colors cursor-pointer",
+          "hover:bg-muted transition-colors cursor-pointer",
           open && "ring-2 ring-ring ring-offset-2"
         )}
       >
@@ -126,8 +126,8 @@ export function SafeSelect({
                 }}
                 className={cn(
                   "flex items-center justify-between px-3 py-2 text-sm cursor-pointer select-none",
-                  "hover:bg-accent hover:text-accent-foreground transition-colors",
-                  isSelected && "bg-accent/50 font-medium"
+                  "hover:bg-muted hover:text-foreground transition-colors",
+                  isSelected && "bg-muted font-medium text-foreground"
                 )}
               >
                 {option.label}
