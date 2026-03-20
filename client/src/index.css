@@ -406,26 +406,20 @@
     @apply block sm:hidden;
   }
   
-  /* Modern date and time inputs */
-  input[type="date"],
-  input[type="time"] {
-    @apply relative;
-    color-scheme: light;
-  }
-  
-  /* Style the calendar and clock icons - light mode */
+  /* Date and time inputs: hide native icons globally.
+     Custom DateInput/TimeInput components provide their own SVG icons. */
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    border-radius: 3px;
-    opacity: 0.6;
-    padding: 2px;
-    transition: opacity 0.2s;
+    display: none !important;
+    -webkit-appearance: none !important;
   }
   
-  input[type="date"]:hover::-webkit-calendar-picker-indicator,
-  input[type="time"]:hover::-webkit-calendar-picker-indicator {
-    opacity: 1;
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="time"]::-webkit-inner-spin-button,
+  input[type="date"]::-webkit-clear-button,
+  input[type="time"]::-webkit-clear-button {
+    display: none !important;
+    -webkit-appearance: none !important;
   }
 
   /* Number input: hide default spin buttons */
