@@ -17,6 +17,7 @@ import {
   ChevronUp,
   Trophy,
   MapPin,
+  Utensils,
   Info,
   Send,
   ArrowRight,
@@ -357,7 +358,6 @@ export default function Harassenlauf() {
                       <div className="space-y-2">
                         <Label htmlFor="memberCount">
                           Anzahl Teilnehmer <span className="text-destructive">*</span>
-                          <span className="text-xs text-muted-foreground ml-1">(1–5)</span>
                         </Label>
                         <Input
                           id="memberCount"
@@ -449,7 +449,7 @@ export default function Harassenlauf() {
                       >
                         <div className="space-y-4 pt-2">
                           <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground uppercase tracking-wide">
-                            <span className="text-base">🥩</span>
+                            <Utensils className="h-4 w-4" />
                             Wurstbestellung
                           </div>
 
@@ -492,7 +492,7 @@ export default function Harassenlauf() {
                   </AnimatePresence>
 
                   {/* Additional Info */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 pt-2">
                     <Label htmlFor="additionalInfo">
                       Zusätzliche Angaben / Wünsche / Infos
                     </Label>
