@@ -68,6 +68,32 @@ export default function Harassenlauf() {
   });
 
   const [memberCountError, setMemberCountError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  // Validates Swiss and international phone numbers
+  const validatePhone = (phone: string): boolean => {
+    // Remove all spaces, dashes, dots, parentheses
+    const cleaned = phone.replace(/[\s\-\.\(\)]/g, "");
+    // Swiss: 07x, 0800, 0900, +41, 0041
+    // International: +XX... or 00XX...
+    const swissLocal = /^0[0-9]{9}$/;
+    const swissIntl = /^(\+41|0041)[0-9]{9}$/;
+    const international = /^(\+|00)[1-9][0-9]{7,14}$/;
+    return swissLocal.test(cleaned) || swissIntl.test(cleaned) || international.test(cleaned);
+  };
+
+  const handlePhoneChange = (val: string) => {
+    setForm({ ...form, captainPhone: val });
+    if (val.trim() === "") {
+      setPhoneError("");
+      return;
+    }
+    if (!validatePhone(val)) {
+      setPhoneError("Ungültige Telefonnummer – z.B. 079 123 45 67 oder +41 79 123 45 67");
+    } else {
+      setPhoneError("");
+    }
+  };
 
   const memberCountNum = parseInt(form.memberCount) || 0;
   const wurstTotal = form.wurstKalb + form.wurstKloepfer + form.wurstVegi;
@@ -117,9 +143,12 @@ export default function Harassenlauf() {
     form.teamName.trim() &&
     memberCountNum >= 1 &&
     memberCountNum <= 5 &&
+    !memberCountError &&
     form.captainFirstName.trim() &&
     form.captainLastName.trim() &&
     form.captainPhone.trim() &&
+    validatePhone(form.captainPhone) &&
+    !phoneError &&
     notRobot;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -390,9 +419,16 @@ export default function Harassenlauf() {
                           type="tel"
                           placeholder="+41 79 123 45 67"
                           value={form.captainPhone}
-                          onChange={(e) => setForm({ ...form, captainPhone: e.target.value })}
+                          onChange={(e) => handlePhoneChange(e.target.value)}
+                          className={cn(phoneError && "border-destructive focus-visible:ring-destructive")}
                           required
                         />
+                        {phoneError && (
+                          <p className="text-xs text-destructive flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3 shrink-0" />
+                            {phoneError}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
