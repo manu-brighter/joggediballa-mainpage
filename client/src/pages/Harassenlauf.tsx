@@ -29,19 +29,18 @@ const RULES_BASIC = [
   { icon: "👥", text: "Max. 5er Teams" },
   { icon: "💰", text: "CHF 75.– Startgeld pro Team" },
   { icon: "🍺", text: "1 Harasse pro Team" },
-  { icon: "🥩", text: "Für jede Person im Team eine Bratwurst" },
+  { icon: "🍗", text: "Eine Wurst pro Teammitglied inkludiert" },
 ];
 
 const RULES_DETAILED = [
-  "Die eingezeichnete Route muss von allen Teilnehmern abgelaufen werden.",
+  "Die zum Eventstart gegebene Route muss von allen Teilnehmern vollständig abgelaufen werden.",
   "Es darf nichts ausgelehrt werden – auch kein Spuckschluck!",
   "Es sind keine Hilfsmittel für den Transport der Harasse/Bier erlaubt.",
   "Gruppenbild muss bei jedem Posten gemacht werden.",
-  "Wenn die Organisatoren einen Verstoss sehen, wird das Team disqualifiziert!",
-  "Kein Kindergarten – Gentleman Agreement.",
+  "Wenn die Organisatoren einen Verstoss sehen, wird das gesamte Team disqualifiziert!",
   "Littering ist verboten.",
-  "Pro Bierdeckel: 5 Minuten Strafe.",
-  "Pro Bierflasche: 10 Minuten Strafe.",
+  "Pro verlorenen Bierdeckel: 5 Minuten Strafe.",
+  "Pro verlorene Bierflasche: 10 Minuten Strafe.",
 ];
 
 export default function Harassenlauf() {
@@ -50,7 +49,7 @@ export default function Harassenlauf() {
     description: "Melde dein Team für den Harassenlauf an! Max. 5er Teams, CHF 75.– Startgeld pro Team.",
   });
 
-  const [rulesOpen, setRulesOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [notRobot, setNotRobot] = useState(false);
 
@@ -197,9 +196,6 @@ export default function Harassenlauf() {
             Team <span className="font-bold text-foreground">«{form.teamName}»</span> ist dabei!
             Wir melden uns bei <span className="font-bold text-foreground">{form.captainFirstName} {form.captainLastName}</span>.
           </p>
-          <p className="text-sm text-muted-foreground">
-            Denkt daran: Kein Spuckschluck, kein Littering, kein Kindergarten. 😤
-          </p>
           <Button size="lg" className="btn-animate" onClick={() => window.location.href = "/"}>
             Zurück zur Homepage
           </Button>
@@ -290,7 +286,7 @@ export default function Harassenlauf() {
                   <AlertTriangle className="h-5 w-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="font-bold text-sm">Regeln & Strafen</p>
+                  <p className="font-bold text-sm">Regeln</p>
                   <p className="text-xs text-muted-foreground">Kein Kindergarten – Gentleman Agreement</p>
                 </div>
               </div>
@@ -458,10 +454,6 @@ export default function Harassenlauf() {
                           </div>
 
                           <div className="p-4 rounded-xl bg-muted/40 border space-y-3">
-                            <p className="text-xs text-muted-foreground">
-                              Total max. <strong>{wurstMax}</strong> Würste (entspricht Anzahl Teilnehmer).
-                              Noch verfügbar: <strong>{wurstMax - wurstTotal}</strong>
-                            </p>
                             <div className="grid grid-cols-3 gap-3">
                               {[
                                 { key: "wurstKalb" as const, label: "Kalbsbratwurst" },
@@ -482,6 +474,10 @@ export default function Harassenlauf() {
                                 </div>
                               ))}
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                              Anzahl Würste entspricht Anzahl Teilnehmer.
+                              Noch verfügbar: <strong>{wurstMax - wurstTotal}</strong>
+                            </p>
 
                             {wurstTotal > 0 && (
                               <div className="flex items-center justify-center gap-2 pt-2 border-t text-sm">
@@ -499,7 +495,6 @@ export default function Harassenlauf() {
                   <div className="space-y-2">
                     <Label htmlFor="additionalInfo">
                       Zusätzliche Angaben / Wünsche / Infos
-                      <span className="text-xs text-muted-foreground ml-2">(optional)</span>
                     </Label>
                     <Textarea
                       id="additionalInfo"
