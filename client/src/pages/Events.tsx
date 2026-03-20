@@ -925,37 +925,35 @@ export default function Events() {
 
               return (
                 <>
-                  {/* Preview layer — shown immediately, consistently dimmed until full-res loads */}
+                  {/* Preview layer — always visible at full brightness, stays underneath */}
                   <img
                     key={`preview-${currentPhotoIndex}`}
                     src={previewSrc}
                     alt={currentPhotoEventName || "Event Foto"}
-                    className={cn(
-                      "absolute max-w-full max-h-full object-contain",
-                      fullResLoaded && !isAlreadyFull
-                        ? "opacity-0 pointer-events-none transition-opacity duration-300"
-                        : "opacity-100"
-                    )}
+                    className="absolute max-w-full max-h-full object-contain"
                     style={{
                       width: "100%",
                       height: "100%",
                       objectFit: "contain",
-                      // Always slightly dimmed — no transition on filter to avoid blink
-                      filter: isAlreadyFull ? "none" : "brightness(0.85)",
                     }}
                     draggable={false}
                   />
 
-                  {/* Full resolution image — fades in on top */}
+                  {/* Full resolution image — positioned on top, fades in seamlessly */}
                   {!isAlreadyFull && (
                     <img
                       key={`full-${currentPhotoIndex}`}
                       src={fullSrc}
                       alt={currentPhotoEventName || "Event Foto"}
                       className={cn(
-                        "max-w-full max-h-full object-contain transition-opacity duration-500",
+                        "absolute max-w-full max-h-full object-contain transition-opacity duration-300",
                         fullResLoaded ? "opacity-100" : "opacity-0"
                       )}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                      }}
                       onLoad={() => setFullResLoaded(true)}
                       draggable={false}
                     />
