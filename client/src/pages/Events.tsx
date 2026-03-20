@@ -925,23 +925,23 @@ export default function Events() {
 
               return (
                 <>
-                  {/* Preview layer — shown immediately, slightly dimmed while full-res loads */}
+                  {/* Preview layer — shown immediately, consistently dimmed until full-res loads */}
                   <img
                     key={`preview-${currentPhotoIndex}`}
                     src={previewSrc}
                     alt={currentPhotoEventName || "Event Foto"}
                     className={cn(
-                      "absolute max-w-full max-h-full object-contain transition-all duration-300",
+                      "absolute max-w-full max-h-full object-contain",
                       fullResLoaded && !isAlreadyFull
-                        ? "opacity-0 pointer-events-none"
+                        ? "opacity-0 pointer-events-none transition-opacity duration-300"
                         : "opacity-100"
                     )}
                     style={{
                       width: "100%",
                       height: "100%",
                       objectFit: "contain",
-                      // Slightly dim while full-res is loading (not blurred!)
-                      filter: !fullResLoaded && !isAlreadyFull ? "brightness(0.85)" : "none",
+                      // Always slightly dimmed — no transition on filter to avoid blink
+                      filter: isAlreadyFull ? "none" : "brightness(0.85)",
                     }}
                     draggable={false}
                   />
