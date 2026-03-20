@@ -21,6 +21,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SafeSelect } from "@/components/ui/safe-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

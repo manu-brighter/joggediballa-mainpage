@@ -458,3 +458,25 @@
     -moz-appearance: textfield;
   }
 }
+
+/* ===== DATEPICKER / TIMEPICKER DARK MODE ICON FIX =====
+   These rules are outside all @layer blocks to ensure maximum specificity.
+   The .dark class is applied to the <html> element by the theme system. */
+
+html.dark input[type="date"]::-webkit-calendar-picker-indicator,
+html.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2) !important;
+  opacity: 0.85 !important;
+  cursor: pointer;
+}
+
+html.dark input[type="date"]:hover::-webkit-calendar-picker-indicator,
+html.dark input[type="time"]:hover::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2) !important;
+  opacity: 1 !important;
+}
+
+html.dark input[type="date"],
+html.dark input[type="time"] {
+  color-scheme: dark !important;
+}
