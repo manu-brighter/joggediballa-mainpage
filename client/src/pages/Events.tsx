@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -60,6 +60,77 @@ interface EventFormData {
   location: string;
 }
 
+// =============================================================================
+// Helper: pick the best available URL for a given purpose
+// =============================================================================
+function pickSrc(
+  photo: { thumbnailUrl?: string | null; compressedUrl?: string | null; imageUrl: string },
+  purpose: "thumb" | "preview" | "full"
+): string {
+  switch (purpose) {
+    case "thumb":
+      // Smallest available: thumbnail → compressed → original
+      return photo.thumbnailUrl || photo.compressedUrl || photo.imageUrl;
+    case "preview":
+      // Medium: compressed → thumbnail → original
+      return photo.compressedUrl || photo.thumbnailUrl || photo.imageUrl;
+    case "full":
+      return photo.imageUrl;
+  }
+}
+
+// =============================================================================
+// Optimized image component with lazy loading via IntersectionObserver
+// =============================================================================
+function LazyImage({
+  src,
+  alt,
+  className,
+  eager = false,
+  onClick,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  eager?: boolean;
+  onClick?: () => void;
+}) {
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [isVisible, setIsVisible] = useState(eager);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (eager || !imgRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" } // start loading 200px before visible
+    );
+    observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, [eager]);
+
+  return (
+    <img
+      ref={imgRef}
+      src={isVisible ? src : undefined}
+      alt={alt}
+      className={cn(
+        className,
+        "transition-opacity duration-300",
+        loaded ? "opacity-100" : "opacity-0"
+      )}
+      onLoad={() => setLoaded(true)}
+      onClick={onClick}
+      draggable={false}
+    />
+  );
+}
+
 export default function Events() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
@@ -71,8 +142,7 @@ export default function Events() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-  const [imageLoading, setImageLoading] = useState(true);
-  const [imageLoadProgress, setImageLoadProgress] = useState(0);
+  const [fullResLoaded, setFullResLoaded] = useState(false);
 
   // Event management state
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -87,7 +157,7 @@ export default function Events() {
     location: ""
   });
   
-  // Photo upload state - use separate refs for each event
+  // Photo upload state
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadEventId, setUploadEventId] = useState<number | null>(null);
   const photoInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
@@ -95,6 +165,11 @@ export default function Events() {
   // Photo management dialog state
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [photoManagementEventId, setPhotoManagementEventId] = useState<number | null>(null);
+
+  // Touch/swipe state for lightbox
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isSwiping = useRef(false);
 
   const isLoggedIn = !!user;
   const canManageEvents = usePermission("edit_events");
@@ -156,9 +231,11 @@ export default function Events() {
     onError: (error) => toast.error(parseErrorMessage(error))
   });
 
-  const selectedPhotos = selectedEventId
-    ? allPhotos.filter((p) => p.eventId === selectedEventId)
-    : allPhotos;
+  // Memoize filtered photos to avoid re-filtering on every render
+  const selectedPhotos = useMemo(
+    () => selectedEventId ? allPhotos.filter((p) => p.eventId === selectedEventId) : allPhotos,
+    [selectedEventId, allPhotos]
+  );
 
   // Get event name for current photo
   const currentPhotoEventName = selectedPhotos[currentPhotoIndex]
@@ -170,22 +247,22 @@ export default function Events() {
     setSelectedEvent(null);
   };
 
-  const openLightbox = (index: number, eventId?: number) => {
+  const openLightbox = useCallback((index: number, eventId?: number) => {
     setCurrentPhotoIndex(index);
     setSelectedEventId(eventId || null);
+    setFullResLoaded(false);
     setLightboxOpen(true);
-    setImageLoading(true);
-  };
+  }, []);
 
-  const nextPhoto = () => {
-    setImageLoading(true);
+  const nextPhoto = useCallback(() => {
+    setFullResLoaded(false);
     setCurrentPhotoIndex((prev) => (prev + 1) % selectedPhotos.length);
-  };
+  }, [selectedPhotos.length]);
 
-  const prevPhoto = () => {
-    setImageLoading(true);
+  const prevPhoto = useCallback(() => {
+    setFullResLoaded(false);
     setCurrentPhotoIndex((prev) => (prev - 1 + selectedPhotos.length) % selectedPhotos.length);
-  };
+  }, [selectedPhotos.length]);
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -197,23 +274,48 @@ export default function Events() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [lightboxOpen, selectedPhotos.length]);
+  }, [lightboxOpen, nextPhoto, prevPhoto]);
 
-  // Cleanup: Abort image loading when component unmounts or page changes
+  // Preload adjacent images in lightbox
   useEffect(() => {
-    return () => {
-      // Cancel any pending image loads by resetting state
-      setImageLoading(false);
-      setImageLoadProgress(0);
+    if (!lightboxOpen || selectedPhotos.length <= 1) return;
+    const preload = (idx: number) => {
+      const photo = selectedPhotos[idx];
+      if (!photo) return;
+      // Preload the compressed version (shown immediately) and full res
+      const img1 = new Image();
+      img1.src = pickSrc(photo, "preview");
+      const img2 = new Image();
+      img2.src = photo.imageUrl;
     };
+    const nextIdx = (currentPhotoIndex + 1) % selectedPhotos.length;
+    const prevIdx = (currentPhotoIndex - 1 + selectedPhotos.length) % selectedPhotos.length;
+    preload(nextIdx);
+    preload(prevIdx);
+  }, [lightboxOpen, currentPhotoIndex, selectedPhotos]);
+
+  // Touch handlers for swipe navigation in lightbox
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
   }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+    // Only swipe if horizontal movement is dominant and > 50px
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+      if (deltaX < 0) nextPhoto();
+      else prevPhoto();
+    }
+  }, [nextPhoto, prevPhoto]);
 
   const handleCreateEvent = () => {
     if (!eventForm.title.trim() || !eventForm.eventDate) {
       toast.error("Bitte Titel und Datum angeben");
       return;
     }
-    // Combine date and optional time
     const dateStr = eventForm.eventTime 
       ? `${eventForm.eventDate}T${eventForm.eventTime}` 
       : `${eventForm.eventDate}T00:00`;
@@ -230,7 +332,6 @@ export default function Events() {
       toast.error("Bitte Titel und Datum angeben");
       return;
     }
-    // Combine date and optional time
     const dateStr = eventForm.eventTime 
       ? `${eventForm.eventDate}T${eventForm.eventTime}` 
       : `${eventForm.eventDate}T00:00`;
@@ -265,7 +366,6 @@ export default function Events() {
     setDeleteEventOpen(true);
   };
 
-  // Fixed photo upload handler - uses the eventId passed directly
   const handlePhotoUpload = async (files: FileList | null, targetEventId: number) => {
     if (!files || files.length === 0) return;
 
@@ -296,15 +396,16 @@ export default function Events() {
           throw new Error(`Upload fehlgeschlagen für ${file.name}`);
         }
 
-        const { url, key, compressedUrl, compressedKey } = await response.json();
+        const { url, key, compressedUrl, compressedKey, thumbnailUrl, thumbnailKey } = await response.json();
 
-        // Use the targetEventId that was captured when the button was clicked
         await createPhotoMutation.mutateAsync({
           eventId: targetEventId,
           imageUrl: url,
           imageKey: key,
           compressedUrl,
           compressedKey,
+          thumbnailUrl,
+          thumbnailKey,
           title: file.name.replace(/\.[^/.]+$/, "")
         });
       }
@@ -316,7 +417,6 @@ export default function Events() {
     } finally {
       setUploadingPhotos(false);
       setUploadEventId(null);
-      // Clear the specific input
       const inputRef = photoInputRefs.current.get(targetEventId);
       if (inputRef) {
         inputRef.value = "";
@@ -324,6 +424,9 @@ export default function Events() {
     }
   };
 
+  // =========================================================================
+  // RENDER
+  // =========================================================================
   return (
     <div className="container py-12 space-y-12">
       {/* Header */}
@@ -459,7 +562,6 @@ export default function Events() {
             <AnimatePresence>
               {events.map((event, index) => {
                 const eventPhotos = allPhotos.filter((p) => p.eventId === event.id);
-                // Find thumbnail photo or use first photo
                 const thumbnailPhoto = event.thumbnailPhotoId 
                   ? eventPhotos.find(p => p.id === event.thumbnailPhotoId) || eventPhotos[0]
                   : eventPhotos[0];
@@ -473,17 +575,17 @@ export default function Events() {
                     transition={{ delay: index * 0.05 }}
                   >
                     <Card className="overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full flex flex-col">
-                      {/* Event Cover Image - removed top padding */}
+                      {/* Event Cover Image — use compressed for cover */}
                       {thumbnailPhoto ? (
                         <div
                           className="aspect-video overflow-hidden bg-muted cursor-pointer relative group"
                           onClick={() => openLightbox(eventPhotos.indexOf(thumbnailPhoto), event.id)}
                         >
-                          <img
-                            src={thumbnailPhoto.thumbnailUrl || thumbnailPhoto.imageUrl}
+                          <LazyImage
+                            src={pickSrc(thumbnailPhoto, "preview")}
                             alt={event.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            loading={index < 2 ? "eager" : "lazy"}
+                            eager={index < 2}
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-black/90 px-3 py-1.5 rounded-full text-sm font-medium">
@@ -543,7 +645,7 @@ export default function Events() {
                           </p>
                         )}
                         
-                        {/* Photo Gallery Preview - with thumbnail selection */}
+                        {/* Photo Gallery Preview — thumbnails for small grid */}
                         {eventPhotos.length > 0 && (
                           <div className="space-y-2 mt-auto">
                             <div className="grid grid-cols-4 gap-1">
@@ -557,11 +659,10 @@ export default function Events() {
                                   )}
                                   onClick={() => openLightbox(idx, event.id)}
                                 >
-                                  <img
-                                    src={photo.thumbnailUrl || photo.imageUrl}
+                                  <LazyImage
+                                    src={pickSrc(photo, "thumb")}
                                     alt=""
                                     className="w-full h-full object-cover hover:scale-110 transition-transform"
-                                    loading="lazy"
                                   />
                                   {idx === 3 && eventPhotos.length > 4 && (
                                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold">
@@ -603,7 +704,7 @@ export default function Events() {
                           </div>
                         )}
 
-                        {/* Photo Upload for logged-in users - separate input per event */}
+                        {/* Photo Upload for logged-in users */}
                         {canManageEvents && (
                           <div className="mt-auto pt-3 border-t">
                             <input
@@ -675,8 +776,6 @@ export default function Events() {
           </AlertDescription>
         </Alert>
       </MotionDiv>
-
-
 
       {/* Edit Event Dialog */}
       <Dialog open={editEventOpen} onOpenChange={(open) => {
@@ -775,9 +874,15 @@ export default function Events() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Fullscreen Lightbox */}
+      {/* ================================================================= */}
+      {/* Fullscreen Lightbox — optimized                                    */}
+      {/* ================================================================= */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent onEnterKey={() => {}} className="w-[95vw] h-[95vh] !max-w-[95vw] p-4 bg-black/95 border-0 rounded-lg" showCloseButton={false}>
+        <DialogContent
+          onEnterKey={() => {}}
+          className="w-[95vw] h-[95vh] !max-w-[95vw] p-4 bg-black/95 border-0 rounded-lg"
+          showCloseButton={false}
+        >
           {/* Hidden title and description for accessibility */}
           <DialogTitle className="sr-only">
             {currentPhotoEventName || "Foto"} - Bild {currentPhotoIndex + 1} von {selectedPhotos.length}
@@ -785,6 +890,7 @@ export default function Events() {
           <DialogDescription className="sr-only">
             Vollbild-Ansicht des Fotos. Verwende die Pfeiltasten oder Buttons zum Navigieren.
           </DialogDescription>
+
           {/* Close button */}
           <Button
             variant="ghost"
@@ -795,7 +901,7 @@ export default function Events() {
             <X className="h-6 w-6" />
           </Button>
 
-          {/* Photo info - event name instead of filename */}
+          {/* Photo info */}
           <div className="absolute top-4 left-4 z-50 text-white">
             <p className="text-lg font-medium">
               {currentPhotoEventName || "Foto"}
@@ -805,52 +911,68 @@ export default function Events() {
             </p>
           </div>
 
-          {/* Main image container */}
-          <div className="relative w-full h-full flex items-center justify-center">
-            {/* Thumbnail/compressed image shown immediately, blurred while full res loads */}
+          {/* Main image container with touch support */}
+          <div
+            className="relative w-full h-full flex items-center justify-center select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             {selectedPhotos[currentPhotoIndex] && (() => {
               const photo = selectedPhotos[currentPhotoIndex];
-              const thumbSrc = photo.compressedUrl || photo.thumbnailUrl || photo.imageUrl;
+              const previewSrc = pickSrc(photo, "preview");
               const fullSrc = photo.imageUrl;
-              const isSameUrl = thumbSrc === fullSrc;
+              const isAlreadyFull = previewSrc === fullSrc;
+
               return (
                 <>
-                  {/* Thumbnail layer - same size as full res, blurred while loading */}
+                  {/* Preview layer — shown immediately, slightly dimmed while full-res loads */}
                   <img
-                    key={`thumb-${currentPhotoIndex}`}
-                    src={thumbSrc}
+                    key={`preview-${currentPhotoIndex}`}
+                    src={previewSrc}
                     alt={currentPhotoEventName || "Event Foto"}
                     className={cn(
-                      "absolute max-w-full max-h-full object-contain transition-all duration-500",
-                      imageLoading && !isSameUrl ? "blur-md opacity-100" : "blur-0 opacity-0 pointer-events-none"
+                      "absolute max-w-full max-h-full object-contain transition-all duration-300",
+                      fullResLoaded && !isAlreadyFull
+                        ? "opacity-0 pointer-events-none"
+                        : "opacity-100"
                     )}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                  />
-                  {/* Full resolution image - fades in on top */}
-                  <img
-                    key={`full-${currentPhotoIndex}`}
-                    src={fullSrc}
-                    alt={currentPhotoEventName || "Event Foto"}
-                    className={cn(
-                      "max-w-full max-h-full object-contain transition-opacity duration-500",
-                      imageLoading ? "opacity-0" : "opacity-100"
-                    )}
-                    onLoad={() => {
-                      setImageLoading(false);
-                      setImageLoadProgress(0);
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      // Slightly dim while full-res is loading (not blurred!)
+                      filter: !fullResLoaded && !isAlreadyFull ? "brightness(0.85)" : "none",
                     }}
+                    draggable={false}
                   />
-                  {/* Small loading indicator in corner */}
-                  {imageLoading && (
-                    <div className="absolute bottom-4 right-4 z-10">
-                      <Loader2 className="h-5 w-5 animate-spin text-white/60" />
+
+                  {/* Full resolution image — fades in on top */}
+                  {!isAlreadyFull && (
+                    <img
+                      key={`full-${currentPhotoIndex}`}
+                      src={fullSrc}
+                      alt={currentPhotoEventName || "Event Foto"}
+                      className={cn(
+                        "max-w-full max-h-full object-contain transition-opacity duration-500",
+                        fullResLoaded ? "opacity-100" : "opacity-0"
+                      )}
+                      onLoad={() => setFullResLoaded(true)}
+                      draggable={false}
+                    />
+                  )}
+
+                  {/* Subtle loading indicator — small spinner bottom-right */}
+                  {!fullResLoaded && !isAlreadyFull && (
+                    <div className="absolute bottom-6 right-6 z-10 flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full">
+                      <Loader2 className="h-4 w-4 animate-spin text-white/70" />
+                      <span className="text-xs text-white/50">HD laden...</span>
                     </div>
                   )}
                 </>
               );
             })()}
 
-            {/* Navigation arrows - smaller and cleaner */}
+            {/* Navigation arrows */}
             {selectedPhotos.length > 1 && (
               <>
                 <Button
@@ -911,8 +1033,8 @@ export default function Events() {
                           : "border-transparent hover:border-muted-foreground/30"
                       )}
                     >
-                      <img
-                        src={photo.thumbnailUrl || photo.imageUrl}
+                      <LazyImage
+                        src={pickSrc(photo, "thumb")}
                         alt=""
                         className="w-full h-full object-cover"
                       />
@@ -923,7 +1045,7 @@ export default function Events() {
                           Thumbnail
                         </div>
                       )}
-                      {/* Action buttons - always visible on hover */}
+                      {/* Action buttons */}
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4">
                         {photo.id !== event?.thumbnailPhotoId && (
                           <Button

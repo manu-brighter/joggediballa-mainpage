@@ -182,24 +182,39 @@ router.post("/event-photo", async (req: Request, res: Response) => {
         const originalKey = `events/original/${photoId}.${ext}`;
         const { url: originalUrl, key: originalStorageKey } = await storagePut(originalKey, fileBuffer, fileMimeType);
 
-        // Generate compressed version (optimized for fast loading)
+        // Generate compressed version (for lightbox preview / medium quality)
         const compressedBuffer = await sharp(fileBuffer)
-          .resize(800, 800, { // Max 800px on longest side (reduced from 1024)
+          .resize(1200, 1200, { // Max 1200px on longest side for lightbox
             fit: 'inside',
             withoutEnlargement: true
           })
-          .jpeg({ quality: 50 }) // Lower quality for faster loading (reduced from 65)
+          .jpeg({ quality: 65 }) // Good quality for lightbox preview
           .toBuffer();
 
         // Upload compressed version
         const compressedKey = `events/compressed/${photoId}.jpg`;
         const { url: compressedUrl, key: compressedStorageKey } = await storagePut(compressedKey, compressedBuffer, "image/jpeg");
 
+        // Generate thumbnail (for gallery grid / event cards)
+        const thumbnailBuffer = await sharp(fileBuffer)
+          .resize(400, 400, { // Max 400px - small and fast for grids
+            fit: 'inside',
+            withoutEnlargement: true
+          })
+          .jpeg({ quality: 60 }) // Balanced quality/size (~20-50KB)
+          .toBuffer();
+
+        // Upload thumbnail version
+        const thumbnailKey = `events/thumbnails/${photoId}.jpg`;
+        const { url: thumbnailUrl, key: thumbnailStorageKey } = await storagePut(thumbnailKey, thumbnailBuffer, "image/jpeg");
+
         res.json({ 
           url: originalUrl, 
           key: originalStorageKey,
           compressedUrl,
-          compressedKey: compressedStorageKey
+          compressedKey: compressedStorageKey,
+          thumbnailUrl,
+          thumbnailKey: thumbnailStorageKey
         });
       } catch (error) {
         console.error("Event photo upload error:", error);
