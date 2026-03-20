@@ -64,7 +64,9 @@ export default function Events() {
   const utils = trpc.useUtils();
   
   const { data: events = [], isLoading: eventsLoading } = trpc.events.list.useQuery();
-  const { data: allPhotos = [], isLoading: photosLoading } = trpc.photos.listAll.useQuery();
+
+  // Build allPhotos from events data (already loaded) to avoid a separate query
+  const allPhotos = events.flatMap((e) => (e as any).photos ?? []);
   
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -122,7 +124,6 @@ export default function Events() {
   const deleteEventMutation = trpc.events.delete.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
-      utils.photos.listAll.invalidate();
       toast.success("Event gelöscht!");
       setDeleteEventOpen(false);
       setSelectedEvent(null);
@@ -132,14 +133,14 @@ export default function Events() {
 
   const createPhotoMutation = trpc.photos.create.useMutation({
     onSuccess: () => {
-      utils.photos.listAll.invalidate();
+      utils.events.list.invalidate();
     },
     onError: (error) => toast.error(parseErrorMessage(error))
   });
 
   const deletePhotoMutation = trpc.photos.delete.useMutation({
     onSuccess: () => {
-      utils.photos.listAll.invalidate();
+      utils.events.list.invalidate();
       toast.success("Foto gelöscht!");
     },
     onError: (error) => toast.error(parseErrorMessage(error))
@@ -675,44 +676,7 @@ export default function Events() {
         </Alert>
       </MotionDiv>
 
-      {/* All Photos Gallery */}
-      {allPhotos.length > 0 && (
-        <section className="space-y-6">
-          <h2 className="text-4xl font-bold">Alle Fotos</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {allPhotos.map((photo, index) => (
-              <MotionDiv
-                key={photo.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.02 }}
-                className="aspect-square overflow-hidden bg-muted rounded-xl cursor-pointer group relative"
-                onClick={() => openLightbox(index)}
-              >
-                <img
-                  src={photo.compressedUrl || photo.imageUrl}
-                  alt={photo.title || "Event Foto"}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  loading="lazy"
-                />
-                {canManageEvents && (
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deletePhotoMutation.mutate({ photoId: photo.id });
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </MotionDiv>
-            ))}
-          </div>
-        </section>
-      )}
+
 
       {/* Edit Event Dialog */}
       <Dialog open={editEventOpen} onOpenChange={(open) => {
