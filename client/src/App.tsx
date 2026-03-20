@@ -23,6 +23,7 @@ import AttendanceStatistics from "./pages/AttendanceStatistics";
 import Profile from "./pages/Profile";
 import Dienstleistungen from "./pages/Dienstleistungen";
 import MaintenancePage from "./pages/Maintenance";
+import Harassenlauf from "./pages/Harassenlauf";
 import { createContext, useContext, useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -59,6 +60,7 @@ function Router() {
       <Route path="/attendance/statistics" component={AttendanceStatistics} />
       <Route path="/profile" component={Profile} />
       <Route path="/dienstleistungen" component={Dienstleistungen} />
+      <Route path="/harassenlauf" component={Harassenlauf} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

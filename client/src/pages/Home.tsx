@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link, useLocation } from "wouter";
-import { Calendar, Trophy, Users, Heart, ArrowRight, Instagram, Sparkles, Gift, Twitch } from "lucide-react";
+import { Calendar, Trophy, Users, Heart, ArrowRight, Instagram, Sparkles, Gift, Twitch, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useSEO } from "@/hooks/useSEO";
@@ -19,6 +19,12 @@ export default function Home() {
   
   // Check navigation visibility
   const isEventsVisible = useNavVisibility("/events");
+
+  // Feature toggle for temp button
+  const { data: featureToggles = [] } = trpc.features.list.useQuery(undefined, { staleTime: 30000 });
+  const tempButtonEnabled = featureToggles.find(f => f.featureName === "temp_button")?.isEnabled ?? false;
+  const TEMP_BUTTON_URL = "/harassenlauf";
+  const TEMP_BUTTON_TEXT = "Harassenlauf Anmeldung";
 
   // SEO Meta Tags
   useSEO({
@@ -78,7 +84,19 @@ export default function Home() {
                 unvergessliche Momente, grossartige Events und jede Menge Spass!
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start flex-wrap">
+                {/* Temp Button - only shown when feature toggle is enabled */}
+                {tempButtonEnabled && (
+                  <Button
+                    size="lg"
+                    className="btn-animate text-base h-14 px-8 w-full sm:w-auto font-bold bg-gradient-to-r from-secondary to-orange-500 hover:from-secondary/90 hover:to-orange-500/90 text-white shadow-lg shadow-secondary/30 hover:shadow-secondary/50 border-0 animate-pulse hover:animate-none"
+                    onClick={() => navigate(TEMP_BUTTON_URL)}
+                  >
+                    <Zap className="h-5 w-5 mr-2" />
+                    {TEMP_BUTTON_TEXT}
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
                 <Button 
                   size="lg" 
                   className="btn-animate text-base h-12 px-8 w-full sm:w-auto"
@@ -93,10 +111,10 @@ export default function Home() {
                     variant="outline" 
                     size="lg" 
                     className="btn-animate text-base h-12 px-8 bg-background/50 backdrop-blur-sm w-full sm:w-auto"
-                    onClick={() => navigate("/events")}
+                    onClick={() => navigate(nextEvent ? `/events` : "/events")}
                   >
                     <Calendar className="h-5 w-5 mr-2" />
-                    Unsere Events
+                    {nextEvent ? "Nächstes Event" : "Unsere Events"}
                   </Button>
                 )}
               </div>

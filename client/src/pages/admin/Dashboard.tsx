@@ -53,7 +53,8 @@ import {
   AlertTriangle,
   Menu,
   Eye,
-  EyeOff
+  EyeOff,
+  Zap
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -563,6 +564,33 @@ export default function AdminDashboard() {
                     onCheckedChange={(checked) =>
                       toggleFeatureMutation.mutate({
                         featureName: "maintenance_mode",
+                        isEnabled: checked,
+                      })
+                    }
+                  />
+                </div>
+
+                {/* Temp Button Toggle */}
+                <div className="flex items-center justify-between p-4 border rounded-xl hover:border-secondary/30 transition-colors col-span-full">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+                      <Zap className="h-5 w-5 text-secondary" />
+                    </div>
+                    <div className="min-w-0">
+                      <Label htmlFor="temp-button-toggle" className="font-medium cursor-pointer block">
+                        Temporärer Button (Homepage)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Zeigt den Aktions-Button auf der Homepage an — aktuell verlinkt auf: <span className="font-mono text-primary">/harassenlauf</span>
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="temp-button-toggle"
+                    checked={getFeatureToggle("temp_button")?.isEnabled ?? false}
+                    onCheckedChange={(checked) =>
+                      toggleFeatureMutation.mutate({
+                        featureName: "temp_button",
                         isEnabled: checked,
                       })
                     }
