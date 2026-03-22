@@ -542,6 +542,15 @@ export default function Harassenlauf() {
                     </label>
                   </div>
 
+                  {/* Cancellation policy notice */}
+                  <div className="flex gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-muted-foreground">
+                    <Info className="h-4 w-4 mt-0.5 shrink-0 text-amber-500/70" />
+                    <p>
+                      <span className="font-medium text-foreground">Stornierungs&shy;hinweis:</span>{" "}
+                      Bei einer Abmeldung weniger als 14 Tage vor dem Event können die Teilnahmekosten nicht mehr erstattet werden, da die Anmeldung zu diesem Zeitpunkt bereits verbindlich beim Veranstalter eingereicht wurde.
+                    </p>
+                  </div>
+
                   {/* Submit */}
                   <Button
                     type="submit"
