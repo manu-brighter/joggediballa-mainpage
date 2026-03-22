@@ -145,16 +145,6 @@ export function Footer() {
             <Instagram className="h-4 w-4" />
             @joggediballa
           </a>
-
-          {/* Mitglieder-Login - only when not authenticated */}
-          {!isAuthenticated && (
-            <a
-              href={getLoginUrl()}
-              className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-            >
-              Mitglieder-Login
-            </a>
-          )}
         </div>
 
         {/* Copyright - Both layouts */}
@@ -166,10 +156,10 @@ export function Footer() {
             Fotos © Manuel Heller
           </p>
           {!isAuthenticated && (
-            <p className="mt-3 text-xs hidden md:block">
+            <p className="mt-3 text-xs">
               <a
                 href={getLoginUrl()}
-                className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
               >
                 Mitglieder-Login
               </a>
