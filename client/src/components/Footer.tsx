@@ -1,8 +1,11 @@
 import { Link } from "wouter";
 import { Instagram, Heart } from "lucide-react";
+import { getLoginUrl } from "@/const";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { isAuthenticated } = useAuth();
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -152,6 +155,16 @@ export function Footer() {
           <p className="mt-1 text-xs text-muted-foreground/70">
             Fotos © Manuel Heller
           </p>
+          {!isAuthenticated && (
+            <p className="mt-3 text-xs">
+              <a
+                href={getLoginUrl()}
+                className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+              >
+                Mitglieder-Login
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Sun, Moon, Monitor, Settings, LogOut, Users, LogIn, Lock, ClipboardList } from "lucide-react";
+import { Menu, X, Sun, Moon, Monitor, Settings, LogOut, Users, Lock, ClipboardList } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -309,12 +309,6 @@ export function Navigation() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <Button asChild variant="default" size="sm" className="btn-animate">
-                  <a href={getLoginUrl()} className="flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />
-                  </a>
-                </Button>
               )}
             </>
           )}
