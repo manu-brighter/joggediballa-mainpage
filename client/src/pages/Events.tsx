@@ -569,6 +569,7 @@ export default function Events() {
                 const thumbnailPhoto = event.thumbnailPhotoId 
                   ? eventPhotos.find(p => p.id === event.thumbnailPhotoId) || eventPhotos[0]
                   : eventPhotos[0];
+                const isFuture = new Date(event.eventDate) > new Date();
                 
                 return (
                   <MotionDiv
@@ -578,7 +579,14 @@ export default function Events() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <Card className="overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full flex flex-col">
+                    <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 h-full flex flex-col relative ${isFuture ? "border-primary/60 shadow-primary/10 shadow-md" : "hover:border-primary/30"}`}>
+                      {/* Upcoming Badge */}
+                      {isFuture && (
+                        <div className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+                          Kommendes Event
+                        </div>
+                      )}
+
                       {/* Event Cover Image — use compressed for cover */}
                       {thumbnailPhoto ? (
                         <div
