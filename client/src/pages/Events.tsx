@@ -347,9 +347,13 @@ export default function Events() {
   const openEditEvent = (event: typeof events[0]) => {
     setSelectedEvent({ id: event.id, title: event.title });
     const eventDate = new Date(event.eventDate);
-    const dateStr = eventDate.toISOString().slice(0, 10);
-    const timeStr = eventDate.getHours() > 0 || eventDate.getMinutes() > 0 
-      ? eventDate.toTimeString().slice(0, 5) 
+    // Use local time (not UTC) to avoid timezone offset shifting the date by one day
+    const yyyy = eventDate.getFullYear();
+    const mm = String(eventDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(eventDate.getDate()).padStart(2, "0");
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    const timeStr = eventDate.getHours() > 0 || eventDate.getMinutes() > 0
+      ? eventDate.toTimeString().slice(0, 5)
       : "";
     setEventForm({
       title: event.title,
