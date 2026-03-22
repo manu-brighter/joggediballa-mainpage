@@ -569,7 +569,9 @@ export default function Events() {
                 const thumbnailPhoto = event.thumbnailPhotoId 
                   ? eventPhotos.find(p => p.id === event.thumbnailPhotoId) || eventPhotos[0]
                   : eventPhotos[0];
-                const isFuture = new Date(event.eventDate) > new Date();
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const eventDay = new Date(event.eventDate); eventDay.setHours(0, 0, 0, 0);
+                const isFuture = eventDay >= today;
                 
                 return (
                   <MotionDiv

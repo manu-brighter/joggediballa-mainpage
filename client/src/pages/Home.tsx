@@ -15,7 +15,11 @@ export default function Home() {
   const [, navigate] = useLocation();
   const { theme, resolvedTheme } = useTheme();
   
-  const nextEvent = events.find((event) => new Date(event.eventDate) > new Date());
+  const nextEvent = events.find((event) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const eventDay = new Date(event.eventDate); eventDay.setHours(0, 0, 0, 0);
+    return eventDay >= today;
+  });
   
   // Check navigation visibility
   const isEventsVisible = useNavVisibility("/events");
