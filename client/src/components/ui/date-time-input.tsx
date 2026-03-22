@@ -45,7 +45,7 @@ const DateInput = React.forwardRef<
   };
 
   return (
-    <div className={cn("relative w-full max-w-full overflow-hidden", wrapperClassName)}>
+    <div className={cn("relative w-full max-w-full", wrapperClassName)}>
       <Input
         ref={inputRef}
         type="date"
@@ -97,7 +97,7 @@ const TimeInput = React.forwardRef<
   };
 
   return (
-    <div className={cn("relative w-full max-w-full overflow-hidden", wrapperClassName)}>
+    <div className={cn("relative w-full max-w-full", wrapperClassName)}>
       <Input
         ref={inputRef}
         type="time"
