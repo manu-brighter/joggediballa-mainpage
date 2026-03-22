@@ -838,7 +838,7 @@ export default function Goennermitglieder() {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 min-w-0">
                     <Label htmlFor="membershipStartDate">Mitgliedschaft ab *</Label>
                     <DateInput
                       id="membershipStartDate"

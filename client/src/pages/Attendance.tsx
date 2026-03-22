@@ -496,7 +496,7 @@ export default function Attendance() {
                 }}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label htmlFor="date">Datum <span className="text-red-500">*</span></Label>
               <DateInput
                 id="sessionDate"

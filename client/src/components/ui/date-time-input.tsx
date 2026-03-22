@@ -21,6 +21,11 @@ function useDateTimeStyles() {
  * SVG icon instead. The SVG inherits `currentColor` so it automatically
  * adapts to light/dark mode. `color-scheme` is set dynamically so the
  * browser's date-picker popup also respects the current theme.
+ *
+ * Mobile fix: `<input type="date">` has a browser-imposed minimum width
+ * that can overflow its container. We contain it with `max-w-full` and
+ * `overflow-hidden` on the wrapper, and force `min-w-0 w-full` on the
+ * input itself so it never exceeds the available space.
  */
 const DateInput = React.forwardRef<
   HTMLInputElement,
@@ -40,7 +45,7 @@ const DateInput = React.forwardRef<
   };
 
   return (
-    <div className={cn("relative w-full", wrapperClassName)}>
+    <div className={cn("relative w-full max-w-full overflow-hidden", wrapperClassName)}>
       <Input
         ref={inputRef}
         type="date"
@@ -50,6 +55,8 @@ const DateInput = React.forwardRef<
           "[&::-webkit-calendar-picker-indicator]:!hidden",
           "[&::-webkit-inner-spin-button]:!hidden",
           "[&::-webkit-clear-button]:!hidden",
+          // Force the input to stay within its container on mobile
+          "w-full min-w-0 max-w-full",
           "pr-9",
           className,
         )}
@@ -90,7 +97,7 @@ const TimeInput = React.forwardRef<
   };
 
   return (
-    <div className={cn("relative w-full", wrapperClassName)}>
+    <div className={cn("relative w-full max-w-full overflow-hidden", wrapperClassName)}>
       <Input
         ref={inputRef}
         type="time"
@@ -99,6 +106,8 @@ const TimeInput = React.forwardRef<
           "[&::-webkit-calendar-picker-indicator]:!hidden",
           "[&::-webkit-inner-spin-button]:!hidden",
           "[&::-webkit-clear-button]:!hidden",
+          // Force the input to stay within its container on mobile
+          "w-full min-w-0 max-w-full",
           "pr-9",
           className,
         )}
