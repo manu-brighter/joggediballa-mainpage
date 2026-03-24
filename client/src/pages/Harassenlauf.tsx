@@ -248,10 +248,24 @@ export default function Harassenlauf() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
+              className="relative inline-block"
             >
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
                 <span className="gradient-text">Harassenlauf Anmeldung</span>
               </h1>
+              {/* Date Badge — tilted, floating top-right */}
+              <MotionDiv
+                initial={{ opacity: 0, scale: 0.7, rotate: -6 }}
+                animate={{ opacity: 1, scale: 1, rotate: 6 }}
+                transition={{ delay: 0.35, type: "spring", stiffness: 200, damping: 12 }}
+                className="absolute -top-5 -right-4 sm:-top-6 sm:-right-8 z-10"
+              >
+                <div className="bg-primary text-primary-foreground rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 shadow-lg shadow-primary/30 rotate-6 flex flex-col items-center leading-tight">
+                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest opacity-80">Save the date</span>
+                  <span className="text-base sm:text-xl font-black">18. Juli</span>
+                  <span className="text-[10px] sm:text-xs font-bold opacity-80">2026</span>
+                </div>
+              </MotionDiv>
             </MotionDiv>
 
             <MotionDiv
