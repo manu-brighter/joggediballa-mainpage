@@ -244,12 +244,12 @@ export default function Harassenlauf() {
               >
                 Jogge di Balla präsentiert
               </MotionDiv>
-              {/* Date Badge — on mobile: next to badge; on sm+: hidden here (shown near title) */}
+              {/* Date Badge — on mobile+landscape: next to badge; on md+: hidden here (shown near title) */}
               <MotionDiv
                 initial={{ opacity: 0, scale: 0.7, rotate: -6 }}
                 animate={{ opacity: 1, scale: 1, rotate: 6 }}
                 transition={{ delay: 0.35, type: "spring", stiffness: 200, damping: 12 }}
-                className="sm:hidden"
+                className="md:hidden"
               >
                 <div className="bg-primary text-primary-foreground rounded-xl px-2.5 py-1.5 shadow-lg shadow-primary/30 rotate-6 flex flex-col items-center leading-tight">
                   <span className="text-[8px] font-semibold uppercase tracking-widest opacity-80">Save the date</span>
@@ -263,17 +263,17 @@ export default function Harassenlauf() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="relative sm:inline-block"
+              className="relative md:inline-block"
             >
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
                 <span className="gradient-text">Harassenlauf Anmeldung</span>
               </h1>
-              {/* Date Badge — on sm+: tilted top-right; on mobile: hidden here (shown above) */}
+              {/* Date Badge — on md+: tilted top-right; on mobile+landscape: hidden here (shown above) */}
               <MotionDiv
                 initial={{ opacity: 0, scale: 0.7, rotate: -6 }}
                 animate={{ opacity: 1, scale: 1, rotate: 6 }}
                 transition={{ delay: 0.35, type: "spring", stiffness: 200, damping: 12 }}
-                className="hidden sm:block sm:absolute sm:-top-6 sm:-right-8 z-10"
+                className="hidden md:block md:absolute md:-top-6 md:-right-8 z-10"
               >
                 <div className="bg-primary text-primary-foreground rounded-2xl px-4 py-2.5 shadow-lg shadow-primary/30 rotate-6 flex flex-col items-center leading-tight">
                   <span className="text-xs font-semibold uppercase tracking-widest opacity-80">Save the date</span>
