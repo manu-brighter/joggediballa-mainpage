@@ -236,34 +236,49 @@ export default function Harassenlauf() {
         {/* Hero Banner */}
         <div className="pt-28 pb-10">
           <div className="container text-center space-y-4 max-w-3xl mx-auto">
-            <MotionDiv
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold"
-            >
-              Jogge di Balla präsentiert
-            </MotionDiv>
+            <div className="flex items-center justify-center gap-3">
+              <MotionDiv
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold"
+              >
+                Jogge di Balla präsentiert
+              </MotionDiv>
+              {/* Date Badge — on mobile: next to badge; on sm+: hidden here (shown near title) */}
+              <MotionDiv
+                initial={{ opacity: 0, scale: 0.7, rotate: -6 }}
+                animate={{ opacity: 1, scale: 1, rotate: 6 }}
+                transition={{ delay: 0.35, type: "spring", stiffness: 200, damping: 12 }}
+                className="sm:hidden"
+              >
+                <div className="bg-primary text-primary-foreground rounded-xl px-2.5 py-1.5 shadow-lg shadow-primary/30 rotate-6 flex flex-col items-center leading-tight">
+                  <span className="text-[8px] font-semibold uppercase tracking-widest opacity-80">Save the date</span>
+                  <span className="text-sm font-black">18. Juli</span>
+                  <span className="text-[8px] font-bold opacity-80">2026</span>
+                </div>
+              </MotionDiv>
+            </div>
 
             <MotionDiv
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="relative inline-block pr-16 sm:pr-0"
+              className="relative sm:inline-block"
             >
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight text-left sm:text-center">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
                 <span className="gradient-text">Harassenlauf Anmeldung</span>
               </h1>
-              {/* Date Badge — tilted top-right, smaller on mobile */}
+              {/* Date Badge — on sm+: tilted top-right; on mobile: hidden here (shown above) */}
               <MotionDiv
                 initial={{ opacity: 0, scale: 0.7, rotate: -6 }}
                 animate={{ opacity: 1, scale: 1, rotate: 6 }}
                 transition={{ delay: 0.35, type: "spring", stiffness: 200, damping: 12 }}
-                className="absolute top-1/2 -translate-y-1/2 -right-1 sm:-top-6 sm:translate-y-0 sm:-right-8 z-10"
+                className="hidden sm:block sm:absolute sm:-top-6 sm:-right-8 z-10"
               >
-                <div className="bg-primary text-primary-foreground rounded-xl sm:rounded-2xl px-2 py-1.5 sm:px-4 sm:py-2.5 shadow-lg shadow-primary/30 rotate-6 flex flex-col items-center leading-tight">
-                  <span className="text-[8px] sm:text-xs font-semibold uppercase tracking-widest opacity-80">Save the date</span>
-                  <span className="text-sm sm:text-xl font-black">18. Juli</span>
-                  <span className="text-[8px] sm:text-xs font-bold opacity-80">2026</span>
+                <div className="bg-primary text-primary-foreground rounded-2xl px-4 py-2.5 shadow-lg shadow-primary/30 rotate-6 flex flex-col items-center leading-tight">
+                  <span className="text-xs font-semibold uppercase tracking-widest opacity-80">Save the date</span>
+                  <span className="text-xl font-black">18. Juli</span>
+                  <span className="text-xs font-bold opacity-80">2026</span>
                 </div>
               </MotionDiv>
             </MotionDiv>
