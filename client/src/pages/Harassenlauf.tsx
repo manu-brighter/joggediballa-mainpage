@@ -610,6 +610,42 @@ export default function Harassenlauf() {
             </Card>
           </MotionDiv>
 
+          {/* Flyer Section */}
+          <MotionDiv
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="overflow-hidden border bg-card/80 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <span className="text-lg">📄</span>
+                  </div>
+                  Event-Flyer
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">Teile den Flyer mit Freunden und hol dir dein Team zusammen!</p>
+                <div className="rounded-xl overflow-hidden border">
+                  <img
+                    src="/HarassenlaufFlyer2026.png"
+                    alt="Harassenlauf 2026 Flyer"
+                    className="w-full h-auto object-contain"
+                  />
+                </div>
+                <a
+                  href="/HarassenlaufFlyer2026.png"
+                  download="HarassenlaufFlyer2026.png"
+                  className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-sm transition-colors"
+                >
+                  <span>⬇️</span>
+                  Flyer herunterladen
+                </a>
+              </CardContent>
+            </Card>
+          </MotionDiv>
+
         </div>
       </div>
     </div>
