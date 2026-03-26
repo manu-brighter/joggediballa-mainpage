@@ -6,6 +6,7 @@ interface SEOProps {
   keywords?: string;
   ogImage?: string;
   ogUrl?: string;
+  noIndex?: boolean;
 }
 
 /**
@@ -18,6 +19,7 @@ export function useSEO({
   keywords,
   ogImage,
   ogUrl,
+  noIndex,
 }: SEOProps) {
   useEffect(() => {
     // Update document title
@@ -39,6 +41,16 @@ export function useSEO({
       }
       element.setAttribute("content", content);
     };
+
+    // Robots noindex
+    const robotsSelector = 'meta[name="robots"]';
+    if (noIndex) {
+      updateMetaTag(robotsSelector, "name", "noindex, nofollow");
+    } else {
+      // Ensure robots tag is set to index when not noIndex
+      const robotsEl = document.querySelector(robotsSelector);
+      if (robotsEl) robotsEl.setAttribute("content", "index, follow");
+    }
 
     // Update standard meta tags
     if (title) {
@@ -81,6 +93,9 @@ export function useSEO({
 
     // Cleanup: Reset to default when component unmounts
     return () => {
+      // Remove noindex on unmount
+      const robotsEl = document.querySelector('meta[name="robots"]');
+      if (robotsEl) robotsEl.setAttribute("content", "index, follow");
       document.title = "Jogge di Balla - Event- und Kulturverein seit 2022";
       updateMetaTag('meta[name="title"]', "name", "Jogge di Balla - Event- und Kulturverein seit 2022");
       updateMetaTag('meta[name="description"]', "name", "Event- und Kulturverein aus Brislach. Wir bringen Menschen zusammen für unvergessliche Momente, grossartige Events und jede Menge Spass! Shotcounter, Gönnermitglieder, DJ & Fotografie Services.");

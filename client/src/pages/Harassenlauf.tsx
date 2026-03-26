@@ -50,6 +50,7 @@ export default function Harassenlauf() {
   useSEO({
     title: "Harassenlauf Anmeldung – Jogge di Balla",
     description: "Melde dein Team für den Harassenlauf an! Max. 5er Teams, CHF 75.– Startgeld pro Team.",
+    noIndex: true,
   });
 
   const [rulesOpen, setRulesOpen] = useState(true);

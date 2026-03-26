@@ -46,6 +46,7 @@ import {
   Star,
   Info,
   Mail,
+  Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -637,14 +638,25 @@ export default function Events() {
                             </div>
                           )}
                         </div>
-                        <CardDescription className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(event.eventDate).toLocaleDateString("de-DE", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                        <CardDescription className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4 shrink-0" />
+                            {new Date(event.eventDate).toLocaleDateString("de-DE", {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </span>
+                          {(() => {
+                            const d = new Date(event.eventDate);
+                            return (d.getHours() > 0 || d.getMinutes() > 0) ? (
+                              <span className="flex items-center gap-1.5">
+                                <Clock className="h-4 w-4 shrink-0" />
+                                {d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+                              </span>
+                            ) : null;
+                          })()}
                         </CardDescription>
                       </CardHeader>
                       
