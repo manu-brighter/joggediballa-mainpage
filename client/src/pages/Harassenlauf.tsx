@@ -22,6 +22,7 @@ import {
   Send,
   ArrowRight,
   FileText,
+  Download,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -627,7 +628,7 @@ export default function Harassenlauf() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">Teile den Flyer mit Freunden und hol dir dein Team zusammen!</p>
+                <p className="text-sm text-muted-foreground">Schnapp dir den Flyer, schick ihn deinen Freunden und stell das stärkste Harassenlauf-Team im Laufental auf!</p>
                 <div className="rounded-xl overflow-hidden border">
                   <img
                     src="/HarassenlaufFlyer2026.png"
@@ -640,7 +641,7 @@ export default function Harassenlauf() {
                   download="HarassenlaufFlyer2026.png"
                   className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-sm transition-colors"
                 >
-                  <span>⬇️</span>
+                  <Download className="h-4 w-4" />
                   Flyer herunterladen
                 </a>
               </CardContent>
