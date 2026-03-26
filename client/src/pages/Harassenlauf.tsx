@@ -21,6 +21,7 @@ import {
   Info,
   Send,
   ArrowRight,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -620,7 +621,7 @@ export default function Harassenlauf() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <span className="text-lg">📄</span>
+                    <FileText className="h-5 w-5 text-primary" />
                   </div>
                   Event-Flyer
                 </CardTitle>
