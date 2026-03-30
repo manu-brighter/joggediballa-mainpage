@@ -46,10 +46,15 @@ export function useSEO({
     const robotsSelector = 'meta[name="robots"]';
     if (noIndex) {
       updateMetaTag(robotsSelector, "name", "noindex, nofollow");
+      // Also prevent browser auto-translation which causes React DOM errors
+      updateMetaTag('meta[name="google"]', "name", "notranslate");
     } else {
       // Ensure robots tag is set to index when not noIndex
       const robotsEl = document.querySelector(robotsSelector);
       if (robotsEl) robotsEl.setAttribute("content", "index, follow");
+      // Remove notranslate if it was set
+      const translateEl = document.querySelector('meta[name="google"]');
+      if (translateEl) translateEl.remove();
     }
 
     // Update standard meta tags
