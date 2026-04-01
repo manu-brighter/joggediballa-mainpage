@@ -139,7 +139,49 @@ export default function Datenschutz() {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">9. Bildrechte</h3>
+              <h3 className="font-semibold mb-2">9. Google Analytics</h3>
+              <p className="text-muted-foreground">
+                Diese Website verwendet Google Analytics, einen Webanalysedienst der Google LLC,
+                1600 Amphitheatre Parkway, Mountain View, CA 94043, USA. Google Analytics verwendet
+                Cookies und ähnliche Technologien, um die Nutzung der Website zu analysieren und
+                Berichte über die Websiteaktivität zu erstellen. Die dabei erhobenen Daten
+                (u.a. IP-Adresse, aufgerufene Seiten, Verweildauer, Geräteinformationen) werden
+                an Server von Google in den USA übertragen.
+              </p>
+              <p className="text-muted-foreground mt-2">
+                Wir haben die IP-Anonymisierung aktiviert, sodass Ihre IP-Adresse vor der
+                Übermittlung an Google gekürzt wird. Die Verarbeitung erfolgt auf Grundlage
+                unseres berechtigten Interesses an der statistischen Auswertung der Websitenutzung
+                zur Verbesserung unseres Angebots (Art. 6 Abs. 1 lit. f DSGVO bzw. Art. 13 DSG).
+                Google LLC ist unter dem EU-US Data Privacy Framework zertifiziert.
+              </p>
+              <p className="text-muted-foreground mt-2">
+                Sie können die Erfassung durch Google Analytics verhindern, indem Sie das
+                Browser-Add-on zur Deaktivierung von Google Analytics installieren:{" "}
+                <a
+                  href="https://tools.google.com/dlpage/gaoptout"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline underline-offset-2"
+                >
+                  tools.google.com/dlpage/gaoptout
+                </a>
+              </p>
+              <p className="text-muted-foreground mt-2">
+                Weitere Informationen zum Datenschutz bei Google finden Sie unter:{" "}
+                <a
+                  href="https://policies.google.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline underline-offset-2"
+                >
+                  policies.google.com/privacy
+                </a>
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-2">10. Bildrechte</h3>
               <p className="text-muted-foreground">
                 Eigene Fotos auf dieser Website sind urheberrechtlich geschützt
                 und © Manuel Heller. Die Verwendung von Bildern Dritter erfolgt
