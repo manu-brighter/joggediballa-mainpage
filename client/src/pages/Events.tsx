@@ -451,6 +451,38 @@ export default function Events() {
         </p>
       </MotionDiv>
 
+      {/* Datenschutz-Hinweis */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="max-w-4xl mx-auto"
+      >
+        <Alert className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-sm text-muted-foreground ml-2">
+            <div className="flex flex-col items-start gap-3">
+              <div className="flex-1">
+                <h1><strong className="text-foreground">Fotografie an Veranstaltungen:</strong></h1>
+                An unseren Veranstaltungen werden Fotos und Videos erstellt, welche für unsere Website, Social Media sowie Vereinskommunikation verwendet werden.
+                Die Veröffentlichung erfolgt auf Grundlage unseres berechtigten Interesses an der Öffentlichkeitsarbeit. Personen, die nicht fotografiert werden möchten oder mit einer
+                Veröffentlichung nicht einverstanden sind, können dies jederzeit unserem Team mitteilen oder eine nachträgliche Entfernung verlangen.
+              </div>
+              <Link href="/contact">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="btn-animate border-blue-300 bg-blue-100/50 hover:bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 whitespace-nowrap"
+                >
+                  Fotos © Manuel Heller → Für Anfragen
+                  <Mail className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </MotionDiv>
+
       {/* Add Event Button */}
       {canManageEvents && (
         <div className="flex justify-center">
@@ -770,38 +802,6 @@ export default function Events() {
           </div>
         )}
       </section>
-
-      {/* Datenschutz-Hinweis */}
-      <MotionDiv
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="max-w-4xl mx-auto"
-      >
-        <Alert className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="text-sm text-muted-foreground ml-2">
-            <div className="flex flex-col items-start gap-3">
-              <div className="flex-1">
-                <h1><strong className="text-foreground">Fotografie an Veranstaltungen:</strong></h1>
-                An unseren Veranstaltungen werden Fotos und Videos erstellt, welche für unsere Website, Social Media sowie Vereinskommunikation verwendet werden.
-                Die Veröffentlichung erfolgt auf Grundlage unseres berechtigten Interesses an der Öffentlichkeitsarbeit. Personen, die nicht fotografiert werden möchten oder mit einer
-                Veröffentlichung nicht einverstanden sind, können dies jederzeit unserem Team mitteilen oder eine nachträgliche Entfernung verlangen.
-              </div>
-              <Link href="/contact">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="btn-animate border-blue-300 bg-blue-100/50 hover:bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 whitespace-nowrap"
-                >
-                  Fotos © Manuel Heller → Für Anfragen
-                  <Mail className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </MotionDiv>
 
       {/* Edit Event Dialog */}
       <Dialog open={editEventOpen} onOpenChange={(open) => {
