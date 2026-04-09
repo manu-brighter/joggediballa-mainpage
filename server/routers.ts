@@ -275,11 +275,14 @@ export const appRouter = router({
         eventDate: z.date(),
         location: z.string().max(255).optional(),
         eventUrl: z.string().url().optional().or(z.literal("")),
+        eventLinks: z.array(z.object({ url: z.string().url(), label: z.string() })).optional(),
         isPublished: z.boolean().optional()
       }))
       .mutation(async ({ input, ctx }) => {
+        const { eventLinks, ...rest } = input;
         const eventId = await db.createEvent({
-          ...input,
+          ...rest,
+          eventLinks: eventLinks as any,
           createdBy: ctx.user.id
         });
         return { eventId };
@@ -293,11 +296,15 @@ export const appRouter = router({
         eventDate: z.date().optional(),
         location: z.string().max(255).optional(),
         eventUrl: z.string().url().optional().or(z.literal("")),
+        eventLinks: z.array(z.object({ url: z.string().url(), label: z.string() })).optional(),
         isPublished: z.boolean().optional()
       }))
       .mutation(async ({ input }) => {
-        const { eventId, ...data } = input;
-        await db.updateEvent(eventId, data);
+        const { eventId, eventLinks, ...rest } = input;
+        await db.updateEvent(eventId, {
+          ...rest,
+          eventLinks: eventLinks as any
+        });
         return { success: true };
       }),
     

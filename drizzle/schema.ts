@@ -88,7 +88,8 @@ export const events = mysqlTable("events", {
   description: text("description"),
   eventDate: timestamp("eventDate").notNull(),
   location: varchar("location", { length: 255 }),
-  eventUrl: text("eventUrl"), // Optional: Link to external event page
+  eventUrl: text("eventUrl"), // Legacy: kept for migration compatibility
+  eventLinks: text("eventLinks"), // JSON array of {url, label} objects
   thumbnailPhotoId: int("thumbnailPhotoId"), // Reference to photo used as thumbnail
   isPublished: boolean("isPublished").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -55,13 +55,18 @@ import { cn } from "@/lib/utils";
 
 const MotionDiv = motion.div;
 
+interface EventLink {
+  url: string;
+  label: string;
+}
+
 interface EventFormData {
   title: string;
   description: string;
   eventDate: string;
   eventTime: string;
   location: string;
-  eventUrl: string;
+  eventLinks: EventLink[];
 }
 
 // =============================================================================
@@ -159,7 +164,7 @@ export default function Events() {
     eventDate: "",
     eventTime: "",
     location: "",
-    eventUrl: ""
+    eventLinks: []
   });
   
   // Photo upload state
@@ -248,7 +253,7 @@ export default function Events() {
     : null;
 
   const resetEventForm = () => {
-    setEventForm({ title: "", description: "", eventDate: "", eventTime: "", location: "", eventUrl: "" });
+    setEventForm({ title: "", description: "", eventDate: "", eventTime: "", location: "", eventLinks: [] });
     setSelectedEvent(null);
   };
 
@@ -324,12 +329,13 @@ export default function Events() {
     const dateStr = eventForm.eventTime 
       ? `${eventForm.eventDate}T${eventForm.eventTime}` 
       : `${eventForm.eventDate}T00:00`;
+    const validLinks = eventForm.eventLinks.filter(l => l.url.trim());
     createEventMutation.mutate({
       title: eventForm.title.trim(),
       description: eventForm.description.trim() || undefined,
       eventDate: new Date(dateStr),
       location: eventForm.location.trim() || undefined,
-      eventUrl: eventForm.eventUrl.trim() || undefined
+      eventLinks: validLinks.length > 0 ? validLinks : undefined
     });
   };
 
@@ -341,13 +347,14 @@ export default function Events() {
     const dateStr = eventForm.eventTime 
       ? `${eventForm.eventDate}T${eventForm.eventTime}` 
       : `${eventForm.eventDate}T00:00`;
+    const validLinks = eventForm.eventLinks.filter(l => l.url.trim());
     updateEventMutation.mutate({
       eventId: selectedEvent.id,
       title: eventForm.title.trim(),
       description: eventForm.description.trim() || undefined,
       eventDate: new Date(dateStr),
       location: eventForm.location.trim() || undefined,
-      eventUrl: eventForm.eventUrl.trim() || undefined
+      eventLinks: validLinks.length > 0 ? validLinks : undefined
     });
   };
 
@@ -362,13 +369,15 @@ export default function Events() {
     const timeStr = eventDate.getHours() > 0 || eventDate.getMinutes() > 0
       ? eventDate.toTimeString().slice(0, 5)
       : "";
+    let parsedLinks: EventLink[] = [];
+    try { parsedLinks = JSON.parse((event as any).eventLinks || "[]"); } catch {}
     setEventForm({
       title: event.title,
       description: event.description || "",
       eventDate: dateStr,
       eventTime: timeStr,
       location: event.location || "",
-      eventUrl: event.eventUrl || ""
+      eventLinks: parsedLinks
     });
     setEditEventOpen(true);
   };
@@ -558,17 +567,57 @@ export default function Events() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="eventUrl" className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2">
                     <Link2 className="h-4 w-4" />
-                    Event-Link <span className="text-muted-foreground font-normal">(optional)</span>
+                    Links
                   </Label>
-                  <Input
-                    id="eventUrl"
-                    value={eventForm.eventUrl}
-                    onChange={(e) => setEventForm({ ...eventForm, eventUrl: e.target.value })}
-                    placeholder="https://..."
-                    type="url"
-                  />
+                  <div className="space-y-2">
+                    {eventForm.eventLinks.map((link, i) => (
+                      <div key={i} className="flex gap-2">
+                        <Input
+                          value={link.url}
+                          onChange={(e) => {
+                            const updated = [...eventForm.eventLinks];
+                            updated[i] = { ...updated[i], url: e.target.value };
+                            setEventForm({ ...eventForm, eventLinks: updated });
+                          }}
+                          placeholder="https://..."
+                          type="url"
+                          className="flex-1"
+                        />
+                        <Input
+                          value={link.label}
+                          onChange={(e) => {
+                            const updated = [...eventForm.eventLinks];
+                            updated[i] = { ...updated[i], label: e.target.value };
+                            setEventForm({ ...eventForm, eventLinks: updated });
+                          }}
+                          placeholder="Bezeichnung"
+                          className="flex-1"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => {
+                            const updated = eventForm.eventLinks.filter((_, idx) => idx !== i);
+                            setEventForm({ ...eventForm, eventLinks: updated });
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setEventForm({ ...eventForm, eventLinks: [...eventForm.eventLinks, { url: "", label: "" }] })}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Link hinzufügen
+                    </Button>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
@@ -722,28 +771,39 @@ export default function Events() {
                         </CardDescription>
                       </CardHeader>
                       
-                      <CardContent className="flex-1 flex flex-col gap-3">
-                        {event.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
-                        )}
+                        <CardContent className="flex-1 flex flex-col gap-3">
                         {event.location && (
                           <p className="text-sm text-muted-foreground flex items-center gap-2">
                             <MapPin className="h-4 w-4 shrink-0" />
                             {event.location}
                           </p>
                         )}
-                        {event.eventUrl && (
-                          <a
-                            href={event.eventUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary flex items-center gap-2 hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLink className="h-4 w-4 shrink-0" />
-                            Event-Link
-                          </a>
+                        {event.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                         )}
+                        {(() => {
+                          const links: EventLink[] = (() => {
+                            try { return JSON.parse((event as any).eventLinks || "[]"); } catch { return []; }
+                          })();
+                          if (links.length === 0) return null;
+                          return (
+                            <div className="flex flex-col gap-1">
+                              {links.map((link, i) => (
+                                <a
+                                  key={i}
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-primary flex items-center gap-2 hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <ExternalLink className="h-4 w-4 shrink-0" />
+                                  {link.label || link.url}
+                                </a>
+                              ))}
+                            </div>
+                          );
+                        })()}
                         
                         {/* Photo Gallery Preview — thumbnails for small grid */}
                         {eventPhotos.length > 0 && (
@@ -905,17 +965,57 @@ export default function Events() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-eventUrl" className="flex items-center gap-2">
+              <Label className="flex items-center gap-2">
                 <Link2 className="h-4 w-4" />
-                Event-Link <span className="text-muted-foreground font-normal">(optional)</span>
+                Links
               </Label>
-              <Input
-                id="edit-eventUrl"
-                value={eventForm.eventUrl}
-                onChange={(e) => setEventForm({ ...eventForm, eventUrl: e.target.value })}
-                placeholder="https://..."
-                type="url"
-              />
+              <div className="space-y-2">
+                {eventForm.eventLinks.map((link, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      value={link.url}
+                      onChange={(e) => {
+                        const updated = [...eventForm.eventLinks];
+                        updated[i] = { ...updated[i], url: e.target.value };
+                        setEventForm({ ...eventForm, eventLinks: updated });
+                      }}
+                      placeholder="https://..."
+                      type="url"
+                      className="flex-1"
+                    />
+                    <Input
+                      value={link.label}
+                      onChange={(e) => {
+                        const updated = [...eventForm.eventLinks];
+                        updated[i] = { ...updated[i], label: e.target.value };
+                        setEventForm({ ...eventForm, eventLinks: updated });
+                      }}
+                      placeholder="Bezeichnung"
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => {
+                        const updated = eventForm.eventLinks.filter((_, idx) => idx !== i);
+                        setEventForm({ ...eventForm, eventLinks: updated });
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setEventForm({ ...eventForm, eventLinks: [...eventForm.eventLinks, { url: "", label: "" }] })}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Link hinzufügen
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -1083,7 +1183,7 @@ export default function Events() {
 
       {/* Photo Management Dialog */}
       <Dialog open={photoManagementOpen} onOpenChange={setPhotoManagementOpen}>
-        <DialogContent className="w-[90vw] h-[90vh] !max-w-[90vw] overflow-y-auto">
+        <DialogContent className="w-[90vw] h-[90vh] !max-w-[90vw] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader className="top-0 bg-background mb-8 pb-8 border-b border-muted/20">
              <DialogTitle>Fotos verwalten</DialogTitle>
              <DialogDescription>

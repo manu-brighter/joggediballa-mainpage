@@ -316,17 +316,27 @@ export async function getEventById(eventId: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createEvent(event: InsertEvent) {
+export async function createEvent(event: InsertEvent & { eventLinks?: Array<{url: string, label: string}> }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(events).values(event);
+  const { eventLinks, ...rest } = event as any;
+  const insertData = {
+    ...rest,
+    eventLinks: eventLinks ? JSON.stringify(eventLinks) : null
+  };
+  const result = await db.insert(events).values(insertData);
   return Number(result[0].insertId);
 }
 
-export async function updateEvent(eventId: number, data: Partial<InsertEvent>) {
+export async function updateEvent(eventId: number, data: Partial<InsertEvent> & { eventLinks?: Array<{url: string, label: string}> }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(events).set(data).where(eq(events.id, eventId));
+  const { eventLinks, ...rest } = data as any;
+  const updateData: any = { ...rest };
+  if (eventLinks !== undefined) {
+    updateData.eventLinks = eventLinks ? JSON.stringify(eventLinks) : null;
+  }
+  await db.update(events).set(updateData).where(eq(events.id, eventId));
 }
 
 export async function deleteEvent(eventId: number) {
