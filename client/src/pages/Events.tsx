@@ -777,7 +777,7 @@ export default function Events() {
                         )}
                       </CardHeader>
                       
-                        <CardContent className="flex-1 flex flex-col gap-3 pt-0">
+                        <CardContent className="flex-1 flex flex-col gap-2 pt-0">
                         {event.description && (
                           <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                         )}
@@ -807,7 +807,7 @@ export default function Events() {
                         
                         {/* Photo Gallery Preview — thumbnails for small grid */}
                         {eventPhotos.length > 0 && (
-                          <div className="space-y-2 mt-auto">
+                          <div className="space-y-2 mt-auto pt-3">
                             <div className="grid grid-cols-4 gap-1">
                               {eventPhotos.slice(0, 4).map((photo, idx) => (
                                 <div
