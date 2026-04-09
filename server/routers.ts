@@ -274,6 +274,7 @@ export const appRouter = router({
         description: z.string().optional(),
         eventDate: z.date(),
         location: z.string().max(255).optional(),
+        eventUrl: z.string().url().optional().or(z.literal("")),
         isPublished: z.boolean().optional()
       }))
       .mutation(async ({ input, ctx }) => {
@@ -291,6 +292,7 @@ export const appRouter = router({
         description: z.string().optional(),
         eventDate: z.date().optional(),
         location: z.string().max(255).optional(),
+        eventUrl: z.string().url().optional().or(z.literal("")),
         isPublished: z.boolean().optional()
       }))
       .mutation(async ({ input }) => {

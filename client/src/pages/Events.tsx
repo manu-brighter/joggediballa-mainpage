@@ -47,6 +47,8 @@ import {
   Info,
   Mail,
   Clock,
+  ExternalLink,
+  Link2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -59,6 +61,7 @@ interface EventFormData {
   eventDate: string;
   eventTime: string;
   location: string;
+  eventUrl: string;
 }
 
 // =============================================================================
@@ -155,7 +158,8 @@ export default function Events() {
     description: "",
     eventDate: "",
     eventTime: "",
-    location: ""
+    location: "",
+    eventUrl: ""
   });
   
   // Photo upload state
@@ -244,7 +248,7 @@ export default function Events() {
     : null;
 
   const resetEventForm = () => {
-    setEventForm({ title: "", description: "", eventDate: "", eventTime: "", location: "" });
+    setEventForm({ title: "", description: "", eventDate: "", eventTime: "", location: "", eventUrl: "" });
     setSelectedEvent(null);
   };
 
@@ -324,7 +328,8 @@ export default function Events() {
       title: eventForm.title.trim(),
       description: eventForm.description.trim() || undefined,
       eventDate: new Date(dateStr),
-      location: eventForm.location.trim() || undefined
+      location: eventForm.location.trim() || undefined,
+      eventUrl: eventForm.eventUrl.trim() || undefined
     });
   };
 
@@ -341,7 +346,8 @@ export default function Events() {
       title: eventForm.title.trim(),
       description: eventForm.description.trim() || undefined,
       eventDate: new Date(dateStr),
-      location: eventForm.location.trim() || undefined
+      location: eventForm.location.trim() || undefined,
+      eventUrl: eventForm.eventUrl.trim() || undefined
     });
   };
 
@@ -361,7 +367,8 @@ export default function Events() {
       description: event.description || "",
       eventDate: dateStr,
       eventTime: timeStr,
-      location: event.location || ""
+      location: event.location || "",
+      eventUrl: event.eventUrl || ""
     });
     setEditEventOpen(true);
   };
@@ -550,6 +557,19 @@ export default function Events() {
                     rows={3}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="eventUrl" className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4" />
+                    Event-Link <span className="text-muted-foreground font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="eventUrl"
+                    value={eventForm.eventUrl}
+                    onChange={(e) => setEventForm({ ...eventForm, eventUrl: e.target.value })}
+                    placeholder="https://..."
+                    type="url"
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setCreateEventOpen(false)}>
@@ -597,14 +617,24 @@ export default function Events() {
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             <AnimatePresence>
-              {events.map((event, index) => {
+              {(() => {
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const futureEvents = [...events]
+                  .filter(e => { const d = new Date(e.eventDate); d.setHours(0,0,0,0); return d >= today; })
+                  .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+                const pastEvents = [...events]
+                  .filter(e => { const d = new Date(e.eventDate); d.setHours(0,0,0,0); return d < today; })
+                  .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+                const sortedEvents = [...futureEvents, ...pastEvents];
+                return sortedEvents;
+              })().map((event, index) => {
                 const eventPhotos = allPhotos.filter((p) => p.eventId === event.id);
                 const thumbnailPhoto = event.thumbnailPhotoId 
                   ? eventPhotos.find(p => p.id === event.thumbnailPhotoId) || eventPhotos[0]
                   : eventPhotos[0];
-                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const _today = new Date(); _today.setHours(0, 0, 0, 0);
                 const eventDay = new Date(event.eventDate); eventDay.setHours(0, 0, 0, 0);
-                const isFuture = eventDay >= today;
+                const isFuture = eventDay >= _today;
                 
                 return (
                   <MotionDiv
@@ -701,6 +731,18 @@ export default function Events() {
                             <MapPin className="h-4 w-4 shrink-0" />
                             {event.location}
                           </p>
+                        )}
+                        {event.eventUrl && (
+                          <a
+                            href={event.eventUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary flex items-center gap-2 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="h-4 w-4 shrink-0" />
+                            Event-Link
+                          </a>
                         )}
                         
                         {/* Photo Gallery Preview — thumbnails for small grid */}
@@ -860,6 +902,19 @@ export default function Events() {
                 onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
                 placeholder="Beschreibe das Event..."
                 rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-eventUrl" className="flex items-center gap-2">
+                <Link2 className="h-4 w-4" />
+                Event-Link <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Input
+                id="edit-eventUrl"
+                value={eventForm.eventUrl}
+                onChange={(e) => setEventForm({ ...eventForm, eventUrl: e.target.value })}
+                placeholder="https://..."
+                type="url"
               />
             </div>
           </div>
@@ -1046,7 +1101,7 @@ export default function Events() {
                  <p className="text-sm text-muted-foreground">
                    {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"} vorhanden
                  </p>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
                   {eventPhotos.map((photo) => (
                     <div
                       key={photo.id}
