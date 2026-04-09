@@ -769,15 +769,15 @@ export default function Events() {
                             ) : null;
                           })()}
                         </CardDescription>
-                      </CardHeader>
-                      
-                        <CardContent className="flex-1 flex flex-col gap-3">
                         {event.location && (
-                          <p className="text-sm text-muted-foreground flex items-center gap-2">
+                          <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                             <MapPin className="h-4 w-4 shrink-0" />
                             {event.location}
                           </p>
                         )}
+                      </CardHeader>
+                      
+                        <CardContent className="flex-1 flex flex-col gap-3 pt-0">
                         {event.description && (
                           <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                         )}
