@@ -140,6 +140,103 @@ function LazyImage({
   );
 }
 
+// =============================================================================
+// SmartCoverImage — object-cover for landscape, object-contain for portrait
+// Samples edge pixels to derive a background colour for portrait images
+// =============================================================================
+function sampleEdgeColor(img: HTMLImageElement): string {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "#000";
+    ctx.drawImage(img, 0, 0);
+    // Sample 4 corner pixels
+    const corners = [
+      ctx.getImageData(0, 0, 1, 1).data,
+      ctx.getImageData(img.naturalWidth - 1, 0, 1, 1).data,
+      ctx.getImageData(0, img.naturalHeight - 1, 1, 1).data,
+      ctx.getImageData(img.naturalWidth - 1, img.naturalHeight - 1, 1, 1).data,
+    ];
+    const r = Math.round(corners.reduce((s, c) => s + c[0], 0) / 4);
+    const g = Math.round(corners.reduce((s, c) => s + c[1], 0) / 4);
+    const b = Math.round(corners.reduce((s, c) => s + c[2], 0) / 4);
+    return `rgb(${r},${g},${b})`;
+  } catch {
+    return "#000";
+  }
+}
+
+function SmartCoverImage({
+  src,
+  alt,
+  containerClassName,
+  imgClassName,
+  eager = false,
+  onClick,
+  children,
+}: {
+  src: string;
+  alt: string;
+  containerClassName?: string;
+  imgClassName?: string;
+  eager?: boolean;
+  onClick?: () => void;
+  children?: React.ReactNode;
+}) {
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [isVisible, setIsVisible] = useState(eager);
+  const [loaded, setLoaded] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
+  const [bgColor, setBgColor] = useState("#000");
+
+  useEffect(() => {
+    if (eager || !imgRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, [eager]);
+
+  const handleLoad = () => {
+    setLoaded(true);
+    const img = imgRef.current;
+    if (!img) return;
+    const portrait = img.naturalHeight > img.naturalWidth;
+    setIsPortrait(portrait);
+    if (portrait) setBgColor(sampleEdgeColor(img));
+  };
+
+  return (
+    <div
+      className={containerClassName}
+      style={isPortrait && loaded ? { backgroundColor: bgColor } : undefined}
+      onClick={onClick}
+    >
+      <img
+        ref={imgRef}
+        src={isVisible ? src : undefined}
+        alt={alt}
+        className={cn(
+          imgClassName,
+          "transition-opacity duration-300 w-full h-full",
+          loaded ? "opacity-100" : "opacity-0",
+          loaded && isPortrait ? "object-contain" : "object-cover"
+        )}
+        onLoad={handleLoad}
+        draggable={false}
+        crossOrigin="anonymous"
+      />
+      {children}
+    </div>
+  );
+}
+
 export default function Events() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
@@ -704,22 +801,20 @@ export default function Events() {
 
                       {/* Event Cover Image — use compressed for cover */}
                       {thumbnailPhoto ? (
-                        <div
-                          className="aspect-video overflow-hidden bg-muted cursor-pointer relative group"
+                        <SmartCoverImage
+                          src={pickSrc(thumbnailPhoto, "preview")}
+                          alt={event.title}
+                          containerClassName="aspect-video overflow-hidden bg-muted cursor-pointer relative group"
+                          imgClassName="group-hover:scale-105 transition-transform duration-300"
+                          eager={index < 2}
                           onClick={() => openLightbox(eventPhotos.indexOf(thumbnailPhoto), event.id)}
                         >
-                          <LazyImage
-                            src={pickSrc(thumbnailPhoto, "preview")}
-                            alt={event.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            eager={index < 2}
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-black/90 px-3 py-1.5 rounded-full text-sm font-medium">
                               {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"}
                             </div>
                           </div>
-                        </div>
+                        </SmartCoverImage>
                       ) : (
                         <div className="aspect-video bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
                           <ImageIcon className="h-16 w-16 text-muted-foreground/30" />
