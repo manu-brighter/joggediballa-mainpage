@@ -891,13 +891,23 @@ export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
     else if (newPlayer2Score > newPlayer1Score + maxRemaining) newWinnerId = 2;
   }
 
+  // Auto-set next game name from pre-defined list if available
+  let nextGameName = "";
+  if (!isLastGame && session.gameNames) {
+    try {
+      const names: string[] = JSON.parse(session.gameNames);
+      const nextIndex = nextGame - 1; // 0-based
+      nextGameName = names[nextIndex] ?? "";
+    } catch { /* ignore parse errors */ }
+  }
+
   await db.update(sdkSession).set({
     player1Score: newPlayer1Score,
     player2Score: newPlayer2Score,
     currentGame: isLastGame ? gameNumber : nextGame,
     winnerId: newWinnerId,
-    isActive: newWinnerId === null && !isLastGame ? true : true, // keep active for display
-    currentGameName: "", // reset game name for next game
+    isActive: true, // keep active for display
+    currentGameName: nextGameName,
   }).where(eq(sdkSession.id, sessionId));
 
   return sdkGetSession(sessionId);

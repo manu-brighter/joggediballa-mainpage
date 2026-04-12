@@ -357,6 +357,8 @@ export const sdkSession = mysqlTable("sdk_session", {
   totalGames: int("totalGames").notNull().default(10),
   currentGame: int("currentGame").notNull().default(1),
   currentGameName: varchar("currentGameName", { length: 255 }).default(""),
+  // Pre-defined game names as JSON array, e.g. ["Dart","Quiz","Torwandschießen"]
+  gameNames: text("gameNames").default(""),
   // Scores
   player1Score: int("player1Score").notNull().default(0),
   player2Score: int("player2Score").notNull().default(0),

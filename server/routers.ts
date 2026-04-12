@@ -784,8 +784,12 @@ export const appRouter = router({
         player2Name: z.string().min(1).max(100),
         totalGames: z.number().int().min(1).max(50),
         currentGameName: z.string().max(255).optional(),
+        gameNames: z.array(z.string().max(255)).optional(), // pre-defined game names
       }))
       .mutation(async ({ input, ctx }) => {
+        const gameNamesJson = input.gameNames && input.gameNames.length > 0
+          ? JSON.stringify(input.gameNames)
+          : "";
         return db.sdkCreateSession({
           showTitle: input.showTitle ?? "Schlag den Kassier",
           player1Name: input.player1Name,
@@ -793,6 +797,7 @@ export const appRouter = router({
           totalGames: input.totalGames,
           currentGame: 1,
           currentGameName: input.currentGameName ?? "",
+          gameNames: gameNamesJson,
           player1Score: 0,
           player2Score: 0,
           winnerId: null,
@@ -811,10 +816,15 @@ export const appRouter = router({
         currentGameName: z.string().max(255).optional(),
         totalGames: z.number().int().min(1).max(50).optional(),
         currentGame: z.number().int().min(1).optional(),
+        gameNames: z.array(z.string().max(255)).optional(),
       }))
       .mutation(async ({ input }) => {
-        const { sessionId, ...data } = input;
-        return db.sdkUpdateSession(sessionId, data);
+        const { sessionId, gameNames, ...rest } = input;
+        const data: Record<string, unknown> = { ...rest };
+        if (gameNames !== undefined) {
+          data.gameNames = gameNames.length > 0 ? JSON.stringify(gameNames) : "";
+        }
+        return db.sdkUpdateSession(sessionId, data as Parameters<typeof db.sdkUpdateSession>[1]);
       }),
 
     // Admin: award points for current game to a player

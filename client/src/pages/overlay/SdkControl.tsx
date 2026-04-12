@@ -28,6 +28,8 @@ import {
   Pencil,
   Check,
   X,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,25 +44,26 @@ function maxRemaining(current: number, total: number) {
   return totalPoints(total) - totalPoints(current - 1);
 }
 
+function parseGameNames(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try { return JSON.parse(raw) as string[]; } catch { return []; }
+}
+
 // ─── Inline editable field ───────────────────────────────────────────────────
 
 function InlineEdit({
   value,
   onSave,
-  label,
   placeholder,
 }: {
   value: string;
   onSave: (v: string) => void;
-  label: string;
   placeholder?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
+  useEffect(() => { setDraft(value); }, [value]);
 
   if (!editing) {
     return (
@@ -82,7 +85,7 @@ function InlineEdit({
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         placeholder={placeholder}
-        className="h-7 text-sm w-44"
+        className="h-7 text-sm w-48"
         autoFocus
         onKeyDown={(e) => {
           if (e.key === "Enter") { onSave(draft); setEditing(false); }
@@ -95,6 +98,46 @@ function InlineEdit({
       <button onClick={() => { setDraft(value); setEditing(false); }} className="text-muted-foreground hover:text-foreground">
         <X className="h-4 w-4" />
       </button>
+    </div>
+  );
+}
+
+// ─── Game names editor ───────────────────────────────────────────────────────
+
+function GameNamesEditor({
+  names,
+  onChange,
+  totalGames,
+}: {
+  names: string[];
+  onChange: (names: string[]) => void;
+  totalGames: number;
+}) {
+  // Ensure array has exactly totalGames entries
+  const padded = Array.from({ length: totalGames }, (_, i) => names[i] ?? "");
+
+  const update = (index: number, value: string) => {
+    const next = [...padded];
+    next[index] = value;
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-2">
+      {padded.map((name, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground w-16 shrink-0">
+            Spiel {i + 1}
+            <span className="text-primary ml-1 font-semibold">+{i + 1}</span>
+          </span>
+          <Input
+            value={name}
+            onChange={(e) => update(i, e.target.value)}
+            placeholder={`Spielname (optional)`}
+            className="h-8 text-sm"
+          />
+        </div>
+      ))}
     </div>
   );
 }
@@ -114,8 +157,8 @@ function ScoreDisplay({
   isLeading: boolean;
   color: "red" | "blue";
 }) {
-  const accent = color === "red" ? "text-red-500" : "text-blue-500";
-  const bg = color === "red" ? "bg-red-500/10 ring-red-500/40" : "bg-blue-500/10 ring-blue-500/40";
+  const accent = color === "red" ? "text-[#E93F56]" : "text-[#0B93A7]";
+  const bg = color === "red" ? "bg-[#E93F56]/10 ring-[#E93F56]/40" : "bg-[#0B93A7]/10 ring-[#0B93A7]/40";
 
   return (
     <div className="flex flex-col items-center gap-1.5">
@@ -154,7 +197,16 @@ export default function SdkControl() {
   const [p1Name, setP1Name] = useState("Kassier");
   const [p2Name, setP2Name] = useState("Kandidat");
   const [totalGames, setTotalGames] = useState(10);
+  const [gameNamesInput, setGameNamesInput] = useState<string[]>([]);
   const [gameName, setGameName] = useState("");
+
+  // Sync gameNamesInput length with totalGames
+  useEffect(() => {
+    setGameNamesInput((prev) => {
+      const next = Array.from({ length: totalGames }, (_, i) => prev[i] ?? "");
+      return next;
+    });
+  }, [totalGames]);
 
   const { data: session } = trpc.sdk.getActive.useQuery(undefined, {
     refetchInterval: 2000,
@@ -165,6 +217,13 @@ export default function SdkControl() {
     { sessionId: session?.id ?? 0 },
     { enabled: !!session?.id, refetchInterval: 2000 }
   );
+
+  // Sync gameName from session
+  useEffect(() => {
+    if (session?.currentGameName !== undefined) {
+      setGameName(session.currentGameName ?? "");
+    }
+  }, [session?.currentGameName]);
 
   const createSession = trpc.sdk.createSession.useMutation({
     onSuccess: () => {
@@ -177,10 +236,7 @@ export default function SdkControl() {
   });
 
   const updateSession = trpc.sdk.updateSession.useMutation({
-    onSuccess: () => {
-      utils.sdk.getActive.invalidate();
-      toast.success("Gespeichert");
-    },
+    onSuccess: () => { utils.sdk.getActive.invalidate(); toast.success("Gespeichert"); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -188,7 +244,6 @@ export default function SdkControl() {
     onSuccess: (updated) => {
       utils.sdk.getActive.invalidate();
       utils.sdk.getGameLog.invalidate();
-      setGameName("");
       if (updated?.winnerId !== null && updated?.winnerId !== undefined) {
         toast.success("🏆 Sieger steht fest!", { duration: 5000 });
       }
@@ -242,16 +297,15 @@ export default function SdkControl() {
   const hasWinner = p1Winner || p2Winner;
   const gamePoints = curGame;
 
+  // Pre-defined game names for current session
+  const sessionGameNames = parseGameNames(session?.gameNames);
+
   return (
     <div className="min-h-screen bg-background">
       {/* ── Header ── */}
       <div className="border-b bg-card px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img
-            src="/Jogge_Di_Balla_Final_Transparent.png"
-            alt="Jogge di Balla"
-            className="h-8 w-auto"
-          />
+          <img src="/Jogge_Di_Balla_Final_Transparent.png" alt="Jogge di Balla" className="h-8 w-auto" />
           <div>
             <h1 className="text-lg font-bold leading-none">Schlag den Kassier</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Overlay Control Panel</p>
@@ -272,23 +326,18 @@ export default function SdkControl() {
 
         {/* ── Live Score ── */}
         {session && (
-          <Card className={cn(
-            "border-2 transition-all duration-500",
-            hasWinner ? "border-yellow-500/50 bg-yellow-500/5" : "border-primary/30"
-          )}>
+          <Card className={cn("border-2 transition-all duration-500", hasWinner ? "border-yellow-500/50 bg-yellow-500/5" : "border-primary/30")}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Swords className="h-4 w-4" />
                     Live Spielstand
                   </CardTitle>
-                  {/* Inline editable show title */}
                   <span className="text-muted-foreground">—</span>
                   <InlineEdit
                     value={session.showTitle ?? "Schlag den Kassier"}
                     onSave={(v) => updateSession.mutate({ sessionId: session.id, showTitle: v || "Schlag den Kassier" })}
-                    label="Showtitel"
                     placeholder="Schlag den Kassier"
                   />
                 </div>
@@ -303,13 +352,7 @@ export default function SdkControl() {
             <CardContent className="space-y-4">
               {/* Scoreboard */}
               <div className="flex items-center justify-between gap-4 py-2">
-                <ScoreDisplay
-                  name={session.player1Name}
-                  score={p1Score}
-                  isWinner={p1Winner}
-                  isLeading={p1Score > p2Score && !hasWinner}
-                  color="red"
-                />
+                <ScoreDisplay name={session.player1Name} score={p1Score} isWinner={p1Winner} isLeading={p1Score > p2Score && !hasWinner} color="red" />
                 <div className="flex flex-col items-center gap-1 text-muted-foreground">
                   <span className="text-3xl font-black">VS</span>
                   {!hasWinner && (
@@ -319,38 +362,30 @@ export default function SdkControl() {
                     </span>
                   )}
                 </div>
-                <ScoreDisplay
-                  name={session.player2Name}
-                  score={p2Score}
-                  isWinner={p2Winner}
-                  isLeading={p2Score > p1Score && !hasWinner}
-                  color="blue"
-                />
+                <ScoreDisplay name={session.player2Name} score={p2Score} isWinner={p2Winner} isLeading={p2Score > p1Score && !hasWinner} color="blue" />
               </div>
 
               {/* Inline name editing */}
-              <div className="flex items-center justify-between px-2 py-1.5 bg-muted/40 rounded-lg">
+              <div className="flex items-center justify-between px-3 py-2 bg-muted/40 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-[#E93F56]" />
                   <InlineEdit
                     value={session.player1Name}
                     onSave={(v) => updateSession.mutate({ sessionId: session.id, player1Name: v || session.player1Name })}
-                    label="Spieler 1"
                     placeholder="Kassier"
                   />
                 </div>
                 <div className="flex items-center gap-2 flex-row-reverse">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <div className="w-3 h-3 rounded-full bg-[#0B93A7]" />
                   <InlineEdit
                     value={session.player2Name}
                     onSave={(v) => updateSession.mutate({ sessionId: session.id, player2Name: v || session.player2Name })}
-                    label="Spieler 2"
                     placeholder="Kandidat"
                   />
                 </div>
               </div>
 
-              {/* Game name input */}
+              {/* Current game name */}
               {!hasWinner && (
                 <div className="flex gap-2">
                   <Input
@@ -359,9 +394,7 @@ export default function SdkControl() {
                     onChange={(e) => setGameName(e.target.value)}
                     className="text-sm"
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        updateSession.mutate({ sessionId: session.id, currentGameName: gameName });
-                      }
+                      if (e.key === "Enter") updateSession.mutate({ sessionId: session.id, currentGameName: gameName });
                     }}
                   />
                   <Button
@@ -375,28 +408,53 @@ export default function SdkControl() {
                 </div>
               )}
 
+              {/* Quick-fill from pre-defined names */}
+              {!hasWinner && sessionGameNames.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {sessionGameNames.map((n, i) => n && (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setGameName(n);
+                        updateSession.mutate({ sessionId: session.id, currentGameName: n });
+                      }}
+                      className={cn(
+                        "text-xs px-2.5 py-1 rounded-full border transition-colors",
+                        i + 1 === curGame
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground"
+                      )}
+                    >
+                      {i + 1}. {n}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Award buttons */}
               {!hasWinner && (
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     size="lg"
-                    className="h-16 text-base font-bold gap-2 bg-red-600 hover:bg-red-700 border-0"
+                    className="h-16 text-base font-bold gap-2 border-0"
+                    style={{ background: "#E93F56" }}
                     onClick={() => session && awardPoint.mutate({ sessionId: session.id, winnerId: 1 })}
                     disabled={awardPoint.isPending}
                   >
                     <Crown className="h-5 w-5" />
                     {session.player1Name}
-                    <Badge variant="secondary" className="ml-1 bg-red-900/50 text-white border-0">+{gamePoints}</Badge>
+                    <Badge variant="secondary" className="ml-1 bg-black/20 text-white border-0">+{gamePoints}</Badge>
                   </Button>
                   <Button
                     size="lg"
-                    className="h-16 text-base font-bold gap-2 bg-blue-600 hover:bg-blue-700 border-0"
+                    className="h-16 text-base font-bold gap-2 border-0"
+                    style={{ background: "#0B93A7" }}
                     onClick={() => session && awardPoint.mutate({ sessionId: session.id, winnerId: 2 })}
                     disabled={awardPoint.isPending}
                   >
                     <Crown className="h-5 w-5" />
                     {session.player2Name}
-                    <Badge variant="secondary" className="ml-1 bg-blue-900/50 text-white border-0">+{gamePoints}</Badge>
+                    <Badge variant="secondary" className="ml-1 bg-black/20 text-white border-0">+{gamePoints}</Badge>
                   </Button>
                 </div>
               )}
@@ -410,7 +468,6 @@ export default function SdkControl() {
                 </div>
               )}
 
-              {/* Control buttons */}
               <Separator />
               <div className="flex gap-2 flex-wrap">
                 <Button
@@ -455,23 +512,14 @@ export default function SdkControl() {
                   const winner = entry.winnerId === 1 ? session.player1Name : session.player2Name;
                   const isP1 = entry.winnerId === 1;
                   return (
-                    <div
-                      key={entry.id}
-                      className="flex items-center justify-between text-sm py-1.5 px-3 rounded-lg bg-muted/50"
-                    >
+                    <div key={entry.id} className="flex items-center justify-between text-sm py-1.5 px-3 rounded-lg bg-muted/50">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs w-16 justify-center">
-                          Spiel {entry.gameNumber}
-                        </Badge>
-                        {entry.gameName && (
-                          <span className="text-muted-foreground">{entry.gameName}</span>
-                        )}
+                        <Badge variant="outline" className="text-xs w-16 justify-center">Spiel {entry.gameNumber}</Badge>
+                        {entry.gameName && <span className="text-muted-foreground">{entry.gameName}</span>}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={cn("font-medium", isP1 ? "text-red-400" : "text-blue-400")}>
-                          {winner}
-                        </span>
-                        <Badge className={cn("border-0", isP1 ? "bg-red-500/20 text-red-400" : "bg-blue-500/20 text-blue-400")}>
+                        <span className={cn("font-medium", isP1 ? "text-[#E93F56]" : "text-[#0B93A7]")}>{winner}</span>
+                        <Badge className={cn("border-0", isP1 ? "bg-[#E93F56]/20 text-[#E93F56]" : "bg-[#0B93A7]/20 text-[#0B93A7]")}>
                           +{entry.pointsAwarded}
                         </Badge>
                       </div>
@@ -490,14 +538,9 @@ export default function SdkControl() {
               <Settings className="h-4 w-4" />
               {session ? "Neue Session starten" : "Session einrichten"}
             </CardTitle>
-            {session && (
-              <CardDescription>
-                Startet eine neue Session und setzt alle Punkte zurück.
-              </CardDescription>
-            )}
+            {session && <CardDescription>Startet eine neue Session und setzt alle Punkte zurück.</CardDescription>}
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Pre-fill button */}
             {session && (
               <Button
                 variant="ghost"
@@ -508,6 +551,7 @@ export default function SdkControl() {
                   setP1Name(session.player1Name);
                   setP2Name(session.player2Name);
                   setTotalGames(session.totalGames);
+                  setGameNamesInput(parseGameNames(session.gameNames));
                 }}
               >
                 <ChevronRight className="h-3 w-3" />
@@ -517,17 +561,9 @@ export default function SdkControl() {
 
             {/* Show title */}
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <Pencil className="h-3.5 w-3.5" /> Showtitel
-              </Label>
-              <Input
-                value={showTitle}
-                onChange={(e) => setShowTitle(e.target.value)}
-                placeholder="Schlag den Kassier"
-              />
-              <p className="text-xs text-muted-foreground">
-                z.B. "Schlag den Kassier", "Schlag den Präsi", "Schlag den Trainer"
-              </p>
+              <Label className="flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5" /> Showtitel</Label>
+              <Input value={showTitle} onChange={(e) => setShowTitle(e.target.value)} placeholder="Schlag den Kassier" />
+              <p className="text-xs text-muted-foreground">z.B. "Schlag den Kassier", "Schlag den Präsi", "Schlag den Trainer"</p>
             </div>
 
             <Separator />
@@ -536,25 +572,17 @@ export default function SdkControl() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-[#E93F56]" />
                   <User className="h-3.5 w-3.5" /> Spieler 1
                 </Label>
-                <Input
-                  value={p1Name}
-                  onChange={(e) => setP1Name(e.target.value)}
-                  placeholder="Kassier"
-                />
+                <Input value={p1Name} onChange={(e) => setP1Name(e.target.value)} placeholder="Kassier" />
               </div>
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <div className="w-3 h-3 rounded-full bg-[#0B93A7]" />
                   <User className="h-3.5 w-3.5" /> Spieler 2
                 </Label>
-                <Input
-                  value={p2Name}
-                  onChange={(e) => setP2Name(e.target.value)}
-                  placeholder="Kandidat"
-                />
+                <Input value={p2Name} onChange={(e) => setP2Name(e.target.value)} placeholder="Kandidat" />
               </div>
             </div>
 
@@ -566,13 +594,26 @@ export default function SdkControl() {
                 min={1}
                 max={50}
                 value={totalGames}
-                onChange={(e) =>
-                  setTotalGames(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))
-                }
+                onChange={(e) => setTotalGames(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
               />
+              <p className="text-xs text-muted-foreground">Max. Punkte: {totalPoints(totalGames)}</p>
+            </div>
+
+            <Separator />
+
+            {/* Game names */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Play className="h-3.5 w-3.5" /> Spielnamen (optional)
+              </Label>
               <p className="text-xs text-muted-foreground">
-                Max. Punkte: {totalPoints(totalGames)}
+                Definiere die Namen der einzelnen Spiele im Voraus. Das Overlay zeigt automatisch den richtigen Namen an.
               </p>
+              <GameNamesEditor
+                names={gameNamesInput}
+                onChange={setGameNamesInput}
+                totalGames={totalGames}
+              />
             </div>
 
             <Button
@@ -583,6 +624,7 @@ export default function SdkControl() {
                   player1Name: p1Name.trim() || "Kassier",
                   player2Name: p2Name.trim() || "Kandidat",
                   totalGames,
+                  gameNames: gameNamesInput.map((n) => n.trim()),
                 });
               }}
               disabled={createSession.isPending}
@@ -601,8 +643,7 @@ export default function SdkControl() {
               <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">
                 {typeof window !== "undefined" ? window.location.origin : "https://joggediballa.ch"}/overlay/sdk
               </code>
-              {" "}— Empfohlene Breite: <strong>1920px</strong>, Höhe: <strong>80px</strong>.
-              Hintergrundfarbe auf transparent stellen.
+              {" "}— Empfohlene Breite: <strong>1920px</strong>, Höhe: <strong>80px</strong>. Hintergrundfarbe auf transparent stellen.
             </p>
           </CardContent>
         </Card>
