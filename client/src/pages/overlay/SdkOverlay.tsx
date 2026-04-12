@@ -9,7 +9,6 @@
  */
 import { useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { cn } from "@/lib/utils";
 
 // Brand colours
 const RED = "#E93F56";
@@ -26,44 +25,73 @@ function maxRemaining(current: number, total: number): number {
   return totalPoints(total) - totalPoints(current - 1);
 }
 
-// ─── Abstract SVG decorations ────────────────────────────────────────────────
+// ─── Abstract background SVG ─────────────────────────────────────────────────
+// Full-width abstract pattern: diagonal speed lines + geometric rings
+// No logo — purely abstract
 
-function AbstractLeft() {
+function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
   return (
     <svg
-      style={{ position: "absolute", left: 0, top: 0, height: "100%", width: 140, pointerEvents: "none" }}
-      viewBox="0 0 140 80"
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+      }}
+      viewBox="0 0 1920 80"
       preserveAspectRatio="xMidYMid slice"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <line x1="-10" y1="95" x2="70" y2="-15" stroke="rgba(255,255,255,0.07)" strokeWidth="22" />
-      <line x1="15" y1="95" x2="95" y2="-15" stroke="rgba(255,255,255,0.05)" strokeWidth="12" />
-      <line x1="40" y1="95" x2="120" y2="-15" stroke="rgba(255,255,255,0.03)" strokeWidth="7" />
-      <circle cx="0" cy="80" r="65" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
-      <circle cx="0" cy="80" r="42" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-      <circle cx="22" cy="14" r="3.5" fill="rgba(255,255,255,0.14)" />
-      <circle cx="44" cy="38" r="2" fill="rgba(255,255,255,0.09)" />
-      <circle cx="12" cy="54" r="4.5" fill="rgba(255,255,255,0.07)" />
-    </svg>
-  );
-}
+      {/* ── Left side speed lines (red tint) ── */}
+      <g opacity="0.18">
+        <line x1="-20" y1="90" x2="180" y2="-10" stroke={RED} strokeWidth="28" />
+        <line x1="30" y1="90" x2="230" y2="-10" stroke={RED} strokeWidth="14" />
+        <line x1="80" y1="90" x2="280" y2="-10" stroke={RED} strokeWidth="8" />
+        <line x1="120" y1="90" x2="320" y2="-10" stroke={RED} strokeWidth="4" />
+      </g>
 
-function AbstractRight() {
-  return (
-    <svg
-      style={{ position: "absolute", right: 0, top: 0, height: "100%", width: 140, pointerEvents: "none" }}
-      viewBox="0 0 140 80"
-      preserveAspectRatio="xMidYMid slice"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <line x1="150" y1="95" x2="70" y2="-15" stroke="rgba(255,255,255,0.07)" strokeWidth="22" />
-      <line x1="125" y1="95" x2="45" y2="-15" stroke="rgba(255,255,255,0.05)" strokeWidth="12" />
-      <line x1="100" y1="95" x2="20" y2="-15" stroke="rgba(255,255,255,0.03)" strokeWidth="7" />
-      <circle cx="140" cy="80" r="65" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
-      <circle cx="140" cy="80" r="42" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-      <circle cx="118" cy="14" r="3.5" fill="rgba(255,255,255,0.14)" />
-      <circle cx="96" cy="38" r="2" fill="rgba(255,255,255,0.09)" />
-      <circle cx="128" cy="54" r="4.5" fill="rgba(255,255,255,0.07)" />
+      {/* ── Right side speed lines (blue tint) ── */}
+      <g opacity="0.18">
+        <line x1="1940" y1="90" x2="1740" y2="-10" stroke={BLUE} strokeWidth="28" />
+        <line x1="1890" y1="90" x2="1690" y2="-10" stroke={BLUE} strokeWidth="14" />
+        <line x1="1840" y1="90" x2="1640" y2="-10" stroke={BLUE} strokeWidth="8" />
+        <line x1="1800" y1="90" x2="1600" y2="-10" stroke={BLUE} strokeWidth="4" />
+      </g>
+
+      {/* ── Left decorative arcs ── */}
+      <circle cx="0" cy="80" r="90" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" />
+      <circle cx="0" cy="80" r="58" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+      <circle cx="0" cy="80" r="30" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+
+      {/* ── Right decorative arcs ── */}
+      <circle cx="1920" cy="80" r="90" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" />
+      <circle cx="1920" cy="80" r="58" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+      <circle cx="1920" cy="80" r="30" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+
+      {/* ── Centre geometric ring ── */}
+      <circle cx="960" cy="40" r="55" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+      <circle cx="960" cy="40" r="38" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+
+      {/* ── Scattered dots ── */}
+      <circle cx="350" cy="18" r="3" fill="rgba(255,255,255,0.1)" />
+      <circle cx="420" cy="55" r="2" fill="rgba(255,255,255,0.07)" />
+      <circle cx="280" cy="40" r="4" fill="rgba(255,255,255,0.06)" />
+      <circle cx="1570" cy="18" r="3" fill="rgba(255,255,255,0.1)" />
+      <circle cx="1500" cy="55" r="2" fill="rgba(255,255,255,0.07)" />
+      <circle cx="1640" cy="40" r="4" fill="rgba(255,255,255,0.06)" />
+
+      {/* ── Thin horizontal accent lines ── */}
+      <line x1="0" y1="1" x2="1920" y2="1" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+      <line x1="0" y1="79" x2="1920" y2="79" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+
+      {/* ── Winner: gold shimmer bar ── */}
+      {hasWinner && (
+        <>
+          <line x1="0" y1="1" x2="1920" y2="1" stroke="rgba(251,191,36,0.4)" strokeWidth="2" />
+          <line x1="0" y1="79" x2="1920" y2="79" stroke="rgba(251,191,36,0.4)" strokeWidth="2" />
+        </>
+      )}
     </svg>
   );
 }
@@ -264,9 +292,7 @@ export default function SdkOverlay() {
           height: 80,
           display: "flex",
           alignItems: "center",
-          background: hasWinner
-            ? `linear-gradient(90deg, #5a0f1a 0%, #1a0a0a 35%, #0f0f1a 50%, #0a0a1a 65%, #062830 100%)`
-            : `linear-gradient(90deg, #5a0f1a 0%, #1a0a0a 35%, #0f0f1a 50%, #0a0a1a 65%, #062830 100%)`,
+          background: `linear-gradient(90deg, #4a0d18 0%, #1a0a0a 30%, #0f0f1a 50%, #0a0a1a 70%, #052530 100%)`,
           borderBottom: hasWinner
             ? "2px solid rgba(251,191,36,0.55)"
             : "1px solid rgba(255,255,255,0.07)",
@@ -275,44 +301,15 @@ export default function SdkOverlay() {
             : "0 4px 28px rgba(0,0,0,0.65)",
         }}
       >
-        {/* ── Blurred background logo — full-width centered ── */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-            zIndex: 0,
-            overflow: "hidden",
-          }}
-        >
-          <img
-            src="/Jogge_Di_Balla_Final_Transparent.png"
-            alt=""
-            aria-hidden="true"
-            style={{
-              height: 200,
-              width: "auto",
-              opacity: 0.09,
-              filter: "blur(8px) brightness(2.5) saturate(0.3)",
-              transform: "scale(1.1)",
-              userSelect: "none",
-              flexShrink: 0,
-            }}
-          />
-        </div>
-
         {/* ── Red side glow ── */}
         <div
           style={{
             position: "absolute",
             left: 0,
             top: 0,
-            width: "42%",
+            width: "40%",
             height: "100%",
-            background: `linear-gradient(90deg, ${RED}55 0%, transparent 100%)`,
+            background: `linear-gradient(90deg, ${RED}50 0%, transparent 100%)`,
             pointerEvents: "none",
             zIndex: 1,
           }}
@@ -324,18 +321,17 @@ export default function SdkOverlay() {
             position: "absolute",
             right: 0,
             top: 0,
-            width: "42%",
+            width: "40%",
             height: "100%",
-            background: `linear-gradient(270deg, ${BLUE}55 0%, transparent 100%)`,
+            background: `linear-gradient(270deg, ${BLUE}50 0%, transparent 100%)`,
             pointerEvents: "none",
             zIndex: 1,
           }}
         />
 
-        {/* ── Abstract decorations ── */}
+        {/* ── Abstract background ── */}
         <div style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none" }}>
-          <AbstractLeft />
-          <AbstractRight />
+          <AbstractBg hasWinner={hasWinner} />
         </div>
 
         {/* ── Winner shimmer ── */}
