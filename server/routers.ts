@@ -762,6 +762,121 @@ export const appRouter = router({
   }),
 
   // ============================================
+  // SCHLAG DEN KASSIER (SDK) OVERLAY
+  // ============================================
+  sdk: router({
+    // Public: overlay reads live state (polling)
+    getActive: publicProcedure.query(async () => {
+      return db.sdkGetActiveSession();
+    }),
+
+    getGameLog: publicProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        return db.sdkGetGameLog(input.sessionId);
+      }),
+
+    // Admin: create a new session (resets previous)
+    createSession: adminProcedure
+      .input(z.object({
+        player1Name: z.string().min(1).max(100),
+        player2Name: z.string().min(1).max(100),
+        totalGames: z.number().int().min(1).max(50),
+        currentGameName: z.string().max(255).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.sdkCreateSession({
+          player1Name: input.player1Name,
+          player2Name: input.player2Name,
+          totalGames: input.totalGames,
+          currentGame: 1,
+          currentGameName: input.currentGameName ?? "",
+          player1Score: 0,
+          player2Score: 0,
+          winnerId: null,
+          isActive: true,
+          createdBy: ctx.user.id,
+        });
+      }),
+
+    // Admin: update session settings (names, game name)
+    updateSession: adminProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        player1Name: z.string().min(1).max(100).optional(),
+        player2Name: z.string().min(1).max(100).optional(),
+        currentGameName: z.string().max(255).optional(),
+        totalGames: z.number().int().min(1).max(50).optional(),
+        currentGame: z.number().int().min(1).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { sessionId, ...data } = input;
+        return db.sdkUpdateSession(sessionId, data);
+      }),
+
+    // Admin: award points for current game to a player
+    awardPoint: adminProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        winnerId: z.union([z.literal(1), z.literal(2)]),
+      }))
+      .mutation(async ({ input }) => {
+        return db.sdkAwardPoint(input.sessionId, input.winnerId);
+      }),
+
+    // Admin: undo last game (remove last log entry and recalculate)
+    undoLastGame: adminProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ input }) => {
+        const log = await db.sdkGetGameLog(input.sessionId);
+        if (log.length === 0) throw new Error("No games to undo");
+        const last = log[log.length - 1];
+        // Recalculate scores from remaining log
+        const remaining = log.slice(0, -1);
+        let p1 = 0, p2 = 0;
+        for (const entry of remaining) {
+          if (entry.winnerId === 1) p1 += entry.pointsAwarded;
+          else p2 += entry.pointsAwarded;
+        }
+        // Delete last log entry
+        const dbConn = await (await import("./db")).getDb();
+        if (dbConn) {
+          const { sdkGameLog: sdkGameLogTable } = await import("../drizzle/schema");
+          const { eq } = await import("drizzle-orm");
+          await dbConn.delete(sdkGameLogTable).where(eq(sdkGameLogTable.id, last.id));
+        }
+        // Reset to previous game
+        return db.sdkUpdateSession(input.sessionId, {
+          player1Score: p1,
+          player2Score: p2,
+          currentGame: last.gameNumber,
+          currentGameName: "",
+          winnerId: null,
+        });
+      }),
+
+    // Admin: reset session scores (keep config)
+    resetSession: adminProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ input }) => {
+        // Delete all game log entries
+        const dbConn = await (await import("./db")).getDb();
+        if (dbConn) {
+          const { sdkGameLog: sdkGameLogTable } = await import("../drizzle/schema");
+          const { eq } = await import("drizzle-orm");
+          await dbConn.delete(sdkGameLogTable).where(eq(sdkGameLogTable.sessionId, input.sessionId));
+        }
+        return db.sdkUpdateSession(input.sessionId, {
+          player1Score: 0,
+          player2Score: 0,
+          currentGame: 1,
+          currentGameName: "",
+          winnerId: null,
+        });
+      }),
+  }),
+
+  // ============================================
   // ACTIVITY LOG (Admin only)
   // ============================================
   activityLog: router({

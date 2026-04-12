@@ -338,3 +338,48 @@ export const harassenlaufRegistrations = mysqlTable("harassenlauf_registrations"
 
 export type HarassenlaufRegistration = typeof harassenlaufRegistrations.$inferSelect;
 export type InsertHarassenlaufRegistration = typeof harassenlaufRegistrations.$inferInsert;
+
+// ============================================
+// SCHLAG DEN KASSIER (SDK) OVERLAY
+// ============================================
+/**
+ * SDK Session - one active session at a time for the overlay
+ * Stores all configuration and live state for the current game
+ */
+export const sdkSession = mysqlTable("sdk_session", {
+  id: int("id").autoincrement().primaryKey(),
+  // Player names
+  player1Name: varchar("player1Name", { length: 100 }).notNull().default("Kassier"),
+  player2Name: varchar("player2Name", { length: 100 }).notNull().default("Kandidat"),
+  // Game configuration
+  totalGames: int("totalGames").notNull().default(10),
+  currentGame: int("currentGame").notNull().default(1),
+  currentGameName: varchar("currentGameName", { length: 255 }).default(""),
+  // Scores
+  player1Score: int("player1Score").notNull().default(0),
+  player2Score: int("player2Score").notNull().default(0),
+  // State
+  isActive: boolean("isActive").notNull().default(true),
+  winnerId: int("winnerId"), // 1 = player1, 2 = player2, null = ongoing
+  // Metadata
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdBy: int("createdBy").references(() => users.id),
+});
+export type SdkSession = typeof sdkSession.$inferSelect;
+export type InsertSdkSession = typeof sdkSession.$inferInsert;
+
+/**
+ * SDK Game Log - tracks each game result
+ */
+export const sdkGameLog = mysqlTable("sdk_game_log", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull().references(() => sdkSession.id, { onDelete: "cascade" }),
+  gameNumber: int("gameNumber").notNull(),
+  gameName: varchar("gameName", { length: 255 }).default(""),
+  pointsAwarded: int("pointsAwarded").notNull(), // = gameNumber
+  winnerId: int("winnerId").notNull(), // 1 = player1, 2 = player2
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SdkGameLog = typeof sdkGameLog.$inferSelect;
+export type InsertSdkGameLog = typeof sdkGameLog.$inferInsert;

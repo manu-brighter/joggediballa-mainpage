@@ -24,7 +24,11 @@ import {
   InsertContactSubmission,
   InsertGoennermitglied,
   InsertUserActivityLog,
-  InsertRolePermission
+  InsertRolePermission,
+  sdkSession,
+  sdkGameLog,
+  InsertSdkSession,
+  InsertSdkGameLog
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -805,4 +809,104 @@ export async function initializeDefaultPermissions() {
   } catch (error) {
     console.error("[Database] Failed to initialize default permissions:", error);
   }
+}
+
+// ============================================
+// SCHLAG DEN KASSIER (SDK) OVERLAY
+// ============================================
+
+export async function sdkGetActiveSession() {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(sdkSession)
+    .where(eq(sdkSession.isActive, true))
+    .orderBy(desc(sdkSession.createdAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function sdkGetSession(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(sdkSession).where(eq(sdkSession.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function sdkCreateSession(data: Omit<InsertSdkSession, "id" | "createdAt" | "updatedAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Deactivate all existing sessions first
+  await db.update(sdkSession).set({ isActive: false });
+  const result = await db.insert(sdkSession).values({ ...data, isActive: true });
+  const id = (result as any)[0]?.insertId ?? (result as any).insertId;
+  return sdkGetSession(id);
+}
+
+export async function sdkUpdateSession(id: number, data: Partial<InsertSdkSession>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(sdkSession).set(data).where(eq(sdkSession.id, id));
+  return sdkGetSession(id);
+}
+
+export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const session = await sdkGetSession(sessionId);
+  if (!session) throw new Error("Session not found");
+  if (!session.isActive) throw new Error("Session is not active");
+
+  const gameNumber = session.currentGame;
+  const points = gameNumber; // game N awards N points
+
+  // Log the game result
+  await db.insert(sdkGameLog).values({
+    sessionId,
+    gameNumber,
+    gameName: session.currentGameName ?? "",
+    pointsAwarded: points,
+    winnerId,
+  } as InsertSdkGameLog);
+
+  // Update scores and advance game
+  const newPlayer1Score = session.player1Score + (winnerId === 1 ? points : 0);
+  const newPlayer2Score = session.player2Score + (winnerId === 2 ? points : 0);
+  const nextGame = gameNumber + 1;
+  const isLastGame = gameNumber >= session.totalGames;
+
+  // Calculate max remaining points (sum from nextGame to totalGames)
+  const remainingGames = session.totalGames - gameNumber; // games after this one
+  const maxRemaining = remainingGames > 0
+    ? Array.from({ length: remainingGames }, (_, i) => gameNumber + 1 + i).reduce((a, b) => a + b, 0)
+    : 0;
+
+  // Check if winner is already decided
+  let newWinnerId: number | null = null;
+  if (isLastGame) {
+    // Last game played — determine winner
+    newWinnerId = newPlayer1Score > newPlayer2Score ? 1 : newPlayer1Score < newPlayer2Score ? 2 : null;
+  } else {
+    // Check if any player can no longer be caught
+    if (newPlayer1Score > newPlayer2Score + maxRemaining) newWinnerId = 1;
+    else if (newPlayer2Score > newPlayer1Score + maxRemaining) newWinnerId = 2;
+  }
+
+  await db.update(sdkSession).set({
+    player1Score: newPlayer1Score,
+    player2Score: newPlayer2Score,
+    currentGame: isLastGame ? gameNumber : nextGame,
+    winnerId: newWinnerId,
+    isActive: newWinnerId === null && !isLastGame ? true : true, // keep active for display
+    currentGameName: "", // reset game name for next game
+  }).where(eq(sdkSession.id, sessionId));
+
+  return sdkGetSession(sessionId);
+}
+
+export async function sdkGetGameLog(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sdkGameLog)
+    .where(eq(sdkGameLog.sessionId, sessionId))
+    .orderBy(sdkGameLog.gameNumber);
 }

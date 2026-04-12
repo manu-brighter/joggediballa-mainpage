@@ -24,9 +24,14 @@ import Profile from "./pages/Profile";
 import Dienstleistungen from "./pages/Dienstleistungen";
 import MaintenancePage from "./pages/Maintenance";
 import Harassenlauf from "./pages/Harassenlauf";
+import SdkOverlay from "./pages/overlay/SdkOverlay";
+import SdkControl from "./pages/overlay/SdkControl";
 import { createContext, useContext, useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+
+// Overlay routes — rendered without Navigation/Footer/background
+const OVERLAY_ROUTES = ["/overlay/sdk"];
 
 // Beamer Mode Context
 interface BeamerModeContextType {
@@ -61,6 +66,9 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/dienstleistungen" component={Dienstleistungen} />
       <Route path="/harassenlauf" component={Harassenlauf} />
+      {/* SDK Overlay routes — not linked, not indexed */}
+      <Route path="/overlay/sdk" component={SdkOverlay} />
+      <Route path="/overlay/sdk/control" component={SdkControl} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -71,13 +79,16 @@ function AppContent() {
   const [isBeamerMode, setBeamerMode] = useState(false);
   const [location] = useLocation();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  
+
+  // Overlay mode: no nav, no footer, transparent bg
+  const isOverlayRoute = OVERLAY_ROUTES.some((r) => location === r);
+
   // Check maintenance mode
   const { data: maintenanceMode } = trpc.features.get.useQuery(
     { featureName: "maintenance_mode" },
-    { 
-      staleTime: 30000, // Cache for 30 seconds
-      refetchOnWindowFocus: false 
+    {
+      staleTime: 30000,
+      refetchOnWindowFocus: false,
     }
   );
 
@@ -106,11 +117,20 @@ function AppContent() {
     return <MaintenancePage />;
   }
 
+  // Overlay route: render completely bare with transparent background
+  if (isOverlayRoute) {
+    return (
+      <div style={{ background: "transparent" }}>
+        <Router />
+      </div>
+    );
+  }
+
   return (
     <BeamerModeContext.Provider value={{ isBeamerMode, setBeamerMode }}>
-      <div className={`min-h-screen flex flex-col ${isBeamerMode ? 'beamer-mode' : ''}`}>
+      <div className={`min-h-screen flex flex-col ${isBeamerMode ? "beamer-mode" : ""}`}>
         {!isBeamerMode && <Navigation />}
-        <main className={`flex-1 ${isBeamerMode ? 'p-0' : ''}`}>
+        <main className={`flex-1 ${isBeamerMode ? "p-0" : ""}`}>
           <Router />
         </main>
         {!isBeamerMode && <Footer />}

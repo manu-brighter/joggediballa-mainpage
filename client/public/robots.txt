@@ -8,3 +8,6 @@ Sitemap: https://joggediballa.ch/sitemap.xml
 # Disallow admin and API routes
 Disallow: /api/
 Disallow: /admin/
+
+# Disallow overlay routes (OBS browser sources, not for public)
+Disallow: /overlay/
