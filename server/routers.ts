@@ -779,6 +779,7 @@ export const appRouter = router({
     // Admin: create a new session (resets previous)
     createSession: adminProcedure
       .input(z.object({
+        showTitle: z.string().min(1).max(150).optional(),
         player1Name: z.string().min(1).max(100),
         player2Name: z.string().min(1).max(100),
         totalGames: z.number().int().min(1).max(50),
@@ -786,6 +787,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         return db.sdkCreateSession({
+          showTitle: input.showTitle ?? "Schlag den Kassier",
           player1Name: input.player1Name,
           player2Name: input.player2Name,
           totalGames: input.totalGames,
@@ -803,6 +805,7 @@ export const appRouter = router({
     updateSession: adminProcedure
       .input(z.object({
         sessionId: z.number(),
+        showTitle: z.string().min(1).max(150).optional(),
         player1Name: z.string().min(1).max(100).optional(),
         player2Name: z.string().min(1).max(100).optional(),
         currentGameName: z.string().max(255).optional(),

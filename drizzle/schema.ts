@@ -348,6 +348,8 @@ export type InsertHarassenlaufRegistration = typeof harassenlaufRegistrations.$i
  */
 export const sdkSession = mysqlTable("sdk_session", {
   id: int("id").autoincrement().primaryKey(),
+  // Show title (e.g. "Schlag den Kassier", "Schlag den Präsi")
+  showTitle: varchar("showTitle", { length: 150 }).notNull().default("Schlag den Kassier"),
   // Player names
   player1Name: varchar("player1Name", { length: 100 }).notNull().default("Kassier"),
   player2Name: varchar("player2Name", { length: 100 }).notNull().default("Kandidat"),
