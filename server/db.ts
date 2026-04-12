@@ -837,7 +837,17 @@ export async function sdkCreateSession(data: Omit<InsertSdkSession, "id" | "crea
   if (!db) throw new Error("Database not available");
   // Deactivate all existing sessions first
   await db.update(sdkSession).set({ isActive: false });
-  const result = await db.insert(sdkSession).values({ ...data, isActive: true });
+
+  // Auto-set currentGameName from first entry in gameNames if not already set
+  let initialGameName = data.currentGameName ?? "";
+  if (!initialGameName && data.gameNames) {
+    try {
+      const names: string[] = JSON.parse(data.gameNames);
+      initialGameName = names[0] ?? "";
+    } catch { /* ignore */ }
+  }
+
+  const result = await db.insert(sdkSession).values({ ...data, isActive: true, currentGameName: initialGameName });
   const id = (result as any)[0]?.insertId ?? (result as any).insertId;
   return sdkGetSession(id);
 }
