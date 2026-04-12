@@ -1239,7 +1239,7 @@ export default function Events() {
                       {/* Action overlay — hover on desktop, tap-activated on touch */}
                       <div className={cn(
                         "absolute inset-0 bg-black/60 transition-opacity flex flex-col items-center justify-center gap-2 p-2",
-                        isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        isActive ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
                       )}>
                         {/* Close tap (touch only) */}
                         {isActive && (
