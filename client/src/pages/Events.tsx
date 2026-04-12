@@ -175,6 +175,7 @@ export default function Events() {
   // Photo management dialog state
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [photoManagementEventId, setPhotoManagementEventId] = useState<number | null>(null);
+  const [activePhotoId, setActivePhotoId] = useState<number | null>(null);
 
   // Touch/swipe state for lightbox
   const touchStartX = useRef(0);
@@ -1182,7 +1183,7 @@ export default function Events() {
       </Dialog>
 
       {/* Photo Management Dialog */}
-      <Dialog open={photoManagementOpen} onOpenChange={setPhotoManagementOpen}>
+      <Dialog open={photoManagementOpen} onOpenChange={(open) => { setPhotoManagementOpen(open); if (!open) setActivePhotoId(null); }}>
         <DialogContent className="w-[90vw] h-[90vh] !max-w-[90vw] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader className="top-0 bg-background mb-8 pb-8 border-b border-muted/20">
              <DialogTitle>Fotos verwalten</DialogTitle>
@@ -1202,7 +1203,9 @@ export default function Events() {
                    {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"} vorhanden
                  </p>
                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {eventPhotos.map((photo) => (
+                  {eventPhotos.map((photo) => {
+                    const isActive = activePhotoId === photo.id;
+                    return (
                     <div
                       key={photo.id}
                       className={cn(
@@ -1211,6 +1214,15 @@ export default function Events() {
                           ? "border-primary ring-2 ring-primary/30"
                           : "border-transparent hover:border-muted-foreground/30"
                       )}
+                      onClick={() => {
+                        // On touch devices: first tap activates, second tap on button executes
+                        // On desktop: hover handles it, click on button executes directly
+                        if (window.matchMedia("(hover: none)").matches) {
+                          if (!isActive) {
+                            setActivePhotoId(photo.id);
+                          }
+                        }
+                      }}
                     >
                       <LazyImage
                         src={pickSrc(photo, "thumb")}
@@ -1221,40 +1233,57 @@ export default function Events() {
                       {photo.id === event?.thumbnailPhotoId && (
                         <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                           <Star className="h-3 w-3" fill="currentColor" />
-                          Thumbnail
+                          <span className="hidden sm:inline">Thumbnail</span>
                         </div>
                       )}
-                      {/* Action buttons */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4">
+                      {/* Action overlay — hover on desktop, tap-activated on touch */}
+                      <div className={cn(
+                        "absolute inset-0 bg-black/60 transition-opacity flex flex-col items-center justify-center gap-2 p-2",
+                        isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      )}>
+                        {/* Close tap (touch only) */}
+                        {isActive && (
+                          <button
+                            className="absolute top-1 right-1 text-white/80 hover:text-white p-1"
+                            onClick={(e) => { e.stopPropagation(); setActivePhotoId(null); }}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
                         {photo.id !== event?.thumbnailPhotoId && (
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="gap-2 text-sm font-medium"
-                            onClick={() => {
+                            className="gap-1.5 text-sm font-medium"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (photoManagementEventId) {
                                 setThumbnailMutation.mutate({ eventId: photoManagementEventId, photoId: photo.id });
+                                setActivePhotoId(null);
                               }
                             }}
                           >
-                            <Star className="h-4 w-4" />
-                            Als Thumbnail
+                            <Star className="h-4 w-4 shrink-0" />
+                            <span className="hidden sm:inline">Als Thumbnail</span>
                           </Button>
                         )}
                         <Button
                           variant="destructive"
                           size="sm"
-                          className="gap-2 text-sm font-medium"
-                          onClick={() => {
+                          className="gap-1.5 text-sm font-medium"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             deletePhotoMutation.mutate({ photoId: photo.id });
+                            setActivePhotoId(null);
                           }}
                         >
-                          <Trash2 className="h-4 w-4" />
-                          Löschen
+                          <Trash2 className="h-4 w-4 shrink-0" />
+                          <span className="hidden sm:inline">Löschen</span>
                         </Button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
