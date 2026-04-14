@@ -7,12 +7,12 @@
  * NOT linked anywhere on the website. Not indexed by search engines.
  * URL: /overlay/sdk
  */
-import { useEffect } from "react";
-import { trpc } from "@/lib/trpc";
+import { useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
 
 // Brand colours
-const RED = "#E93F56";
-const BLUE = "#0B93A7";
+const RED = '#E93F56';
+const BLUE = '#0B93A7';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -33,11 +33,11 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
   return (
     <svg
       style={{
-        position: "absolute",
+        position: 'absolute',
         inset: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "none",
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
       }}
       viewBox="0 0 1920 80"
       preserveAspectRatio="xMidYMid slice"
@@ -45,7 +45,14 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
     >
       {/* ── Left side speed lines (red tint) ── */}
       <g opacity="0.18">
-        <line x1="-20" y1="90" x2="180" y2="-10" stroke={RED} strokeWidth="28" />
+        <line
+          x1="-20"
+          y1="90"
+          x2="180"
+          y2="-10"
+          stroke={RED}
+          strokeWidth="28"
+        />
         <line x1="30" y1="90" x2="230" y2="-10" stroke={RED} strokeWidth="14" />
         <line x1="80" y1="90" x2="280" y2="-10" stroke={RED} strokeWidth="8" />
         <line x1="120" y1="90" x2="320" y2="-10" stroke={RED} strokeWidth="4" />
@@ -53,25 +60,109 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
 
       {/* ── Right side speed lines (blue tint) ── */}
       <g opacity="0.18">
-        <line x1="1940" y1="90" x2="1740" y2="-10" stroke={BLUE} strokeWidth="28" />
-        <line x1="1890" y1="90" x2="1690" y2="-10" stroke={BLUE} strokeWidth="14" />
-        <line x1="1840" y1="90" x2="1640" y2="-10" stroke={BLUE} strokeWidth="8" />
-        <line x1="1800" y1="90" x2="1600" y2="-10" stroke={BLUE} strokeWidth="4" />
+        <line
+          x1="1940"
+          y1="90"
+          x2="1740"
+          y2="-10"
+          stroke={BLUE}
+          strokeWidth="28"
+        />
+        <line
+          x1="1890"
+          y1="90"
+          x2="1690"
+          y2="-10"
+          stroke={BLUE}
+          strokeWidth="14"
+        />
+        <line
+          x1="1840"
+          y1="90"
+          x2="1640"
+          y2="-10"
+          stroke={BLUE}
+          strokeWidth="8"
+        />
+        <line
+          x1="1800"
+          y1="90"
+          x2="1600"
+          y2="-10"
+          stroke={BLUE}
+          strokeWidth="4"
+        />
       </g>
 
       {/* ── Left decorative arcs ── */}
-      <circle cx="0" cy="80" r="90" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" />
-      <circle cx="0" cy="80" r="58" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-      <circle cx="0" cy="80" r="30" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+      <circle
+        cx="0"
+        cy="80"
+        r="90"
+        fill="none"
+        stroke="rgba(255,255,255,0.05)"
+        strokeWidth="1.5"
+      />
+      <circle
+        cx="0"
+        cy="80"
+        r="58"
+        fill="none"
+        stroke="rgba(255,255,255,0.04)"
+        strokeWidth="1"
+      />
+      <circle
+        cx="0"
+        cy="80"
+        r="30"
+        fill="none"
+        stroke="rgba(255,255,255,0.04)"
+        strokeWidth="1"
+      />
 
       {/* ── Right decorative arcs ── */}
-      <circle cx="1920" cy="80" r="90" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" />
-      <circle cx="1920" cy="80" r="58" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-      <circle cx="1920" cy="80" r="30" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+      <circle
+        cx="1920"
+        cy="80"
+        r="90"
+        fill="none"
+        stroke="rgba(255,255,255,0.05)"
+        strokeWidth="1.5"
+      />
+      <circle
+        cx="1920"
+        cy="80"
+        r="58"
+        fill="none"
+        stroke="rgba(255,255,255,0.04)"
+        strokeWidth="1"
+      />
+      <circle
+        cx="1920"
+        cy="80"
+        r="30"
+        fill="none"
+        stroke="rgba(255,255,255,0.04)"
+        strokeWidth="1"
+      />
 
       {/* ── Centre geometric ring ── */}
-      <circle cx="960" cy="40" r="55" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-      <circle cx="960" cy="40" r="38" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+      <circle
+        cx="960"
+        cy="40"
+        r="55"
+        fill="none"
+        stroke="rgba(255,255,255,0.04)"
+        strokeWidth="1"
+      />
+      <circle
+        cx="960"
+        cy="40"
+        r="38"
+        fill="none"
+        stroke="rgba(255,255,255,0.03)"
+        strokeWidth="1"
+      />
 
       {/* ── Scattered dots ── */}
       <circle cx="350" cy="18" r="3" fill="rgba(255,255,255,0.1)" />
@@ -82,14 +173,42 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
       <circle cx="1640" cy="40" r="4" fill="rgba(255,255,255,0.06)" />
 
       {/* ── Thin horizontal accent lines ── */}
-      <line x1="0" y1="1" x2="1920" y2="1" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-      <line x1="0" y1="79" x2="1920" y2="79" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+      <line
+        x1="0"
+        y1="1"
+        x2="1920"
+        y2="1"
+        stroke="rgba(255,255,255,0.06)"
+        strokeWidth="1"
+      />
+      <line
+        x1="0"
+        y1="79"
+        x2="1920"
+        y2="79"
+        stroke="rgba(255,255,255,0.04)"
+        strokeWidth="1"
+      />
 
       {/* ── Winner: gold shimmer bar ── */}
       {hasWinner && (
         <>
-          <line x1="0" y1="1" x2="1920" y2="1" stroke="rgba(251,191,36,0.4)" strokeWidth="2" />
-          <line x1="0" y1="79" x2="1920" y2="79" stroke="rgba(251,191,36,0.4)" strokeWidth="2" />
+          <line
+            x1="0"
+            y1="1"
+            x2="1920"
+            y2="1"
+            stroke="rgba(251,191,36,0.4)"
+            strokeWidth="2"
+          />
+          <line
+            x1="0"
+            y1="79"
+            x2="1920"
+            y2="79"
+            stroke="rgba(251,191,36,0.4)"
+            strokeWidth="2"
+          />
         </>
       )}
     </svg>
@@ -98,9 +217,17 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
 
 // ─── Game progress dots ───────────────────────────────────────────────────────
 
-function GameDots({ current, total, isFinished }: { current: number; total: number; isFinished: boolean }) {
+function GameDots({
+  current,
+  total,
+  isFinished,
+}: {
+  current: number;
+  total: number;
+  isFinished: boolean;
+}) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
       {Array.from({ length: total }, (_, i) => {
         const gameNum = i + 1;
         const isDone = gameNum < current || isFinished;
@@ -111,14 +238,16 @@ function GameDots({ current, total, isFinished }: { current: number; total: numb
             style={{
               width: isCurrent ? 11 : 6,
               height: isCurrent ? 11 : 6,
-              borderRadius: "50%",
+              borderRadius: '50%',
               background: isDone
-                ? "rgba(255,255,255,0.75)"
+                ? 'rgba(255,255,255,0.75)'
                 : isCurrent
-                ? "#fff"
-                : "rgba(255,255,255,0.18)",
-              boxShadow: isCurrent ? "0 0 7px 3px rgba(255,255,255,0.55)" : "none",
-              transition: "all 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+                  ? '#fff'
+                  : 'rgba(255,255,255,0.18)',
+              boxShadow: isCurrent
+                ? '0 0 7px 3px rgba(255,255,255,0.55)'
+                : 'none',
+              transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
               flexShrink: 0,
             }}
           />
@@ -140,22 +269,22 @@ function PlayerSide({
 }: {
   name: string;
   score: number;
-  side: "left" | "right";
+  side: 'left' | 'right';
   isWinner: boolean;
   isLeading: boolean;
-  color: "red" | "blue";
+  color: 'red' | 'blue';
 }) {
-  const accent = color === "red" ? RED : BLUE;
-  const glowRgb = color === "red" ? "233,63,86" : "11,147,167";
+  const accent = color === 'red' ? RED : BLUE;
+  const glowRgb = color === 'red' ? '233,63,86' : '11,147,167';
 
   return (
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
+        display: 'flex',
+        alignItems: 'center',
         gap: 14,
         flex: 1,
-        flexDirection: side === "right" ? "row-reverse" : "row",
+        flexDirection: side === 'right' ? 'row-reverse' : 'row',
       }}
     >
       {/* Score bubble */}
@@ -163,31 +292,35 @@ function PlayerSide({
         style={{
           minWidth: 62,
           height: 62,
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           fontSize: 27,
           fontWeight: 900,
-          letterSpacing: "-1px",
-          color: isWinner ? "#fbbf24" : "#fff",
+          letterSpacing: '-1px',
+          color: isWinner ? '#fbbf24' : '#fff',
           background: isWinner
-            ? "linear-gradient(135deg, #92400e, #78350f)"
+            ? 'linear-gradient(135deg, #92400e, #78350f)'
             : isLeading
-            ? `linear-gradient(135deg, ${accent}cc, ${accent}88)`
-            : "rgba(255,255,255,0.09)",
+              ? `linear-gradient(135deg, ${accent}cc, ${accent}88)`
+              : 'rgba(255,255,255,0.09)',
           border: isWinner
-            ? "2px solid #fbbf24"
+            ? '2px solid #fbbf24'
             : isLeading
-            ? `2px solid ${accent}`
-            : "2px solid rgba(255,255,255,0.14)",
+              ? `2px solid ${accent}`
+              : '2px solid rgba(255,255,255,0.14)',
           boxShadow: isWinner
             ? `0 0 28px 8px rgba(251,191,36,0.55)`
             : isLeading
-            ? `0 0 18px 5px rgba(${glowRgb},0.55)`
-            : "none",
-          transform: isWinner ? "scale(1.18)" : isLeading ? "scale(1.06)" : "scale(1)",
-          transition: "all 0.5s cubic-bezier(0.34,1.56,0.64,1)",
+              ? `0 0 18px 5px rgba(${glowRgb},0.55)`
+              : 'none',
+          transform: isWinner
+            ? 'scale(1.18)'
+            : isLeading
+              ? 'scale(1.06)'
+              : 'scale(1)',
+          transition: 'all 0.5s cubic-bezier(0.34,1.56,0.64,1)',
           flexShrink: 0,
         }}
       >
@@ -195,22 +328,28 @@ function PlayerSide({
       </div>
 
       {/* Name + winner badge */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: side === "right" ? "flex-end" : "flex-start" }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: side === 'right' ? 'flex-end' : 'flex-start',
+        }}
+      >
         <span
           style={{
             fontSize: 19,
             fontWeight: 800,
-            color: isWinner ? "#fbbf24" : "#fff",
+            color: isWinner ? '#fbbf24' : '#fff',
             textShadow: isWinner
-              ? "0 0 14px rgba(251,191,36,0.8)"
-              : "0 2px 10px rgba(0,0,0,0.55)",
-            letterSpacing: "0.4px",
+              ? '0 0 14px rgba(251,191,36,0.8)'
+              : '0 2px 10px rgba(0,0,0,0.55)',
+            letterSpacing: '0.4px',
             lineHeight: 1,
             maxWidth: 190,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            transition: "color 0.5s",
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            transition: 'color 0.5s',
           }}
         >
           {name}
@@ -220,11 +359,11 @@ function PlayerSide({
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: "#fbbf24",
-              letterSpacing: "2.5px",
-              textTransform: "uppercase",
+              color: '#fbbf24',
+              letterSpacing: '2.5px',
+              textTransform: 'uppercase',
               marginTop: 3,
-              textShadow: "0 0 10px rgba(251,191,36,0.65)",
+              textShadow: '0 0 10px rgba(251,191,36,0.65)',
             }}
           >
             🏆 Sieger
@@ -239,13 +378,15 @@ function PlayerSide({
 
 export default function SdkOverlay() {
   useEffect(() => {
-    const meta = document.createElement("meta");
-    meta.name = "robots";
-    meta.content = "noindex, nofollow";
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
     document.head.appendChild(meta);
-    document.body.style.background = "transparent";
-    document.documentElement.style.background = "transparent";
-    return () => { document.head.removeChild(meta); };
+    document.body.style.background = 'transparent';
+    document.documentElement.style.background = 'transparent';
+    return () => {
+      document.head.removeChild(meta);
+    };
   }, []);
 
   const { data: session } = trpc.sdk.getActive.useQuery(undefined, {
@@ -254,7 +395,9 @@ export default function SdkOverlay() {
   });
 
   if (!session) {
-    return <div style={{ width: "100%", height: 80, background: "transparent" }} />;
+    return (
+      <div style={{ width: '100%', height: 80, background: 'transparent' }} />
+    );
   }
 
   const {
@@ -281,36 +424,44 @@ export default function SdkOverlay() {
   const p2Winner = isFinished ? winnerId === 2 : p2MathWinner;
   const hasWinner = p1Winner || p2Winner;
 
-  const gameLabel = currentGameName?.trim() ? currentGameName : `Spiel ${currentGame}`;
+  const gameLabel = currentGameName?.trim()
+    ? currentGameName
+    : `Spiel ${currentGame}`;
 
   return (
-    <div style={{ width: "100%", background: "transparent", fontFamily: "'Inter','Segoe UI',system-ui,sans-serif" }}>
+    <div
+      style={{
+        width: '100%',
+        background: 'transparent',
+        fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+      }}
+    >
       <div
         style={{
-          position: "relative",
-          overflow: "hidden",
+          position: 'relative',
+          overflow: 'hidden',
           height: 80,
-          display: "flex",
-          alignItems: "center",
+          display: 'flex',
+          alignItems: 'center',
           background: `linear-gradient(90deg, #4a0d18 0%, #1a0a0a 30%, #0f0f1a 50%, #0a0a1a 70%, #052530 100%)`,
           borderBottom: hasWinner
-            ? "2px solid rgba(251,191,36,0.55)"
-            : "1px solid rgba(255,255,255,0.07)",
+            ? '2px solid rgba(251,191,36,0.55)'
+            : '1px solid rgba(255,255,255,0.07)',
           boxShadow: hasWinner
-            ? "0 4px 36px rgba(251,191,36,0.18)"
-            : "0 4px 28px rgba(0,0,0,0.65)",
+            ? '0 4px 36px rgba(251,191,36,0.18)'
+            : '0 4px 28px rgba(0,0,0,0.65)',
         }}
       >
         {/* ── Red side glow ── */}
         <div
           style={{
-            position: "absolute",
+            position: 'absolute',
             left: 0,
             top: 0,
-            width: "40%",
-            height: "100%",
+            width: '40%',
+            height: '100%',
             background: `linear-gradient(90deg, ${RED}50 0%, transparent 100%)`,
-            pointerEvents: "none",
+            pointerEvents: 'none',
             zIndex: 1,
           }}
         />
@@ -318,19 +469,26 @@ export default function SdkOverlay() {
         {/* ── Blue side glow ── */}
         <div
           style={{
-            position: "absolute",
+            position: 'absolute',
             right: 0,
             top: 0,
-            width: "40%",
-            height: "100%",
+            width: '40%',
+            height: '100%',
             background: `linear-gradient(270deg, ${BLUE}50 0%, transparent 100%)`,
-            pointerEvents: "none",
+            pointerEvents: 'none',
             zIndex: 1,
           }}
         />
 
         {/* ── Abstract background ── */}
-        <div style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none" }}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 2,
+            pointerEvents: 'none',
+          }}
+        >
           <AbstractBg hasWinner={hasWinner} />
         </div>
 
@@ -338,12 +496,13 @@ export default function SdkOverlay() {
         {hasWinner && (
           <div
             style={{
-              position: "absolute",
+              position: 'absolute',
               inset: 0,
-              background: "linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.07) 50%, transparent 100%)",
+              background:
+                'linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.07) 50%, transparent 100%)',
               zIndex: 3,
-              pointerEvents: "none",
-              animation: "sdk-shimmer 2.2s ease-in-out infinite",
+              pointerEvents: 'none',
+              animation: 'sdk-shimmer 2.2s ease-in-out infinite',
             }}
           />
         )}
@@ -351,12 +510,12 @@ export default function SdkOverlay() {
         {/* ── Content ── */}
         <div
           style={{
-            position: "relative",
+            position: 'relative',
             zIndex: 10,
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            padding: "0 22px",
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 22px',
             gap: 14,
           }}
         >
@@ -373,9 +532,9 @@ export default function SdkOverlay() {
           {/* Centre */}
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
               gap: 5,
               flexShrink: 0,
               minWidth: 190,
@@ -385,32 +544,38 @@ export default function SdkOverlay() {
               style={{
                 fontSize: 9,
                 fontWeight: 700,
-                letterSpacing: "3.5px",
-                textTransform: "uppercase",
-                color: hasWinner ? "rgba(251,191,36,0.9)" : "rgba(255,255,255,0.4)",
+                letterSpacing: '3.5px',
+                textTransform: 'uppercase',
+                color: hasWinner
+                  ? 'rgba(251,191,36,0.9)'
+                  : 'rgba(255,255,255,0.4)',
                 lineHeight: 1,
               }}
             >
-              {showTitle ?? "Schlag den Kassier"}
+              {showTitle ?? 'Schlag den Kassier'}
             </span>
 
             <span
               style={{
                 fontSize: 14,
                 fontWeight: 800,
-                color: hasWinner ? "#fbbf24" : "rgba(255,255,255,0.95)",
-                letterSpacing: "0.4px",
+                color: hasWinner ? '#fbbf24' : 'rgba(255,255,255,0.95)',
+                letterSpacing: '0.4px',
                 lineHeight: 1,
                 textShadow: hasWinner
-                  ? "0 0 14px rgba(251,191,36,0.75)"
-                  : "0 2px 8px rgba(0,0,0,0.6)",
+                  ? '0 0 14px rgba(251,191,36,0.75)'
+                  : '0 2px 8px rgba(0,0,0,0.6)',
               }}
             >
-              {hasWinner ? "🏆 Sieger steht fest!" : gameLabel}
+              {hasWinner ? '🏆 Sieger steht fest!' : gameLabel}
             </span>
 
             {!hasWinner && (
-              <GameDots current={currentGame} total={totalGames} isFinished={isFinished} />
+              <GameDots
+                current={currentGame}
+                total={totalGames}
+                isFinished={isFinished}
+              />
             )}
           </div>
 
