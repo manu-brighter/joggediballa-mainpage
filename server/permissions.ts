@@ -1,43 +1,44 @@
-import * as db from "./db";
+import * as db from './db';
 
-/**
- * Check if a user has a specific permission based on their role
- * @param userRole The role of the user
- * @param permissionKey The permission key to check (e.g., "edit_events")
- * @returns Promise<boolean> True if the user has the permission
- */
-export async function hasPermission(
-  userRole: "admin" | "maintainer" | "editor" | "user" | "visitor",
-  permissionKey: string
-): Promise<boolean> {
-  // Visitor never has any permissions (except public access)
-  if (userRole === "visitor") {
-    return false;
-  }
+type UserRole = 'admin' | 'maintainer' | 'editor' | 'user' | 'visitor';
 
-  // Check database for permission (including admin)
-  const permissions = await db.getAllPermissions();
-  return permissions.some(
-    (p) => p.permissionKey === permissionKey && p.role === userRole
-  );
+// In-memory permission cache per role, invalidated on admin toggle
+const permCache = new Map<string, { keys: string[]; exp: number }>();
+const PERM_TTL = 5 * 60 * 1000; // 5 minutes
+
+/** Call after any permission toggle to force fresh DB reads */
+export function clearPermissionCache() {
+  permCache.clear();
 }
 
 /**
- * Get all permissions for a specific user role
- * @param userRole The role of the user
- * @returns Promise<string[]> Array of permission keys
+ * Get all permission keys for a role, with caching.
+ * Cache is invalidated whenever an admin changes role permissions.
  */
 export async function getUserPermissions(
-  userRole: "admin" | "maintainer" | "editor" | "user" | "visitor"
+  userRole: UserRole,
 ): Promise<string[]> {
-  // Visitor has no permissions
-  if (userRole === "visitor") {
-    return [];
-  }
+  if (userRole === 'visitor') return [];
 
-  // Get permissions from database (including admin)
-  const permissions = await db.getAllPermissions();
-  return permissions
-    .filter((p) => p.role === userRole)
-    .map((p) => p.permissionKey);
+  const cached = permCache.get(userRole);
+  if (cached && cached.exp > Date.now()) return cached.keys;
+
+  const all = await db.getAllPermissions();
+  const keys = all.filter(p => p.role === userRole).map(p => p.permissionKey);
+
+  permCache.set(userRole, { keys, exp: Date.now() + PERM_TTL });
+  return keys;
+}
+
+/**
+ * Check if a user has a specific permission based on their role.
+ * Uses the cached getUserPermissions result — single DB call per role per TTL window.
+ */
+export async function hasPermission(
+  userRole: UserRole,
+  permissionKey: string,
+): Promise<boolean> {
+  if (userRole === 'visitor') return false;
+  const keys = await getUserPermissions(userRole);
+  return keys.includes(permissionKey);
 }

@@ -1,7 +1,7 @@
-import { eq, desc, and, gte, lt, isNull } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { 
-  InsertUser, 
+import { eq, desc, and, gte, lt, isNull } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/mysql2';
+import {
+  InsertUser,
   users,
   shotcounterTeams,
   shotcounterAuditLog,
@@ -28,8 +28,8 @@ import {
   sdkSession,
   sdkGameLog,
   InsertSdkSession,
-  InsertSdkGameLog
-} from "../drizzle/schema";
+  InsertSdkGameLog,
+} from '../drizzle/schema';
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -39,7 +39,7 @@ export async function getDb() {
     try {
       _db = drizzle(process.env.DATABASE_URL);
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.warn('[Database] Failed to connect:', error);
       _db = null;
     }
   }
@@ -52,12 +52,12 @@ export async function getDb() {
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
-    throw new Error("User openId is required for upsert");
+    throw new Error('User openId is required for upsert');
   }
 
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
+    console.warn('[Database] Cannot upsert user: database not available');
     return;
   }
 
@@ -67,7 +67,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     };
     const updateSet: Record<string, unknown> = {};
 
-    const textFields = ["name", "email", "loginMethod", "profilePictureUrl"] as const;
+    const textFields = [
+      'name',
+      'email',
+      'loginMethod',
+      'profilePictureUrl',
+    ] as const;
     type TextField = (typeof textFields)[number];
 
     const assignNullable = (field: TextField) => {
@@ -104,7 +109,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       set: updateSet,
     });
   } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
+    console.error('[Database] Failed to upsert user:', error);
     throw error;
   }
 }
@@ -112,11 +117,15 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
+    console.warn('[Database] Cannot get user: database not available');
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.openId, openId))
+    .limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
@@ -129,11 +138,18 @@ export async function getAllUsers() {
 export async function getUserById(userId: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
   return result[0] || null;
 }
 
-export async function updateUserRole(userId: number, role: "admin" | "maintainer" | "editor" | "user" | "visitor") {
+export async function updateUserRole(
+  userId: number,
+  role: 'admin' | 'maintainer' | 'editor' | 'user' | 'visitor',
+) {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ role }).where(eq(users.id, userId));
@@ -141,15 +157,19 @@ export async function updateUserRole(userId: number, role: "admin" | "maintainer
 
 export async function deleteUser(userId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Get user data to delete profile picture from storage
-  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
   if (user.length > 0 && user[0].profilePictureKey) {
     const { storageDelete } = await import('./storage');
     await storageDelete(user[0].profilePictureKey);
   }
-  
+
   await db.delete(users).where(eq(users.id, userId));
 }
 
@@ -160,42 +180,51 @@ export async function deleteUser(userId: number) {
 export async function getShotcounterTeamsByYear(year: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(shotcounterTeams)
-    .where(and(eq(shotcounterTeams.year, year), isNull(shotcounterTeams.deletedAt)))
+  return db
+    .select()
+    .from(shotcounterTeams)
+    .where(
+      and(eq(shotcounterTeams.year, year), isNull(shotcounterTeams.deletedAt)),
+    )
     .orderBy(desc(shotcounterTeams.score));
 }
 
 export async function createShotcounterTeam(team: InsertShotcounterTeam) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(shotcounterTeams).values(team);
   return Number(result[0].insertId);
 }
 
 export async function updateShotcounterScore(teamId: number, newScore: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(shotcounterTeams)
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(shotcounterTeams)
     .set({ score: newScore, updatedAt: new Date() })
     .where(eq(shotcounterTeams.id, teamId));
 }
 
 export async function deleteShotcounterTeam(teamId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(shotcounterTeams).set({ deletedAt: new Date() }).where(eq(shotcounterTeams.id, teamId));
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(shotcounterTeams)
+    .set({ deletedAt: new Date() })
+    .where(eq(shotcounterTeams.id, teamId));
 }
 
 export async function resetShotcounterForYear(year: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   await db.delete(shotcounterTeams).where(eq(shotcounterTeams.year, year));
 }
 
 export async function resetShotcounterScoresForYear(year: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(shotcounterTeams)
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(shotcounterTeams)
     .set({ score: 0, updatedAt: new Date() })
     .where(eq(shotcounterTeams.year, year));
 }
@@ -203,7 +232,11 @@ export async function resetShotcounterScoresForYear(year: number) {
 export async function getShotcounterTeamById(teamId: number) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(shotcounterTeams).where(eq(shotcounterTeams.id, teamId)).limit(1);
+  const result = await db
+    .select()
+    .from(shotcounterTeams)
+    .where(eq(shotcounterTeams.id, teamId))
+    .limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
@@ -220,7 +253,9 @@ export async function createAuditLog(log: InsertShotcounterAuditLog) {
 export async function getAuditLogsByTeam(teamId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(shotcounterAuditLog)
+  return db
+    .select()
+    .from(shotcounterAuditLog)
     .where(eq(shotcounterAuditLog.teamId, teamId))
     .orderBy(desc(shotcounterAuditLog.timestamp));
 }
@@ -228,7 +263,7 @@ export async function getAuditLogsByTeam(teamId: number) {
 export async function getAllAuditLogs(limit: number = 100) {
   const db = await getDb();
   if (!db) return [];
-  
+
   const logs = await db
     .select({
       id: shotcounterAuditLog.id,
@@ -244,10 +279,13 @@ export async function getAllAuditLogs(limit: number = 100) {
       note: shotcounterAuditLog.note,
     })
     .from(shotcounterAuditLog)
-    .leftJoin(shotcounterTeams, eq(shotcounterAuditLog.teamId, shotcounterTeams.id))
+    .leftJoin(
+      shotcounterTeams,
+      eq(shotcounterAuditLog.teamId, shotcounterTeams.id),
+    )
     .orderBy(desc(shotcounterAuditLog.timestamp))
     .limit(limit);
-    
+
   return logs;
 }
 
@@ -258,46 +296,66 @@ export async function getAllAuditLogs(limit: number = 100) {
 export async function getAllSponsors() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(sponsors)
+  return db
+    .select()
+    .from(sponsors)
     .where(eq(sponsors.isActive, true))
     .orderBy(sponsors.displayOrder);
 }
 
 export async function createSponsor(sponsor: InsertSponsor) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(sponsors).values(sponsor);
   return Number(result[0].insertId);
 }
 
-export async function updateSponsor(sponsorId: number, data: Partial<InsertSponsor>) {
+export async function updateSponsor(
+  sponsorId: number,
+  data: Partial<InsertSponsor>,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // If logoKey is being updated, delete the old logo from storage
   if (data.logoKey) {
-    const oldSponsor = await db.select().from(sponsors).where(eq(sponsors.id, sponsorId)).limit(1);
-    if (oldSponsor.length > 0 && oldSponsor[0].logoKey && oldSponsor[0].logoKey !== data.logoKey) {
+    const oldSponsor = await db
+      .select()
+      .from(sponsors)
+      .where(eq(sponsors.id, sponsorId))
+      .limit(1);
+    if (
+      oldSponsor.length > 0 &&
+      oldSponsor[0].logoKey &&
+      oldSponsor[0].logoKey !== data.logoKey
+    ) {
       const { storageDelete } = await import('./storage');
       await storageDelete(oldSponsor[0].logoKey);
     }
   }
-  
+
   await db.update(sponsors).set(data).where(eq(sponsors.id, sponsorId));
 }
 
 export async function deleteSponsor(sponsorId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Get sponsor data to delete logo from storage
-  const sponsor = await db.select().from(sponsors).where(eq(sponsors.id, sponsorId)).limit(1);
+  const sponsor = await db
+    .select()
+    .from(sponsors)
+    .where(eq(sponsors.id, sponsorId))
+    .limit(1);
   if (sponsor.length > 0 && sponsor[0].logoKey) {
     const { storageDelete } = await import('./storage');
     await storageDelete(sponsor[0].logoKey);
   }
-  
-  await db.update(sponsors).set({ isActive: false }).where(eq(sponsors.id, sponsorId));
+
+  await db
+    .update(sponsors)
+    .set({ isActive: false })
+    .where(eq(sponsors.id, sponsorId));
 }
 
 // ============================================
@@ -307,7 +365,7 @@ export async function deleteSponsor(sponsorId: number) {
 export async function getAllEvents(publishedOnly: boolean = false) {
   const db = await getDb();
   if (!db) return [];
-  const query = publishedOnly 
+  const query = publishedOnly
     ? db.select().from(events).where(eq(events.isPublished, true))
     : db.select().from(events);
   return query.orderBy(desc(events.eventDate));
@@ -316,25 +374,36 @@ export async function getAllEvents(publishedOnly: boolean = false) {
 export async function getEventById(eventId: number) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+  const result = await db
+    .select()
+    .from(events)
+    .where(eq(events.id, eventId))
+    .limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createEvent(event: InsertEvent & { eventLinks?: Array<{url: string, label: string}> }) {
+export async function createEvent(
+  event: InsertEvent & { eventLinks?: Array<{ url: string; label: string }> },
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   const { eventLinks, ...rest } = event as any;
   const insertData = {
     ...rest,
-    eventLinks: eventLinks ? JSON.stringify(eventLinks) : null
+    eventLinks: eventLinks ? JSON.stringify(eventLinks) : null,
   };
   const result = await db.insert(events).values(insertData);
   return Number(result[0].insertId);
 }
 
-export async function updateEvent(eventId: number, data: Partial<InsertEvent> & { eventLinks?: Array<{url: string, label: string}> }) {
+export async function updateEvent(
+  eventId: number,
+  data: Partial<InsertEvent> & {
+    eventLinks?: Array<{ url: string; label: string }>;
+  },
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   const { eventLinks, ...rest } = data as any;
   const updateData: any = { ...rest };
   if (eventLinks !== undefined) {
@@ -345,12 +414,15 @@ export async function updateEvent(eventId: number, data: Partial<InsertEvent> & 
 
 export async function deleteEvent(eventId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Get all photos for this event to delete from storage
-  const eventPhotos = await db.select().from(photos).where(eq(photos.eventId, eventId));
+  const eventPhotos = await db
+    .select()
+    .from(photos)
+    .where(eq(photos.eventId, eventId));
   const { storageDelete } = await import('./storage');
-  
+
   for (const photo of eventPhotos) {
     // Delete original image
     if (photo.imageKey) {
@@ -365,28 +437,36 @@ export async function deleteEvent(eventId: number) {
       await storageDelete(photo.thumbnailKey);
     }
   }
-  
+
   // Delete event (photos will be cascade deleted by DB)
   await db.delete(events).where(eq(events.id, eventId));
 }
 
 export async function setEventThumbnail(eventId: number, photoId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(events).set({ thumbnailPhotoId: photoId }).where(eq(events.id, eventId));
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(events)
+    .set({ thumbnailPhotoId: photoId })
+    .where(eq(events.id, eventId));
 }
 
 // ============================================
 // PHOTOS
 // ============================================
 
-export async function getPhotosByEvent(eventId: number, publishedOnly: boolean = false) {
+export async function getPhotosByEvent(
+  eventId: number,
+  publishedOnly: boolean = false,
+) {
   const db = await getDb();
   if (!db) return [];
-  const conditions = publishedOnly 
+  const conditions = publishedOnly
     ? and(eq(photos.eventId, eventId), eq(photos.isPublished, true))
     : eq(photos.eventId, eventId);
-  return db.select().from(photos)
+  return db
+    .select()
+    .from(photos)
     .where(conditions)
     .orderBy(photos.displayOrder);
 }
@@ -394,7 +474,7 @@ export async function getPhotosByEvent(eventId: number, publishedOnly: boolean =
 export async function getAllPhotos(publishedOnly: boolean = false) {
   const db = await getDb();
   if (!db) return [];
-  const query = publishedOnly 
+  const query = publishedOnly
     ? db.select().from(photos).where(eq(photos.isPublished, true))
     : db.select().from(photos);
   return query.orderBy(desc(photos.createdAt));
@@ -402,17 +482,21 @@ export async function getAllPhotos(publishedOnly: boolean = false) {
 
 export async function createPhoto(photo: InsertPhoto) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(photos).values(photo);
   return Number(result[0].insertId);
 }
 
 export async function deletePhoto(photoId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Get photo data to delete from storage
-  const photo = await db.select().from(photos).where(eq(photos.id, photoId)).limit(1);
+  const photo = await db
+    .select()
+    .from(photos)
+    .where(eq(photos.id, photoId))
+    .limit(1);
   if (photo.length > 0) {
     const { storageDelete } = await import('./storage');
     // Delete original image
@@ -428,7 +512,7 @@ export async function deletePhoto(photoId: number) {
       await storageDelete(photo[0].thumbnailKey);
     }
   }
-  
+
   await db.delete(photos).where(eq(photos.id, photoId));
 }
 
@@ -439,48 +523,71 @@ export async function deletePhoto(photoId: number) {
 export async function getAllTeamMembers(activeOnly: boolean = true) {
   const db = await getDb();
   if (!db) return [];
-  const query = activeOnly 
-    ? db.select().from(teamMembers).where(eq(teamMembers.isActive, true)).orderBy(teamMembers.displayOrder)
+  const query = activeOnly
+    ? db
+        .select()
+        .from(teamMembers)
+        .where(eq(teamMembers.isActive, true))
+        .orderBy(teamMembers.displayOrder)
     : db.select().from(teamMembers).orderBy(teamMembers.displayOrder);
   return query;
 }
 
 export async function createTeamMember(member: InsertTeamMember) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(teamMembers).values(member);
   return Number(result[0].insertId);
 }
 
-export async function updateTeamMember(memberId: number, data: Partial<InsertTeamMember>) {
+export async function updateTeamMember(
+  memberId: number,
+  data: Partial<InsertTeamMember>,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // If photoKey is being updated, delete the old photos from storage
   if (data.photoKey || data.compressedPhotoKey) {
-    const oldMember = await db.select().from(teamMembers).where(eq(teamMembers.id, memberId)).limit(1);
+    const oldMember = await db
+      .select()
+      .from(teamMembers)
+      .where(eq(teamMembers.id, memberId))
+      .limit(1);
     if (oldMember.length > 0) {
       const { storageDelete } = await import('./storage');
       // Delete old original photo if new one is provided
-      if (data.photoKey && oldMember[0].photoKey && oldMember[0].photoKey !== data.photoKey) {
+      if (
+        data.photoKey &&
+        oldMember[0].photoKey &&
+        oldMember[0].photoKey !== data.photoKey
+      ) {
         await storageDelete(oldMember[0].photoKey);
       }
       // Delete old compressed photo if new one is provided
-      if (data.compressedPhotoKey && oldMember[0].compressedPhotoKey && oldMember[0].compressedPhotoKey !== data.compressedPhotoKey) {
+      if (
+        data.compressedPhotoKey &&
+        oldMember[0].compressedPhotoKey &&
+        oldMember[0].compressedPhotoKey !== data.compressedPhotoKey
+      ) {
         await storageDelete(oldMember[0].compressedPhotoKey);
       }
     }
   }
-  
+
   await db.update(teamMembers).set(data).where(eq(teamMembers.id, memberId));
 }
 
 export async function deleteTeamMember(memberId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Get team member data to delete photo from storage
-  const member = await db.select().from(teamMembers).where(eq(teamMembers.id, memberId)).limit(1);
+  const member = await db
+    .select()
+    .from(teamMembers)
+    .where(eq(teamMembers.id, memberId))
+    .limit(1);
   if (member.length > 0) {
     const { storageDelete } = await import('./storage');
     // Delete original photo
@@ -492,20 +599,26 @@ export async function deleteTeamMember(memberId: number) {
       await storageDelete(member[0].compressedPhotoKey);
     }
   }
-  
-  await db.update(teamMembers).set({ isActive: false }).where(eq(teamMembers.id, memberId));
+
+  await db
+    .update(teamMembers)
+    .set({ isActive: false })
+    .where(eq(teamMembers.id, memberId));
 }
 
 export async function reorderTeamMembers(memberIds: number[]) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  // Update displayOrder for each member based on their position in the array
-  for (let i = 0; i < memberIds.length; i++) {
-    await db.update(teamMembers)
-      .set({ displayOrder: i })
-      .where(eq(teamMembers.id, memberIds[i]));
-  }
+  if (!db) throw new Error('Database not available');
+
+  // Run all updates in parallel instead of sequentially
+  await Promise.all(
+    memberIds.map((id, i) =>
+      db
+        .update(teamMembers)
+        .set({ displayOrder: i })
+        .where(eq(teamMembers.id, id)),
+    ),
+  );
 }
 
 // ============================================
@@ -521,27 +634,40 @@ export async function getAllFeatureToggles() {
 export async function getFeatureToggle(featureName: string) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(featureToggles)
+  const result = await db
+    .select()
+    .from(featureToggles)
     .where(eq(featureToggles.featureName, featureName))
     .limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function setFeatureToggle(featureName: string, isEnabled: boolean, updatedBy?: number, description?: string) {
+export async function setFeatureToggle(
+  featureName: string,
+  isEnabled: boolean,
+  updatedBy?: number,
+  description?: string,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   const existing = await getFeatureToggle(featureName);
   if (existing) {
-    await db.update(featureToggles)
-      .set({ isEnabled, updatedBy, updatedAt: new Date(), ...(description !== undefined && { description }) })
+    await db
+      .update(featureToggles)
+      .set({
+        isEnabled,
+        updatedBy,
+        updatedAt: new Date(),
+        ...(description !== undefined && { description }),
+      })
       .where(eq(featureToggles.featureName, featureName));
   } else {
     await db.insert(featureToggles).values({
       featureName,
       isEnabled,
       updatedBy,
-      ...(description !== undefined && { description })
+      ...(description !== undefined && { description }),
     });
   }
 }
@@ -550,30 +676,37 @@ export async function setFeatureToggle(featureName: string, isEnabled: boolean, 
 // CONTACT SUBMISSIONS
 // ============================================
 
-export async function createContactSubmission(submission: InsertContactSubmission) {
+export async function createContactSubmission(
+  submission: InsertContactSubmission,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(contactSubmissions).values(submission);
   return Number(result[0].insertId);
 }
 
-export async function getAllContactSubmissions(includeArchived: boolean = false) {
+export async function getAllContactSubmissions(
+  includeArchived: boolean = false,
+) {
   const db = await getDb();
   if (!db) return [];
-  const query = includeArchived 
+  const query = includeArchived
     ? db.select().from(contactSubmissions)
-    : db.select().from(contactSubmissions).where(eq(contactSubmissions.isArchived, false));
+    : db
+        .select()
+        .from(contactSubmissions)
+        .where(eq(contactSubmissions.isArchived, false));
   return query.orderBy(desc(contactSubmissions.submittedAt));
 }
 
 export async function markContactSubmissionAsRead(submissionId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(contactSubmissions)
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(contactSubmissions)
     .set({ isRead: true })
     .where(eq(contactSubmissions.id, submissionId));
 }
-
 
 // ============================================
 // GÖNNERMITGLIEDER (Sponsor Members)
@@ -582,7 +715,9 @@ export async function markContactSubmissionAsRead(submissionId: number) {
 export async function getAllGoennermitglieder() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(goennermitglieder)
+  return db
+    .select()
+    .from(goennermitglieder)
     .orderBy(goennermitglieder.membershipEndDate);
 }
 
@@ -590,11 +725,15 @@ export async function getActiveGoennermitglieder() {
   const db = await getDb();
   if (!db) return [];
   const now = new Date();
-  return db.select().from(goennermitglieder)
-    .where(and(
-      eq(goennermitglieder.isActive, true),
-      gte(goennermitglieder.membershipEndDate, now)
-    ))
+  return db
+    .select()
+    .from(goennermitglieder)
+    .where(
+      and(
+        eq(goennermitglieder.isActive, true),
+        gte(goennermitglieder.membershipEndDate, now),
+      ),
+    )
     .orderBy(goennermitglieder.membershipEndDate);
 }
 
@@ -602,55 +741,71 @@ export async function getExpiredGoennermitglieder() {
   const db = await getDb();
   if (!db) return [];
   const now = new Date();
-  return db.select().from(goennermitglieder)
-    .where(and(
-      eq(goennermitglieder.isActive, true),
-      lt(goennermitglieder.membershipEndDate, now)
-    ))
+  return db
+    .select()
+    .from(goennermitglieder)
+    .where(
+      and(
+        eq(goennermitglieder.isActive, true),
+        lt(goennermitglieder.membershipEndDate, now),
+      ),
+    )
     .orderBy(desc(goennermitglieder.membershipEndDate));
 }
 
 export async function createGoennermitglied(member: InsertGoennermitglied) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(goennermitglieder).values(member);
   return Number(result[0].insertId);
 }
 
-export async function updateGoennermitglied(memberId: number, data: Partial<InsertGoennermitglied>) {
+export async function updateGoennermitglied(
+  memberId: number,
+  data: Partial<InsertGoennermitglied>,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(goennermitglieder).set(data).where(eq(goennermitglieder.id, memberId));
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(goennermitglieder)
+    .set(data)
+    .where(eq(goennermitglieder.id, memberId));
 }
 
-export async function extendGoennermitgliedschaft(memberId: number, years: number = 1) {
+export async function extendGoennermitgliedschaft(
+  memberId: number,
+  years: number = 1,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const member = await db.select().from(goennermitglieder)
+  if (!db) throw new Error('Database not available');
+
+  const member = await db
+    .select()
+    .from(goennermitglieder)
     .where(eq(goennermitglieder.id, memberId))
     .limit(1);
-  
-  if (member.length === 0) throw new Error("Member not found");
-  
+
+  if (member.length === 0) throw new Error('Member not found');
+
   const currentEndDate = new Date(member[0].membershipEndDate);
   const now = new Date();
-  
+
   // If membership is expired, extend from today; otherwise extend from current end date
   const baseDate = currentEndDate < now ? now : currentEndDate;
   const newEndDate = new Date(baseDate);
   newEndDate.setFullYear(newEndDate.getFullYear() + years);
-  
-  await db.update(goennermitglieder)
+
+  await db
+    .update(goennermitglieder)
     .set({ membershipEndDate: newEndDate })
     .where(eq(goennermitglieder.id, memberId));
-  
+
   return newEndDate;
 }
 
 export async function deleteGoennermitglied(memberId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   await db.delete(goennermitglieder).where(eq(goennermitglieder.id, memberId));
 }
 
@@ -658,38 +813,54 @@ export async function deleteGoennermitglied(memberId: number) {
 // USER PROFILE PICTURE
 // ============================================
 
-export async function updateUserProfilePicture(userId: number, profilePictureUrl: string, profilePictureKey: string) {
+export async function updateUserProfilePicture(
+  userId: number,
+  profilePictureUrl: string,
+  profilePictureKey: string,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Delete old profile picture from storage
-  const oldUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  if (oldUser.length > 0 && oldUser[0].profilePictureKey && oldUser[0].profilePictureKey !== profilePictureKey) {
+  const oldUser = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (
+    oldUser.length > 0 &&
+    oldUser[0].profilePictureKey &&
+    oldUser[0].profilePictureKey !== profilePictureKey
+  ) {
     const { storageDelete } = await import('./storage');
     await storageDelete(oldUser[0].profilePictureKey);
   }
-  
-  await db.update(users)
+
+  await db
+    .update(users)
     .set({ profilePictureUrl, profilePictureKey })
     .where(eq(users.id, userId));
 }
 
-export async function updateUserProfile(userId: number, displayName?: string, memberSince?: Date) {
+export async function updateUserProfile(
+  userId: number,
+  displayName?: string,
+  memberSince?: Date,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const updateData: { displayName?: string | null; memberSince?: Date | null } = {};
+  if (!db) throw new Error('Database not available');
+
+  const updateData: { displayName?: string | null; memberSince?: Date | null } =
+    {};
   if (displayName !== undefined) {
     updateData.displayName = displayName || null;
   }
   if (memberSince !== undefined) {
     updateData.memberSince = memberSince || null;
   }
-  
+
   if (Object.keys(updateData).length > 0) {
-    await db.update(users)
-      .set(updateData)
-      .where(eq(users.id, userId));
+    await db.update(users).set(updateData).where(eq(users.id, userId));
   }
 }
 
@@ -700,29 +871,36 @@ export async function updateUserProfile(userId: number, displayName?: string, me
 export async function createActivityLog(log: InsertUserActivityLog) {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot create activity log: database not available");
+    console.warn(
+      '[Database] Cannot create activity log: database not available',
+    );
     return;
   }
   try {
     await db.insert(userActivityLog).values(log);
   } catch (error) {
-    console.error("[Database] Failed to create activity log:", error);
+    console.error('[Database] Failed to create activity log:', error);
   }
 }
 
 export async function getAllActivityLogs(limit: number = 100) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select()
+  if (!db) throw new Error('Database not available');
+  return db
+    .select()
     .from(userActivityLog)
     .orderBy(desc(userActivityLog.timestamp))
     .limit(limit);
 }
 
-export async function getActivityLogsByUser(userId: number, limit: number = 50) {
+export async function getActivityLogsByUser(
+  userId: number,
+  limit: number = 50,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select()
+  if (!db) throw new Error('Database not available');
+  return db
+    .select()
     .from(userActivityLog)
     .where(eq(userActivityLog.userId, userId))
     .orderBy(desc(userActivityLog.timestamp))
@@ -735,14 +913,17 @@ export async function getActivityLogsByUser(userId: number, limit: number = 50) 
 
 export async function getAllPermissions() {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   return db.select().from(rolePermissions);
 }
 
-export async function addPermission(permissionKey: string, role: "admin" | "maintainer" | "editor" | "user") {
+export async function addPermission(
+  permissionKey: string,
+  role: 'admin' | 'maintainer' | 'editor' | 'user',
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   try {
     await db.insert(rolePermissions).values({
       permissionKey,
@@ -752,22 +933,26 @@ export async function addPermission(permissionKey: string, role: "admin" | "main
   } catch (error: any) {
     // Handle duplicate key error
     if (error.code === 'ER_DUP_ENTRY') {
-      return { success: false, error: "Permission already exists" };
+      return { success: false, error: 'Permission already exists' };
     }
     throw error;
   }
 }
 
-export async function removePermission(permissionKey: string, role: "admin" | "maintainer" | "editor" | "user") {
+export async function removePermission(
+  permissionKey: string,
+  role: 'admin' | 'maintainer' | 'editor' | 'user',
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.delete(rolePermissions)
+  if (!db) throw new Error('Database not available');
+
+  await db
+    .delete(rolePermissions)
     .where(
       and(
         eq(rolePermissions.permissionKey, permissionKey),
-        eq(rolePermissions.role, role)
-      )
+        eq(rolePermissions.role, role),
+      ),
     );
   return { success: true };
 }
@@ -775,25 +960,33 @@ export async function removePermission(permissionKey: string, role: "admin" | "m
 export async function initializeDefaultPermissions() {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot initialize permissions: database not available");
+    console.warn(
+      '[Database] Cannot initialize permissions: database not available',
+    );
     return;
   }
 
   // Check if permissions already exist
   const existing = await db.select().from(rolePermissions).limit(1);
   if (existing.length > 0) {
-    console.log("[Database] Permissions already initialized");
+    console.log('[Database] Permissions already initialized');
     return;
   }
 
   // Default permissions based on current PERMISSIONS array in Dashboard
   const defaultPermissions = [
-    { permissionKey: "edit_events", roles: ["admin", "maintainer", "editor"] },
-    { permissionKey: "manage_sponsors", roles: ["admin", "maintainer"] },
-    { permissionKey: "manage_goennermitglieder", roles: ["admin", "maintainer"] },
-    { permissionKey: "edit_shotcounter", roles: ["admin", "maintainer", "editor"] },
-    { permissionKey: "reset_shotcounter", roles: ["admin"] },
-    { permissionKey: "edit_team", roles: ["admin", "maintainer"] },
+    { permissionKey: 'edit_events', roles: ['admin', 'maintainer', 'editor'] },
+    { permissionKey: 'manage_sponsors', roles: ['admin', 'maintainer'] },
+    {
+      permissionKey: 'manage_goennermitglieder',
+      roles: ['admin', 'maintainer'],
+    },
+    {
+      permissionKey: 'edit_shotcounter',
+      roles: ['admin', 'maintainer', 'editor'],
+    },
+    { permissionKey: 'reset_shotcounter', roles: ['admin'] },
+    { permissionKey: 'edit_team', roles: ['admin', 'maintainer'] },
   ];
 
   try {
@@ -801,13 +994,16 @@ export async function initializeDefaultPermissions() {
       for (const role of perm.roles) {
         await db.insert(rolePermissions).values({
           permissionKey: perm.permissionKey,
-          role: role as "admin" | "maintainer" | "editor" | "user",
+          role: role as 'admin' | 'maintainer' | 'editor' | 'user',
         });
       }
     }
-    console.log("[Database] Default permissions initialized successfully");
+    console.log('[Database] Default permissions initialized successfully');
   } catch (error) {
-    console.error("[Database] Failed to initialize default permissions:", error);
+    console.error(
+      '[Database] Failed to initialize default permissions:',
+      error,
+    );
   }
 }
 
@@ -818,7 +1014,9 @@ export async function initializeDefaultPermissions() {
 export async function sdkGetActiveSession() {
   const db = await getDb();
   if (!db) return null;
-  const rows = await db.select().from(sdkSession)
+  const rows = await db
+    .select()
+    .from(sdkSession)
     .where(eq(sdkSession.isActive, true))
     .orderBy(desc(sdkSession.createdAt))
     .limit(1);
@@ -828,43 +1026,56 @@ export async function sdkGetActiveSession() {
 export async function sdkGetSession(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const rows = await db.select().from(sdkSession).where(eq(sdkSession.id, id)).limit(1);
+  const rows = await db
+    .select()
+    .from(sdkSession)
+    .where(eq(sdkSession.id, id))
+    .limit(1);
   return rows[0] ?? null;
 }
 
-export async function sdkCreateSession(data: Omit<InsertSdkSession, "id" | "createdAt" | "updatedAt">) {
+export async function sdkCreateSession(
+  data: Omit<InsertSdkSession, 'id' | 'createdAt' | 'updatedAt'>,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   // Deactivate all existing sessions first
   await db.update(sdkSession).set({ isActive: false });
 
   // Auto-set currentGameName from first entry in gameNames if not already set
-  let initialGameName = data.currentGameName ?? "";
+  let initialGameName = data.currentGameName ?? '';
   if (!initialGameName && data.gameNames) {
     try {
       const names: string[] = JSON.parse(data.gameNames);
-      initialGameName = names[0] ?? "";
-    } catch { /* ignore */ }
+      initialGameName = names[0] ?? '';
+    } catch {
+      /* ignore */
+    }
   }
 
-  const result = await db.insert(sdkSession).values({ ...data, isActive: true, currentGameName: initialGameName });
+  const result = await db
+    .insert(sdkSession)
+    .values({ ...data, isActive: true, currentGameName: initialGameName });
   const id = (result as any)[0]?.insertId ?? (result as any).insertId;
   return sdkGetSession(id);
 }
 
-export async function sdkUpdateSession(id: number, data: Partial<InsertSdkSession>) {
+export async function sdkUpdateSession(
+  id: number,
+  data: Partial<InsertSdkSession>,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   await db.update(sdkSession).set(data).where(eq(sdkSession.id, id));
   return sdkGetSession(id);
 }
 
 export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) throw new Error('Database not available');
   const session = await sdkGetSession(sessionId);
-  if (!session) throw new Error("Session not found");
-  if (!session.isActive) throw new Error("Session is not active");
+  if (!session) throw new Error('Session not found');
+  if (!session.isActive) throw new Error('Session is not active');
 
   const gameNumber = session.currentGame;
   const points = gameNumber; // game N awards N points
@@ -873,7 +1084,7 @@ export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
   await db.insert(sdkGameLog).values({
     sessionId,
     gameNumber,
-    gameName: session.currentGameName ?? "",
+    gameName: session.currentGameName ?? '',
     pointsAwarded: points,
     winnerId,
   } as InsertSdkGameLog);
@@ -886,15 +1097,24 @@ export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
 
   // Calculate max remaining points (sum from nextGame to totalGames)
   const remainingGames = session.totalGames - gameNumber; // games after this one
-  const maxRemaining = remainingGames > 0
-    ? Array.from({ length: remainingGames }, (_, i) => gameNumber + 1 + i).reduce((a, b) => a + b, 0)
-    : 0;
+  const maxRemaining =
+    remainingGames > 0
+      ? Array.from(
+          { length: remainingGames },
+          (_, i) => gameNumber + 1 + i,
+        ).reduce((a, b) => a + b, 0)
+      : 0;
 
   // Check if winner is already decided
   let newWinnerId: number | null = null;
   if (isLastGame) {
     // Last game played — determine winner
-    newWinnerId = newPlayer1Score > newPlayer2Score ? 1 : newPlayer1Score < newPlayer2Score ? 2 : null;
+    newWinnerId =
+      newPlayer1Score > newPlayer2Score
+        ? 1
+        : newPlayer1Score < newPlayer2Score
+          ? 2
+          : null;
   } else {
     // Check if any player can no longer be caught
     if (newPlayer1Score > newPlayer2Score + maxRemaining) newWinnerId = 1;
@@ -902,23 +1122,28 @@ export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
   }
 
   // Auto-set next game name from pre-defined list if available
-  let nextGameName = "";
+  let nextGameName = '';
   if (!isLastGame && session.gameNames) {
     try {
       const names: string[] = JSON.parse(session.gameNames);
       const nextIndex = nextGame - 1; // 0-based
-      nextGameName = names[nextIndex] ?? "";
-    } catch { /* ignore parse errors */ }
+      nextGameName = names[nextIndex] ?? '';
+    } catch {
+      /* ignore parse errors */
+    }
   }
 
-  await db.update(sdkSession).set({
-    player1Score: newPlayer1Score,
-    player2Score: newPlayer2Score,
-    currentGame: isLastGame ? gameNumber : nextGame,
-    winnerId: newWinnerId,
-    isActive: true, // keep active for display
-    currentGameName: nextGameName,
-  }).where(eq(sdkSession.id, sessionId));
+  await db
+    .update(sdkSession)
+    .set({
+      player1Score: newPlayer1Score,
+      player2Score: newPlayer2Score,
+      currentGame: isLastGame ? gameNumber : nextGame,
+      winnerId: newWinnerId,
+      isActive: true, // keep active for display
+      currentGameName: nextGameName,
+    })
+    .where(eq(sdkSession.id, sessionId));
 
   return sdkGetSession(sessionId);
 }
@@ -926,7 +1151,21 @@ export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
 export async function sdkGetGameLog(sessionId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(sdkGameLog)
+  return db
+    .select()
+    .from(sdkGameLog)
     .where(eq(sdkGameLog.sessionId, sessionId))
     .orderBy(sdkGameLog.gameNumber);
+}
+
+export async function sdkDeleteGameLogEntry(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.delete(sdkGameLog).where(eq(sdkGameLog.id, id));
+}
+
+export async function sdkDeleteSessionGameLog(sessionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.delete(sdkGameLog).where(eq(sdkGameLog.sessionId, sessionId));
 }
