@@ -1,16 +1,17 @@
-import type { Express, Request, Response, NextFunction } from "express";
-import session from "express-session";
-import { passport } from "./googleAuth";
-import { SignJWT } from "jose";
-import { COOKIE_NAME } from "../../shared/const";
-import { getSessionCookieOptions } from "./cookies";
+import type { Express, Request, Response, NextFunction } from 'express';
+import session from 'express-session';
+import { passport } from './googleAuth';
+import { SignJWT } from 'jose';
+import { COOKIE_NAME } from '../../shared/const';
+import { getSessionCookieOptions } from './cookies';
 
-const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-change-in-production";
+const JWT_SECRET =
+  process.env.JWT_SECRET || 'fallback-secret-change-in-production';
 const SESSION_SECRET = process.env.SESSION_SECRET || JWT_SECRET;
 
 /**
  * Register Google OAuth routes
- * 
+ *
  * Routes:
  * - GET /api/auth/google - Initiates Google OAuth flow
  * - GET /api/auth/callback/google - Handles OAuth callback
@@ -24,11 +25,11 @@ export function registerGoogleAuthRoutes(app: Express) {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       },
-    })
+    }),
   );
 
   // Initialize passport
@@ -40,10 +41,10 @@ export function registerGoogleAuthRoutes(app: Express) {
    * Redirects user to Google login page
    */
   app.get(
-    "/api/auth/google",
-    passport.authenticate("google", {
-      scope: ["profile", "email"],
-    })
+    '/api/auth/google',
+    passport.authenticate('google', {
+      scope: ['profile', 'email'],
+    }),
   );
 
   /**
@@ -51,73 +52,65 @@ export function registerGoogleAuthRoutes(app: Express) {
    * Handles the redirect from Google after authentication
    */
   app.get(
-    "/api/auth/callback/google",
-    passport.authenticate("google", {
-      failureRedirect: "/login-failed",
+    '/api/auth/callback/google',
+    passport.authenticate('google', {
+      failureRedirect: '/login-failed',
       session: false, // We'll use JWT instead of sessions
     }),
     async (req: Request, res: Response) => {
       try {
-        console.log("[Google OAuth] Callback received");
         const user = req.user as any;
-        console.log("[Google OAuth] User from passport:", user ? { openId: user.openId, email: user.email, name: user.name } : "null");
 
         if (!user) {
-          console.error("[Google OAuth] No user returned from passport");
-          return res.redirect("/login-failed");
+          console.error('[Google OAuth] No user returned from passport');
+          return res.redirect('/login-failed');
         }
 
         // Create JWT token - must include openId, appId, and name for verifySession compatibility
         const token = await new SignJWT({
           openId: user.openId,
-          appId: "google-oauth", // Required by verifySession
-          name: user.name || "",
+          appId: 'google-oauth', // Required by verifySession
+          name: user.name || '',
           email: user.email,
           role: user.role,
         })
-          .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+          .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
           .setIssuedAt()
-          .setExpirationTime("7d")
+          .setExpirationTime('7d')
           .sign(new TextEncoder().encode(JWT_SECRET));
-
-        console.log("[Google OAuth] JWT token created successfully");
 
         // Set cookie with JWT
         const cookieOptions = getSessionCookieOptions(req);
-        console.log("[Google OAuth] Cookie options:", cookieOptions);
-        console.log("[Google OAuth] Request protocol:", req.protocol);
-        console.log("[Google OAuth] X-Forwarded-Proto:", req.headers["x-forwarded-proto"]);
-        
         res.cookie(COOKIE_NAME, token, {
           ...cookieOptions,
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
-        console.log("[Google OAuth] Cookie set, redirecting to homepage");
-
         // Redirect to the same origin (supports localhost dev and production)
-        // Use the referer or host header to determine the redirect URL
         const host = req.get('host') || 'localhost:3000';
-        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+        const protocol =
+          req.headers['x-forwarded-proto'] || req.protocol || 'http';
         const redirectUrl = `${protocol}://${host}/`;
-        console.log("[Google OAuth] Redirecting to:", redirectUrl);
+        console.log(
+          `[Google OAuth] Login successful: ${user.email} (role: ${user.role})`,
+        );
         res.redirect(redirectUrl);
       } catch (error) {
-        console.error("[Google OAuth] Error in callback:", error);
-        res.redirect("/login-failed");
+        console.error('[Google OAuth] Error in callback:', error);
+        res.redirect('/login-failed');
       }
-    }
+    },
   );
 
   /**
    * Logout endpoint
    * Clears the session cookie
    */
-  app.get("/api/auth/logout", (req: Request, res: Response) => {
+  app.get('/api/auth/logout', (req: Request, res: Response) => {
     const cookieOptions = getSessionCookieOptions(req);
     res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-    res.redirect("/");
+    res.redirect('/');
   });
 
-  console.log("[Google OAuth] Routes registered");
+  console.log('[Google OAuth] Routes registered');
 }
