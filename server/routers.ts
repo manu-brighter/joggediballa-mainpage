@@ -275,9 +275,10 @@ export const appRouter = router({
   // EVENTS
   // ============================================
   events: router({
-    list: publicProcedure.query(async ({ ctx }) => {
-      // Unauthenticated users only see published events
-      return db.getAllEvents(!ctx.user);
+    list: publicProcedure.query(async () => {
+      // isPublished defaults to false and there is no publish UI yet —
+      // show all events until a proper draft/publish workflow exists
+      return db.getAllEvents(false);
     }),
 
     getById: publicProcedure
