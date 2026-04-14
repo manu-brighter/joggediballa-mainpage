@@ -16,10 +16,10 @@ Produce thorough, human-readable documentation for a codebase area by running sp
 
 | Folder | Role |
 |--------|------|
-| `.ai/` | Ephemeral scratch space. All in-progress agent output lands here. Treat as gitignore-friendly working directory. Never reference `.ai/` files in commit messages or permanent docs. |
-| `docs/` | Permanent, published folder. Only promoted outputs live here. |
+| `.ai/` | Ephemeral scratch space intended for agent-written intermediate files. Only use if agents can actually write files to the shared filesystem. |
+| `docs/` | Permanent, published folder. Final outputs live here. |
 
-`.ai/` is expected to be listed in `.gitignore`. If it is not, remind the user to add it.
+**Important:** In some environments (including the default Claude Code sandbox), subagent `Write` tool calls do not persist to the shared filesystem. When this happens, the orchestrator must write all files directly. In that case, **skip `.ai/` entirely and write directly to `docs/`** — there is no point staging files in a folder that is immediately copied away.
 
 ---
 
@@ -146,9 +146,9 @@ Suggested final document structure:
 ## References      ← list .ai/ source files used
 ```
 
-#### 3b. Promote
+#### 3b. Promote (only if `.ai/` staging was used)
 
-Move all six (or more) files from `.ai/` to `docs/`:
+If files were written to `.ai/` by agents, move them to `docs/`. If the orchestrator wrote directly to `docs/`, this step is a no-op.
 
 ```
 docs/
@@ -161,7 +161,7 @@ docs/
   final-authentication.md    ← primary deliverable
 ```
 
-The move must be a filesystem rename/move — do not copy-and-delete unless rename is unavailable. After promotion, `.ai/` may be empty or contain unrelated in-progress work; do not delete `.ai/` itself.
+Use filesystem rename/move (not copy-and-delete) when moving. After promotion, `.ai/` may be empty; do not delete `.ai/` itself.
 
 #### 3c. One-time Git Confirmation
 
