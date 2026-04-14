@@ -1,0 +1,77 @@
+# TODO:
+
+## Aufgeschobene technische Verbesserungen (recherchiert, bewusst zurückgestellt)
+
+- [ ] Tailwind v4 class renames durchführen (shadow-sm→shadow-xs, ring→ring-3, bg-opacity-\*→/opacity-Syntax, etc.) — Risiko: silent UI-Regressions in 50+ Komponenten, erst mit visuellem Test machen
+- [ ] React 19 useActionState für Form-Loading-States einführen (ersetzt manuelle isLoading/isError States)
+- [ ] Drizzle Relations API v2 einführen (verhindert N+1 Queries bei komplexen Joins, db.query.\* statt db.select())
+- [ ] TypeScript: Split tsconfig in tsconfig.app.json (Vite) + tsconfig.server.json (Node/ESM) für sauberere Typ-Separation
+- [ ] verbatimModuleSyntax: true in tsconfig (erzwingt import type für reine Type-Imports)
+- [x] Nächstes Event sichtbar direkt auf Startseite oben
+- [x] scharfes S ersetzen mit ss
+- [x] Startseite Home Muster von Becher in hintergrund
+- [x] Logo auf Startseite schwarz (vllt lightmode weiss)
+- [x] Gedankenstriche raus nehmen
+- [x] Gönner zu sponsoring
+- [x] "Fotos © Manuel Heller | Für Anfragen: Kontakt" grösser machen
+- [x] preis anpassen sponsoring (50.- | 100.-)
+- [x] Benutzerverwaltung Buttons im Admin Dashboard auf mobile ausserhalb der Card
+- [x] shotcounter audit log braucht noch teamname
+- [x] Audit Log umbennen zu Shotcounter Audit Log
+- [x] delete team und create team soll auch im audit log erscheinen
+- [x] benutzerverwaltung detail ansicht UI fixen in mobile view
+- [x] datum bearbeitbar machen wieder entfernen weil zu viel komplexität durch das rein kommt ins berechnen
+- [x] bug bei löschen vom team im shotcounter, siehe whatsapp fehler von sämi
+- [x] bestätigungs butten für gönnermitglieder nach zahlung und auch bei reaktivierung von abgelaufene gönner
+- [x] abgelaufene reaktiveren immer ab aktuellem datum
+- [x] provisorische mitglieder liste
+- [x] einzahlungsschein als PDF
+- [x] neue mitglieder mit einem flag markieren
+- [x] bei allen formular errors aussagekräftige error messages einbauen
+- [x] improve loading: wenn ich von der event seite auf eine andere gehen lädt alles sehr langsam, da es die bilder der event seite noch weiter laden will nach dem switch
+- [x] Team tab vllt auch mit compressed previews der bilder ausstatten welche zuerst die previes lädt und erst dann die grossen bilder
+- [x] description etc edit im team tab can't be left empty
+- [x] icon auf google doesn't work
+- [x] die ganzen berechtigungen nochmals testen und durchgehen
+- [x] Dienstleistungen Text oben entfernen
+- [x] DB zugriff einschränken, nur bestimmte IP zulassen
+- [x] es passiert immer mal wieder dass ein login (google account) der bereits registriert ist und auch rechte hat, plötzlich seine rechte verliert und ich diese neu setzen muss. das muss gefixt werden
+- [x] die visibility vom Tab Goennermitglieder in der Navbar muss sich auch anhand der rechte richten
+- [x] aktuell wird, wenn ich bilder auf der website mithilfe des UIs lösche, nur der DB eintrag gelöscht, aber das bild bleibt im storage auf dem server. das muss gefixt werden
+- [x] auf google kommt bei den suchergebnissen zuoberst due website als: "Jogge di Balla - Event- und Kulturverein seit 2022" welches auf die homepage zeigt, was auch gut ist. aber danach kommt als: "und Kulturverein seit 2022 - Jogge di Balla - Event" welches auf die sponsoren seite zeigt was irgendwie nicht viel sinn ergibt und auch der erste teil des satzes fehlt.
+- [x] das favicon wird bei google noch nicht korrekt in den suchergebnissen angezeigt, kannst du kontrollieren ob das alles korrekt ist. Aktuell wird ein favicon mit dem google logo angezeigt.
+- [x] das favicon in den google suchergebnissen ist aktuell das logo auf weissem hintergrund, kann man dass auch auf dieser hintergrundfarbe machen #002f46 / rgba(0, 47, 70)? Wichtig dabei ist dass, das favicon welches oben an der taskbar ist bei einem geöffneten tab weiterhin mit durchsichtigem hintergrund bleibt. Also allgemein zuerst durchsichtig, aber wenn ein hintergrund nötig ist (wie bei den google suchergebnissen, dann lieber #002f46 / rgba(0, 47, 70) statt weiss)
+- [x] gönnermitglieder brauchen ein neues feld für gönnerbeitrag in CHF welches defaulkt auf 20.- ist wenn nicht gesetzt
+- [x] Alle Gönnerbeiträge der aktuell aktiven Gönner zusammengerechnet oben anzeigen.
+- [x] Hover over highlight der Gönnerliste ist falsch.
+  - Die bald endenden Gönner sind korrekt.
+  - Die normalen aktiven Gönner sollen nicht rot sondern gleich wie früher mit einem türkis rand highlightet werden
+  - die abgelaufenen rönner sollen mit einem roten rand gehighlightet werden
+  - und die provisorischen gönner sind auch korrekt
+- [x] die buttons auf den einzelnen gönnermitgliedern werden alle in rot (destructive) highlighted obwohl es eigentlich nur der delete button sein sollte. kannst du das korrigieren und die anderen buttons einfach mit einem leichten grau highlighten
+- [x] ich hätte gerne dass ich alle popups auf der gesamten seite auch mit der entertaste bestätigen kann
+- [x] das button ui der provisorischen gönnermitglieder ist zu breit für den mobile view, kannst du das so anpassen dass es auch auf mobile nicht zu breit ist
+- [x] Navigation Sichtbarkeit ist noch sichtbar für nicht eingeloggt wenn sichtbarkeit aus
+- [x] new page: anwesenheistsliste für meetings
+- [ ] goennermitglieder visibility und goennermitglieder bearbeiten solle zwei unterschiedliche rechte sein
+- [ ] goennermitglieder soll eine ansicht haben wo man nichts bearbeiten kann, aber die volle liste mit seinen daten sehen kann
+- [ ] die "no edit"-goennermitglieder liste soll auch für visitor togglebar sein wie z.B. sponsoren, events etc. auch
+- [x] das popup für die Gönnermitgliedschaft Einzahlung hat eine sehr hässliche scrollbar, bitte fixen
+- [x] wenn ein tab im admin dashboard bei Navigation Sichtbarkeit deaktiviert ist dann solten auch alle links die zu diesem tab führen nicht mehr sichtbar sein, z.B. der link zu den events auf der startseite
+- [x] scrollbar in der benutzerverwaltung im admin dashboard ist auch sehr hässlich, bitte fixen
+- [x] wenn ein mitglied im team tab noch kein profilbild hat, ich das mitglied bearbeiten möchte und ein profilbild hinzufüge wird dies nicht übernommen
+- [x] user visibilities nicht korrekt bei verschiedenen tabs etc.
+- [x] Button auf Homepage für nächstes Event
+- [x] Anmeldeformular für Harassenlauf + Verlinkung
+- [x] Temp/Custom Button + Admin Dashboard
+- [x] Text "Pfeiltasten zur Navigation" weg in der grossen Foto Ansicht der Events
+- [x] image previews full size trotzdem downscaled
+- [x] optimized image loading: nur previews in normal ansicht, vllt für thumbnails original images
+- [x] in der grossen foto ansicht, kleiner loader unten rechts im ecken entweder in der mitte des screens oder gar nicht anzeigen
+- [x] das preview image in der grossen foto ansicht muss nicht geblurred sein bis das original geladen ist, vllt einfach ganz leicht leicht ausgegraut und der loader drüber
+- [x] date und timepicker darkmode korrekt und ohne typescript für sämi
+- [x] number feld up und down arrows im darkmode anpassen (dunkler hintergrund und weisse pfeile)
+- [x] date und timepicker hübscher machen ohne typescript
+- [ ] Fotos verwalten view in Events & Fotos zeigt 2 Fotos pro row an aber da es nur die previews rendert ist dass dann ein wenig gross für so schlechte qualität, man kann gut auch 4-5 Fotos pro row anzeigen lassen
+- [ ] Im Events und Fotos Tab hätte ich gerne die möglichkeit Links zu den Events hinzuzufügen
+- [ ] Im Events und Fotos Tab sind die Events nach datum sortiert, von neueste bis älteste, das ist auch gut, aber wenn die Events in der Zukunft oder heute liegen, dann werden sie mit "Kommendes Event" markiert. Diese Events die so markiert sind hätte ich gerne so sortiert mit dem nächsten Event vom heutigen Datum aus zuoberst und dann weiter in die Zukunft, die bereits vergangen Events sollen aber gleich sortiert bleiben wie bisher.

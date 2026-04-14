@@ -1,0 +1,79 @@
+# CLAUDE.md — server/
+
+This file provides guidance to Claude Code when working in the `server/` directory.
+
+## Architecture
+
+```
+server/
+  _core/          # Express bootstrap, tRPC setup, auth, cookies, context
+  routers.ts      # All tRPC procedures (single file)
+  db.ts           # All database queries (single file — no ORM relations layer)
+  permissions.ts  # Role permission checks with in-memory cache (5-min TTL)
+  uploadRoutes.ts # S3 file uploads (Express routes, not tRPC)
+  attendance_router.ts  # Attendance feature (separate router, mounted in routers.ts)
+  sitemap.ts      # Sitemap Express route
+```
+
+## Procedure Types — When to Use Which
+
+| Procedure                                 | Use case                                                              |
+| ----------------------------------------- | --------------------------------------------------------------------- |
+| `publicProcedure`                         | No auth required, visible to everyone                                 |
+| `protectedProcedure`                      | Auth required, any logged-in user                                     |
+| `requirePermission("key")`                | **Preferred for new procedures** — checks DB permission for role      |
+| `adminProcedure`                          | Hardcoded admin-only (use only for admin-infrastructure, not content) |
+| `maintainerProcedure` / `editorProcedure` | Legacy — do not add new uses, prefer `requirePermission()`            |
+
+## Database Pattern
+
+`db.ts` exports plain async functions — no ORM relation objects, no query builder chained outside db.ts. The DB connection is lazy and returns `null` if `DATABASE_URL` is missing; all db functions must guard with:
+
+```typescript
+const db = await getDb();
+if (!db) {
+  console.warn('...');
+  return fallback;
+}
+```
+
+**Manual DB changes**: Schema changes are often applied directly to MySQL rather than via `pnpm db:push`. Do not assume `db:push` was run — verify the live DB reflects schema.ts before writing queries against new columns.
+
+## Testing
+
+Tests live in `server/*.test.ts`. Run with `pnpm test`.
+
+**Test pattern** — create a typed context manually, use `appRouter.createCaller(ctx)`:
+
+```typescript
+const ctx: TrpcContext = {
+  user: { id: 1, openId: "x", role: "admin", ... },
+  req: { protocol: "https", headers: {} } as TrpcContext["req"],
+  res: { clearCookie: vi.fn() } as unknown as TrpcContext["res"],
+};
+const caller = appRouter.createCaller(ctx);
+```
+
+Tests that require a live DB, real S3, or SMTP are **expected to fail in CI** (no infra). Do not mock the DB in integration tests — we've been burned by mock/prod divergence before.
+
+## S3 Upload Pattern
+
+Upload routes are Express (not tRPC) in `uploadRoutes.ts`. Each endpoint:
+
+1. Validates file MIME type with `fileMimeType.startsWith("image/")` (or `"application/pdf"` etc.)
+2. Uploads to S3 via `uploadToS3()`
+3. Stores both `xxxUrl` (public URL) and `xxxKey` (S3 key for deletion) in DB
+
+Always store the S3 key — deletion requires the key, not just the URL.
+
+## Soft Delete Convention
+
+Tables with `deletedAt: timestamp` use soft delete. Filter with `isNull(table.deletedAt)` in queries. The `shotcounterTeams` table uses soft delete; teams are never hard-deleted.
+
+## Permission Cache
+
+`permissions.ts` caches per-role permission lists with 5-min TTL. Call `clearPermissionCache()` after any mutation that changes `rolePermissions` (already done in `permissions.toggle` in routers.ts).
+
+## Rate Limiting Note
+
+tRPC batch URLs (`/api/trpc/proc1,proc2`) bypass Express route-specific rate limiters. Per-procedure rate limiting must be implemented as tRPC middleware, not Express middleware.
