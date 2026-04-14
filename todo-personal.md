@@ -1,5 +1,9 @@
 # TODO:
 
+## Offene Features (angefangen aber unvollständig)
+
+- [ ] Events: Publish/Unpublish Workflow — `isPublished` Spalte existiert (default: false), aber es gibt keine UI. Aktuell werden alle Events angezeigt. Braucht: Toggle in Event-Edit-Dialog + Filter in events.list wenn publish-Workflow fertig ist.
+
 ## Aufgeschobene technische Verbesserungen (recherchiert, bewusst zurückgestellt)
 
 - [ ] Tailwind v4 class renames durchführen (shadow-sm→shadow-xs, ring→ring-3, bg-opacity-\*→/opacity-Syntax, etc.) — Risiko: silent UI-Regressions in 50+ Komponenten, erst mit visuellem Test machen
