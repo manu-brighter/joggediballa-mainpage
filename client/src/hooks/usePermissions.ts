@@ -1,6 +1,6 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { trpc } from "@/lib/trpc";
-import { useMemo } from "react";
+import { useAuth } from '@/_core/hooks/useAuth';
+import { trpc } from '@/lib/trpc';
+import { useMemo } from 'react';
 
 /**
  * Hook to check if the current user has a specific permission
@@ -9,13 +9,14 @@ import { useMemo } from "react";
  */
 export function usePermission(permissionKey: string): boolean {
   const { user, isAuthenticated } = useAuth();
-  
+
   // Fetch user's permissions from database
-  const { data: userPermissions = [] } = trpc.permissions.getMyPermissions.useQuery(undefined, {
-    enabled: isAuthenticated && !!user,
-    staleTime: 30 * 1000, // Cache for 30 seconds (shorter for faster permission updates)
-    refetchOnMount: true, // Always refetch on component mount
-  });
+  const { data: userPermissions = [] } =
+    trpc.permissions.getMyPermissions.useQuery(undefined, {
+      enabled: isAuthenticated && !!user,
+      staleTime: 30 * 1000, // Cache for 30 seconds (shorter for faster permission updates)
+      refetchOnMount: true, // Always refetch on component mount
+    });
 
   return useMemo(() => {
     if (!isAuthenticated || !user) {
@@ -33,12 +34,13 @@ export function usePermission(permissionKey: string): boolean {
  */
 export function useUserPermissions(): string[] {
   const { user, isAuthenticated } = useAuth();
-  
-  const { data: userPermissions = [] } = trpc.permissions.getMyPermissions.useQuery(undefined, {
-    enabled: isAuthenticated && !!user,
-    staleTime: 30 * 1000,
-    refetchOnMount: true,
-  });
+
+  const { data: userPermissions = [] } =
+    trpc.permissions.getMyPermissions.useQuery(undefined, {
+      enabled: isAuthenticated && !!user,
+      staleTime: 30 * 1000,
+      refetchOnMount: true,
+    });
 
   return userPermissions;
 }

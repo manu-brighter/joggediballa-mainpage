@@ -47,7 +47,6 @@ cd joggediballa-mainpage
 ssh -L 3307:127.0.0.1:3306 root@[server-ip] -N
 ```
 
-
 ### 2. Dependencies installieren
 
 ```bash
@@ -98,6 +97,7 @@ pnpm db:push
 ### 5. Google OAuth einrichten
 
 Folge der Anleitung in `GOOGLE_OAUTH_SETUP.md` um:
+
 1. Google Cloud Projekt zu erstellen
 2. OAuth 2.0 Credentials zu generieren
 3. Authorized redirect URIs zu konfigurieren
@@ -206,10 +206,12 @@ Der Server muss hinter einem Reverse Proxy (Nginx) laufen. Die `trust proxy` Ein
 ### Cookie-Einstellungen
 
 Für HTTPS (Production):
+
 - `secure: true`
 - `sameSite: 'none'`
 
 Für HTTP (Development):
+
 - `secure: false`
 - `sameSite: 'lax'`
 

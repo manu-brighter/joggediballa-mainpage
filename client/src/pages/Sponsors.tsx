@@ -1,11 +1,17 @@
-import { useState, useRef } from "react";
-import { useLocation } from "wouter";
-import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { usePermission } from "@/hooks/usePermissions";
-import { useSEO } from "@/hooks/useSEO";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef } from 'react';
+import { useLocation } from 'wouter';
+import { trpc } from '@/lib/trpc';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { usePermission } from '@/hooks/usePermissions';
+import { useSEO } from '@/hooks/useSEO';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,15 +30,30 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { parseErrorMessage } from "@/lib/errorMessages";
-import { Heart, Gift, Trophy, ArrowRight, Plus, Trash2, ExternalLink, Upload, Image, X, Loader2, Star, Crown, Mail } from "lucide-react";
-import { Link } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { parseErrorMessage } from '@/lib/errorMessages';
+import {
+  Heart,
+  Gift,
+  Trophy,
+  ArrowRight,
+  Plus,
+  Trash2,
+  ExternalLink,
+  Upload,
+  Image,
+  X,
+  Loader2,
+  Star,
+  Crown,
+  Mail,
+} from 'lucide-react';
+import { Link } from 'wouter';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const MotionDiv = motion.div;
 
@@ -41,9 +62,12 @@ export default function Sponsors() {
   const [, navigate] = useLocation();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedSponsor, setSelectedSponsor] = useState<{ id: number; name: string } | null>(null);
-  const [name, setName] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [selectedSponsor, setSelectedSponsor] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [name, setName] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -55,11 +79,11 @@ export default function Sponsors() {
   const createSponsorMutation = trpc.sponsors.create.useMutation({
     onSuccess: () => {
       utils.sponsors.list.invalidate();
-      toast.success("Sponsor erfolgreich hinzugefügt!");
+      toast.success('Sponsor erfolgreich hinzugefügt!');
       resetForm();
       setCreateDialogOpen(false);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(parseErrorMessage(error));
     },
   });
@@ -67,29 +91,31 @@ export default function Sponsors() {
   const deleteSponsorMutation = trpc.sponsors.delete.useMutation({
     onSuccess: () => {
       utils.sponsors.list.invalidate();
-      toast.success("Sponsor gelöscht!");
+      toast.success('Sponsor gelöscht!');
       setDeleteDialogOpen(false);
       setSelectedSponsor(null);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(parseErrorMessage(error));
     },
   });
 
-  const canManageSponsors = usePermission("manage_sponsors");
+  const canManageSponsors = usePermission('manage_sponsors');
 
   // SEO Meta Tags for Google Search Results
   useSEO({
-    title: "Unsere Sponsoren - Jogge di Balla",
-    description: "Entdecke die Unternehmen und Partner, die Jogge di Balla unterstützen. Gemeinsam schaffen wir unvergessliche Events und stärken unsere Community in Brislach und dem Laufental.",
-    keywords: "Jogge di Balla, Sponsoren, Partner, Brislach, Laufental, Event-Sponsoring, Community Support",
-    ogUrl: "https://joggediballa.ch/sponsors",
-    ogImage: "https://joggediballa.ch/JoggediBalla-Logo.PNG"
+    title: 'Unsere Sponsoren - Jogge di Balla',
+    description:
+      'Entdecke die Unternehmen und Partner, die Jogge di Balla unterstützen. Gemeinsam schaffen wir unvergessliche Events und stärken unsere Community in Brislach und dem Laufental.',
+    keywords:
+      'Jogge di Balla, Sponsoren, Partner, Brislach, Laufental, Event-Sponsoring, Community Support',
+    ogUrl: 'https://joggediballa.ch/sponsors',
+    ogImage: 'https://joggediballa.ch/JoggediBalla-Logo.PNG',
   });
 
   const resetForm = () => {
-    setName("");
-    setWebsiteUrl("");
+    setName('');
+    setWebsiteUrl('');
     setLogoFile(null);
     setLogoPreview(null);
   };
@@ -99,14 +125,14 @@ export default function Sponsors() {
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Bitte wähle eine Bilddatei aus.");
+    if (!file.type.startsWith('image/')) {
+      toast.error('Bitte wähle eine Bilddatei aus.');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Das Bild darf maximal 5MB gross sein.");
+      toast.error('Das Bild darf maximal 5MB gross sein.');
       return;
     }
 
@@ -124,13 +150,13 @@ export default function Sponsors() {
     setLogoFile(null);
     setLogoPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
   const handleCreateSponsor = async () => {
     if (!name.trim()) {
-      toast.error("Bitte gib einen Namen ein");
+      toast.error('Bitte gib einen Namen ein');
       return;
     }
 
@@ -143,16 +169,16 @@ export default function Sponsors() {
       // Upload logo if provided
       if (logoFile) {
         const formData = new FormData();
-        formData.append("file", logoFile);
-        formData.append("type", "sponsor");
+        formData.append('file', logoFile);
+        formData.append('type', 'sponsor');
 
-        const response = await fetch("/api/upload/sponsor-logo", {
-          method: "POST",
+        const response = await fetch('/api/upload/sponsor-logo', {
+          method: 'POST',
           body: formData,
         });
 
         if (!response.ok) {
-          throw new Error("Logo-Upload fehlgeschlagen");
+          throw new Error('Logo-Upload fehlgeschlagen');
         }
 
         const data = await response.json();
@@ -168,8 +194,8 @@ export default function Sponsors() {
         logoKey,
       });
     } catch (error) {
-      console.error("Error creating sponsor:", error);
-      toast.error("Fehler beim Erstellen des Sponsors");
+      console.error('Error creating sponsor:', error);
+      toast.error('Fehler beim Erstellen des Sponsors');
     } finally {
       setUploading(false);
     }
@@ -201,17 +227,21 @@ export default function Sponsors() {
           <span className="gradient-text">Unsere Sponsoren</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Ein grosses Dankeschön an alle, die uns unterstützen und unsere Events möglich machen!
+          Ein grosses Dankeschön an alle, die uns unterstützen und unsere Events
+          möglich machen!
         </p>
       </MotionDiv>
 
       {/* Add Sponsor Button */}
       {canManageSponsors && (
         <div className="flex justify-center">
-          <Dialog open={createDialogOpen} onOpenChange={(open) => {
-            setCreateDialogOpen(open);
-            if (!open) resetForm();
-          }}>
+          <Dialog
+            open={createDialogOpen}
+            onOpenChange={open => {
+              setCreateDialogOpen(open);
+              if (!open) resetForm();
+            }}
+          >
             <DialogTrigger asChild>
               <Button size="lg" className="btn-animate gap-2">
                 <Plus className="h-5 w-5" />
@@ -222,17 +252,20 @@ export default function Sponsors() {
               <DialogHeader>
                 <DialogTitle>Neuen Sponsor hinzufügen</DialogTitle>
                 <DialogDescription>
-                  Füge einen neuen Sponsor mit optionalem Logo und Website-Link hinzu.
+                  Füge einen neuen Sponsor mit optionalem Logo und Website-Link
+                  hinzu.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-6 py-4">
                 {/* Name Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="name">
+                    Name <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={e => setName(e.target.value)}
                     placeholder="Sponsor-Name"
                   />
                 </div>
@@ -244,7 +277,7 @@ export default function Sponsors() {
                     id="website"
                     type="url"
                     value={websiteUrl}
-                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    onChange={e => setWebsiteUrl(e.target.value)}
                     placeholder="https://example.com"
                   />
                 </div>
@@ -255,7 +288,7 @@ export default function Sponsors() {
                   <p className="text-xs text-muted-foreground mb-2">
                     PNG mit transparentem Hintergrund empfohlen. Max. 5MB.
                   </p>
-                  
+
                   {logoPreview ? (
                     <div className="relative">
                       <div className="border-2 border-dashed border-border rounded-xl p-4 bg-muted/30">
@@ -292,12 +325,16 @@ export default function Sponsors() {
                         <div className="p-3 rounded-full bg-muted">
                           <Upload className="h-6 w-6" />
                         </div>
-                        <span className="text-sm font-medium">Klicken zum Hochladen</span>
-                        <span className="text-xs">PNG, JPG, SVG (max. 5MB)</span>
+                        <span className="text-sm font-medium">
+                          Klicken zum Hochladen
+                        </span>
+                        <span className="text-xs">
+                          PNG, JPG, SVG (max. 5MB)
+                        </span>
                       </div>
                     </button>
                   )}
-                  
+
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -308,12 +345,17 @@ export default function Sponsors() {
                 </div>
               </div>
               <DialogFooter className="gap-2 sm:gap-0">
-                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setCreateDialogOpen(false)}
+                >
                   Abbrechen
                 </Button>
                 <Button
                   onClick={handleCreateSponsor}
-                  disabled={uploading || createSponsorMutation.isPending || !name.trim()}
+                  disabled={
+                    uploading || createSponsorMutation.isPending || !name.trim()
+                  }
                   className="gap-2"
                 >
                   {uploading || createSponsorMutation.isPending ? (
@@ -322,7 +364,7 @@ export default function Sponsors() {
                       Lädt...
                     </>
                   ) : (
-                    "Hinzufügen"
+                    'Hinzufügen'
                   )}
                 </Button>
               </DialogFooter>
@@ -379,10 +421,17 @@ export default function Sponsors() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    <CardTitle className="text-center text-sm truncate">{sponsor.name}</CardTitle>
+                    <CardTitle className="text-center text-sm truncate">
+                      {sponsor.name}
+                    </CardTitle>
                     <div className="flex items-center justify-center gap-2 mt-3">
                       {sponsor.websiteUrl && (
-                        <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                        >
                           <a
                             href={sponsor.websiteUrl}
                             target="_blank"
@@ -398,7 +447,12 @@ export default function Sponsors() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => openDeleteDialog({ id: sponsor.id, name: sponsor.name })}
+                          onClick={() =>
+                            openDeleteDialog({
+                              id: sponsor.id,
+                              name: sponsor.name,
+                            })
+                          }
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -426,16 +480,18 @@ export default function Sponsors() {
                 <Heart className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold">Werde Sponsor von Jogge di Balla</h2>
+                <h2 className="text-2xl md:text-3xl font-bold">
+                  Werde Sponsor von Jogge di Balla
+                </h2>
                 <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-                  Unterstütze unseren Verein und profitiere von unseren Werbe-Vorteilen!
+                  Unterstütze unseren Verein und profitiere von unseren
+                  Werbe-Vorteilen!
                 </p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
                 {/* Standard Package */}
                 <div className="bg-background/50 backdrop-blur-sm rounded-xl p-6 border border-border hover:border-primary/30 transition-all ">
-
                   {/* Header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -444,8 +500,12 @@ export default function Sponsors() {
                     </div>
                     {/* Preis */}
                     <div className="text-right">
-                      <div className="text-lg font-bold whitespace-nowrap">CHF 50.-</div>
-                      <div className="text-xs text-muted-foreground">pro Jahr</div>
+                      <div className="text-lg font-bold whitespace-nowrap">
+                        CHF 50.-
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        pro Jahr
+                      </div>
                     </div>
                   </div>
 
@@ -457,7 +517,7 @@ export default function Sponsors() {
                     </li>
                   </ul>
                 </div>
-                
+
                 {/* Premium Package */}
                 <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl p-6 border-2 border-primary/30 hover:border-primary/50 transition-all relative">
                   <div className="absolute -top-3 right-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
@@ -471,8 +531,12 @@ export default function Sponsors() {
                     </div>
                     {/* Preis */}
                     <div className="text-right">
-                      <div className="text-lg font-bold whitespace-nowrap">CHF 100.-</div>
-                      <div className="text-xs text-muted-foreground">pro Jahr</div>
+                      <div className="text-lg font-bold whitespace-nowrap">
+                        CHF 100.-
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        pro Jahr
+                      </div>
                     </div>
                   </div>
                   {/* Liste */}
@@ -492,7 +556,7 @@ export default function Sponsors() {
                   </ul>
                 </div>
               </div>
-              
+
               <Button asChild size="lg" className="btn-animate gap-2">
                 <Link href="/contact">
                   <Mail className="h-5 w-5" />
@@ -517,7 +581,9 @@ export default function Sponsors() {
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Gift className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl md:text-3xl">Werde Gönnermitglied!</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl">
+              Werde Gönnermitglied!
+            </CardTitle>
             <CardDescription className="text-lg">
               Unterstütze Jogge di Balla und profitiere von exklusiven Vorteilen
             </CardDescription>
@@ -544,7 +610,7 @@ export default function Sponsors() {
             <Button
               size="lg"
               className="btn-animate"
-              onClick={() => navigate("/contact")}
+              onClick={() => navigate('/contact')}
             >
               Jetzt Gönner werden, schreib uns!
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -559,8 +625,8 @@ export default function Sponsors() {
           <AlertDialogHeader>
             <AlertDialogTitle>Sponsor löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Möchtest du den Sponsor "{selectedSponsor?.name}" wirklich löschen? 
-              Diese Aktion kann nicht rückgängig gemacht werden.
+              Möchtest du den Sponsor "{selectedSponsor?.name}" wirklich
+              löschen? Diese Aktion kann nicht rückgängig gemacht werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -575,7 +641,7 @@ export default function Sponsors() {
                   Löschen...
                 </>
               ) : (
-                "Löschen"
+                'Löschen'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,13 +1,13 @@
 /**
  * Google Maps API Integration for Manus WebDev Templates
- * 
+ *
  * Main function: makeRequest<T>(endpoint, params) - Makes authenticated requests to Google Maps APIs
  * All credentials are automatically injected. Array parameters use | as separator.
- * 
+ *
  * See API examples below the type definitions for usage patterns.
  */
 
-import { ENV } from "./env";
+import { ENV } from './env';
 
 // ============================================================================
 // Configuration
@@ -24,12 +24,12 @@ function getMapsConfig(): MapsConfig {
 
   if (!baseUrl || !apiKey) {
     throw new Error(
-      "Google Maps proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
+      'Google Maps proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY',
     );
   }
 
   return {
-    baseUrl: baseUrl.replace(/\/+$/, ""),
+    baseUrl: baseUrl.replace(/\/+$/, ''),
     apiKey,
   };
 }
@@ -39,13 +39,13 @@ function getMapsConfig(): MapsConfig {
 // ============================================================================
 
 interface RequestOptions {
-  method?: "GET" | "POST";
+  method?: 'GET' | 'POST';
   body?: Record<string, unknown>;
 }
 
 /**
  * Make authenticated requests to Google Maps APIs
- * 
+ *
  * @param endpoint - The API endpoint (e.g., "/maps/api/geocode/json")
  * @param params - Query parameters for the request
  * @param options - Additional request options
@@ -54,7 +54,7 @@ interface RequestOptions {
 export async function makeRequest<T = unknown>(
   endpoint: string,
   params: Record<string, unknown> = {},
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<T> {
   const { baseUrl, apiKey } = getMapsConfig();
 
@@ -62,7 +62,7 @@ export async function makeRequest<T = unknown>(
   const url = new URL(`${baseUrl}/v1/maps/proxy${endpoint}`);
 
   // Add API key as query parameter (standard Google Maps API authentication)
-  url.searchParams.append("key", apiKey);
+  url.searchParams.append('key', apiKey);
 
   // Add other query parameters
   Object.entries(params).forEach(([key, value]) => {
@@ -72,9 +72,9 @@ export async function makeRequest<T = unknown>(
   });
 
   const response = await fetch(url.toString(), {
-    method: options.method || "GET",
+    method: options.method || 'GET',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
@@ -82,7 +82,7 @@ export async function makeRequest<T = unknown>(
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `Google Maps API request failed (${response.status} ${response.statusText}): ${errorText}`
+      `Google Maps API request failed (${response.status} ${response.statusText}): ${errorText}`,
     );
   }
 
@@ -93,9 +93,9 @@ export async function makeRequest<T = unknown>(
 // Type Definitions
 // ============================================================================
 
-export type TravelMode = "driving" | "walking" | "bicycling" | "transit";
-export type MapType = "roadmap" | "satellite" | "terrain" | "hybrid";
-export type SpeedUnit = "KPH" | "MPH";
+export type TravelMode = 'driving' | 'walking' | 'bicycling' | 'transit';
+export type MapType = 'roadmap' | 'satellite' | 'terrain' | 'hybrid';
+export type SpeedUnit = 'KPH' | 'MPH';
 
 export type LatLng = {
   lat: number;
@@ -313,7 +313,3 @@ export type RoadsResult = {
  * Output: Image URL (not JSON) - use directly in <img src={url} />
  * Note: Construct URL manually with getMapsConfig() for auth
  */
-
-
-
-

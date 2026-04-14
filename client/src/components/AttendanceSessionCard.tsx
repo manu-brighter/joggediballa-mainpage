@@ -1,10 +1,25 @@
-import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, ClipboardList, Pencil, Trash2, Eye, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { trpc } from '@/lib/trpc';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Calendar,
+  ClipboardList,
+  Pencil,
+  Trash2,
+  Eye,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const MotionCard = motion(Card);
 
@@ -12,7 +27,7 @@ interface Session {
   id: number;
   date: Date;
   title: string;
-  type: "meeting" | "event";
+  type: 'meeting' | 'event';
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -46,9 +61,9 @@ export function AttendanceSessionCard({
   });
 
   // Calculate attendance stats
-  const presentCount = records.filter((r) => r.status === "present").length;
-  const partialCount = records.filter((r) => r.status === "partial").length;
-  const absentCount = records.filter((r) => r.status === "absent").length;
+  const presentCount = records.filter(r => r.status === 'present').length;
+  const partialCount = records.filter(r => r.status === 'partial').length;
+  const absentCount = records.filter(r => r.status === 'absent').length;
   const totalMembers = members.length;
   const recordedCount = records.length;
   const actuallyPresentCount = presentCount + partialCount; // Only count present + partial
@@ -61,8 +76,8 @@ export function AttendanceSessionCard({
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "hover:shadow-lg transition-shadow",
-        session.type === "event" && "border-teal-500 border-2"
+        'hover:shadow-lg transition-shadow',
+        session.type === 'event' && 'border-teal-500 border-2',
       )}
     >
       <CardHeader>
@@ -72,26 +87,24 @@ export function AttendanceSessionCard({
             <CardDescription className="space-y-1">
               <div className="flex items-center gap-2">
                 <Calendar className="h-3 w-3" />
-                {new Date(session.date).toLocaleDateString("de-CH", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
+                {new Date(session.date).toLocaleDateString('de-CH', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
                 })}
               </div>
               {session.notes && (
-                <div className="text-xs line-clamp-2">
-                  {session.notes}
-                </div>
+                <div className="text-xs line-clamp-2">{session.notes}</div>
               )}
             </CardDescription>
           </div>
           <Badge
-            variant={session.type === "event" ? "default" : "secondary"}
+            variant={session.type === 'event' ? 'default' : 'secondary'}
             className={cn(
-              session.type === "event" && "bg-teal-500 hover:bg-teal-600"
+              session.type === 'event' && 'bg-teal-500 hover:bg-teal-600',
             )}
           >
-            {session.type === "event" ? "Event" : "Meeting"}
+            {session.type === 'event' ? 'Event' : 'Meeting'}
           </Badge>
         </div>
       </CardHeader>
@@ -100,7 +113,9 @@ export function AttendanceSessionCard({
         {recordedCount > 0 && (
           <div className="mb-4 space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Anwesenheit ({actuallyPresentCount}/{totalMembers})</span>
+              <span>
+                Anwesenheit ({actuallyPresentCount}/{totalMembers})
+              </span>
             </div>
             <div className="flex gap-2">
               {presentCount > 0 && (
@@ -124,18 +139,21 @@ export function AttendanceSessionCard({
             </div>
             {/* Member Names Preview */}
             <div className="flex flex-wrap gap-1 mt-2">
-              {records.map((record) => {
-                const member = members.find((m) => m.id === record.memberId);
+              {records.map(record => {
+                const member = members.find(m => m.id === record.memberId);
                 if (!member) return null;
                 return (
                   <Badge
                     key={record.id}
                     variant="outline"
                     className={cn(
-                      "text-xs",
-                      record.status === "present" && "border-green-500 text-green-700 dark:text-green-400",
-                      record.status === "partial" && "border-orange-500 text-orange-700 dark:text-orange-400",
-                      record.status === "absent" && "border-red-500 text-red-700 dark:text-red-400"
+                      'text-xs',
+                      record.status === 'present' &&
+                        'border-green-500 text-green-700 dark:text-green-400',
+                      record.status === 'partial' &&
+                        'border-orange-500 text-orange-700 dark:text-orange-400',
+                      record.status === 'absent' &&
+                        'border-red-500 text-red-700 dark:text-red-400',
                     )}
                   >
                     {member.name}

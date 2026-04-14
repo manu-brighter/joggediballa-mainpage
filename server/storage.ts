@@ -13,8 +13,10 @@ function isSelfHosted(): boolean {
 }
 
 function getSelfHostedConfig(): { uploadDir: string; publicUrl: string } {
-  const uploadDir = process.env.UPLOAD_DIR || '/var/www/joggediballa-mainpage/uploads';
-  const publicUrl = process.env.PUBLIC_UPLOAD_URL || 'https://joggediballa.ch/uploads';
+  const uploadDir =
+    process.env.UPLOAD_DIR || '/var/www/joggediballa-mainpage/uploads';
+  const publicUrl =
+    process.env.PUBLIC_UPLOAD_URL || 'https://joggediballa.ch/uploads';
   return { uploadDir, publicUrl };
 }
 
@@ -24,55 +26,55 @@ function getStorageConfig(): StorageConfig {
 
   if (!baseUrl || !apiKey) {
     throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
+      'Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY',
     );
   }
 
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
+  return { baseUrl: baseUrl.replace(/\/+$/, ''), apiKey };
 }
 
 function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
+  const url = new URL('v1/storage/upload', ensureTrailingSlash(baseUrl));
+  url.searchParams.set('path', normalizeKey(relKey));
   return url;
 }
 
 async function buildDownloadUrl(
   baseUrl: string,
   relKey: string,
-  apiKey: string
+  apiKey: string,
 ): Promise<string> {
   const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl)
+    'v1/storage/downloadUrl',
+    ensureTrailingSlash(baseUrl),
   );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
+  downloadApiUrl.searchParams.set('path', normalizeKey(relKey));
   const response = await fetch(downloadApiUrl, {
-    method: "GET",
+    method: 'GET',
     headers: buildAuthHeaders(apiKey),
   });
   return (await response.json()).url;
 }
 
 function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
+  return value.endsWith('/') ? value : `${value}/`;
 }
 
 function normalizeKey(relKey: string): string {
-  return relKey.replace(/^\/+/, "");
+  return relKey.replace(/^\/+/, '');
 }
 
 function toFormData(
   data: Buffer | Uint8Array | string,
   contentType: string,
-  fileName: string
+  fileName: string,
 ): FormData {
   const blob =
-    typeof data === "string"
+    typeof data === 'string'
       ? new Blob([data], { type: contentType })
       : new Blob([data as any], { type: contentType });
   const form = new FormData();
-  form.append("file", blob, fileName || "file");
+  form.append('file', blob, fileName || 'file');
   return form;
 }
 
@@ -84,29 +86,32 @@ function buildAuthHeaders(apiKey: string): HeadersInit {
 async function storagePutLocal(
   relKey: string,
   data: Buffer | Uint8Array | string,
-  contentType = "application/octet-stream"
+  contentType = 'application/octet-stream',
 ): Promise<{ key: string; url: string }> {
   const { uploadDir, publicUrl } = getSelfHostedConfig();
   const key = normalizeKey(relKey);
   const filePath = path.join(uploadDir, key);
-  
+
   // Ensure directory exists
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  
+
   // Write file
-  const buffer = typeof data === 'string' ? Buffer.from(data) : Buffer.from(data);
+  const buffer =
+    typeof data === 'string' ? Buffer.from(data) : Buffer.from(data);
   fs.writeFileSync(filePath, buffer);
-  
+
   // Build public URL
   const url = `${publicUrl.replace(/\/+$/, '')}/${key}`;
-  
+
   return { key, url };
 }
 
-async function storageGetLocal(relKey: string): Promise<{ key: string; url: string }> {
+async function storageGetLocal(
+  relKey: string,
+): Promise<{ key: string; url: string }> {
   const { publicUrl } = getSelfHostedConfig();
   const key = normalizeKey(relKey);
   const url = `${publicUrl.replace(/\/+$/, '')}/${key}`;
@@ -117,14 +122,14 @@ async function storageGetLocal(relKey: string): Promise<{ key: string; url: stri
 async function storagePutS3(
   relKey: string,
   data: Buffer | Uint8Array | string,
-  contentType = "application/octet-stream"
+  contentType = 'application/octet-stream',
 ): Promise<{ key: string; url: string }> {
   const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
   const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
+  const formData = toFormData(data, contentType, key.split('/').pop() ?? key);
   const response = await fetch(uploadUrl, {
-    method: "POST",
+    method: 'POST',
     headers: buildAuthHeaders(apiKey),
     body: formData,
   });
@@ -132,14 +137,16 @@ async function storagePutS3(
   if (!response.ok) {
     const message = await response.text().catch(() => response.statusText);
     throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
+      `Storage upload failed (${response.status} ${response.statusText}): ${message}`,
     );
   }
   const url = (await response.json()).url;
   return { key, url };
 }
 
-async function storageGetS3(relKey: string): Promise<{ key: string; url: string }> {
+async function storageGetS3(
+  relKey: string,
+): Promise<{ key: string; url: string }> {
   const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
   return {
@@ -152,7 +159,7 @@ async function storageGetS3(relKey: string): Promise<{ key: string; url: string 
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
-  contentType = "application/octet-stream"
+  contentType = 'application/octet-stream',
 ): Promise<{ key: string; url: string }> {
   if (isSelfHosted()) {
     return storagePutLocal(relKey, data, contentType);
@@ -160,7 +167,9 @@ export async function storagePut(
   return storagePutS3(relKey, data, contentType);
 }
 
-export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
+export async function storageGet(
+  relKey: string,
+): Promise<{ key: string; url: string }> {
   if (isSelfHosted()) {
     return storageGetLocal(relKey);
   }
@@ -172,7 +181,7 @@ async function storageDeleteLocal(relKey: string): Promise<void> {
   const { uploadDir } = getSelfHostedConfig();
   const key = normalizeKey(relKey);
   const filePath = path.join(uploadDir, key);
-  
+
   // Check if file exists before deleting
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
@@ -185,32 +194,34 @@ async function storageDeleteLocal(relKey: string): Promise<void> {
 async function storageDeleteS3(relKey: string): Promise<void> {
   const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
-  
-  const deleteUrl = new URL("v1/storage/delete", ensureTrailingSlash(baseUrl));
-  deleteUrl.searchParams.set("path", key);
-  
+
+  const deleteUrl = new URL('v1/storage/delete', ensureTrailingSlash(baseUrl));
+  deleteUrl.searchParams.set('path', key);
+
   const response = await fetch(deleteUrl, {
-    method: "DELETE",
+    method: 'DELETE',
     headers: buildAuthHeaders(apiKey),
   });
 
   if (!response.ok) {
     const message = await response.text().catch(() => response.statusText);
-    console.error(`[Storage] S3 delete failed (${response.status}): ${message}`);
+    console.error(
+      `[Storage] S3 delete failed (${response.status}): ${message}`,
+    );
     throw new Error(
-      `Storage delete failed (${response.status} ${response.statusText}): ${message}`
+      `Storage delete failed (${response.status} ${response.statusText}): ${message}`,
     );
   }
-  
+
   console.log(`[Storage] Deleted S3 file: ${key}`);
 }
 
 export async function storageDelete(relKey: string): Promise<void> {
   if (!relKey) {
-    console.warn("[Storage] Attempted to delete empty key, skipping");
+    console.warn('[Storage] Attempted to delete empty key, skipping');
     return;
   }
-  
+
   try {
     if (isSelfHosted()) {
       await storageDeleteLocal(relKey);

@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Shield } from 'lucide-react';
 
 export default function Datenschutz() {
   return (
@@ -19,9 +19,10 @@ export default function Datenschutz() {
             <div>
               <h3 className="font-semibold mb-2">1. Allgemeine Hinweise</h3>
               <p className="text-muted-foreground">
-                Der Schutz Ihrer persönlichen Daten ist uns ein wichtiges Anliegen.
-                In dieser Datenschutzerklärung informieren wir Sie darüber, wie wir
-                personenbezogene Daten im Rahmen dieser Website bearbeiten.
+                Der Schutz Ihrer persönlichen Daten ist uns ein wichtiges
+                Anliegen. In dieser Datenschutzerklärung informieren wir Sie
+                darüber, wie wir personenbezogene Daten im Rahmen dieser Website
+                bearbeiten.
               </p>
             </div>
 
@@ -31,9 +32,12 @@ export default function Datenschutz() {
                 Verantwortlich für die Datenbearbeitung auf dieser Website ist:
               </p>
               <p className="mt-2">
-                Jogge di Balla<br />
-                Martisackerweg 18<br />
-                4203 Grellingen, Schweiz<br />
+                Jogge di Balla
+                <br />
+                Martisackerweg 18
+                <br />
+                4203 Grellingen, Schweiz
+                <br />
                 E-Mail: joggediballa@gmail.com
               </p>
             </div>
@@ -64,8 +68,9 @@ export default function Datenschutz() {
                   <li>Referrer URL</li>
                 </ul>
                 <p>
-                  Diese Daten werden nicht mit anderen Datenquellen zusammengeführt
-                  und nach angemessener Zeit automatisch gelöscht.
+                  Diese Daten werden nicht mit anderen Datenquellen
+                  zusammengeführt und nach angemessener Zeit automatisch
+                  gelöscht.
                 </p>
               </div>
             </div>
@@ -73,60 +78,66 @@ export default function Datenschutz() {
             <div>
               <h3 className="font-semibold mb-2">5. Kontaktformular</h3>
               <p className="text-muted-foreground">
-                Wenn Sie uns per Kontaktformular kontaktieren, werden die von Ihnen
-                angegebenen Daten (z. B. Name, E-Mail-Adresse, Nachricht) zur
-                Bearbeitung Ihrer Anfrage gespeichert. Diese Daten werden nicht
-                an Dritte weitergegeben und ausschliesslich zur Bearbeitung Ihres
-                Anliegens verwendet.
+                Wenn Sie uns per Kontaktformular kontaktieren, werden die von
+                Ihnen angegebenen Daten (z. B. Name, E-Mail-Adresse, Nachricht)
+                zur Bearbeitung Ihrer Anfrage gespeichert. Diese Daten werden
+                nicht an Dritte weitergegeben und ausschliesslich zur
+                Bearbeitung Ihres Anliegens verwendet.
               </p>
             </div>
 
             <div>
               <h3 className="font-semibold mb-2">6. Ihre Rechte</h3>
               <p className="text-muted-foreground">
-                Sie haben im Rahmen der geltenden Datenschutzgesetze das Recht auf
-                Auskunft über die zu Ihrer Person gespeicherten Daten sowie auf
-                Berichtigung oder Löschung dieser Daten. Anfragen richten Sie
-                bitte an die oben angegebene Kontaktadresse.
+                Sie haben im Rahmen der geltenden Datenschutzgesetze das Recht
+                auf Auskunft über die zu Ihrer Person gespeicherten Daten sowie
+                auf Berichtigung oder Löschung dieser Daten. Anfragen richten
+                Sie bitte an die oben angegebene Kontaktadresse.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">7. Fotografie an Veranstaltungen</h3>
+              <h3 className="font-semibold mb-2">
+                7. Fotografie an Veranstaltungen
+              </h3>
               <p className="text-muted-foreground">
-                An unseren Veranstaltungen werden Fotos und Videos erstellt, welche
-                für unsere Website, Social Media sowie Vereinskommunikation verwendet
-                werden. Die Veröffentlichung erfolgt auf Grundlage unseres berechtigten
-                Interesses an der Öffentlichkeitsarbeit gemäss Art. 6 Abs. 1 lit. f DSGVO
-                bzw. Art. 13 DSG (Schweiz).
+                An unseren Veranstaltungen werden Fotos und Videos erstellt,
+                welche für unsere Website, Social Media sowie
+                Vereinskommunikation verwendet werden. Die Veröffentlichung
+                erfolgt auf Grundlage unseres berechtigten Interesses an der
+                Öffentlichkeitsarbeit gemäss Art. 6 Abs. 1 lit. f DSGVO bzw.
+                Art. 13 DSG (Schweiz).
               </p>
               <p className="text-muted-foreground mt-2">
                 Personen, die nicht fotografiert werden möchten oder mit einer
-                Veröffentlichung nicht einverstanden sind, können dies jederzeit unserem
-                Team vor Ort mitteilen oder nachträglich eine Entfernung der Aufnahmen
-                verlangen. Wenden Sie sich hierzu bitte an die oben angegebene
-                Kontaktadresse.
+                Veröffentlichung nicht einverstanden sind, können dies jederzeit
+                unserem Team vor Ort mitteilen oder nachträglich eine Entfernung
+                der Aufnahmen verlangen. Wenden Sie sich hierzu bitte an die
+                oben angegebene Kontaktadresse.
               </p>
             </div>
 
             <div>
               <h3 className="font-semibold mb-2">8. Google Fonts</h3>
               <p className="text-muted-foreground">
-                Diese Website verwendet Google Fonts, einen Dienst der Google LLC,
-                1600 Amphitheatre Parkway, Mountain View, CA 94043, USA. Beim Laden
-                einer Seite wird die Schriftart «Inter» direkt von den Servern von
-                Google abgerufen. Dabei wird Ihre IP-Adresse an Google übermittelt
-                und kann auf Servern in den USA verarbeitet werden.
+                Diese Website verwendet Google Fonts, einen Dienst der Google
+                LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA.
+                Beim Laden einer Seite wird die Schriftart «Inter» direkt von
+                den Servern von Google abgerufen. Dabei wird Ihre IP-Adresse an
+                Google übermittelt und kann auf Servern in den USA verarbeitet
+                werden.
               </p>
               <p className="text-muted-foreground mt-2">
-                Die Einbindung erfolgt auf Grundlage unseres berechtigten Interesses
-                an einer einheitlichen und ansprechenden Darstellung der Website
-                (Art. 6 Abs. 1 lit. f DSGVO bzw. Art. 13 DSG). Für die USA besteht
-                kein Angemessenheitsbeschluss der EU-Kommission; Google LLC ist
-                jedoch unter dem EU-US Data Privacy Framework zertifiziert.
+                Die Einbindung erfolgt auf Grundlage unseres berechtigten
+                Interesses an einer einheitlichen und ansprechenden Darstellung
+                der Website (Art. 6 Abs. 1 lit. f DSGVO bzw. Art. 13 DSG). Für
+                die USA besteht kein Angemessenheitsbeschluss der EU-Kommission;
+                Google LLC ist jedoch unter dem EU-US Data Privacy Framework
+                zertifiziert.
               </p>
               <p className="text-muted-foreground mt-2">
-                Weitere Informationen zum Datenschutz bei Google finden Sie unter:{" "}
+                Weitere Informationen zum Datenschutz bei Google finden Sie
+                unter:{' '}
                 <a
                   href="https://policies.google.com/privacy"
                   target="_blank"
@@ -141,23 +152,28 @@ export default function Datenschutz() {
             <div>
               <h3 className="font-semibold mb-2">9. Google Analytics</h3>
               <p className="text-muted-foreground">
-                Diese Website verwendet Google Analytics, einen Webanalysedienst der Google LLC,
-                1600 Amphitheatre Parkway, Mountain View, CA 94043, USA. Google Analytics verwendet
-                Cookies und ähnliche Technologien, um die Nutzung der Website zu analysieren und
-                Berichte über die Websiteaktivität zu erstellen. Die dabei erhobenen Daten
-                (u.a. IP-Adresse, aufgerufene Seiten, Verweildauer, Geräteinformationen) werden
-                an Server von Google in den USA übertragen.
+                Diese Website verwendet Google Analytics, einen Webanalysedienst
+                der Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA
+                94043, USA. Google Analytics verwendet Cookies und ähnliche
+                Technologien, um die Nutzung der Website zu analysieren und
+                Berichte über die Websiteaktivität zu erstellen. Die dabei
+                erhobenen Daten (u.a. IP-Adresse, aufgerufene Seiten,
+                Verweildauer, Geräteinformationen) werden an Server von Google
+                in den USA übertragen.
               </p>
               <p className="text-muted-foreground mt-2">
-                Wir haben die IP-Anonymisierung aktiviert, sodass Ihre IP-Adresse vor der
-                Übermittlung an Google gekürzt wird. Die Verarbeitung erfolgt auf Grundlage
-                unseres berechtigten Interesses an der statistischen Auswertung der Websitenutzung
-                zur Verbesserung unseres Angebots (Art. 6 Abs. 1 lit. f DSGVO bzw. Art. 13 DSG).
-                Google LLC ist unter dem EU-US Data Privacy Framework zertifiziert.
+                Wir haben die IP-Anonymisierung aktiviert, sodass Ihre
+                IP-Adresse vor der Übermittlung an Google gekürzt wird. Die
+                Verarbeitung erfolgt auf Grundlage unseres berechtigten
+                Interesses an der statistischen Auswertung der Websitenutzung
+                zur Verbesserung unseres Angebots (Art. 6 Abs. 1 lit. f DSGVO
+                bzw. Art. 13 DSG). Google LLC ist unter dem EU-US Data Privacy
+                Framework zertifiziert.
               </p>
               <p className="text-muted-foreground mt-2">
-                Sie können die Erfassung durch Google Analytics verhindern, indem Sie das
-                Browser-Add-on zur Deaktivierung von Google Analytics installieren:{" "}
+                Sie können die Erfassung durch Google Analytics verhindern,
+                indem Sie das Browser-Add-on zur Deaktivierung von Google
+                Analytics installieren:{' '}
                 <a
                   href="https://tools.google.com/dlpage/gaoptout"
                   target="_blank"
@@ -168,7 +184,8 @@ export default function Datenschutz() {
                 </a>
               </p>
               <p className="text-muted-foreground mt-2">
-                Weitere Informationen zum Datenschutz bei Google finden Sie unter:{" "}
+                Weitere Informationen zum Datenschutz bei Google finden Sie
+                unter:{' '}
                 <a
                   href="https://policies.google.com/privacy"
                   target="_blank"

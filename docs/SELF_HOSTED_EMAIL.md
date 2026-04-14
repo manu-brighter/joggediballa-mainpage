@@ -143,7 +143,7 @@ import { sendContactEmail } from './emailService';
   if (input.honeypot) {
     return { success: true };
   }
-  
+
   const submissionId = await db.createContactSubmission({
     name: input.name,
     email: input.email,
@@ -152,7 +152,7 @@ import { sendContactEmail } from './emailService';
     honeypot: input.honeypot,
     ipAddress: ctx.req.ip || ctx.req.headers['x-forwarded-for'] as string || undefined
   });
-  
+
   // E-Mail senden (async, blockiert nicht)
   sendContactEmail({
     name: input.name,
@@ -160,7 +160,7 @@ import { sendContactEmail } from './emailService';
     subject: input.subject,
     message: input.message,
   }).catch(err => console.error('[Email] Error:', err));
-  
+
   return { success: true, submissionId };
 }),
 ```
@@ -168,17 +168,21 @@ import { sendContactEmail } from './emailService';
 ## 5. SMTP-Anbieter Optionen
 
 ### Option A: Eigener Mailserver
+
 Wenn du bereits einen Mailserver hast (z.B. Postfix, Dovecot):
+
 - Verwende die Zugangsdaten deines Mailservers
 - Stelle sicher, dass SPF, DKIM und DMARC korrekt konfiguriert sind
 
 ### Option B: Externe SMTP-Dienste
+
 - **Mailgun**: Kostenlos bis 5.000 E-Mails/Monat
 - **SendGrid**: Kostenlos bis 100 E-Mails/Tag
 - **Amazon SES**: Sehr günstig für hohe Volumen
 - **Brevo (ex Sendinblue)**: Kostenlos bis 300 E-Mails/Tag
 
 ### Option C: Gmail SMTP (für Tests)
+
 ```bash
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -186,6 +190,7 @@ SMTP_SECURE=false
 SMTP_USER=deine.email@gmail.com
 SMTP_PASS=app-spezifisches-passwort
 ```
+
 ⚠️ Für Gmail musst du ein App-spezifisches Passwort erstellen.
 
 ## 6. Testen
@@ -200,16 +205,19 @@ Nach der Konfiguration:
 ## Troubleshooting
 
 ### E-Mails werden nicht gesendet
+
 - Prüfe die SMTP-Zugangsdaten
 - Überprüfe Firewall-Regeln (Port 587 oder 465)
 - Schaue in die Server-Logs
 
 ### E-Mails landen im Spam
+
 - Konfiguriere SPF, DKIM und DMARC für deine Domain
 - Verwende eine verifizierte Absenderadresse
 - Vermeide spam-typische Wörter im Betreff
 
 ### Verbindungsfehler
+
 ```bash
 # Teste SMTP-Verbindung
 telnet mail.deinserver.ch 587

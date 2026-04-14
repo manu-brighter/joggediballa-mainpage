@@ -23,6 +23,7 @@ ALTER TABLE `events` ADD `thumbnailPhotoId` int;
 ```
 
 **Ohne diese Migration:**
+
 - Events-Seite wirft 500-Fehler
 - Browser-Console zeigt SQL-Fehler
 
@@ -31,6 +32,7 @@ ALTER TABLE `events` ADD `thumbnailPhotoId` int;
 ### Fehler: "Failed query: select ... thumbnailPhotoId ..."
 
 **Lösung:** Migration wurde nicht ausgeführt
+
 ```bash
 pnpm db:push
 pm2 restart all
@@ -39,6 +41,7 @@ pm2 restart all
 ### Fehler: "Database not available"
 
 **Lösung:** Prüfe `DATABASE_URL` in `.env`
+
 ```bash
 cat .env | grep DATABASE_URL
 ```
@@ -46,6 +49,7 @@ cat .env | grep DATABASE_URL
 ### Fehler: "Connection refused"
 
 **Lösung:** MySQL/MariaDB läuft nicht
+
 ```bash
 sudo systemctl status mysql
 sudo systemctl start mysql
@@ -54,6 +58,7 @@ sudo systemctl start mysql
 ## Best Practice
 
 **Nach jedem `git pull`:**
+
 1. `pnpm install` (falls package.json geändert)
 2. `pnpm db:push` (falls Schema geändert)
 3. `pnpm build` (für Production)

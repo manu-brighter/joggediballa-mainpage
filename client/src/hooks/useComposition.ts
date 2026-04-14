@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { usePersistFn } from "./usePersistFn";
+import { useRef } from 'react';
+import { usePersistFn } from './usePersistFn';
 
 export interface UseCompositionReturn<
   T extends HTMLInputElement | HTMLTextAreaElement,
@@ -60,7 +60,7 @@ export function useComposition<
     // 在 composition 状态下，阻止 ESC 和 Enter（非 shift+Enter）事件的冒泡
     if (
       c.current &&
-      (e.key === "Escape" || (e.key === "Enter" && !e.shiftKey))
+      (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey))
     ) {
       e.stopPropagation();
       return;

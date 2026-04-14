@@ -1,23 +1,23 @@
 /**
  * generate-thumbnails.ts
- * 
+ *
  * Einmaliges Migrations-Script: Generiert Thumbnails für alle bestehenden Fotos
  * die noch kein thumbnailUrl haben.
- * 
+ *
  * Funktionsweise:
  * 1. Alle Fotos aus der DB laden die kein thumbnailUrl haben
  * 2. Für jedes Foto: compressedUrl oder imageUrl herunterladen
  * 3. Mit sharp auf 400px verkleinern (JPEG q60)
  * 4. Thumbnail in Storage hochladen (self-hosted oder S3)
  * 5. DB-Eintrag mit thumbnailUrl und thumbnailKey updaten
- * 
+ *
  * Ausführung auf dem Server:
  *   cd /var/www/joggediballa-mainpage
  *   npx tsx scripts/generate-thumbnails.ts
- * 
+ *
  * Oder mit pnpm:
  *   pnpm tsx scripts/generate-thumbnails.ts
- * 
+ *
  * Umgebungsvariablen werden aus .env geladen (dotenv).
  */
 
@@ -39,15 +39,17 @@ function isSelfHosted(): boolean {
 }
 
 function getSelfHostedConfig() {
-  const uploadDir = process.env.UPLOAD_DIR || '/var/www/joggediballa-mainpage/uploads';
-  const publicUrl = process.env.PUBLIC_UPLOAD_URL || 'https://joggediballa.ch/uploads';
+  const uploadDir =
+    process.env.UPLOAD_DIR || '/var/www/joggediballa-mainpage/uploads';
+  const publicUrl =
+    process.env.PUBLIC_UPLOAD_URL || 'https://joggediballa.ch/uploads';
   return { uploadDir, publicUrl };
 }
 
 async function storagePut(
   relKey: string,
   data: Buffer,
-  contentType = 'image/jpeg'
+  contentType = 'image/jpeg',
 ): Promise<{ key: string; url: string }> {
   const key = relKey.replace(/^\/+/, '');
 
@@ -63,7 +65,10 @@ async function storagePut(
     return { key, url };
   } else {
     // S3 via Manus forge proxy
-    const baseUrl = (process.env.BUILT_IN_FORGE_API_URL || '').replace(/\/+$/, '');
+    const baseUrl = (process.env.BUILT_IN_FORGE_API_URL || '').replace(
+      /\/+$/,
+      '',
+    );
     const apiKey = process.env.BUILT_IN_FORGE_API_KEY || '';
     if (!baseUrl || !apiKey) throw new Error('S3 credentials missing');
 
@@ -136,16 +141,18 @@ async function main() {
   for (let i = 0; i < total; i++) {
     const photo = photosWithoutThumbnail[i];
     const progress = `[${i + 1}/${total}]`;
-    
+
     // Prefer compressed version as source (smaller download)
     const sourceUrl = photo.compressedUrl || photo.imageUrl;
-    
+
     try {
-      console.log(`${progress} Lade Foto #${photo.id} von ${sourceUrl.substring(0, 80)}...`);
-      
+      console.log(
+        `${progress} Lade Foto #${photo.id} von ${sourceUrl.substring(0, 80)}...`,
+      );
+
       // 1. Download source image
       const imageBuffer = await downloadImage(sourceUrl);
-      
+
       // 2. Generate thumbnail with sharp
       const thumbnailBuffer = await sharp(imageBuffer)
         .resize(400, 400, {
@@ -156,14 +163,14 @@ async function main() {
         .toBuffer();
 
       const sizeKB = (thumbnailBuffer.length / 1024).toFixed(1);
-      
+
       // 3. Upload thumbnail
       const thumbId = nanoid();
       const thumbnailKey = `events/thumbnails/${thumbId}.jpg`;
       const { url: thumbnailUrl, key: storedKey } = await storagePut(
         thumbnailKey,
         thumbnailBuffer,
-        'image/jpeg'
+        'image/jpeg',
       );
 
       // 4. Update database
@@ -178,19 +185,23 @@ async function main() {
       console.log(`${progress} ✅ Foto #${photo.id} → Thumbnail ${sizeKB}KB`);
       success++;
     } catch (error: any) {
-      console.error(`${progress} ❌ Foto #${photo.id} fehlgeschlagen: ${error.message}`);
+      console.error(
+        `${progress} ❌ Foto #${photo.id} fehlgeschlagen: ${error.message}`,
+      );
       failed++;
     }
   }
 
   console.log('\n' + '='.repeat(50));
-  console.log(`📊 Ergebnis: ${success} erfolgreich, ${failed} fehlgeschlagen (von ${total})`);
+  console.log(
+    `📊 Ergebnis: ${success} erfolgreich, ${failed} fehlgeschlagen (von ${total})`,
+  );
   console.log('='.repeat(50));
 
   process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('💥 Unerwarteter Fehler:', err);
   process.exit(1);
 });

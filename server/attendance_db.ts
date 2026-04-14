@@ -1,15 +1,15 @@
-import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
-import { getDb } from "./db";
-import { 
-  attendanceSessions, 
-  attendanceMembers, 
+import { eq, desc, and, sql, gte, lte } from 'drizzle-orm';
+import { getDb } from './db';
+import {
+  attendanceSessions,
+  attendanceMembers,
   attendanceRecords,
   attendanceSettings,
   type InsertAttendanceSession,
   type InsertAttendanceMember,
   type InsertAttendanceRecord,
-  type InsertAttendanceSetting
-} from "../drizzle/schema";
+  type InsertAttendanceSetting,
+} from '../drizzle/schema';
 
 // ============================================
 // SESSIONS
@@ -17,49 +17,54 @@ import {
 
 export async function listAttendanceSessions(year?: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   let query = db.select().from(attendanceSessions);
-  
+
   if (year) {
     const startDate = new Date(`${year}-01-01`);
     const endDate = new Date(`${year}-12-31`);
     query = query.where(
       and(
         gte(attendanceSessions.date, startDate),
-        lte(attendanceSessions.date, endDate)
-      )
+        lte(attendanceSessions.date, endDate),
+      ),
     ) as any;
   }
-  
+
   return query.orderBy(desc(attendanceSessions.date));
 }
 
 export async function getAttendanceSession(sessionId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   const result = await db
     .select()
     .from(attendanceSessions)
     .where(eq(attendanceSessions.id, sessionId))
     .limit(1);
-  
+
   return result[0] || null;
 }
 
-export async function createAttendanceSession(session: InsertAttendanceSession) {
+export async function createAttendanceSession(
+  session: InsertAttendanceSession,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   const result = await db.insert(attendanceSessions).values(session);
   return Number(result[0].insertId);
 }
 
-export async function updateAttendanceSession(sessionId: number, data: Partial<InsertAttendanceSession>) {
+export async function updateAttendanceSession(
+  sessionId: number,
+  data: Partial<InsertAttendanceSession>,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   await db
     .update(attendanceSessions)
     .set(data)
@@ -68,8 +73,8 @@ export async function updateAttendanceSession(sessionId: number, data: Partial<I
 
 export async function deleteAttendanceSession(sessionId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Records will be deleted automatically due to CASCADE
   await db
     .delete(attendanceSessions)
@@ -82,42 +87,45 @@ export async function deleteAttendanceSession(sessionId: number) {
 
 export async function listAttendanceMembers(activeOnly = true) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   let query = db.select().from(attendanceMembers);
-  
+
   if (activeOnly) {
     query = query.where(eq(attendanceMembers.isActive, true)) as any;
   }
-  
+
   return query.orderBy(attendanceMembers.displayOrder, attendanceMembers.name);
 }
 
 export async function getAttendanceMember(memberId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   const result = await db
     .select()
     .from(attendanceMembers)
     .where(eq(attendanceMembers.id, memberId))
     .limit(1);
-  
+
   return result[0] || null;
 }
 
 export async function createAttendanceMember(member: InsertAttendanceMember) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   const result = await db.insert(attendanceMembers).values(member);
   return Number(result[0].insertId);
 }
 
-export async function updateAttendanceMember(memberId: number, data: Partial<InsertAttendanceMember>) {
+export async function updateAttendanceMember(
+  memberId: number,
+  data: Partial<InsertAttendanceMember>,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   await db
     .update(attendanceMembers)
     .set(data)
@@ -126,8 +134,8 @@ export async function updateAttendanceMember(memberId: number, data: Partial<Ins
 
 export async function deleteAttendanceMember(memberId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Soft delete
   await db
     .update(attendanceMembers)
@@ -137,8 +145,8 @@ export async function deleteAttendanceMember(memberId: number) {
 
 export async function reorderAttendanceMembers(memberIds: number[]) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   for (let i = 0; i < memberIds.length; i++) {
     await db
       .update(attendanceMembers)
@@ -153,8 +161,8 @@ export async function reorderAttendanceMembers(memberIds: number[]) {
 
 export async function listAttendanceRecords(sessionId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   return db
     .select()
     .from(attendanceRecords)
@@ -164,29 +172,29 @@ export async function listAttendanceRecords(sessionId: number) {
 
 export async function getAttendanceRecord(sessionId: number, memberId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   const result = await db
     .select()
     .from(attendanceRecords)
     .where(
       and(
         eq(attendanceRecords.sessionId, sessionId),
-        eq(attendanceRecords.memberId, memberId)
-      )
+        eq(attendanceRecords.memberId, memberId),
+      ),
     )
     .limit(1);
-  
+
   return result[0] || null;
 }
 
 export async function upsertAttendanceRecord(record: InsertAttendanceRecord) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Check if record exists
   const existing = await getAttendanceRecord(record.sessionId, record.memberId);
-  
+
   if (existing) {
     // Update existing record
     await db
@@ -204,10 +212,17 @@ export async function upsertAttendanceRecord(record: InsertAttendanceRecord) {
   }
 }
 
-export async function bulkUpsertAttendanceRecords(sessionId: number, records: Array<{ memberId: number; status: "present" | "partial" | "absent"; notes?: string }>) {
+export async function bulkUpsertAttendanceRecords(
+  sessionId: number,
+  records: Array<{
+    memberId: number;
+    status: 'present' | 'partial' | 'absent';
+    notes?: string;
+  }>,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   for (const record of records) {
     await upsertAttendanceRecord({
       sessionId,
@@ -224,23 +239,23 @@ export async function bulkUpsertAttendanceRecords(sessionId: number, records: Ar
 
 export async function getAttendanceSetting(key: string) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   const result = await db
     .select()
     .from(attendanceSettings)
     .where(eq(attendanceSettings.settingKey, key))
     .limit(1);
-  
+
   return result[0] || null;
 }
 
 export async function upsertAttendanceSetting(key: string, value: string) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   const existing = await getAttendanceSetting(key);
-  
+
   if (existing) {
     await db
       .update(attendanceSettings)
@@ -260,48 +275,50 @@ export async function upsertAttendanceSetting(key: string, value: string) {
 
 export async function getAttendanceStatistics(year?: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
+  if (!db) throw new Error('Database not available');
+
   // Get event weight multiplier
-  const weightSetting = await getAttendanceSetting("event_weight_multiplier");
-  const eventWeight = weightSetting ? parseFloat(weightSetting.settingValue) : 2.0;
-  
+  const weightSetting = await getAttendanceSetting('event_weight_multiplier');
+  const eventWeight = weightSetting
+    ? parseFloat(weightSetting.settingValue)
+    : 2.0;
+
   // Get all sessions
   const sessions = await listAttendanceSessions(year);
-  
+
   // Get all members
   const members = await listAttendanceMembers(true);
-  
+
   // Get all records
   const allRecords = await db
     .select()
     .from(attendanceRecords)
     .where(
-      year 
+      year
         ? sql`${attendanceRecords.sessionId} IN (SELECT id FROM attendance_sessions WHERE YEAR(date) = ${year})`
-        : sql`1=1`
+        : sql`1=1`,
     );
-  
+
   // Calculate statistics per member
   const memberStats = members.map(member => {
     const memberRecords = allRecords.filter(r => r.memberId === member.id);
-    
+
     let totalSessions = 0;
     let presentCount = 0;
     let partialCount = 0;
     let absentCount = 0;
     let weightedAbsences = 0;
-    
+
     sessions.forEach(session => {
       const record = memberRecords.find(r => r.sessionId === session.id);
-      const weight = session.type === "event" ? eventWeight : 1.0;
-      
+      const weight = session.type === 'event' ? eventWeight : 1.0;
+
       totalSessions++;
-      
+
       if (record) {
-        if (record.status === "present") {
+        if (record.status === 'present') {
           presentCount++;
-        } else if (record.status === "partial") {
+        } else if (record.status === 'partial') {
           partialCount++;
           weightedAbsences += 0.5 * weight; // Partial counts as half absence
         } else {
@@ -314,11 +331,12 @@ export async function getAttendanceStatistics(year?: number) {
         weightedAbsences += weight;
       }
     });
-    
-    const attendanceRate = totalSessions > 0 
-      ? ((presentCount + partialCount * 0.5) / totalSessions) * 100 
-      : 0;
-    
+
+    const attendanceRate =
+      totalSessions > 0
+        ? ((presentCount + partialCount * 0.5) / totalSessions) * 100
+        : 0;
+
     return {
       memberId: member.id,
       memberName: member.name,
@@ -330,23 +348,26 @@ export async function getAttendanceStatistics(year?: number) {
       weightedAbsences,
     };
   });
-  
+
   // Sort by weighted absences (worst first)
   memberStats.sort((a, b) => b.weightedAbsences - a.weightedAbsences);
-  
+
   // Session statistics
-  const meetingCount = sessions.filter(s => s.type === "meeting").length;
-  const eventCount = sessions.filter(s => s.type === "event").length;
-  
+  const meetingCount = sessions.filter(s => s.type === 'meeting').length;
+  const eventCount = sessions.filter(s => s.type === 'event').length;
+
   // Average attendance rate
-  const avgAttendanceRate = memberStats.length > 0
-    ? memberStats.reduce((sum, m) => sum + m.attendanceRate, 0) / memberStats.length
-    : 0;
-  
+  const avgAttendanceRate =
+    memberStats.length > 0
+      ? memberStats.reduce((sum, m) => sum + m.attendanceRate, 0) /
+        memberStats.length
+      : 0;
+
   // Best and worst attendance
-  const bestMember = memberStats.length > 0 ? memberStats[memberStats.length - 1] : null;
+  const bestMember =
+    memberStats.length > 0 ? memberStats[memberStats.length - 1] : null;
   const worstMember = memberStats.length > 0 ? memberStats[0] : null;
-  
+
   return {
     memberStats,
     totalSessions: sessions.length,

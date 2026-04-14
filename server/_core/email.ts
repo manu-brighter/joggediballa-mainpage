@@ -1,5 +1,5 @@
-import nodemailer from "nodemailer";
-import { ENV } from "./env";
+import nodemailer from 'nodemailer';
+import { ENV } from './env';
 
 /**
  * Send email using configured SMTP settings
@@ -25,7 +25,9 @@ export async function sendEmail(options: {
 
     // Send email
     const info = await transporter.sendMail({
-      from: options.replyTo ? `"${options.replyTo}" <${ENV.smtpUser}>` : ENV.contactEmailFrom,
+      from: options.replyTo
+        ? `"${options.replyTo}" <${ENV.smtpUser}>`
+        : ENV.contactEmailFrom,
       to: options.to,
       subject: options.subject,
       text: options.text,
@@ -38,10 +40,10 @@ export async function sendEmail(options: {
       messageId: info.messageId,
     };
   } catch (error) {
-    console.error("Email sending failed:", error);
+    console.error('Email sending failed:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -99,7 +101,7 @@ ${data.message}
       <div class="field">
         <span class="label">Nachricht:</span>
         <div class="message-box">
-          ${data.message.replace(/\n/g, "<br>")}
+          ${data.message.replace(/\n/g, '<br>')}
         </div>
       </div>
     </div>
@@ -147,7 +149,7 @@ Wurstbestellung:
 - Vegi: ${data.wurstVegi}
 - Total: ${totalWurste} Würste
 
-${data.additionalInfo ? `Zusätzliche Angaben:\n${data.additionalInfo}` : ""}
+${data.additionalInfo ? `Zusätzliche Angaben:\n${data.additionalInfo}` : ''}
   `.trim();
 
   const emailHtml = `
@@ -195,12 +197,16 @@ ${data.additionalInfo ? `Zusätzliche Angaben:\n${data.additionalInfo}` : ""}
           </div>
         </div>
       </div>
-      ${data.additionalInfo ? `
+      ${
+        data.additionalInfo
+          ? `
       <div class="field">
         <span class="label">💬 Zusätzliche Angaben:</span>
-        <div class="additional-box">${data.additionalInfo.replace(/\n/g, "<br>")}</div>
+        <div class="additional-box">${data.additionalInfo.replace(/\n/g, '<br>')}</div>
       </div>
-      ` : ""}
+      `
+          : ''
+      }
     </div>
   </div>
 </body>

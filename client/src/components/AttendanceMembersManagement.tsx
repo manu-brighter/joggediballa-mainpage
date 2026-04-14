@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { trpc } from "@/lib/trpc";
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,16 +17,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
-import { parseErrorMessage } from "@/lib/errorMessages";
-import { Pencil, Trash2, ChevronUp, ChevronDown, UserPlus } from "lucide-react";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { parseErrorMessage } from '@/lib/errorMessages';
+import { Pencil, Trash2, ChevronUp, ChevronDown, UserPlus } from 'lucide-react';
 
 interface Member {
   id: number;
@@ -51,24 +51,26 @@ export function AttendanceMembersManagement({
   onCreateMember,
 }: AttendanceMembersManagementProps) {
   const utils = trpc.useUtils();
-  
+
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", isActive: true });
+  const [editForm, setEditForm] = useState({ name: '', isActive: true });
 
   // Sort members by displayOrder
-  const sortedMembers = [...members].sort((a, b) => a.displayOrder - b.displayOrder);
+  const sortedMembers = [...members].sort(
+    (a, b) => a.displayOrder - b.displayOrder,
+  );
 
   // Mutations
   const updateMemberMutation = trpc.attendance.updateMember.useMutation({
     onSuccess: () => {
       utils.attendance.listMembers.invalidate();
-      toast.success("Mitglied aktualisiert");
+      toast.success('Mitglied aktualisiert');
       setEditDialogOpen(false);
       setSelectedMember(null);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(parseErrorMessage(error.message));
     },
   });
@@ -76,11 +78,11 @@ export function AttendanceMembersManagement({
   const deleteMemberMutation = trpc.attendance.deleteMember.useMutation({
     onSuccess: () => {
       utils.attendance.listMembers.invalidate();
-      toast.success("Mitglied gelöscht");
+      toast.success('Mitglied gelöscht');
       setDeleteDialogOpen(false);
       setSelectedMember(null);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(parseErrorMessage(error.message));
     },
   });
@@ -88,9 +90,9 @@ export function AttendanceMembersManagement({
   const reorderMembersMutation = trpc.attendance.reorderMembers.useMutation({
     onSuccess: () => {
       utils.attendance.listMembers.invalidate();
-      toast.success("Reihenfolge aktualisiert");
+      toast.success('Reihenfolge aktualisiert');
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(parseErrorMessage(error.message));
     },
   });
@@ -123,18 +125,24 @@ export function AttendanceMembersManagement({
   const handleMoveUp = (member: Member, index: number) => {
     if (index === 0) return;
     const newOrder = [...sortedMembers];
-    [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+    [newOrder[index - 1], newOrder[index]] = [
+      newOrder[index],
+      newOrder[index - 1],
+    ];
     reorderMembersMutation.mutate({
-      memberIds: newOrder.map((m) => m.id),
+      memberIds: newOrder.map(m => m.id),
     });
   };
 
   const handleMoveDown = (member: Member, index: number) => {
     if (index === sortedMembers.length - 1) return;
     const newOrder = [...sortedMembers];
-    [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+    [newOrder[index], newOrder[index + 1]] = [
+      newOrder[index + 1],
+      newOrder[index],
+    ];
     reorderMembersMutation.mutate({
-      memberIds: newOrder.map((m) => m.id),
+      memberIds: newOrder.map(m => m.id),
     });
   };
 
@@ -155,7 +163,10 @@ export function AttendanceMembersManagement({
               </p>
             ) : (
               sortedMembers.map((member, index) => (
-                <Card key={member.id} className="border-0 shadow-none bg-muted/30">
+                <Card
+                  key={member.id}
+                  className="border-0 shadow-none bg-muted/30"
+                >
                   <CardContent className="px-3 py-0">
                     <div className="flex items-center gap-2">
                       <div className="flex flex-col gap-0.5">
@@ -211,7 +222,12 @@ export function AttendanceMembersManagement({
             )}
           </div>
           <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
-            <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Schliessen</Button>
+            <Button
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
+            >
+              Schliessen
+            </Button>
             <Button
               variant="outline"
               className="gap-2 w-full sm:w-auto"
@@ -237,13 +253,17 @@ export function AttendanceMembersManagement({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="editName">Name <span className="text-red-500">*</span></Label>
+              <Label htmlFor="editName">
+                Name <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="editName"
                 value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                onChange={e =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
                     e.preventDefault();
                     handleUpdateMember();
                   }
@@ -255,7 +275,7 @@ export function AttendanceMembersManagement({
               <Switch
                 id="editActive"
                 checked={editForm.isActive}
-                onCheckedChange={(checked) =>
+                onCheckedChange={checked =>
                   setEditForm({ ...editForm, isActive: checked })
                 }
               />
@@ -283,8 +303,8 @@ export function AttendanceMembersManagement({
             <AlertDialogTitle>Mitglied löschen?</AlertDialogTitle>
             <AlertDialogDescription>
               Bist du sicher, dass du "{selectedMember?.name}" löschen möchtest?
-              Alle Anwesenheitseinträge dieses Mitglieds werden ebenfalls gelöscht.
-              Diese Aktion kann nicht rückgängig gemacht werden.
+              Alle Anwesenheitseinträge dieses Mitglieds werden ebenfalls
+              gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

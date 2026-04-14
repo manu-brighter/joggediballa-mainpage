@@ -1,15 +1,15 @@
-import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import type { Profile } from "passport-google-oauth20";
-import { upsertUser, getUserByOpenId, createActivityLog } from "../db";
-import type { User } from "../../drizzle/schema";
-import { sendEmail } from "./email";
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import type { Profile } from 'passport-google-oauth20';
+import { upsertUser, getUserByOpenId, createActivityLog } from '../db';
+import type { User } from '../../drizzle/schema';
+import { sendEmail } from './email';
 
 /**
  * Google OAuth Configuration
- * 
+ *
  * This module replaces the Manus OAuth system with Google OAuth for self-hosting.
- * 
+ *
  * Setup:
  * 1. Create OAuth credentials in Google Cloud Console
  * 2. Set environment variables: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL
@@ -18,12 +18,18 @@ import { sendEmail } from "./email";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/api/auth/callback/google";
+const GOOGLE_CALLBACK_URL =
+  process.env.GOOGLE_CALLBACK_URL ||
+  'http://localhost:3000/api/auth/callback/google';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-  console.warn("[Google OAuth] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET. Google OAuth will not work.");
-  console.warn("[Google OAuth] Please follow GOOGLE_OAUTH_SETUP.md to configure Google OAuth.");
+  console.warn(
+    '[Google OAuth] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET. Google OAuth will not work.',
+  );
+  console.warn(
+    '[Google OAuth] Please follow GOOGLE_OAUTH_SETUP.md to configure Google OAuth.',
+  );
 }
 
 /**
@@ -32,10 +38,10 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
 passport.use(
   new GoogleStrategy(
     {
-      clientID: GOOGLE_CLIENT_ID || "placeholder",
-      clientSecret: GOOGLE_CLIENT_SECRET || "placeholder",
+      clientID: GOOGLE_CLIENT_ID || 'placeholder',
+      clientSecret: GOOGLE_CLIENT_SECRET || 'placeholder',
       callbackURL: GOOGLE_CALLBACK_URL,
-      scope: ["profile", "email"],
+      scope: ['profile', 'email'],
     },
     async (accessToken, refreshToken, profile: Profile, done) => {
       try {
@@ -44,7 +50,7 @@ passport.use(
         const email = profile.emails?.[0]?.value;
         const name = profile.displayName;
         const profilePictureUrl = profile.photos?.[0]?.value;
-        const loginMethod = "google";
+        const loginMethod = 'google';
 
         // Check if user exists to determine if this is a new registration
         const existingUser = await getUserByOpenId(googleId);
@@ -52,11 +58,21 @@ passport.use(
 
         // Determine role: ADMIN_EMAIL becomes admin, others start as visitor
         // IMPORTANT: Only set role for NEW users, preserve existing user roles
-        let role: "admin" | "maintainer" | "editor" | "user" | "visitor" | undefined = undefined;
+        let role:
+          | 'admin'
+          | 'maintainer'
+          | 'editor'
+          | 'user'
+          | 'visitor'
+          | undefined = undefined;
         if (isNewUser) {
-          role = "visitor";
-          if (email && ADMIN_EMAIL && email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-            role = "admin";
+          role = 'visitor';
+          if (
+            email &&
+            ADMIN_EMAIL &&
+            email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+          ) {
+            role = 'admin';
           }
         }
 
@@ -73,33 +89,35 @@ passport.use(
 
         // Fetch the complete user record and log activity
         const user = await getUserByOpenId(googleId);
-        
+
         if (user) {
           // Log login activity
           await createActivityLog({
             userId: user.id,
-            userName: user.name || "Unknown",
-            action: isNewUser ? "registration" : "login",
-            details: isNewUser ? `New user registered via Google OAuth` : `User logged in via Google OAuth`,
+            userName: user.name || 'Unknown',
+            action: isNewUser ? 'registration' : 'login',
+            details: isNewUser
+              ? `New user registered via Google OAuth`
+              : `User logged in via Google OAuth`,
             ipAddress: null,
             userAgent: null,
           });
         }
 
         // Send email notification for new visitor registrations
-        if (isNewUser && role === "visitor" && user) {
+        if (isNewUser && role === 'visitor' && user) {
           // Send email asynchronously without blocking authentication
           sendEmail({
-            to: process.env.CONTACT_EMAIL_TO || "joggediballa@gmail.com",
-            subject: "Neue Benutzerregistrierung - Freischaltung erforderlich",
-            text: `Neue Benutzerregistrierung: ${name || "Unbekannt"} (${email || "Keine E-Mail"}) wartet auf Freischaltung.`,
+            to: process.env.CONTACT_EMAIL_TO || 'joggediballa@gmail.com',
+            subject: 'Neue Benutzerregistrierung - Freischaltung erforderlich',
+            text: `Neue Benutzerregistrierung: ${name || 'Unbekannt'} (${email || 'Keine E-Mail'}) wartet auf Freischaltung.`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #0ea5e9;">Neue Benutzerregistrierung</h2>
                 <p>Ein neuer Benutzer hat sich auf der Jogge di Balla Website registriert und wartet auf Freischaltung:</p>
                 <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                  <p><strong>Name:</strong> ${name || "Nicht angegeben"}</p>
-                  <p><strong>E-Mail:</strong> ${email || "Nicht angegeben"}</p>
+                  <p><strong>Name:</strong> ${name || 'Nicht angegeben'}</p>
+                  <p><strong>E-Mail:</strong> ${email || 'Nicht angegeben'}</p>
                   <p><strong>Login-Methode:</strong> Google OAuth</p>
                   <p><strong>Status:</strong> Visitor (wartet auf Freischaltung)</p>
                 </div>
@@ -108,29 +126,37 @@ passport.use(
               </div>
             `,
           })
-            .then((result) => {
+            .then(result => {
               if (result.success) {
-                console.log("[Google OAuth] New visitor notification email sent");
+                console.log(
+                  '[Google OAuth] New visitor notification email sent',
+                );
               } else {
-                console.warn("[Google OAuth] Failed to send notification email:", result.error);
+                console.warn(
+                  '[Google OAuth] Failed to send notification email:',
+                  result.error,
+                );
               }
             })
-            .catch((emailError) => {
-              console.error("[Google OAuth] Email notification error:", emailError);
+            .catch(emailError => {
+              console.error(
+                '[Google OAuth] Email notification error:',
+                emailError,
+              );
             });
         }
-        
+
         if (!user) {
-          return done(new Error("Failed to create or fetch user"));
+          return done(new Error('Failed to create or fetch user'));
         }
 
         return done(null, user);
       } catch (error) {
-        console.error("[Google OAuth] Error during authentication:", error);
+        console.error('[Google OAuth] Error during authentication:', error);
         return done(error as Error);
       }
-    }
-  )
+    },
+  ),
 );
 
 /**

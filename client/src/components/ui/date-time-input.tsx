@@ -1,8 +1,8 @@
-import { cn } from "@/lib/utils";
-import { useTheme } from "@/contexts/ThemeContext";
-import { Calendar, Clock } from "lucide-react";
-import * as React from "react";
-import { Input } from "./input";
+import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Calendar, Clock } from 'lucide-react';
+import * as React from 'react';
+import { Input } from './input';
 
 /**
  * Shared inline styles that completely remove the native browser icon
@@ -11,7 +11,7 @@ import { Input } from "./input";
 function useDateTimeStyles() {
   const { resolvedTheme } = useTheme();
   return {
-    colorScheme: resolvedTheme === "dark" ? "dark" : "light",
+    colorScheme: resolvedTheme === 'dark' ? 'dark' : 'light',
   } as React.CSSProperties;
 }
 
@@ -29,7 +29,7 @@ function useDateTimeStyles() {
  */
 const DateInput = React.forwardRef<
   HTMLInputElement,
-  React.ComponentProps<"input"> & { wrapperClassName?: string }
+  React.ComponentProps<'input'> & { wrapperClassName?: string }
 >(({ className, wrapperClassName, style, ...props }, ref) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const themeStyles = useDateTimeStyles();
@@ -45,19 +45,24 @@ const DateInput = React.forwardRef<
   };
 
   return (
-    <div className={cn("relative w-full max-w-full overflow-hidden rounded-md", wrapperClassName)}>
+    <div
+      className={cn(
+        'relative w-full max-w-full overflow-hidden rounded-md',
+        wrapperClassName,
+      )}
+    >
       <Input
         ref={inputRef}
         type="date"
         style={{ ...themeStyles, ...style }}
         className={cn(
           // Completely hide the native calendar icon
-          "[&::-webkit-calendar-picker-indicator]:!hidden",
-          "[&::-webkit-inner-spin-button]:!hidden",
-          "[&::-webkit-clear-button]:!hidden",
+          '[&::-webkit-calendar-picker-indicator]:!hidden',
+          '[&::-webkit-inner-spin-button]:!hidden',
+          '[&::-webkit-clear-button]:!hidden',
           // Force the input to stay within its container on mobile
-          "w-full min-w-0 max-w-full",
-          "pr-9",
+          'w-full min-w-0 max-w-full',
+          'pr-9',
           className,
         )}
         {...props}
@@ -74,14 +79,14 @@ const DateInput = React.forwardRef<
     </div>
   );
 });
-DateInput.displayName = "DateInput";
+DateInput.displayName = 'DateInput';
 
 /**
  * TimeInput — same approach but for <input type="time"> with a Clock icon.
  */
 const TimeInput = React.forwardRef<
   HTMLInputElement,
-  React.ComponentProps<"input"> & { wrapperClassName?: string }
+  React.ComponentProps<'input'> & { wrapperClassName?: string }
 >(({ className, wrapperClassName, style, ...props }, ref) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const themeStyles = useDateTimeStyles();
@@ -97,18 +102,23 @@ const TimeInput = React.forwardRef<
   };
 
   return (
-    <div className={cn("relative w-full max-w-full overflow-hidden rounded-md", wrapperClassName)}>
+    <div
+      className={cn(
+        'relative w-full max-w-full overflow-hidden rounded-md',
+        wrapperClassName,
+      )}
+    >
       <Input
         ref={inputRef}
         type="time"
         style={{ ...themeStyles, ...style }}
         className={cn(
-          "[&::-webkit-calendar-picker-indicator]:!hidden",
-          "[&::-webkit-inner-spin-button]:!hidden",
-          "[&::-webkit-clear-button]:!hidden",
+          '[&::-webkit-calendar-picker-indicator]:!hidden',
+          '[&::-webkit-inner-spin-button]:!hidden',
+          '[&::-webkit-clear-button]:!hidden',
           // Force the input to stay within its container on mobile
-          "w-full min-w-0 max-w-full",
-          "pr-9",
+          'w-full min-w-0 max-w-full',
+          'pr-9',
           className,
         )}
         {...props}
@@ -125,6 +135,6 @@ const TimeInput = React.forwardRef<
     </div>
   );
 });
-TimeInput.displayName = "TimeInput";
+TimeInput.displayName = 'TimeInput';
 
 export { DateInput, TimeInput };

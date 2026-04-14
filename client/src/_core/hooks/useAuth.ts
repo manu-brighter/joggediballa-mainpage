@@ -1,7 +1,7 @@
-import { getLoginUrl } from "@/const";
-import { trpc } from "@/lib/trpc";
-import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo } from "react";
+import { getLoginUrl } from '@/const';
+import { trpc } from '@/lib/trpc';
+import { TRPCClientError } from '@trpc/client';
+import { useCallback, useEffect, useMemo } from 'react';
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -30,7 +30,7 @@ export function useAuth(options?: UseAuthOptions) {
     } catch (error: unknown) {
       if (
         error instanceof TRPCClientError &&
-        error.data?.code === "UNAUTHORIZED"
+        error.data?.code === 'UNAUTHORIZED'
       ) {
         return;
       }
@@ -43,8 +43,8 @@ export function useAuth(options?: UseAuthOptions) {
 
   const state = useMemo(() => {
     localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
+      'manus-runtime-user-info',
+      JSON.stringify(meQuery.data),
     );
     return {
       user: meQuery.data ?? null,
@@ -64,10 +64,10 @@ export function useAuth(options?: UseAuthOptions) {
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;
     if (state.user) return;
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     if (window.location.pathname === redirectPath) return;
 
-    window.location.href = redirectPath
+    window.location.href = redirectPath;
   }, [
     redirectOnUnauthenticated,
     redirectPath,

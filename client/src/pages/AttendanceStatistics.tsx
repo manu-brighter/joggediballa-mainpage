@@ -1,18 +1,24 @@
-import { useState, useMemo, useEffect } from "react";
-import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { usePermission } from "@/hooks/usePermissions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useMemo, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { usePermission } from '@/hooks/usePermissions';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -20,20 +26,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { 
-  ArrowLeft, 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import {
+  ArrowLeft,
+  TrendingUp,
+  TrendingDown,
+  Users,
   Calendar,
   Trophy,
   AlertTriangle,
-  Settings
-} from "lucide-react";
-import { Link } from "wouter";
+  Settings,
+} from 'lucide-react';
+import { Link } from 'wouter';
 import {
   BarChart,
   Bar,
@@ -48,25 +54,25 @@ import {
   Cell,
   LineChart,
   Line,
-} from "recharts";
+} from 'recharts';
 
 const COLORS = {
-  present: "#22c55e",
-  partial: "#f97316",
-  absent: "#ef4444",
-  meeting: "#3b82f6",
-  event: "#14b8a6",
+  present: '#22c55e',
+  partial: '#f97316',
+  absent: '#ef4444',
+  meeting: '#3b82f6',
+  event: '#14b8a6',
 };
 
 export default function AttendanceStatistics() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
-  const canManageAttendance = usePermission("manage_attendance");
+  const canManageAttendance = usePermission('manage_attendance');
 
   const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = useState<number | "all">(currentYear);
+  const [selectedYear, setSelectedYear] = useState<number | 'all'>(currentYear);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [eventWeight, setEventWeight] = useState("2.0");
+  const [eventWeight, setEventWeight] = useState('2.0');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Detect dark mode
@@ -76,21 +82,24 @@ export default function AttendanceStatistics() {
     };
     checkDarkMode();
     const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
     return () => observer.disconnect();
   }, []);
 
   // Queries
   const { data: stats, isLoading } = trpc.attendance.getStatistics.useQuery({
-    year: selectedYear === "all" ? undefined : selectedYear,
+    year: selectedYear === 'all' ? undefined : selectedYear,
   });
 
   const { data: sessions = [] } = trpc.attendance.listSessions.useQuery({
-    year: selectedYear === "all" ? undefined : selectedYear,
+    year: selectedYear === 'all' ? undefined : selectedYear,
   });
 
   const { data: weightSetting } = trpc.attendance.getSetting.useQuery({
-    key: "event_weight_multiplier",
+    key: 'event_weight_multiplier',
   });
 
   // Mutations
@@ -98,11 +107,11 @@ export default function AttendanceStatistics() {
     onSuccess: () => {
       utils.attendance.getStatistics.invalidate();
       utils.attendance.getSetting.invalidate();
-      toast.success("Event-Gewichtung aktualisiert");
+      toast.success('Event-Gewichtung aktualisiert');
       setSettingsOpen(false);
     },
-    onError: (error) => {
-      toast.error("Fehler beim Speichern: " + error.message);
+    onError: error => {
+      toast.error('Fehler beim Speichern: ' + error.message);
     },
   });
 
@@ -126,13 +135,15 @@ export default function AttendanceStatistics() {
   // Prepare chart data
   const attendanceRateData = useMemo(() => {
     if (!stats) return [];
-    return stats.memberStats.map(m => ({
-      name: m.memberName,
-      rate: Math.round(m.attendanceRate * 10) / 10,
-      present: m.presentCount,
-      partial: m.partialCount,
-      absent: m.absentCount,
-    })).reverse(); // Best first
+    return stats.memberStats
+      .map(m => ({
+        name: m.memberName,
+        rate: Math.round(m.attendanceRate * 10) / 10,
+        present: m.presentCount,
+        partial: m.partialCount,
+        absent: m.absentCount,
+      }))
+      .reverse(); // Best first
   }, [stats]);
 
   const absenceData = useMemo(() => {
@@ -154,34 +165,37 @@ export default function AttendanceStatistics() {
   const sessionTypeData = useMemo(() => {
     if (!stats) return [];
     return [
-      { name: "Meetings", value: stats.meetingCount, color: COLORS.meeting },
-      { name: "Events", value: stats.eventCount, color: COLORS.event },
+      { name: 'Meetings', value: stats.meetingCount, color: COLORS.meeting },
+      { name: 'Events', value: stats.eventCount, color: COLORS.event },
     ];
   }, [stats]);
 
   // Monthly activity
   const monthlyActivity = useMemo(() => {
     const months: { [key: string]: { meetings: number; events: number } } = {};
-    
+
     sessions.forEach(session => {
       const date = new Date(session.date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
       if (!months[monthKey]) {
         months[monthKey] = { meetings: 0, events: 0 };
       }
-      
-      if (session.type === "meeting") {
+
+      if (session.type === 'meeting') {
         months[monthKey].meetings++;
       } else {
         months[monthKey].events++;
       }
     });
-    
+
     return Object.entries(months)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([month, data]) => ({
-        month: new Date(month + "-01").toLocaleDateString("de-CH", { month: "short", year: "2-digit" }),
+        month: new Date(month + '-01').toLocaleDateString('de-CH', {
+          month: 'short',
+          year: '2-digit',
+        }),
         meetings: data.meetings,
         events: data.events,
       }));
@@ -190,7 +204,7 @@ export default function AttendanceStatistics() {
   const handleUpdateWeight = () => {
     const weight = parseFloat(eventWeight);
     if (isNaN(weight) || weight < 1 || weight > 10) {
-      toast.error("Gewichtung muss zwischen 1 und 10 liegen");
+      toast.error('Gewichtung muss zwischen 1 und 10 liegen');
       return;
     }
     updateWeightMutation.mutate({ weight });
@@ -265,7 +279,9 @@ export default function AttendanceStatistics() {
         <div className="flex gap-3">
           <Select
             value={selectedYear.toString()}
-            onValueChange={(value) => setSelectedYear(value === "all" ? "all" : parseInt(value))}
+            onValueChange={value =>
+              setSelectedYear(value === 'all' ? 'all' : parseInt(value))
+            }
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue />
@@ -301,9 +317,7 @@ export default function AttendanceStatistics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Ø Anwesenheit
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Ø Anwesenheit</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -325,10 +339,12 @@ export default function AttendanceStatistics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.bestMember?.memberName || "-"}
+              {stats.bestMember?.memberName || '-'}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.bestMember ? `${Math.round(stats.bestMember.attendanceRate)}%` : ""}
+              {stats.bestMember
+                ? `${Math.round(stats.bestMember.attendanceRate)}%`
+                : ''}
             </p>
           </CardContent>
         </Card>
@@ -342,10 +358,12 @@ export default function AttendanceStatistics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.worstMember?.memberName || "-"}
+              {stats.worstMember?.memberName || '-'}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.worstMember ? `${Math.round(stats.worstMember.attendanceRate)}%` : ""}
+              {stats.worstMember
+                ? `${Math.round(stats.worstMember.attendanceRate)}%`
+                : ''}
             </p>
           </CardContent>
         </Card>
@@ -364,19 +382,39 @@ export default function AttendanceStatistics() {
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={attendanceRateData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
-                <XAxis type="number" domain={[0, 100]} tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fill: isDarkMode ? '#e5e7eb' : '#374151' }} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={isDarkMode ? '#374151' : '#e5e7eb'}
+                />
+                <XAxis
+                  type="number"
+                  domain={[0, 100]}
+                  tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  width={100}
+                  tick={{ fill: isDarkMode ? '#e5e7eb' : '#374151' }}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
                     border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
                     borderRadius: '6px',
-                    color: isDarkMode ? '#f3f4f6' : '#000000'
+                    color: isDarkMode ? '#f3f4f6' : '#000000',
                   }}
-                  cursor={{ fill: isDarkMode ? 'rgba(75, 85, 99, 0.3)' : 'rgba(229, 231, 235, 0.5)' }}
+                  cursor={{
+                    fill: isDarkMode
+                      ? 'rgba(75, 85, 99, 0.3)'
+                      : 'rgba(229, 231, 235, 0.5)',
+                  }}
                 />
-                <Bar dataKey="rate" fill={COLORS.present} name="Anwesenheit %" />
+                <Bar
+                  dataKey="rate"
+                  fill={COLORS.present}
+                  name="Anwesenheit %"
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -393,19 +431,39 @@ export default function AttendanceStatistics() {
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={absenceData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
-                <XAxis type="number" domain={[0, maxWeightedAbsence]} tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fill: isDarkMode ? '#e5e7eb' : '#374151' }} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={isDarkMode ? '#374151' : '#e5e7eb'}
+                />
+                <XAxis
+                  type="number"
+                  domain={[0, maxWeightedAbsence]}
+                  tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  width={100}
+                  tick={{ fill: isDarkMode ? '#e5e7eb' : '#374151' }}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
                     border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
                     borderRadius: '6px',
-                    color: isDarkMode ? '#f3f4f6' : '#000000'
+                    color: isDarkMode ? '#f3f4f6' : '#000000',
                   }}
-                  cursor={{ fill: isDarkMode ? 'rgba(75, 85, 99, 0.3)' : 'rgba(229, 231, 235, 0.5)' }}
+                  cursor={{
+                    fill: isDarkMode
+                      ? 'rgba(75, 85, 99, 0.3)'
+                      : 'rgba(229, 231, 235, 0.5)',
+                  }}
                 />
-                <Bar dataKey="weighted" fill={COLORS.absent} name="Gewichtete Fehlzeiten" />
+                <Bar
+                  dataKey="weighted"
+                  fill={COLORS.absent}
+                  name="Gewichtete Fehlzeiten"
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -415,9 +473,7 @@ export default function AttendanceStatistics() {
         <Card>
           <CardHeader>
             <CardTitle>Meetings vs. Events</CardTitle>
-            <CardDescription>
-              Verteilung der Session-Typen
-            </CardDescription>
+            <CardDescription>Verteilung der Session-Typen</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -427,8 +483,16 @@ export default function AttendanceStatistics() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(props) => {
-                    const { cx, cy, midAngle, innerRadius, outerRadius, name, value } = props;
+                  label={props => {
+                    const {
+                      cx,
+                      cy,
+                      midAngle,
+                      innerRadius,
+                      outerRadius,
+                      name,
+                      value,
+                    } = props;
                     const RADIAN = Math.PI / 180;
                     const radius = outerRadius + 25;
                     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -458,13 +522,13 @@ export default function AttendanceStatistics() {
                   contentStyle={{
                     backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
                     border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
-                    borderRadius: '6px'
+                    borderRadius: '6px',
                   }}
                   itemStyle={{
-                    color: isDarkMode ? '#f3f4f6' : '#000000'
+                    color: isDarkMode ? '#f3f4f6' : '#000000',
                   }}
                   labelStyle={{
-                    color: isDarkMode ? '#f3f4f6' : '#000000'
+                    color: isDarkMode ? '#f3f4f6' : '#000000',
                   }}
                 />
               </PieChart>
@@ -483,21 +547,43 @@ export default function AttendanceStatistics() {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthlyActivity}>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
-                <XAxis dataKey="month" tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={isDarkMode ? '#374151' : '#e5e7eb'}
+                />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }}
+                />
                 <YAxis tick={{ fill: isDarkMode ? '#d1d5db' : '#374151' }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
                     border: `1px solid ${isDarkMode ? '#4b5563' : '#e5e7eb'}`,
                     borderRadius: '6px',
-                    color: isDarkMode ? '#f3f4f6' : '#000000'
+                    color: isDarkMode ? '#f3f4f6' : '#000000',
                   }}
-                  cursor={{ fill: isDarkMode ? 'rgba(75, 85, 99, 0.3)' : 'rgba(229, 231, 235, 0.5)' }}
+                  cursor={{
+                    fill: isDarkMode
+                      ? 'rgba(75, 85, 99, 0.3)'
+                      : 'rgba(229, 231, 235, 0.5)',
+                  }}
                 />
-                <Legend wrapperStyle={{ color: isDarkMode ? '#f3f4f6' : '#000000' }} />
-                <Line type="monotone" dataKey="meetings" stroke={COLORS.meeting} name="Meetings" />
-                <Line type="monotone" dataKey="events" stroke={COLORS.event} name="Events" />
+                <Legend
+                  wrapperStyle={{ color: isDarkMode ? '#f3f4f6' : '#000000' }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="meetings"
+                  stroke={COLORS.meeting}
+                  name="Meetings"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="events"
+                  stroke={COLORS.event}
+                  name="Events"
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -509,21 +595,17 @@ export default function AttendanceStatistics() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Statistik-Einstellungen</DialogTitle>
-            <DialogDescription>
-              Passe die Event-Gewichtung an
-            </DialogDescription>
+            <DialogDescription>Passe die Event-Gewichtung an</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="weight">
-                Event-Gewichtung (Multiplikator)
-              </Label>
+              <Label htmlFor="weight">Event-Gewichtung (Multiplikator)</Label>
               <Input
                 id="weight"
                 type="number"
                 min="1"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
                     e.preventDefault();
                     handleUpdateWeight();
                   }
@@ -531,11 +613,12 @@ export default function AttendanceStatistics() {
                 max="10"
                 step="0.1"
                 value={eventWeight}
-                onChange={(e) => setEventWeight(e.target.value)}
+                onChange={e => setEventWeight(e.target.value)}
                 className="[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
               <p className="text-sm text-muted-foreground">
-                Events werden mit diesem Faktor gewichtet (z.B. 2.0 = doppelt so wichtig wie Meetings)
+                Events werden mit diesem Faktor gewichtet (z.B. 2.0 = doppelt so
+                wichtig wie Meetings)
               </p>
             </div>
           </div>
@@ -543,9 +626,7 @@ export default function AttendanceStatistics() {
             <Button variant="outline" onClick={() => setSettingsOpen(false)}>
               Abbrechen
             </Button>
-            <Button onClick={handleUpdateWeight}>
-              Speichern
-            </Button>
+            <Button onClick={handleUpdateWeight}>Speichern</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

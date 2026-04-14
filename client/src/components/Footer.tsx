@@ -1,24 +1,24 @@
-import { Link } from "wouter";
-import { Instagram, Heart } from "lucide-react";
-import { getLoginUrl } from "@/const";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { Link } from 'wouter';
+import { Instagram, Heart } from 'lucide-react';
+import { getLoginUrl } from '@/const';
+import { useAuth } from '@/_core/hooks/useAuth';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const { isAuthenticated } = useAuth();
 
   const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/shotcounter", label: "Shotcounter" },
-    { href: "/team", label: "Team" },
-    { href: "/events", label: "Events" },
-    { href: "/sponsors", label: "Sponsoren" },
-    { href: "/contact", label: "Kontakt" },
+    { href: '/', label: 'Home' },
+    { href: '/shotcounter', label: 'Shotcounter' },
+    { href: '/team', label: 'Team' },
+    { href: '/events', label: 'Events' },
+    { href: '/sponsors', label: 'Sponsoren' },
+    { href: '/contact', label: 'Kontakt' },
   ];
 
   const legalLinks = [
-    { href: "/impressum", label: "Impressum" },
-    { href: "/datenschutz", label: "Datenschutz" },
+    { href: '/impressum', label: 'Impressum' },
+    { href: '/datenschutz', label: 'Datenschutz' },
   ];
 
   return (
@@ -28,18 +28,18 @@ export function Footer() {
         <div className="hidden md:grid md:grid-cols-4 gap-8">
           {/* Logo & About */}
           <div className="space-y-4">
-            <img 
+            <img
               src="/JoggediBalla-Logo.PNG"
-              alt="Jogge di Balla Logo" 
+              alt="Jogge di Balla Logo"
               className="h-14 w-auto"
               loading="lazy"
             />
             <p className="text-sm text-muted-foreground">
               Gemeinsam feiern seit 2022
             </p>
-            <a 
-              href="https://instagram.com/joggediballa" 
-              target="_blank" 
+            <a
+              href="https://instagram.com/joggediballa"
+              target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
             >
@@ -52,9 +52,9 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4 text-sm">Navigation</h3>
             <ul className="space-y-2.5 text-sm">
-              {navLinks.map((link) => (
+              {navLinks.map(link => (
                 <li key={link.href}>
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
@@ -69,9 +69,9 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4 text-sm">Rechtliches</h3>
             <ul className="space-y-2.5 text-sm">
-              {legalLinks.map((link) => (
+              {legalLinks.map(link => (
                 <li key={link.href}>
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
@@ -88,7 +88,7 @@ export function Footer() {
             <p className="text-sm text-muted-foreground">
               Fragen oder Anregungen?
             </p>
-            <Link 
+            <Link
               href="/contact"
               className="inline-block mt-2 text-sm text-primary hover:underline"
             >
@@ -101,9 +101,9 @@ export function Footer() {
         <div className="md:hidden text-center space-y-6">
           {/* Logo */}
           <div className="flex justify-center">
-            <img 
+            <img
               src="/JoggediBalla-Logo.PNG"
-              alt="Jogge di Balla Logo" 
+              alt="Jogge di Balla Logo"
               className="h-12 w-auto"
               loading="lazy"
             />
@@ -111,9 +111,9 @@ export function Footer() {
 
           {/* Navigation Links - Horizontal */}
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.href} 
+            {navLinks.map(link => (
+              <Link
+                key={link.href}
                 href={link.href}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -124,9 +124,9 @@ export function Footer() {
 
           {/* Legal Links */}
           <div className="flex justify-center gap-4 text-sm">
-            {legalLinks.map((link) => (
-              <Link 
-                key={link.href} 
+            {legalLinks.map(link => (
+              <Link
+                key={link.href}
                 href={link.href}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -136,9 +136,9 @@ export function Footer() {
           </div>
 
           {/* Instagram */}
-          <a 
-            href="https://instagram.com/joggediballa" 
-            target="_blank" 
+          <a
+            href="https://instagram.com/joggediballa"
+            target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
           >
@@ -150,7 +150,9 @@ export function Footer() {
         {/* Copyright - Both layouts */}
         <div className="mt-8 pt-6 border-t text-center">
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-            © {currentYear} Jogge di Balla. Made with <Heart className="h-3 w-3 text-secondary fill-secondary" /> in Switzerland
+            © {currentYear} Jogge di Balla. Made with{' '}
+            <Heart className="h-3 w-3 text-secondary fill-secondary" /> in
+            Switzerland
           </p>
           <p className="mt-1 text-xs text-muted-foreground/70">
             Fotos © Manuel Heller

@@ -1,8 +1,14 @@
-import { useState, useCallback, useRef } from "react";
-import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { usePermission } from "@/hooks/usePermissions";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useCallback, useRef } from 'react';
+import { trpc } from '@/lib/trpc';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { usePermission } from '@/hooks/usePermissions';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,19 +27,32 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { toast } from "sonner";
-import { parseErrorMessage } from "@/lib/errorMessages";
-import { Users, Plus, Pencil, Trash2, Upload, X, Loader2, GripVertical, ArrowUp, ArrowDown, ZoomIn, ZoomOut } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-import Cropper from "react-easy-crop";
-import type { Area } from "react-easy-crop";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Slider } from '@/components/ui/slider';
+import { toast } from 'sonner';
+import { parseErrorMessage } from '@/lib/errorMessages';
+import {
+  Users,
+  Plus,
+  Pencil,
+  Trash2,
+  Upload,
+  X,
+  Loader2,
+  GripVertical,
+  ArrowUp,
+  ArrowDown,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import Cropper from 'react-easy-crop';
+import type { Area } from 'react-easy-crop';
 
 const MotionDiv = motion.div;
 
@@ -47,11 +66,11 @@ interface MemberFormData {
 // Helper function to create a cropped image
 async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
   const image = await createImage(imageSrc);
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
 
   if (!ctx) {
-    throw new Error("No 2d context");
+    throw new Error('No 2d context');
   }
 
   canvas.width = pixelCrop.width;
@@ -66,25 +85,29 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
     0,
     0,
     pixelCrop.width,
-    pixelCrop.height
+    pixelCrop.height,
   );
 
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error("Canvas is empty"));
-        return;
-      }
-      resolve(blob);
-    }, "image/jpeg", 0.95);
+    canvas.toBlob(
+      blob => {
+        if (!blob) {
+          reject(new Error('Canvas is empty'));
+          return;
+        }
+        resolve(blob);
+      },
+      'image/jpeg',
+      0.95,
+    );
   });
 }
 
 function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
-    image.addEventListener("load", () => resolve(image));
-    image.addEventListener("error", (error) => reject(error));
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', error => reject(error));
     image.src = url;
   });
 }
@@ -100,36 +123,36 @@ export default function Team() {
   const createMutation = trpc.team.create.useMutation({
     onSuccess: () => {
       utils.team.list.invalidate();
-      toast.success("Mitglied erfolgreich hinzugefügt");
+      toast.success('Mitglied erfolgreich hinzugefügt');
       setAddDialogOpen(false);
       resetForm();
     },
-    onError: (error) => {
-      toast.error("Fehler beim Hinzufügen: " + error.message);
+    onError: error => {
+      toast.error('Fehler beim Hinzufügen: ' + error.message);
     },
   });
 
   const updateMutation = trpc.team.update.useMutation({
     onSuccess: () => {
       utils.team.list.invalidate();
-      toast.success("Mitglied erfolgreich aktualisiert");
+      toast.success('Mitglied erfolgreich aktualisiert');
       setEditDialogOpen(false);
       resetForm();
     },
-    onError: (error) => {
-      toast.error("Fehler beim Aktualisieren: " + error.message);
+    onError: error => {
+      toast.error('Fehler beim Aktualisieren: ' + error.message);
     },
   });
 
   const deleteMutation = trpc.team.delete.useMutation({
     onSuccess: () => {
       utils.team.list.invalidate();
-      toast.success("Mitglied erfolgreich gelöscht");
+      toast.success('Mitglied erfolgreich gelöscht');
       setDeleteDialogOpen(false);
       setSelectedMember(null);
     },
-    onError: (error) => {
-      toast.error("Fehler beim Löschen: " + error.message);
+    onError: error => {
+      toast.error('Fehler beim Löschen: ' + error.message);
     },
   });
 
@@ -137,49 +160,58 @@ export default function Team() {
     onSuccess: () => {
       utils.team.list.invalidate();
     },
-    onError: (error) => {
-      toast.error("Fehler beim Sortieren: " + error.message);
+    onError: error => {
+      toast.error('Fehler beim Sortieren: ' + error.message);
     },
   });
 
   // Form state
   const [formData, setFormData] = useState<MemberFormData>({
-    name: "",
-    nickname: "",
-    role: "",
-    bio: "",
+    name: '',
+    nickname: '',
+    role: '',
+    bio: '',
   });
 
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<typeof members[0] | null>(null);
+  const [selectedMember, setSelectedMember] = useState<
+    (typeof members)[0] | null
+  >(null);
 
   // Photo upload state
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string>("");
-  
+  const [photoPreview, setPhotoPreview] = useState<string>('');
+
   // Cropper state
   const [cropperOpen, setCropperOpen] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const [croppedImageUrl, setCroppedImageUrl] = useState<string>("");
-  const [imageLoadingStates, setImageLoadingStates] = useState<Record<number, boolean>>({});
-  const [uploadedPhotoData, setUploadedPhotoData] = useState<{ url: string; key: string; compressedUrl: string; compressedKey: string } | null>(null);
+  const [croppedImageUrl, setCroppedImageUrl] = useState<string>('');
+  const [imageLoadingStates, setImageLoadingStates] = useState<
+    Record<number, boolean>
+  >({});
+  const [uploadedPhotoData, setUploadedPhotoData] = useState<{
+    url: string;
+    key: string;
+    compressedUrl: string;
+    compressedKey: string;
+  } | null>(null);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const isLoggedIn = !!user;
-  const canManageTeam = usePermission("edit_team");
+  const canManageTeam = usePermission('edit_team');
 
   const resetForm = () => {
-    setFormData({ name: "", nickname: "", role: "", bio: "" });
+    setFormData({ name: '', nickname: '', role: '', bio: '' });
     setPhotoFile(null);
-    setPhotoPreview("");
-    setCroppedImageUrl("");
+    setPhotoPreview('');
+    setCroppedImageUrl('');
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
@@ -192,13 +224,13 @@ export default function Team() {
 
     // Validate file size (25MB max)
     if (file.size > 25 * 1024 * 1024) {
-      toast.error("Datei zu gross. Maximal 25MB erlaubt.");
+      toast.error('Datei zu gross. Maximal 25MB erlaubt.');
       return;
     }
 
     // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Nur Bilddateien sind erlaubt.");
+    if (!file.type.startsWith('image/')) {
+      toast.error('Nur Bilddateien sind erlaubt.');
       return;
     }
 
@@ -211,9 +243,12 @@ export default function Team() {
     reader.readAsDataURL(file);
   };
 
-  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
+  const onCropComplete = useCallback(
+    (croppedArea: Area, croppedAreaPixels: Area) => {
+      setCroppedAreaPixels(croppedAreaPixels);
+    },
+    [],
+  );
 
   const handleCropSave = async () => {
     if (!photoPreview || !croppedAreaPixels) return;
@@ -222,18 +257,22 @@ export default function Team() {
       const croppedBlob = await getCroppedImg(photoPreview, croppedAreaPixels);
       const croppedUrl = URL.createObjectURL(croppedBlob);
       setCroppedImageUrl(croppedUrl);
-      
+
       // Convert blob to file
-      const croppedFile = new File([croppedBlob], photoFile?.name || "cropped.jpg", {
-        type: "image/jpeg",
-      });
+      const croppedFile = new File(
+        [croppedBlob],
+        photoFile?.name || 'cropped.jpg',
+        {
+          type: 'image/jpeg',
+        },
+      );
       setPhotoFile(croppedFile);
-      
+
       setCropperOpen(false);
-      toast.success("Bild zugeschnitten");
+      toast.success('Bild zugeschnitten');
     } catch (error) {
-      console.error("Crop error:", error);
-      toast.error("Fehler beim Zuschneiden");
+      console.error('Crop error:', error);
+      toast.error('Fehler beim Zuschneiden');
     }
   };
 
@@ -243,25 +282,25 @@ export default function Team() {
     setUploadingPhoto(true);
     try {
       const formData = new FormData();
-      formData.append("file", photoFile);
+      formData.append('file', photoFile);
 
-      const response = await fetch("/api/upload/team-member-photo", {
-        method: "POST",
+      const response = await fetch('/api/upload/team-member-photo', {
+        method: 'POST',
         body: formData,
-        credentials: "include",
+        credentials: 'include',
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Upload error response:", errorText);
-        throw new Error("Upload fehlgeschlagen");
+        console.error('Upload error response:', errorText);
+        throw new Error('Upload fehlgeschlagen');
       }
 
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        console.error("Non-JSON response:", text);
-        throw new Error("Server hat keine JSON-Antwort zurückgegeben");
+        console.error('Non-JSON response:', text);
+        throw new Error('Server hat keine JSON-Antwort zurückgegeben');
       }
 
       const data = await response.json();
@@ -270,13 +309,13 @@ export default function Team() {
         url: data.url,
         key: data.key,
         compressedUrl: data.compressedUrl,
-        compressedKey: data.compressedKey
+        compressedKey: data.compressedKey,
       };
       setUploadedPhotoData(photoData);
       return photoData;
     } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Fehler beim Hochladen des Bildes");
+      console.error('Upload error:', error);
+      toast.error('Fehler beim Hochladen des Bildes');
       return null;
     } finally {
       setUploadingPhoto(false);
@@ -285,15 +324,15 @@ export default function Team() {
 
   const handleSubmit = async (isEdit: boolean) => {
     if (!formData.name.trim()) {
-      toast.error("Name ist erforderlich");
+      toast.error('Name ist erforderlich');
       return;
     }
 
-    let photoUrl = selectedMember?.photoUrl || "";
-    let photoKey = selectedMember?.photoKey || "";
-    let compressedPhotoUrl = (selectedMember as any)?.compressedPhotoUrl || "";
-    let compressedPhotoKey = (selectedMember as any)?.compressedPhotoKey || "";
-    
+    let photoUrl = selectedMember?.photoUrl || '';
+    let photoKey = selectedMember?.photoKey || '';
+    let compressedPhotoUrl = (selectedMember as any)?.compressedPhotoUrl || '';
+    let compressedPhotoKey = (selectedMember as any)?.compressedPhotoKey || '';
+
     if (photoFile) {
       const uploadResult = await handlePhotoUpload();
       if (uploadResult) {
@@ -330,29 +369,29 @@ export default function Team() {
     }
   };
 
-  const openEditDialog = (member: typeof members[0]) => {
+  const openEditDialog = (member: (typeof members)[0]) => {
     setSelectedMember(member);
     setFormData({
       name: member.name,
-      nickname: member.nickname || "",
-      role: member.role || "",
-      bio: member.bio || "",
+      nickname: member.nickname || '',
+      role: member.role || '',
+      bio: member.bio || '',
     });
-    setPhotoPreview(member.photoUrl || "");
-    setCroppedImageUrl(member.photoUrl || "");
+    setPhotoPreview(member.photoUrl || '');
+    setCroppedImageUrl(member.photoUrl || '');
     setEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (member: typeof members[0]) => {
+  const openDeleteDialog = (member: (typeof members)[0]) => {
     setSelectedMember(member);
     setDeleteDialogOpen(true);
   };
 
-  const moveMember = (memberId: number, direction: "up" | "down") => {
-    const currentIndex = members.findIndex((m) => m.id === memberId);
+  const moveMember = (memberId: number, direction: 'up' | 'down') => {
+    const currentIndex = members.findIndex(m => m.id === memberId);
     if (currentIndex === -1) return;
 
-    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     if (newIndex < 0 || newIndex >= members.length) return;
 
     const reorderedMembers = [...members];
@@ -361,7 +400,7 @@ export default function Team() {
       reorderedMembers[currentIndex],
     ];
 
-    const newOrder = reorderedMembers.map((m) => m.id);
+    const newOrder = reorderedMembers.map(m => m.id);
 
     reorderMutation.mutate({ memberIds: newOrder });
   };
@@ -386,10 +425,13 @@ export default function Team() {
           </div>
 
           {canManageTeam && (
-            <Dialog open={addDialogOpen} onOpenChange={(open) => {
-              setAddDialogOpen(open);
-              if (!open) resetForm();
-            }}>
+            <Dialog
+              open={addDialogOpen}
+              onOpenChange={open => {
+                setAddDialogOpen(open);
+                if (!open) resetForm();
+              }}
+            >
               <DialogTrigger asChild>
                 <Button size="lg" className="gap-2">
                   <Plus className="h-5 w-5" />
@@ -420,9 +462,9 @@ export default function Team() {
                             size="icon"
                             className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
                             onClick={() => {
-                              setCroppedImageUrl("");
+                              setCroppedImageUrl('');
                               setPhotoFile(null);
-                              setPhotoPreview("");
+                              setPhotoPreview('');
                             }}
                           >
                             <X className="h-3 w-3" />
@@ -467,11 +509,15 @@ export default function Team() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="name">
+                      Name <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={e =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       placeholder="z.B. Max Mustermann"
                     />
                   </div>
@@ -481,7 +527,9 @@ export default function Team() {
                     <Input
                       id="nickname"
                       value={formData.nickname}
-                      onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                      onChange={e =>
+                        setFormData({ ...formData, nickname: e.target.value })
+                      }
                       placeholder="z.B. Maxi"
                     />
                   </div>
@@ -491,7 +539,9 @@ export default function Team() {
                     <Input
                       id="role"
                       value={formData.role}
-                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      onChange={e =>
+                        setFormData({ ...formData, role: e.target.value })
+                      }
                       placeholder="z.B. Präsident, Kassier, DJ"
                     />
                   </div>
@@ -501,7 +551,9 @@ export default function Team() {
                     <Textarea
                       id="bio"
                       value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      onChange={e =>
+                        setFormData({ ...formData, bio: e.target.value })
+                      }
                       placeholder="Kurze Beschreibung..."
                       rows={4}
                     />
@@ -527,7 +579,7 @@ export default function Team() {
                         Wird hinzugefügt...
                       </>
                     ) : (
-                      "Hinzufügen"
+                      'Hinzufügen'
                     )}
                   </Button>
                 </DialogFooter>
@@ -545,7 +597,9 @@ export default function Team() {
           <Card>
             <CardContent className="py-20 text-center">
               <Users className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-lg text-muted-foreground">Noch keine Team-Mitglieder</p>
+              <p className="text-lg text-muted-foreground">
+                Noch keine Team-Mitglieder
+              </p>
               {canManageTeam && (
                 <p className="text-sm text-muted-foreground mt-2">
                   Klicke auf "Neues Mitglied" um das erste Mitglied hinzuzufügen
@@ -571,16 +625,27 @@ export default function Team() {
                         <div className="aspect-square overflow-hidden relative">
                           {/* Show compressed thumbnail first, then load original */}
                           <img
-                            src={(member as any).compressedPhotoUrl && imageLoadingStates[member.id] !== false ? (member as any).compressedPhotoUrl : member.photoUrl}
+                            src={
+                              (member as any).compressedPhotoUrl &&
+                              imageLoadingStates[member.id] !== false
+                                ? (member as any).compressedPhotoUrl
+                                : member.photoUrl
+                            }
                             alt={member.name}
                             className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${(member as any).compressedPhotoUrl && imageLoadingStates[member.id] !== false ? 'blur-sm' : ''}`}
                             onLoad={() => {
                               // Load original image in background only if compressed version exists
-                              if ((member as any).compressedPhotoUrl && imageLoadingStates[member.id] !== false) {
+                              if (
+                                (member as any).compressedPhotoUrl &&
+                                imageLoadingStates[member.id] !== false
+                              ) {
                                 const img = new Image();
                                 img.src = member.photoUrl || '';
                                 img.onload = () => {
-                                  setImageLoadingStates(prev => ({ ...prev, [member.id]: false }));
+                                  setImageLoadingStates(prev => ({
+                                    ...prev,
+                                    [member.id]: false,
+                                  }));
                                 };
                               }
                             }}
@@ -601,7 +666,7 @@ export default function Team() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 bg-background/90 hover:bg-background text-foreground"
-                              onClick={() => moveMember(member.id, "up")}
+                              onClick={() => moveMember(member.id, 'up')}
                             >
                               <ArrowUp className="h-4 w-4 text-foreground" />
                             </Button>
@@ -611,7 +676,7 @@ export default function Team() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 bg-background/90 hover:bg-background text-foreground"
-                              onClick={() => moveMember(member.id, "down")}
+                              onClick={() => moveMember(member.id, 'down')}
                             >
                               <ArrowDown className="h-4 w-4 text-foreground" />
                             </Button>
@@ -645,7 +710,9 @@ export default function Team() {
                         )}
                       </div>
                       {member.role && (
-                        <p className="text-sm font-medium text-primary">{member.role}</p>
+                        <p className="text-sm font-medium text-primary">
+                          {member.role}
+                        </p>
                       )}
                       {member.bio && (
                         <p className="text-sm text-muted-foreground line-clamp-3">
@@ -661,13 +728,16 @@ export default function Team() {
         )}
 
         {/* Edit Dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={(open) => {
-          setEditDialogOpen(open);
-          if (!open) {
-            resetForm();
-            setSelectedMember(null);
-          }
-        }}>
+        <Dialog
+          open={editDialogOpen}
+          onOpenChange={open => {
+            setEditDialogOpen(open);
+            if (!open) {
+              resetForm();
+              setSelectedMember(null);
+            }
+          }}
+        >
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Mitglied bearbeiten</DialogTitle>
@@ -692,9 +762,9 @@ export default function Team() {
                         size="icon"
                         className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
                         onClick={() => {
-                          setCroppedImageUrl("");
+                          setCroppedImageUrl('');
                           setPhotoFile(null);
-                          setPhotoPreview("");
+                          setPhotoPreview('');
                         }}
                       >
                         <X className="h-3 w-3" />
@@ -739,11 +809,15 @@ export default function Team() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Name <span className="text-destructive">*</span></Label>
+                <Label htmlFor="edit-name">
+                  Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="edit-name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="z.B. Max Mustermann"
                 />
               </div>
@@ -753,7 +827,9 @@ export default function Team() {
                 <Input
                   id="edit-nickname"
                   value={formData.nickname}
-                  onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, nickname: e.target.value })
+                  }
                   placeholder="z.B. Maxi"
                 />
               </div>
@@ -763,7 +839,9 @@ export default function Team() {
                 <Input
                   id="edit-role"
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, role: e.target.value })
+                  }
                   placeholder="z.B. Präsident, Kassier, DJ"
                 />
               </div>
@@ -773,7 +851,9 @@ export default function Team() {
                 <Textarea
                   id="edit-bio"
                   value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, bio: e.target.value })
+                  }
                   placeholder="Kurze Beschreibung..."
                   rows={4}
                 />
@@ -800,7 +880,7 @@ export default function Team() {
                     Wird gespeichert...
                   </>
                 ) : (
-                  "Speichern"
+                  'Speichern'
                 )}
               </Button>
             </DialogFooter>
@@ -813,7 +893,8 @@ export default function Team() {
             <AlertDialogHeader>
               <AlertDialogTitle>Mitglied löschen?</AlertDialogTitle>
               <AlertDialogDescription>
-                Möchtest du {selectedMember?.name} wirklich aus dem Team entfernen? Diese Aktion kann nicht rückgängig gemacht werden.
+                Möchtest du {selectedMember?.name} wirklich aus dem Team
+                entfernen? Diese Aktion kann nicht rückgängig gemacht werden.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -834,7 +915,7 @@ export default function Team() {
                     Wird gelöscht...
                   </>
                 ) : (
-                  "Löschen"
+                  'Löschen'
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -846,9 +927,7 @@ export default function Team() {
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>Bild zuschneiden</DialogTitle>
-              <DialogDescription>
-                Passe den Bildausschnitt an
-              </DialogDescription>
+              <DialogDescription>Passe den Bildausschnitt an</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="relative w-full h-[400px] bg-black rounded-lg overflow-hidden">
@@ -876,7 +955,7 @@ export default function Team() {
                 </div>
                 <Slider
                   value={[zoom]}
-                  onValueChange={(value) => setZoom(value[0])}
+                  onValueChange={value => setZoom(value[0])}
                   min={1}
                   max={3}
                   step={0.1}
@@ -889,15 +968,13 @@ export default function Team() {
                 variant="outline"
                 onClick={() => {
                   setCropperOpen(false);
-                  setPhotoPreview("");
+                  setPhotoPreview('');
                   setPhotoFile(null);
                 }}
               >
                 Abbrechen
               </Button>
-              <Button onClick={handleCropSave}>
-                Zuschnitt übernehmen
-              </Button>
+              <Button onClick={handleCropSave}>Zuschnitt übernehmen</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

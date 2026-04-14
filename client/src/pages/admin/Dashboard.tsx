@@ -1,7 +1,13 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from '@/_core/hooks/useAuth';
+import { trpc } from '@/lib/trpc';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -9,14 +15,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,19 +32,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { parseErrorMessage } from "@/lib/errorMessages";
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import { 
-  Shield, 
-  Users, 
-  ToggleLeft, 
-  Trash2, 
-  Key, 
+} from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { parseErrorMessage } from '@/lib/errorMessages';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
+import {
+  Shield,
+  Users,
+  ToggleLeft,
+  Trash2,
+  Key,
   Loader2,
   Monitor,
   Calendar,
@@ -54,39 +60,80 @@ import {
   Menu,
   Eye,
   EyeOff,
-  Zap
-} from "lucide-react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+  Zap,
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const MotionDiv = motion.div;
 
 // Permission definitions
 const PERMISSIONS = [
-  { key: "edit_events", label: "Events bearbeiten", icon: Calendar, roles: ["admin", "maintainer", "editor"] },
-  { key: "manage_sponsors", label: "Sponsoren verwalten", icon: Image, roles: ["admin", "maintainer"] },
-  { key: "manage_goennermitglieder", label: "Gönnermitglieder verwalten", icon: UserCog, roles: ["admin", "maintainer"] },
-  { key: "edit_shotcounter", label: "Shotcounter bearbeiten", icon: Wine, roles: ["admin", "maintainer", "editor"] },
-  { key: "reset_shotcounter", label: "Shotcounter zurücksetzen", icon: RotateCcw, roles: ["admin"] },
-  { key: "edit_team", label: "Team bearbeiten", icon: Users2, roles: ["admin", "maintainer"] },
-  { key: "manage_attendance", label: "Anwesenheitsliste verwalten", icon: ClipboardList, roles: ["admin", "maintainer"] },
+  {
+    key: 'edit_events',
+    label: 'Events bearbeiten',
+    icon: Calendar,
+    roles: ['admin', 'maintainer', 'editor'],
+  },
+  {
+    key: 'manage_sponsors',
+    label: 'Sponsoren verwalten',
+    icon: Image,
+    roles: ['admin', 'maintainer'],
+  },
+  {
+    key: 'manage_goennermitglieder',
+    label: 'Gönnermitglieder verwalten',
+    icon: UserCog,
+    roles: ['admin', 'maintainer'],
+  },
+  {
+    key: 'edit_shotcounter',
+    label: 'Shotcounter bearbeiten',
+    icon: Wine,
+    roles: ['admin', 'maintainer', 'editor'],
+  },
+  {
+    key: 'reset_shotcounter',
+    label: 'Shotcounter zurücksetzen',
+    icon: RotateCcw,
+    roles: ['admin'],
+  },
+  {
+    key: 'edit_team',
+    label: 'Team bearbeiten',
+    icon: Users2,
+    roles: ['admin', 'maintainer'],
+  },
+  {
+    key: 'manage_attendance',
+    label: 'Anwesenheitsliste verwalten',
+    icon: ClipboardList,
+    roles: ['admin', 'maintainer'],
+  },
 ];
 
 // Default feature toggles
 const DEFAULT_FEATURES = [
-  { name: "beamer_mode", description: "Beamer-Modus Button im Shotcounter anzeigen" },
-  { name: "maintenance_mode", description: "Wartungsmodus aktivieren (Website für Besucher sperren)" },
+  {
+    name: 'beamer_mode',
+    description: 'Beamer-Modus Button im Shotcounter anzeigen',
+  },
+  {
+    name: 'maintenance_mode',
+    description: 'Wartungsmodus aktivieren (Website für Besucher sperren)',
+  },
 ];
 
 // Navbar items that can be toggled (Home, Team, Kontakt cannot be disabled)
 const NAVBAR_ITEMS = [
-  { name: "nav_events", label: "Events", canDisable: true },
-  { name: "nav_sponsors", label: "Sponsoren", canDisable: true },
-  { name: "nav_shotcounter", label: "Shotcounter", canDisable: true },
-  { name: "nav_dienstleistungen", label: "Dienstleistungen", canDisable: true },
+  { name: 'nav_events', label: 'Events', canDisable: true },
+  { name: 'nav_sponsors', label: 'Sponsoren', canDisable: true },
+  { name: 'nav_shotcounter', label: 'Shotcounter', canDisable: true },
+  { name: 'nav_dienstleistungen', label: 'Dienstleistungen', canDisable: true },
 ];
 
-type ResetType = "scores_only" | "everything" | null;
+type ResetType = 'scores_only' | 'everything' | null;
 
 export default function AdminDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -95,36 +142,41 @@ export default function AdminDashboard() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetType, setResetType] = useState<ResetType>(null);
 
-  const { data: users = [], isLoading: usersLoading } = trpc.users.list.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "admin",
-  });
+  const { data: users = [], isLoading: usersLoading } =
+    trpc.users.list.useQuery(undefined, {
+      enabled: isAuthenticated && user?.role === 'admin',
+    });
 
-  const { data: featureToggles = [], isLoading: featuresLoading } = trpc.features.list.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "admin",
-  });
+  const { data: featureToggles = [], isLoading: featuresLoading } =
+    trpc.features.list.useQuery(undefined, {
+      enabled: isAuthenticated && user?.role === 'admin',
+    });
 
-  const { data: dbPermissions = [], isLoading: permissionsLoading } = trpc.permissions.list.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "admin",
-  });
+  const { data: dbPermissions = [], isLoading: permissionsLoading } =
+    trpc.permissions.list.useQuery(undefined, {
+      enabled: isAuthenticated && user?.role === 'admin',
+    });
 
-  const { data: auditLogs = [], isLoading: auditLoading } = trpc.shotcounter.getAuditLog.useQuery(
-    { limit: 50 },
-    {
-      enabled: isAuthenticated && ["admin", "maintainer"].includes(user?.role || ""),
-    }
-  );
+  const { data: auditLogs = [], isLoading: auditLoading } =
+    trpc.shotcounter.getAuditLog.useQuery(
+      { limit: 50 },
+      {
+        enabled:
+          isAuthenticated && ['admin', 'maintainer'].includes(user?.role || ''),
+      },
+    );
 
   const { data: teams = [] } = trpc.shotcounter.getTeams.useQuery(
     { year: new Date().getFullYear() },
-    { enabled: isAuthenticated && user?.role === "admin" }
+    { enabled: isAuthenticated && user?.role === 'admin' },
   );
 
   const togglePermissionMutation = trpc.permissions.toggle.useMutation({
     onSuccess: () => {
       utils.permissions.list.invalidate();
-      toast.success("Berechtigung aktualisiert");
+      toast.success('Berechtigung aktualisiert');
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Fehler: ${error.message}`);
     },
   });
@@ -132,9 +184,9 @@ export default function AdminDashboard() {
   const updateRoleMutation = trpc.users.updateRole.useMutation({
     onSuccess: () => {
       utils.users.list.invalidate();
-      toast.success("Rolle erfolgreich aktualisiert!");
+      toast.success('Rolle erfolgreich aktualisiert!');
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Fehler: ${error.message}`);
     },
   });
@@ -143,18 +195,18 @@ export default function AdminDashboard() {
     onMutate: async ({ featureName, isEnabled }) => {
       // Cancel outgoing refetches
       await utils.features.list.cancel();
-      
+
       // Snapshot previous value
       const previousToggles = utils.features.list.getData();
-      
+
       // Optimistically update
-      utils.features.list.setData(undefined, (old) => {
+      utils.features.list.setData(undefined, old => {
         if (!old) return old;
-        return old.map((f) =>
-          f.featureName === featureName ? { ...f, isEnabled } : f
+        return old.map(f =>
+          f.featureName === featureName ? { ...f, isEnabled } : f,
         );
       });
-      
+
       return { previousToggles };
     },
     onError: (error, _, context) => {
@@ -165,7 +217,7 @@ export default function AdminDashboard() {
       toast.error(`Fehler: ${error.message}`);
     },
     onSuccess: () => {
-      toast.success("Feature-Toggle aktualisiert!");
+      toast.success('Feature-Toggle aktualisiert!');
     },
     onSettled: () => {
       // Invalidate to refetch
@@ -183,11 +235,11 @@ export default function AdminDashboard() {
   const resetYearMutation = trpc.shotcounter.resetYear.useMutation({
     onSuccess: () => {
       utils.shotcounter.getTeams.invalidate();
-      toast.success("Shotcounter erfolgreich zurückgesetzt!");
+      toast.success('Shotcounter erfolgreich zurückgesetzt!');
       setResetDialogOpen(false);
       setResetType(null);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Fehler: ${error.message}`);
     },
   });
@@ -195,11 +247,11 @@ export default function AdminDashboard() {
   const resetScoresMutation = trpc.shotcounter.resetScores.useMutation({
     onSuccess: () => {
       utils.shotcounter.getTeams.invalidate();
-      toast.success("Alle Scores wurden auf 0 zurückgesetzt!");
+      toast.success('Alle Scores wurden auf 0 zurückgesetzt!');
       setResetDialogOpen(false);
       setResetType(null);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Fehler: ${error.message}`);
     },
   });
@@ -207,13 +259,13 @@ export default function AdminDashboard() {
   // Initialize default feature toggles if they don't exist
   useEffect(() => {
     if (featureToggles && !featuresLoading) {
-      DEFAULT_FEATURES.forEach((feature) => {
-        const exists = featureToggles.some((f) => f.featureName === feature.name);
+      DEFAULT_FEATURES.forEach(feature => {
+        const exists = featureToggles.some(f => f.featureName === feature.name);
         if (!exists) {
           createFeatureMutation.mutate({
             featureName: feature.name,
             description: feature.description,
-            isEnabled: feature.name === "beamer_mode", // Enable beamer mode by default
+            isEnabled: feature.name === 'beamer_mode', // Enable beamer mode by default
           });
         }
       });
@@ -221,9 +273,11 @@ export default function AdminDashboard() {
   }, [featureToggles, featuresLoading]);
 
   useEffect(() => {
-    if (!loading && (!isAuthenticated || user?.role !== "admin")) {
-      toast.error("Zugriff verweigert. Nur Admins haben Zugriff auf diesen Bereich.");
-      setLocation("/");
+    if (!loading && (!isAuthenticated || user?.role !== 'admin')) {
+      toast.error(
+        'Zugriff verweigert. Nur Admins haben Zugriff auf diesen Bereich.',
+      );
+      setLocation('/');
     }
   }, [loading, isAuthenticated, user, setLocation]);
 
@@ -235,7 +289,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!isAuthenticated || user?.role !== "admin") {
+  if (!isAuthenticated || user?.role !== 'admin') {
     return null;
   }
 
@@ -246,15 +300,15 @@ export default function AdminDashboard() {
 
   const handleConfirmReset = () => {
     const currentYear = new Date().getFullYear();
-    if (resetType === "scores_only") {
+    if (resetType === 'scores_only') {
       resetScoresMutation.mutate({ year: currentYear });
-    } else if (resetType === "everything") {
+    } else if (resetType === 'everything') {
       resetYearMutation.mutate({ year: currentYear });
     }
   };
 
   const getFeatureToggle = (name: string) => {
-    return featureToggles.find((f) => f.featureName === name);
+    return featureToggles.find(f => f.featureName === name);
   };
 
   return (
@@ -272,7 +326,9 @@ export default function AdminDashboard() {
           <h1 className="text-3xl md:text-4xl font-black truncate">
             <span className="gradient-text">Admin Dashboard</span>
           </h1>
-          <p className="text-muted-foreground text-sm md:text-base">Verwaltung und Konfiguration</p>
+          <p className="text-muted-foreground text-sm md:text-base">
+            Verwaltung und Konfiguration
+          </p>
         </div>
       </MotionDiv>
 
@@ -292,7 +348,9 @@ export default function AdminDashboard() {
                     <Users className="h-5 w-5 text-primary shrink-0" />
                     <span className="truncate">Benutzerverwaltung</span>
                   </CardTitle>
-                  <CardDescription className="text-sm">Verwalte Benutzerrollen und Zugriffsrechte</CardDescription>
+                  <CardDescription className="text-sm">
+                    Verwalte Benutzerrollen und Zugriffsrechte
+                  </CardDescription>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <Button asChild variant="outline" size="sm">
@@ -315,46 +373,52 @@ export default function AdminDashboard() {
                 </p>
               ) : (
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
-                  {users.map((u) => (
+                  {users.map(u => (
                     <div
                       key={u.id}
                       className={cn(
-                        "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition-colors",
-                        u.id === user.id && "bg-primary/5 border-primary/20"
+                        'flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition-colors',
+                        u.id === user.id && 'bg-primary/5 border-primary/20',
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         {u.profilePictureUrl ? (
                           <img
                             src={u.profilePictureUrl}
-                            alt={u.name || "User"}
+                            alt={u.name || 'User'}
                             className="w-10 h-10 rounded-full object-cover shrink-0"
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
                             <span className="text-sm font-bold">
-                              {(u.name || "U").charAt(0).toUpperCase()}
+                              {(u.name || 'U').charAt(0).toUpperCase()}
                             </span>
                           </div>
                         )}
                         <div className="min-w-0">
                           <p className="font-medium truncate">
-                            {u.displayName || u.name || "Unbekannt"}
+                            {u.displayName || u.name || 'Unbekannt'}
                             {u.id === user.id && (
-                              <span className="text-xs text-primary ml-2">(Du)</span>
+                              <span className="text-xs text-primary ml-2">
+                                (Du)
+                              </span>
                             )}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
-                            {u.email || "-"}
+                            {u.email || '-'}
                           </p>
                         </div>
                       </div>
                       <Select
                         value={u.role}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           updateRoleMutation.mutate({
                             userId: u.id,
-                            role: value as "admin" | "maintainer" | "editor" | "user",
+                            role: value as
+                              | 'admin'
+                              | 'maintainer'
+                              | 'editor'
+                              | 'user',
                           })
                         }
                         disabled={u.id === user.id}
@@ -390,7 +454,9 @@ export default function AdminDashboard() {
                 <Key className="h-5 w-5 text-primary shrink-0" />
                 <span className="truncate">Berechtigungen</span>
               </CardTitle>
-              <CardDescription className="text-sm">Übersicht der Rollenberechtigungen</CardDescription>
+              <CardDescription className="text-sm">
+                Übersicht der Rollenberechtigungen
+              </CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto px-3 sm:px-6">
               <div className="min-w-[320px] sm:min-w-[400px]">
@@ -398,21 +464,32 @@ export default function AdminDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-xs">Berechtigung</TableHead>
-                      <TableHead className="text-center w-14 text-xs">Admin</TableHead>
-                      <TableHead className="text-center w-14 text-xs">Maint.</TableHead>
-                      <TableHead className="text-center w-14 text-xs">Editor</TableHead>
-                      <TableHead className="text-center w-14 text-xs">Member</TableHead>
+                      <TableHead className="text-center w-14 text-xs">
+                        Admin
+                      </TableHead>
+                      <TableHead className="text-center w-14 text-xs">
+                        Maint.
+                      </TableHead>
+                      <TableHead className="text-center w-14 text-xs">
+                        Editor
+                      </TableHead>
+                      <TableHead className="text-center w-14 text-xs">
+                        Member
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {PERMISSIONS.map((perm) => {
+                    {PERMISSIONS.map(perm => {
                       const hasPermission = (role: string) => {
                         return dbPermissions.some(
-                          (p) => p.permissionKey === perm.key && p.role === role
+                          p => p.permissionKey === perm.key && p.role === role,
                         );
                       };
 
-                      const togglePermission = (role: "admin" | "maintainer" | "editor" | "user", enabled: boolean) => {
+                      const togglePermission = (
+                        role: 'admin' | 'maintainer' | 'editor' | 'user',
+                        enabled: boolean,
+                      ) => {
                         togglePermissionMutation.mutate({
                           permissionKey: perm.key,
                           role,
@@ -430,12 +507,17 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-center py-2">
                             <button
-                              onClick={() => togglePermission("admin", !hasPermission("admin"))}
+                              onClick={() =>
+                                togglePermission(
+                                  'admin',
+                                  !hasPermission('admin'),
+                                )
+                              }
                               disabled={togglePermissionMutation.isPending}
                               className="mx-auto cursor-pointer hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Klicken zum Umschalten"
                             >
-                              {hasPermission("admin") ? (
+                              {hasPermission('admin') ? (
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-muted-foreground/30" />
@@ -444,12 +526,17 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-center py-2">
                             <button
-                              onClick={() => togglePermission("maintainer", !hasPermission("maintainer"))}
+                              onClick={() =>
+                                togglePermission(
+                                  'maintainer',
+                                  !hasPermission('maintainer'),
+                                )
+                              }
                               disabled={togglePermissionMutation.isPending}
                               className="mx-auto cursor-pointer hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Klicken zum Umschalten"
                             >
-                              {hasPermission("maintainer") ? (
+                              {hasPermission('maintainer') ? (
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-muted-foreground/30" />
@@ -458,12 +545,17 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-center py-2">
                             <button
-                              onClick={() => togglePermission("editor", !hasPermission("editor"))}
+                              onClick={() =>
+                                togglePermission(
+                                  'editor',
+                                  !hasPermission('editor'),
+                                )
+                              }
                               disabled={togglePermissionMutation.isPending}
                               className="mx-auto cursor-pointer hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Klicken zum Umschalten"
                             >
-                              {hasPermission("editor") ? (
+                              {hasPermission('editor') ? (
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-muted-foreground/30" />
@@ -472,12 +564,14 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-center py-2">
                             <button
-                              onClick={() => togglePermission("user", !hasPermission("user"))}
+                              onClick={() =>
+                                togglePermission('user', !hasPermission('user'))
+                              }
                               disabled={togglePermissionMutation.isPending}
                               className="mx-auto cursor-pointer hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Klicken zum Umschalten"
                             >
-                              {hasPermission("user") ? (
+                              {hasPermission('user') ? (
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-muted-foreground/30" />
@@ -507,7 +601,9 @@ export default function AdminDashboard() {
               <ToggleLeft className="h-5 w-5 text-primary" />
               Feature Toggles
             </CardTitle>
-            <CardDescription className="text-sm">Aktiviere oder deaktiviere Features dynamisch</CardDescription>
+            <CardDescription className="text-sm">
+              Aktiviere oder deaktiviere Features dynamisch
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {featuresLoading ? (
@@ -523,7 +619,10 @@ export default function AdminDashboard() {
                       <Monitor className="h-5 w-5 text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <Label htmlFor="beamer-toggle" className="font-medium cursor-pointer block truncate">
+                      <Label
+                        htmlFor="beamer-toggle"
+                        className="font-medium cursor-pointer block truncate"
+                      >
                         Beamer-Modus
                       </Label>
                       <p className="text-xs text-muted-foreground truncate">
@@ -533,10 +632,10 @@ export default function AdminDashboard() {
                   </div>
                   <Switch
                     id="beamer-toggle"
-                    checked={getFeatureToggle("beamer_mode")?.isEnabled ?? true}
-                    onCheckedChange={(checked) =>
+                    checked={getFeatureToggle('beamer_mode')?.isEnabled ?? true}
+                    onCheckedChange={checked =>
                       toggleFeatureMutation.mutate({
-                        featureName: "beamer_mode",
+                        featureName: 'beamer_mode',
                         isEnabled: checked,
                       })
                     }
@@ -550,7 +649,10 @@ export default function AdminDashboard() {
                       <Shield className="h-5 w-5 text-orange-500" />
                     </div>
                     <div className="min-w-0">
-                      <Label htmlFor="maintenance-toggle" className="font-medium cursor-pointer block truncate">
+                      <Label
+                        htmlFor="maintenance-toggle"
+                        className="font-medium cursor-pointer block truncate"
+                      >
                         Wartungsmodus
                       </Label>
                       <p className="text-xs text-muted-foreground truncate">
@@ -560,10 +662,12 @@ export default function AdminDashboard() {
                   </div>
                   <Switch
                     id="maintenance-toggle"
-                    checked={getFeatureToggle("maintenance_mode")?.isEnabled ?? false}
-                    onCheckedChange={(checked) =>
+                    checked={
+                      getFeatureToggle('maintenance_mode')?.isEnabled ?? false
+                    }
+                    onCheckedChange={checked =>
                       toggleFeatureMutation.mutate({
-                        featureName: "maintenance_mode",
+                        featureName: 'maintenance_mode',
                         isEnabled: checked,
                       })
                     }
@@ -577,20 +681,29 @@ export default function AdminDashboard() {
                       <Zap className="h-5 w-5 text-secondary" />
                     </div>
                     <div className="min-w-0">
-                      <Label htmlFor="temp-button-toggle" className="font-medium cursor-pointer block">
+                      <Label
+                        htmlFor="temp-button-toggle"
+                        className="font-medium cursor-pointer block"
+                      >
                         Temporärer Button (Homepage)
                       </Label>
                       <p className="text-xs text-muted-foreground">
-                        Zeigt den Aktions-Button auf der Homepage an — aktuell verlinkt auf: <span className="font-mono text-primary">/harassenlauf</span>
+                        Zeigt den Aktions-Button auf der Homepage an — aktuell
+                        verlinkt auf:{' '}
+                        <span className="font-mono text-primary">
+                          /harassenlauf
+                        </span>
                       </p>
                     </div>
                   </div>
                   <Switch
                     id="temp-button-toggle"
-                    checked={getFeatureToggle("temp_button")?.isEnabled ?? false}
-                    onCheckedChange={(checked) =>
+                    checked={
+                      getFeatureToggle('temp_button')?.isEnabled ?? false
+                    }
+                    onCheckedChange={checked =>
                       toggleFeatureMutation.mutate({
-                        featureName: "temp_button",
+                        featureName: 'temp_button',
                         isEnabled: checked,
                       })
                     }
@@ -615,7 +728,8 @@ export default function AdminDashboard() {
               Navigation Sichtbarkeit
             </CardTitle>
             <CardDescription className="text-sm">
-              Steuere welche Seiten in der Navigation sichtbar sind. Deaktivierte Seiten sind nur für eingeloggte Benutzer zugänglich.
+              Steuere welche Seiten in der Navigation sichtbar sind.
+              Deaktivierte Seiten sind nur für eingeloggte Benutzer zugänglich.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -632,17 +746,20 @@ export default function AdminDashboard() {
                   <span className="px-2 py-0.5 rounded bg-muted">Team</span>
                   <span className="px-2 py-0.5 rounded bg-muted">Kontakt</span>
                 </div>
-                
+
                 {/* Toggleable items */}
                 <div className="grid sm:grid-cols-2 gap-3">
-                  {NAVBAR_ITEMS.map((item) => {
-                    const isEnabled = getFeatureToggle(item.name)?.isEnabled ?? true;
+                  {NAVBAR_ITEMS.map(item => {
+                    const isEnabled =
+                      getFeatureToggle(item.name)?.isEnabled ?? true;
                     return (
                       <div
                         key={item.name}
                         className={cn(
-                          "flex items-center justify-between p-3 border rounded-lg transition-colors",
-                          isEnabled ? "border-green-500/30 bg-green-500/5" : "border-muted bg-muted/30"
+                          'flex items-center justify-between p-3 border rounded-lg transition-colors',
+                          isEnabled
+                            ? 'border-green-500/30 bg-green-500/5'
+                            : 'border-muted bg-muted/30',
                         )}
                       >
                         <div className="flex items-center gap-2">
@@ -651,16 +768,18 @@ export default function AdminDashboard() {
                           ) : (
                             <EyeOff className="h-4 w-4 text-muted-foreground" />
                           )}
-                          <span className={cn(
-                            "font-medium text-sm",
-                            !isEnabled && "text-muted-foreground"
-                          )}>
+                          <span
+                            className={cn(
+                              'font-medium text-sm',
+                              !isEnabled && 'text-muted-foreground',
+                            )}
+                          >
                             {item.label}
                           </span>
                         </div>
                         <Switch
                           checked={isEnabled}
-                          onCheckedChange={(checked) =>
+                          onCheckedChange={checked =>
                             toggleFeatureMutation.mutate({
                               featureName: item.name,
                               isEnabled: checked,
@@ -671,9 +790,10 @@ export default function AdminDashboard() {
                     );
                   })}
                 </div>
-                
+
                 <p className="text-xs text-muted-foreground mt-3">
-                  Deaktivierte Seiten werden hinter einem Trenner angezeigt und erfordern eine Anmeldung.
+                  Deaktivierte Seiten werden hinter einem Trenner angezeigt und
+                  erfordern eine Anmeldung.
                 </p>
               </div>
             )}
@@ -693,7 +813,9 @@ export default function AdminDashboard() {
               <Wine className="h-5 w-5 text-primary" />
               Shotcounter Verwaltung
             </CardTitle>
-            <CardDescription className="text-sm">Verwalte den Shotcounter und setze ihn zurück</CardDescription>
+            <CardDescription className="text-sm">
+              Verwalte den Shotcounter und setze ihn zurück
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-4 border border-destructive/20 rounded-xl bg-destructive/5">
@@ -702,12 +824,17 @@ export default function AdminDashboard() {
                   <Trash2 className="h-5 w-5 text-destructive" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-destructive">Shotcounter zurücksetzen</h4>
+                  <h4 className="font-medium text-destructive">
+                    Shotcounter zurücksetzen
+                  </h4>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Wähle, ob nur die Scores oder alles (Teams + Scores) zurückgesetzt werden soll.
+                    Wähle, ob nur die Scores oder alles (Teams + Scores)
+                    zurückgesetzt werden soll.
                     {teams.length > 0 && (
                       <span className="block mt-1 text-xs">
-                        Aktuell: {teams.length} Team{teams.length !== 1 ? "s" : ""} im Jahr {new Date().getFullYear()}
+                        Aktuell: {teams.length} Team
+                        {teams.length !== 1 ? 's' : ''} im Jahr{' '}
+                        {new Date().getFullYear()}
                       </span>
                     )}
                   </p>
@@ -715,7 +842,7 @@ export default function AdminDashboard() {
                     <Button
                       variant="outline"
                       className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
-                      onClick={() => handleResetChoice("scores_only")}
+                      onClick={() => handleResetChoice('scores_only')}
                       disabled={teams.length === 0}
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -723,7 +850,7 @@ export default function AdminDashboard() {
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={() => handleResetChoice("everything")}
+                      onClick={() => handleResetChoice('everything')}
                       disabled={teams.length === 0}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -746,7 +873,9 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Shotcounter Audit Log</CardTitle>
-            <CardDescription className="text-sm">Letzte 50 Aktionen im Shotcounter</CardDescription>
+            <CardDescription className="text-sm">
+              Letzte 50 Aktionen im Shotcounter
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {auditLoading ? (
@@ -767,38 +896,48 @@ export default function AdminDashboard() {
                       <TableHead className="text-xs">Aktion</TableHead>
                       <TableHead className="text-xs">Betrag</TableHead>
                       <TableHead className="text-xs">Score</TableHead>
-                      <TableHead className="text-xs">Durchgeführt von</TableHead>
+                      <TableHead className="text-xs">
+                        Durchgeführt von
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {auditLogs.map((log) => (
+                    {auditLogs.map(log => (
                       <TableRow key={log.id}>
                         <TableCell className="text-xs whitespace-nowrap py-2">
-                          {new Date(log.timestamp).toLocaleString("de-DE")}
+                          {new Date(log.timestamp).toLocaleString('de-DE')}
                         </TableCell>
                         <TableCell className="text-xs py-2 font-medium">
-                          {log.teamName || "-"}
+                          {log.teamName || '-'}
                         </TableCell>
                         <TableCell className="text-xs py-2">
-                          <span className="capitalize">{log.action.replace("_", " ")}</span>
+                          <span className="capitalize">
+                            {log.action.replace('_', ' ')}
+                          </span>
                         </TableCell>
                         <TableCell className="py-2">
                           {log.amount !== null ? (
-                            <span className={cn(
-                              "font-medium text-xs",
-                              log.amount > 0 ? "text-green-500" : "text-red-500"
-                            )}>
+                            <span
+                              className={cn(
+                                'font-medium text-xs',
+                                log.amount > 0
+                                  ? 'text-green-500'
+                                  : 'text-red-500',
+                              )}
+                            >
                               {log.amount > 0 ? `+${log.amount}` : log.amount}
                             </span>
-                          ) : "-"}
+                          ) : (
+                            '-'
+                          )}
                         </TableCell>
                         <TableCell className="text-xs py-2">
                           {log.previousScore !== null && log.newScore !== null
                             ? `${log.previousScore} → ${log.newScore}`
-                            : "-"}
+                            : '-'}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground py-2">
-                          {log.performedByName || "System"}
+                          {log.performedByName || 'System'}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -816,19 +955,23 @@ export default function AdminDashboard() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              {resetType === "scores_only" ? "Scores zurücksetzen?" : "Alles zurücksetzen?"}
+              {resetType === 'scores_only'
+                ? 'Scores zurücksetzen?'
+                : 'Alles zurücksetzen?'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {resetType === "scores_only" ? (
+              {resetType === 'scores_only' ? (
                 <>
-                  Alle Scores werden auf 0 zurückgesetzt. Die Teams bleiben erhalten.
+                  Alle Scores werden auf 0 zurückgesetzt. Die Teams bleiben
+                  erhalten.
                   <strong className="block mt-2 text-orange-600">
                     Diese Aktion kann nicht rückgängig gemacht werden!
                   </strong>
                 </>
               ) : (
                 <>
-                  Möchtest du den Shotcounter für {new Date().getFullYear()} wirklich vollständig zurücksetzen?
+                  Möchtest du den Shotcounter für {new Date().getFullYear()}{' '}
+                  wirklich vollständig zurücksetzen?
                   <strong className="block mt-2 text-destructive">
                     Alle Teams und Scores werden unwiderruflich gelöscht!
                   </strong>
@@ -837,18 +980,25 @@ export default function AdminDashboard() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setResetType(null)}>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setResetType(null)}>
+              Abbrechen
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmReset}
               className={cn(
-                resetType === "scores_only" 
-                  ? "bg-orange-500 text-white hover:bg-orange-600" 
-                  : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                resetType === 'scores_only'
+                  ? 'bg-orange-500 text-white hover:bg-orange-600'
+                  : 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
               )}
             >
-              {(resetYearMutation.isPending || resetScoresMutation.isPending) ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Zurücksetzen...</>
-              ) : "Ja, zurücksetzen"}
+              {resetYearMutation.isPending || resetScoresMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Zurücksetzen...
+                </>
+              ) : (
+                'Ja, zurücksetzen'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

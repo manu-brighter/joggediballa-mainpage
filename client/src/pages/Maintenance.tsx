@@ -1,8 +1,14 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wrench, LogIn } from "lucide-react";
-import { getLoginUrl } from "@/const";
-import { motion } from "framer-motion";
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Wrench, LogIn } from 'lucide-react';
+import { getLoginUrl } from '@/const';
+import { motion } from 'framer-motion';
 
 const MotionDiv = motion.div;
 
@@ -42,11 +48,10 @@ export default function MaintenancePage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-center text-muted-foreground">
-              Die Website ist vorübergehend nicht verfügbar. 
-              Bitte versuche es später erneut oder melde dich an, 
-              um auf die Website zuzugreifen.
+              Die Website ist vorübergehend nicht verfügbar. Bitte versuche es
+              später erneut oder melde dich an, um auf die Website zuzugreifen.
             </p>
-            
+
             <div className="flex flex-col gap-3">
               <a href={getLoginUrl()} className="w-full">
                 <Button className="w-full gap-2" size="lg">

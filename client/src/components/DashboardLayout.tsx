@@ -1,11 +1,11 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from '@/_core/hooks/useAuth';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Sidebar,
   SidebarContent,
@@ -18,21 +18,21 @@ import {
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
-} from "@/components/ui/sidebar";
-import { getLoginUrl } from "@/const";
-import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
-import { CSSProperties, useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
+} from '@/components/ui/sidebar';
+import { getLoginUrl } from '@/const';
+import { useIsMobile } from '@/hooks/useMobile';
+import { LayoutDashboard, LogOut, PanelLeft, Users } from 'lucide-react';
+import { CSSProperties, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'wouter';
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
-import { Button } from "./ui/button";
+import { Button } from './ui/button';
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: 'Page 1', path: '/' },
+  { icon: Users, label: 'Page 2', path: '/some-path' },
 ];
 
-const SIDEBAR_WIDTH_KEY = "sidebar-width";
+const SIDEBAR_WIDTH_KEY = 'sidebar-width';
 const DEFAULT_WIDTH = 280;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 480;
@@ -53,7 +53,7 @@ export default function DashboardLayout({
   }, [sidebarWidth]);
 
   if (loading) {
-    return <DashboardLayoutSkeleton />
+    return <DashboardLayoutSkeleton />;
   }
 
   if (!user) {
@@ -65,7 +65,8 @@ export default function DashboardLayout({
               Sign in to continue
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
+              Access to this dashboard requires authentication. Continue to
+              launch the login flow.
             </p>
           </div>
           <Button
@@ -86,7 +87,7 @@ export default function DashboardLayout({
     <SidebarProvider
       style={
         {
-          "--sidebar-width": `${sidebarWidth}px`,
+          '--sidebar-width': `${sidebarWidth}px`,
         } as CSSProperties
       }
     >
@@ -109,7 +110,7 @@ function DashboardLayoutContent({
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
-  const isCollapsed = state === "collapsed";
+  const isCollapsed = state === 'collapsed';
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
@@ -137,17 +138,17 @@ function DashboardLayoutContent({
     };
 
     if (isResizing) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
     }
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
   }, [isResizing, setSidebarWidth]);
 
@@ -191,7 +192,7 @@ function DashboardLayoutContent({
                       className={`h-10 transition-all font-normal`}
                     >
                       <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                        className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`}
                       />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
@@ -212,10 +213,10 @@ function DashboardLayoutContent({
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
+                      {user?.name || '-'}
                     </p>
                     <p className="text-xs text-muted-foreground truncate mt-1.5">
-                      {user?.email || "-"}
+                      {user?.email || '-'}
                     </p>
                   </div>
                 </button>
@@ -233,7 +234,7 @@ function DashboardLayoutContent({
           </SidebarFooter>
         </Sidebar>
         <div
-          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors ${isCollapsed ? "hidden" : ""}`}
+          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors ${isCollapsed ? 'hidden' : ''}`}
           onMouseDown={() => {
             if (isCollapsed) return;
             setIsResizing(true);
@@ -250,7 +251,7 @@ function DashboardLayoutContent({
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1">
                   <span className="tracking-tight text-foreground">
-                    {activeMenuItem?.label ?? "Menu"}
+                    {activeMenuItem?.label ?? 'Menu'}
                   </span>
                 </div>
               </div>

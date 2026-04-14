@@ -86,9 +86,7 @@
       "compositePrimaryKeys": {
         "contact_submissions_id": {
           "name": "contact_submissions_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -171,12 +169,8 @@
           "name": "events_createdBy_users_id_fk",
           "tableFrom": "events",
           "tableTo": "users",
-          "columnsFrom": [
-            "createdBy"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["createdBy"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -184,9 +178,7 @@
       "compositePrimaryKeys": {
         "events_id": {
           "name": "events_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -247,12 +239,8 @@
           "name": "feature_toggles_updatedBy_users_id_fk",
           "tableFrom": "feature_toggles",
           "tableTo": "users",
-          "columnsFrom": [
-            "updatedBy"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updatedBy"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -260,17 +248,13 @@
       "compositePrimaryKeys": {
         "feature_toggles_id": {
           "name": "feature_toggles_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "feature_toggles_featureName_unique": {
           "name": "feature_toggles_featureName_unique",
-          "columns": [
-            "featureName"
-          ]
+          "columns": ["featureName"]
         }
       },
       "checkConstraint": {}
@@ -401,12 +385,8 @@
           "name": "goennermitglieder_createdBy_users_id_fk",
           "tableFrom": "goennermitglieder",
           "tableTo": "users",
-          "columnsFrom": [
-            "createdBy"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["createdBy"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -414,9 +394,7 @@
       "compositePrimaryKeys": {
         "goennermitglieder_id": {
           "name": "goennermitglieder_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -519,12 +497,8 @@
           "name": "photos_eventId_events_id_fk",
           "tableFrom": "photos",
           "tableTo": "events",
-          "columnsFrom": [
-            "eventId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["eventId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -532,12 +506,8 @@
           "name": "photos_uploadedBy_users_id_fk",
           "tableFrom": "photos",
           "tableTo": "users",
-          "columnsFrom": [
-            "uploadedBy"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["uploadedBy"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -545,9 +515,7 @@
       "compositePrimaryKeys": {
         "photos_id": {
           "name": "photos_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -634,12 +602,8 @@
           "name": "shotcounter_audit_log_teamId_shotcounter_teams_id_fk",
           "tableFrom": "shotcounter_audit_log",
           "tableTo": "shotcounter_teams",
-          "columnsFrom": [
-            "teamId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["teamId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -647,12 +611,8 @@
           "name": "shotcounter_audit_log_performedBy_users_id_fk",
           "tableFrom": "shotcounter_audit_log",
           "tableTo": "users",
-          "columnsFrom": [
-            "performedBy"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["performedBy"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -660,9 +620,7 @@
       "compositePrimaryKeys": {
         "shotcounter_audit_log_id": {
           "name": "shotcounter_audit_log_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -731,12 +689,8 @@
           "name": "shotcounter_teams_createdBy_users_id_fk",
           "tableFrom": "shotcounter_teams",
           "tableTo": "users",
-          "columnsFrom": [
-            "createdBy"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["createdBy"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -744,9 +698,7 @@
       "compositePrimaryKeys": {
         "shotcounter_teams_id": {
           "name": "shotcounter_teams_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -837,12 +789,8 @@
           "name": "sponsors_createdBy_users_id_fk",
           "tableFrom": "sponsors",
           "tableTo": "users",
-          "columnsFrom": [
-            "createdBy"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["createdBy"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -850,9 +798,7 @@
       "compositePrimaryKeys": {
         "sponsors_id": {
           "name": "sponsors_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -942,9 +888,7 @@
       "compositePrimaryKeys": {
         "team_members_id": {
           "name": "team_members_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1041,17 +985,13 @@
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "users_openId_unique": {
           "name": "users_openId_unique",
-          "columns": [
-            "openId"
-          ]
+          "columns": ["openId"]
         }
       },
       "checkConstraint": {}

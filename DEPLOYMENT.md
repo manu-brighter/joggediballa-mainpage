@@ -11,16 +11,19 @@ Diese Anleitung erklärt Schritt für Schritt, wie du die Jogge di Balla Website
 ## Schritt 1: Server vorbereiten
 
 ### 1.1 Mit Server verbinden
+
 ```bash
 ssh root@deine-server-ip
 ```
 
 ### 1.2 System aktualisieren
+
 ```bash
 apt update && apt upgrade -y
 ```
 
 ### 1.3 Node.js 20 installieren
+
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs
@@ -28,12 +31,14 @@ node --version  # Sollte v20.x.x anzeigen
 ```
 
 ### 1.4 pnpm installieren
+
 ```bash
 npm install -g pnpm
 pnpm --version
 ```
 
 ### 1.5 PM2 installieren (Process Manager)
+
 ```bash
 npm install -g pm2
 pm2 --version
@@ -42,6 +47,7 @@ pm2 --version
 ## Schritt 2: MySQL/MariaDB einrichten
 
 ### 2.1 MariaDB installieren
+
 ```bash
 apt install -y mariadb-server mariadb-client
 systemctl start mariadb
@@ -49,10 +55,13 @@ systemctl enable mariadb
 ```
 
 ### 2.2 MariaDB sichern
+
 ```bash
 mysql_secure_installation
 ```
+
 Beantworte die Fragen:
+
 - Set root password? **Y** (wähle ein sicheres Passwort)
 - Remove anonymous users? **Y**
 - Disallow root login remotely? **Y**
@@ -60,11 +69,13 @@ Beantworte die Fragen:
 - Reload privilege tables? **Y**
 
 ### 2.3 Datenbank und Benutzer erstellen
+
 ```bash
 mysql -u root -p
 ```
 
 Im MySQL-Prompt:
+
 ```sql
 CREATE DATABASE joggediballa CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'joggediballa_user'@'localhost' IDENTIFIED BY 'dein_sicheres_passwort';
@@ -76,29 +87,34 @@ EXIT;
 ## Schritt 3: Projekt deployen
 
 ### 3.1 Projekt-Verzeichnis erstellen
+
 ```bash
 mkdir -p /var/www
 cd /var/www
 ```
 
 ### 3.2 Repository clonen
+
 ```bash
 git clone https://github.com/manu-brighter/joggediballa-mainpage.git joggediballa
 cd joggediballa
 ```
 
 ### 3.3 Dependencies installieren
+
 ```bash
 pnpm install
 ```
 
 ### 3.4 Environment-Variablen konfigurieren
+
 ```bash
 cp .env.example .env
 nano .env
 ```
 
 Fülle die `.env` mit deinen echten Werten (siehe `GOOGLE_OAUTH_SETUP.md` für Google OAuth):
+
 ```env
 DATABASE_URL=mysql://joggediballa_user:dein_sicheres_passwort@localhost:3306/joggediballa
 JWT_SECRET=generiere-einen-zufälligen-32-zeichen-string
@@ -114,6 +130,7 @@ PORT=3000
 ```
 
 **JWT Secret generieren:**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
@@ -121,16 +138,19 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Speichern: `Ctrl+O`, `Enter`, `Ctrl+X`
 
 ### 3.5 Datenbank-Migrationen ausführen
+
 ```bash
 pnpm db:push
 ```
 
 ### 3.6 Projekt builden
+
 ```bash
 pnpm build
 ```
 
 ### 3.7 Mit PM2 starten
+
 ```bash
 pm2 start dist/index.js --name joggediballa
 pm2 save
@@ -138,11 +158,13 @@ pm2 startup
 ```
 
 Kopiere den ausgegebenen Befehl und führe ihn aus (sieht aus wie):
+
 ```bash
 sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp /root
 ```
 
 ### 3.8 Status prüfen
+
 ```bash
 pm2 status
 pm2 logs joggediballa
@@ -151,6 +173,7 @@ pm2 logs joggediballa
 ## Schritt 4: Nginx als Reverse Proxy
 
 ### 4.1 Nginx installieren
+
 ```bash
 apt install -y nginx
 systemctl start nginx
@@ -158,16 +181,18 @@ systemctl enable nginx
 ```
 
 ### 4.2 Nginx-Konfiguration erstellen
+
 ```bash
 nano /etc/nginx/sites-available/joggediballa
 ```
 
 Füge folgende Konfiguration ein:
+
 ```nginx
 server {
     listen 80;
     server_name joggediballa.de www.joggediballa.de;
-    
+
     # Redirect to HTTPS
     return 301 https://$server_name$request_uri;
 }
@@ -179,7 +204,7 @@ server {
     # SSL certificates (will be added by Certbot)
     ssl_certificate /etc/letsencrypt/live/joggediballa.de/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/joggediballa.de/privkey.pem;
-    
+
     # SSL configuration
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
@@ -196,7 +221,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
@@ -224,6 +249,7 @@ server {
 Speichern: `Ctrl+O`, `Enter`, `Ctrl+X`
 
 ### 4.3 Konfiguration aktivieren
+
 ```bash
 ln -s /etc/nginx/sites-available/joggediballa /etc/nginx/sites-enabled/
 nginx -t  # Konfiguration testen
@@ -233,21 +259,25 @@ systemctl reload nginx
 ## Schritt 5: SSL-Zertifikat mit Let's Encrypt
 
 ### 5.1 Certbot installieren
+
 ```bash
 apt install -y certbot python3-certbot-nginx
 ```
 
 ### 5.2 SSL-Zertifikat erstellen
+
 ```bash
 certbot --nginx -d joggediballa.de -d www.joggediballa.de
 ```
 
 Beantworte die Fragen:
+
 - E-Mail-Adresse eingeben
 - Terms of Service akzeptieren (Y)
 - E-Mail-Benachrichtigungen (optional)
 
 ### 5.3 Auto-Renewal testen
+
 ```bash
 certbot renew --dry-run
 ```
@@ -255,6 +285,7 @@ certbot renew --dry-run
 ## Schritt 6: Firewall konfigurieren
 
 ### 6.1 UFW installieren und konfigurieren
+
 ```bash
 apt install -y ufw
 ufw allow OpenSSH
@@ -284,11 +315,13 @@ Folge der Anleitung in `GOOGLE_OAUTH_SETUP.md`:
 ## Updates deployen
 
 ### Automatisches Update-Script erstellen
+
 ```bash
 nano /root/update-joggediballa.sh
 ```
 
 Füge ein:
+
 ```bash
 #!/bin/bash
 cd /var/www/joggediballa
@@ -300,11 +333,13 @@ echo "Update abgeschlossen!"
 ```
 
 Ausführbar machen:
+
 ```bash
 chmod +x /root/update-joggediballa.sh
 ```
 
 ### Update ausführen
+
 ```bash
 /root/update-joggediballa.sh
 ```
@@ -312,6 +347,7 @@ chmod +x /root/update-joggediballa.sh
 ## Monitoring und Wartung
 
 ### Logs anzeigen
+
 ```bash
 # PM2 Logs
 pm2 logs joggediballa
@@ -325,17 +361,20 @@ journalctl -u nginx -f
 ```
 
 ### App neu starten
+
 ```bash
 pm2 restart joggediballa
 ```
 
 ### Server neu starten
+
 ```bash
 reboot
 # Nach Neustart: PM2 startet automatisch
 ```
 
 ### Backup erstellen
+
 ```bash
 # Datenbank-Backup
 mysqldump -u joggediballa_user -p joggediballa > /root/backup-$(date +%Y%m%d).sql
@@ -347,12 +386,14 @@ tar -czf /root/joggediballa-files-$(date +%Y%m%d).tar.gz /var/www/joggediballa
 ## Troubleshooting
 
 ### App läuft nicht
+
 ```bash
 pm2 status
 pm2 logs joggediballa --lines 100
 ```
 
 ### Nginx-Fehler
+
 ```bash
 nginx -t
 systemctl status nginx
@@ -360,18 +401,21 @@ tail -f /var/log/nginx/error.log
 ```
 
 ### Datenbank-Verbindung fehlgeschlagen
+
 ```bash
 mysql -u joggediballa_user -p joggediballa
 # Teste die Verbindung
 ```
 
 ### SSL-Zertifikat erneuern
+
 ```bash
 certbot renew
 systemctl reload nginx
 ```
 
 ### Port 3000 bereits belegt
+
 ```bash
 lsof -i :3000
 # Prozess beenden oder anderen Port in .env verwenden
@@ -380,6 +424,7 @@ lsof -i :3000
 ## Performance-Optimierung
 
 ### Node.js Memory Limit erhöhen
+
 ```bash
 pm2 delete joggediballa
 pm2 start dist/index.js --name joggediballa --max-memory-restart 500M
@@ -387,7 +432,9 @@ pm2 save
 ```
 
 ### Nginx Caching aktivieren
+
 Füge in Nginx-Config hinzu:
+
 ```nginx
 proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=my_cache:10m max_size=1g inactive=60m;
 
@@ -401,12 +448,14 @@ location / {
 ## Sicherheit
 
 ### Automatische Updates
+
 ```bash
 apt install -y unattended-upgrades
 dpkg-reconfigure --priority=low unattended-upgrades
 ```
 
 ### Fail2Ban installieren
+
 ```bash
 apt install -y fail2ban
 systemctl enable fail2ban
@@ -414,16 +463,20 @@ systemctl start fail2ban
 ```
 
 ### SSH absichern
+
 ```bash
 nano /etc/ssh/sshd_config
 ```
+
 Ändere:
+
 ```
 PermitRootLogin no
 PasswordAuthentication no
 ```
 
 Erstelle einen neuen Benutzer:
+
 ```bash
 adduser admin
 usermod -aG sudo admin
@@ -432,6 +485,7 @@ usermod -aG sudo admin
 ## Support
 
 Bei Problemen:
+
 1. Prüfe die Logs: `pm2 logs joggediballa`
 2. Prüfe Nginx: `nginx -t && tail -f /var/log/nginx/error.log`
 3. Prüfe Datenbank: `systemctl status mariadb`

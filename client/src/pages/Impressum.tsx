@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Scale } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Scale } from 'lucide-react';
 
 export default function Impressum() {
   return (
@@ -23,7 +23,9 @@ export default function Impressum() {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Vertretungsberechtigte Person</h3>
+              <h3 className="font-semibold mb-2">
+                Vertretungsberechtigte Person
+              </h3>
               <p>Manuel Heller</p>
             </div>
 
@@ -58,20 +60,26 @@ export default function Impressum() {
               <h3 className="font-semibold mb-2">Haftungsausschluss</h3>
               <div className="space-y-4 text-muted-foreground">
                 <div>
-                  <h4 className="font-medium text-foreground">Haftung für Inhalte</h4>
+                  <h4 className="font-medium text-foreground">
+                    Haftung für Inhalte
+                  </h4>
                   <p>
-                    Die Inhalte dieser Website wurden mit grösstmöglicher Sorgfalt erstellt.
-                    Der Verein Jogge di Balla übernimmt jedoch keine Gewähr für die
-                    Richtigkeit, Vollständigkeit und Aktualität der bereitgestellten Inhalte.
+                    Die Inhalte dieser Website wurden mit grösstmöglicher
+                    Sorgfalt erstellt. Der Verein Jogge di Balla übernimmt
+                    jedoch keine Gewähr für die Richtigkeit, Vollständigkeit und
+                    Aktualität der bereitgestellten Inhalte.
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-foreground">Haftung für Links</h4>
+                  <h4 className="font-medium text-foreground">
+                    Haftung für Links
+                  </h4>
                   <p>
-                    Diese Website enthält Links zu externen Websites Dritter, auf deren
-                    Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten
-                    Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich.
+                    Diese Website enthält Links zu externen Websites Dritter,
+                    auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte
+                    der verlinkten Seiten ist stets der jeweilige Anbieter oder
+                    Betreiber verantwortlich.
                   </p>
                 </div>
 
@@ -79,14 +87,16 @@ export default function Impressum() {
                   <h4 className="font-medium text-foreground">Urheberrecht</h4>
                   <p>
                     Die Inhalte und Werke auf dieser Website unterliegen dem
-                    schweizerischen Urheberrecht. Jede Art der Verwertung ausserhalb
-                    der Grenzen des Urheberrechts bedarf der vorherigen schriftlichen
-                    Zustimmung des jeweiligen Rechteinhabers.
+                    schweizerischen Urheberrecht. Jede Art der Verwertung
+                    ausserhalb der Grenzen des Urheberrechts bedarf der
+                    vorherigen schriftlichen Zustimmung des jeweiligen
+                    Rechteinhabers.
                   </p>
                   <p className="mt-2">
-                    <strong>Fotos:</strong> Eigene Fotos auf dieser Website sind urheberrechtlich
-                    geschützt und © Manuel Heller. Die Verwendung von Bildern Dritter erfolgt
-                    mit entsprechender Lizenz oder Genehmigung.
+                    <strong>Fotos:</strong> Eigene Fotos auf dieser Website sind
+                    urheberrechtlich geschützt und © Manuel Heller. Die
+                    Verwendung von Bildern Dritter erfolgt mit entsprechender
+                    Lizenz oder Genehmigung.
                   </p>
                 </div>
               </div>

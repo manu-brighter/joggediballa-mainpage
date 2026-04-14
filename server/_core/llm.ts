@@ -1,25 +1,30 @@
-import { ENV } from "./env";
+import { ENV } from './env';
 
-export type Role = "system" | "user" | "assistant" | "tool" | "function";
+export type Role = 'system' | 'user' | 'assistant' | 'tool' | 'function';
 
 export type TextContent = {
-  type: "text";
+  type: 'text';
   text: string;
 };
 
 export type ImageContent = {
-  type: "image_url";
+  type: 'image_url';
   image_url: {
     url: string;
-    detail?: "auto" | "low" | "high";
+    detail?: 'auto' | 'low' | 'high';
   };
 };
 
 export type FileContent = {
-  type: "file_url";
+  type: 'file_url';
   file_url: {
     url: string;
-    mime_type?: "audio/mpeg" | "audio/wav" | "application/pdf" | "audio/mp4" | "video/mp4" ;
+    mime_type?:
+      | 'audio/mpeg'
+      | 'audio/wav'
+      | 'application/pdf'
+      | 'audio/mp4'
+      | 'video/mp4';
   };
 };
 
@@ -33,7 +38,7 @@ export type Message = {
 };
 
 export type Tool = {
-  type: "function";
+  type: 'function';
   function: {
     name: string;
     description?: string;
@@ -41,10 +46,10 @@ export type Tool = {
   };
 };
 
-export type ToolChoicePrimitive = "none" | "auto" | "required";
+export type ToolChoicePrimitive = 'none' | 'auto' | 'required';
 export type ToolChoiceByName = { name: string };
 export type ToolChoiceExplicit = {
-  type: "function";
+  type: 'function';
   function: {
     name: string;
   };
@@ -70,7 +75,7 @@ export type InvokeParams = {
 
 export type ToolCall = {
   id: string;
-  type: "function";
+  type: 'function';
   function: {
     name: string;
     arguments: string;
@@ -106,43 +111,43 @@ export type JsonSchema = {
 export type OutputSchema = JsonSchema;
 
 export type ResponseFormat =
-  | { type: "text" }
-  | { type: "json_object" }
-  | { type: "json_schema"; json_schema: JsonSchema };
+  | { type: 'text' }
+  | { type: 'json_object' }
+  | { type: 'json_schema'; json_schema: JsonSchema };
 
 const ensureArray = (
-  value: MessageContent | MessageContent[]
+  value: MessageContent | MessageContent[],
 ): MessageContent[] => (Array.isArray(value) ? value : [value]);
 
 const normalizeContentPart = (
-  part: MessageContent
+  part: MessageContent,
 ): TextContent | ImageContent | FileContent => {
-  if (typeof part === "string") {
-    return { type: "text", text: part };
+  if (typeof part === 'string') {
+    return { type: 'text', text: part };
   }
 
-  if (part.type === "text") {
+  if (part.type === 'text') {
     return part;
   }
 
-  if (part.type === "image_url") {
+  if (part.type === 'image_url') {
     return part;
   }
 
-  if (part.type === "file_url") {
+  if (part.type === 'file_url') {
     return part;
   }
 
-  throw new Error("Unsupported message content part");
+  throw new Error('Unsupported message content part');
 };
 
 const normalizeMessage = (message: Message) => {
   const { role, name, tool_call_id } = message;
 
-  if (role === "tool" || role === "function") {
+  if (role === 'tool' || role === 'function') {
     const content = ensureArray(message.content)
-      .map(part => (typeof part === "string" ? part : JSON.stringify(part)))
-      .join("\n");
+      .map(part => (typeof part === 'string' ? part : JSON.stringify(part)))
+      .join('\n');
 
     return {
       role,
@@ -155,7 +160,7 @@ const normalizeMessage = (message: Message) => {
   const contentParts = ensureArray(message.content).map(normalizeContentPart);
 
   // If there's only text content, collapse to a single string for compatibility
-  if (contentParts.length === 1 && contentParts[0].type === "text") {
+  if (contentParts.length === 1 && contentParts[0].type === 'text') {
     return {
       role,
       name,
@@ -172,36 +177,36 @@ const normalizeMessage = (message: Message) => {
 
 const normalizeToolChoice = (
   toolChoice: ToolChoice | undefined,
-  tools: Tool[] | undefined
-): "none" | "auto" | ToolChoiceExplicit | undefined => {
+  tools: Tool[] | undefined,
+): 'none' | 'auto' | ToolChoiceExplicit | undefined => {
   if (!toolChoice) return undefined;
 
-  if (toolChoice === "none" || toolChoice === "auto") {
+  if (toolChoice === 'none' || toolChoice === 'auto') {
     return toolChoice;
   }
 
-  if (toolChoice === "required") {
+  if (toolChoice === 'required') {
     if (!tools || tools.length === 0) {
       throw new Error(
-        "tool_choice 'required' was provided but no tools were configured"
+        "tool_choice 'required' was provided but no tools were configured",
       );
     }
 
     if (tools.length > 1) {
       throw new Error(
-        "tool_choice 'required' needs a single tool or specify the tool name explicitly"
+        "tool_choice 'required' needs a single tool or specify the tool name explicitly",
       );
     }
 
     return {
-      type: "function",
+      type: 'function',
       function: { name: tools[0].function.name },
     };
   }
 
-  if ("name" in toolChoice) {
+  if ('name' in toolChoice) {
     return {
-      type: "function",
+      type: 'function',
       function: { name: toolChoice.name },
     };
   }
@@ -211,12 +216,12 @@ const normalizeToolChoice = (
 
 const resolveApiUrl = () =>
   ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
+    ? `${ENV.forgeApiUrl.replace(/\/$/, '')}/v1/chat/completions`
+    : 'https://forge.manus.im/v1/chat/completions';
 
 const assertApiKey = () => {
   if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+    throw new Error('OPENAI_API_KEY is not configured');
   }
 };
 
@@ -231,18 +236,18 @@ const normalizeResponseFormat = ({
   outputSchema?: OutputSchema;
   output_schema?: OutputSchema;
 }):
-  | { type: "json_schema"; json_schema: JsonSchema }
-  | { type: "text" }
-  | { type: "json_object" }
+  | { type: 'json_schema'; json_schema: JsonSchema }
+  | { type: 'text' }
+  | { type: 'json_object' }
   | undefined => {
   const explicitFormat = responseFormat || response_format;
   if (explicitFormat) {
     if (
-      explicitFormat.type === "json_schema" &&
+      explicitFormat.type === 'json_schema' &&
       !explicitFormat.json_schema?.schema
     ) {
       throw new Error(
-        "responseFormat json_schema requires a defined schema object"
+        'responseFormat json_schema requires a defined schema object',
       );
     }
     return explicitFormat;
@@ -252,15 +257,15 @@ const normalizeResponseFormat = ({
   if (!schema) return undefined;
 
   if (!schema.name || !schema.schema) {
-    throw new Error("outputSchema requires both name and schema");
+    throw new Error('outputSchema requires both name and schema');
   }
 
   return {
-    type: "json_schema",
+    type: 'json_schema',
     json_schema: {
       name: schema.name,
       schema: schema.schema,
-      ...(typeof schema.strict === "boolean" ? { strict: schema.strict } : {}),
+      ...(typeof schema.strict === 'boolean' ? { strict: schema.strict } : {}),
     },
   };
 };
@@ -280,7 +285,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   } = params;
 
   const payload: Record<string, unknown> = {
-    model: "gemini-2.5-flash",
+    model: 'gemini-2.5-flash',
     messages: messages.map(normalizeMessage),
   };
 
@@ -290,16 +295,16 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   const normalizedToolChoice = normalizeToolChoice(
     toolChoice || tool_choice,
-    tools
+    tools,
   );
   if (normalizedToolChoice) {
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = 32768
+  payload.max_tokens = 32768;
   payload.thinking = {
-    "budget_tokens": 128
-  }
+    budget_tokens: 128,
+  };
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
@@ -313,9 +318,9 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   }
 
   const response = await fetch(resolveApiUrl(), {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "content-type": "application/json",
+      'content-type': 'application/json',
       authorization: `Bearer ${ENV.forgeApiKey}`,
     },
     body: JSON.stringify(payload),
@@ -324,7 +329,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
+      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`,
     );
   }
 

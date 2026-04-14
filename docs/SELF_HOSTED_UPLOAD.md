@@ -5,6 +5,7 @@ Diese Anleitung erklärt, wie du den Datei-Upload auf deinem selbst gehosteten S
 ## Übersicht
 
 Die Website unterstützt zwei Upload-Modi:
+
 1. **Manus S3 Storage** (Standard) - Verwendet den integrierten Manus Storage-Proxy
 2. **Self-Hosted Storage** - Speichert Dateien lokal auf deinem Server
 
@@ -53,16 +54,16 @@ server {
         alias /var/www/joggediballa-mainpage/uploads/;
         expires 30d;
         add_header Cache-Control "public, immutable";
-        
+
         # Sicherheitsheader
         add_header X-Content-Type-Options nosniff;
         add_header X-Frame-Options DENY;
-        
+
         # Nur Bilder erlauben
         location ~* \.(jpg|jpeg|png|gif|webp|svg)$ {
             try_files $uri =404;
         }
-        
+
         # Andere Dateitypen blockieren
         location ~ \. {
             deny all;
@@ -80,7 +81,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-        
+
         # Grössere Uploads erlauben
         client_max_body_size 50M;
     }
@@ -112,12 +113,15 @@ pm2 restart joggediballa
 ### Upload funktioniert nicht
 
 1. **Berechtigungen prüfen:**
+
    ```bash
    ls -la /var/www/joggediballa-mainpage/uploads/
    ```
+
    Der Node.js-Prozess muss Schreibrechte haben.
 
 2. **Logs prüfen:**
+
    ```bash
    pm2 logs joggediballa --lines 50
    ```
@@ -136,6 +140,7 @@ pm2 restart joggediballa
 ### Speicherplatz
 
 Überwache den Speicherplatz regelmässig:
+
 ```bash
 du -sh /var/www/joggediballa-mainpage/uploads/
 df -h
@@ -144,6 +149,7 @@ df -h
 ## Backup
 
 Sichere das Upload-Verzeichnis regelmässig:
+
 ```bash
 # Beispiel: Tägliches Backup
 tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa-mainpage/uploads/
@@ -158,8 +164,8 @@ tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa-mainpage/u
 
 ## Umgebungsvariablen Referenz
 
-| Variable | Beschreibung | Beispiel |
-|----------|--------------|----------|
-| `SELF_HOSTED_STORAGE` | Aktiviert lokalen Speicher | `true` |
-| `UPLOAD_DIR` | Absoluter Pfad zum Upload-Verzeichnis | `/var/www/joggediballa-mainpage/uploads` |
-| `PUBLIC_UPLOAD_URL` | Öffentliche URL für Uploads | `https://joggediballa.ch/uploads` |
+| Variable              | Beschreibung                          | Beispiel                                 |
+| --------------------- | ------------------------------------- | ---------------------------------------- |
+| `SELF_HOSTED_STORAGE` | Aktiviert lokalen Speicher            | `true`                                   |
+| `UPLOAD_DIR`          | Absoluter Pfad zum Upload-Verzeichnis | `/var/www/joggediballa-mainpage/uploads` |
+| `PUBLIC_UPLOAD_URL`   | Öffentliche URL für Uploads           | `https://joggediballa.ch/uploads`        |
