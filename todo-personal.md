@@ -79,3 +79,4 @@
 - [ ] Fotos verwalten view in Events & Fotos zeigt 2 Fotos pro row an aber da es nur die previews rendert ist dass dann ein wenig gross für so schlechte qualität, man kann gut auch 4-5 Fotos pro row anzeigen lassen
 - [ ] Im Events und Fotos Tab hätte ich gerne die möglichkeit Links zu den Events hinzuzufügen
 - [ ] Im Events und Fotos Tab sind die Events nach datum sortiert, von neueste bis älteste, das ist auch gut, aber wenn die Events in der Zukunft oder heute liegen, dann werden sie mit "Kommendes Event" markiert. Diese Events die so markiert sind hätte ich gerne so sortiert mit dem nächsten Event vom heutigen Datum aus zuoberst und dann weiter in die Zukunft, die bereits vergangen Events sollen aber gleich sortiert bleiben wie bisher.
+- [ ] Beste Anwesenheit, wenn mehrere gleich viel dann halt alle anzeigen. (vllt um design nicht kaputt zu machen mit "..." oder "+" und dann hover-over tooltip oder so)
