@@ -1,10 +1,17 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Link } from "wouter";
-import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { usePermission } from "@/hooks/usePermissions";
-import { parseErrorMessage } from "@/lib/errorMessages";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import type { EventLink } from '@shared/types';
+import { Link } from 'wouter';
+import { trpc } from '@/lib/trpc';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { usePermission } from '@/hooks/usePermissions';
+import { parseErrorMessage } from '@/lib/errorMessages';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -13,8 +20,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+} from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,13 +31,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DateInput, TimeInput } from "@/components/ui/date-time-input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { DateInput, TimeInput } from '@/components/ui/date-time-input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import {
   Calendar,
   MapPin,
@@ -49,16 +56,11 @@ import {
   Clock,
   ExternalLink,
   Link2,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const MotionDiv = motion.div;
-
-interface EventLink {
-  url: string;
-  label: string;
-}
 
 interface EventFormData {
   title: string;
@@ -73,17 +75,21 @@ interface EventFormData {
 // Helper: pick the best available URL for a given purpose
 // =============================================================================
 function pickSrc(
-  photo: { thumbnailUrl?: string | null; compressedUrl?: string | null; imageUrl: string },
-  purpose: "thumb" | "preview" | "full"
+  photo: {
+    thumbnailUrl?: string | null;
+    compressedUrl?: string | null;
+    imageUrl: string;
+  },
+  purpose: 'thumb' | 'preview' | 'full',
 ): string {
   switch (purpose) {
-    case "thumb":
+    case 'thumb':
       // Smallest available: thumbnail → compressed → original
       return photo.thumbnailUrl || photo.compressedUrl || photo.imageUrl;
-    case "preview":
+    case 'preview':
       // Medium: compressed → thumbnail → original
       return photo.compressedUrl || photo.thumbnailUrl || photo.imageUrl;
-    case "full":
+    case 'full':
       return photo.imageUrl;
   }
 }
@@ -117,7 +123,7 @@ function LazyImage({
           observer.disconnect();
         }
       },
-      { rootMargin: "200px" } // start loading 200px before visible
+      { rootMargin: '200px' }, // start loading 200px before visible
     );
     observer.observe(imgRef.current);
     return () => observer.disconnect();
@@ -130,8 +136,8 @@ function LazyImage({
       alt={alt}
       className={cn(
         className,
-        "transition-opacity duration-300",
-        loaded ? "opacity-100" : "opacity-0"
+        'transition-opacity duration-300',
+        loaded ? 'opacity-100' : 'opacity-0',
       )}
       onLoad={() => setLoaded(true)}
       onClick={onClick}
@@ -142,32 +148,10 @@ function LazyImage({
 
 // =============================================================================
 // SmartCoverImage — object-cover for landscape, object-contain for portrait
-// Samples edge pixels to derive a background colour for portrait images
+// Note: crossOrigin="anonymous" is intentionally NOT used — S3 doesn't serve
+// CORS headers for all origins, which would silently prevent images from loading.
+// Portrait images use a neutral dark background instead of edge-sampled color.
 // =============================================================================
-function sampleEdgeColor(img: HTMLImageElement): string {
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return "#000";
-    ctx.drawImage(img, 0, 0);
-    // Sample 4 corner pixels
-    const corners = [
-      ctx.getImageData(0, 0, 1, 1).data,
-      ctx.getImageData(img.naturalWidth - 1, 0, 1, 1).data,
-      ctx.getImageData(0, img.naturalHeight - 1, 1, 1).data,
-      ctx.getImageData(img.naturalWidth - 1, img.naturalHeight - 1, 1, 1).data,
-    ];
-    const r = Math.round(corners.reduce((s, c) => s + c[0], 0) / 4);
-    const g = Math.round(corners.reduce((s, c) => s + c[1], 0) / 4);
-    const b = Math.round(corners.reduce((s, c) => s + c[2], 0) / 4);
-    return `rgb(${r},${g},${b})`;
-  } catch {
-    return "#000";
-  }
-}
-
 function SmartCoverImage({
   src,
   alt,
@@ -189,15 +173,17 @@ function SmartCoverImage({
   const [isVisible, setIsVisible] = useState(eager);
   const [loaded, setLoaded] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
-  const [bgColor, setBgColor] = useState("#000");
 
   useEffect(() => {
     if (eager || !imgRef.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); }
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
       },
-      { rootMargin: "200px" }
+      { rootMargin: '200px' },
     );
     observer.observe(imgRef.current);
     return () => observer.disconnect();
@@ -207,15 +193,13 @@ function SmartCoverImage({
     setLoaded(true);
     const img = imgRef.current;
     if (!img) return;
-    const portrait = img.naturalHeight > img.naturalWidth;
-    setIsPortrait(portrait);
-    if (portrait) setBgColor(sampleEdgeColor(img));
+    setIsPortrait(img.naturalHeight > img.naturalWidth);
   };
 
   return (
     <div
       className={containerClassName}
-      style={isPortrait && loaded ? { backgroundColor: bgColor } : undefined}
+      style={isPortrait && loaded ? { backgroundColor: '#0E1218' } : undefined}
       onClick={onClick}
     >
       <img
@@ -224,13 +208,12 @@ function SmartCoverImage({
         alt={alt}
         className={cn(
           imgClassName,
-          "transition-opacity duration-300 w-full h-full",
-          loaded ? "opacity-100" : "opacity-0",
-          loaded && isPortrait ? "object-contain" : "object-cover"
+          'transition-opacity duration-300 w-full h-full',
+          loaded ? 'opacity-100' : 'opacity-0',
+          loaded && isPortrait ? 'object-contain' : 'object-cover',
         )}
         onLoad={handleLoad}
         draggable={false}
-        crossOrigin="anonymous"
       />
       {children}
     </div>
@@ -240,10 +223,11 @@ function SmartCoverImage({
 export default function Events() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
-  
-  const { data: events = [], isLoading: eventsLoading } = trpc.events.list.useQuery();
+
+  const { data: events = [], isLoading: eventsLoading } =
+    trpc.events.list.useQuery();
   const { data: allPhotos = [] } = trpc.photos.listAll.useQuery();
-  
+
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -254,24 +238,29 @@ export default function Events() {
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [editEventOpen, setEditEventOpen] = useState(false);
   const [deleteEventOpen, setDeleteEventOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<{ id: number; title: string } | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
   const [eventForm, setEventForm] = useState<EventFormData>({
-    title: "",
-    description: "",
-    eventDate: "",
-    eventTime: "",
-    location: "",
-    eventLinks: []
+    title: '',
+    description: '',
+    eventDate: '',
+    eventTime: '',
+    location: '',
+    eventLinks: [],
   });
-  
+
   // Photo upload state
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadEventId, setUploadEventId] = useState<number | null>(null);
   const photoInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
-  
+
   // Photo management dialog state
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
-  const [photoManagementEventId, setPhotoManagementEventId] = useState<number | null>(null);
+  const [photoManagementEventId, setPhotoManagementEventId] = useState<
+    number | null
+  >(null);
   const [activePhotoId, setActivePhotoId] = useState<number | null>(null);
 
   // Touch/swipe state for lightbox
@@ -280,38 +269,38 @@ export default function Events() {
   const isSwiping = useRef(false);
 
   const isLoggedIn = !!user;
-  const canManageEvents = usePermission("edit_events");
+  const canManageEvents = usePermission('edit_events');
 
   // Mutations
   const createEventMutation = trpc.events.create.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
-      toast.success("Event erfolgreich erstellt!");
+      toast.success('Event erfolgreich erstellt!');
       setCreateEventOpen(false);
       resetEventForm();
     },
-    onError: (error) => toast.error(parseErrorMessage(error))
+    onError: error => toast.error(parseErrorMessage(error)),
   });
 
   const updateEventMutation = trpc.events.update.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
-      toast.success("Event aktualisiert!");
+      toast.success('Event aktualisiert!');
       setEditEventOpen(false);
       resetEventForm();
     },
-    onError: (error) => toast.error(parseErrorMessage(error))
+    onError: error => toast.error(parseErrorMessage(error)),
   });
 
   const deleteEventMutation = trpc.events.delete.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
       utils.photos.listAll.invalidate();
-      toast.success("Event gelöscht!");
+      toast.success('Event gelöscht!');
       setDeleteEventOpen(false);
       setSelectedEvent(null);
     },
-    onError: (error) => toast.error(parseErrorMessage(error))
+    onError: error => toast.error(parseErrorMessage(error)),
   });
 
   const createPhotoMutation = trpc.photos.create.useMutation({
@@ -319,39 +308,50 @@ export default function Events() {
       utils.events.list.invalidate();
       utils.photos.listAll.invalidate();
     },
-    onError: (error) => toast.error(parseErrorMessage(error))
+    onError: error => toast.error(parseErrorMessage(error)),
   });
 
   const deletePhotoMutation = trpc.photos.delete.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
       utils.photos.listAll.invalidate();
-      toast.success("Foto gelöscht!");
+      toast.success('Foto gelöscht!');
     },
-    onError: (error) => toast.error(parseErrorMessage(error))
+    onError: error => toast.error(parseErrorMessage(error)),
   });
 
   const setThumbnailMutation = trpc.events.setThumbnail.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
-      toast.success("Thumbnail gesetzt!");
+      toast.success('Thumbnail gesetzt!');
     },
-    onError: (error) => toast.error(parseErrorMessage(error))
+    onError: error => toast.error(parseErrorMessage(error)),
   });
 
   // Memoize filtered photos to avoid re-filtering on every render
   const selectedPhotos = useMemo(
-    () => selectedEventId ? allPhotos.filter((p) => p.eventId === selectedEventId) : allPhotos,
-    [selectedEventId, allPhotos]
+    () =>
+      selectedEventId
+        ? allPhotos.filter(p => p.eventId === selectedEventId)
+        : allPhotos,
+    [selectedEventId, allPhotos],
   );
 
   // Get event name for current photo
   const currentPhotoEventName = selectedPhotos[currentPhotoIndex]
-    ? events.find(e => e.id === selectedPhotos[currentPhotoIndex].eventId)?.title
+    ? events.find(e => e.id === selectedPhotos[currentPhotoIndex].eventId)
+        ?.title
     : null;
 
   const resetEventForm = () => {
-    setEventForm({ title: "", description: "", eventDate: "", eventTime: "", location: "", eventLinks: [] });
+    setEventForm({
+      title: '',
+      description: '',
+      eventDate: '',
+      eventTime: '',
+      location: '',
+      eventLinks: [],
+    });
     setSelectedEvent(null);
   };
 
@@ -364,24 +364,26 @@ export default function Events() {
 
   const nextPhoto = useCallback(() => {
     setFullResLoaded(false);
-    setCurrentPhotoIndex((prev) => (prev + 1) % selectedPhotos.length);
+    setCurrentPhotoIndex(prev => (prev + 1) % selectedPhotos.length);
   }, [selectedPhotos.length]);
 
   const prevPhoto = useCallback(() => {
     setFullResLoaded(false);
-    setCurrentPhotoIndex((prev) => (prev - 1 + selectedPhotos.length) % selectedPhotos.length);
+    setCurrentPhotoIndex(
+      prev => (prev - 1 + selectedPhotos.length) % selectedPhotos.length,
+    );
   }, [selectedPhotos.length]);
 
   // Keyboard navigation for lightbox
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!lightboxOpen) return;
-      if (e.key === "ArrowRight") nextPhoto();
-      if (e.key === "ArrowLeft") prevPhoto();
-      if (e.key === "Escape") setLightboxOpen(false);
+      if (e.key === 'ArrowRight') nextPhoto();
+      if (e.key === 'ArrowLeft') prevPhoto();
+      if (e.key === 'Escape') setLightboxOpen(false);
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxOpen, nextPhoto, prevPhoto]);
 
   // Preload adjacent images in lightbox
@@ -392,12 +394,13 @@ export default function Events() {
       if (!photo) return;
       // Preload the compressed version (shown immediately) and full res
       const img1 = new Image();
-      img1.src = pickSrc(photo, "preview");
+      img1.src = pickSrc(photo, 'preview');
       const img2 = new Image();
       img2.src = photo.imageUrl;
     };
     const nextIdx = (currentPhotoIndex + 1) % selectedPhotos.length;
-    const prevIdx = (currentPhotoIndex - 1 + selectedPhotos.length) % selectedPhotos.length;
+    const prevIdx =
+      (currentPhotoIndex - 1 + selectedPhotos.length) % selectedPhotos.length;
     preload(nextIdx);
     preload(prevIdx);
   }, [lightboxOpen, currentPhotoIndex, selectedPhotos]);
@@ -409,23 +412,26 @@ export default function Events() {
     isSwiping.current = false;
   }, []);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
-    // Only swipe if horizontal movement is dominant and > 50px
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-      if (deltaX < 0) nextPhoto();
-      else prevPhoto();
-    }
-  }, [nextPhoto, prevPhoto]);
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+      const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+      // Only swipe if horizontal movement is dominant and > 50px
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+        if (deltaX < 0) nextPhoto();
+        else prevPhoto();
+      }
+    },
+    [nextPhoto, prevPhoto],
+  );
 
   const handleCreateEvent = () => {
     if (!eventForm.title.trim() || !eventForm.eventDate) {
-      toast.error("Bitte Titel und Datum angeben");
+      toast.error('Bitte Titel und Datum angeben');
       return;
     }
-    const dateStr = eventForm.eventTime 
-      ? `${eventForm.eventDate}T${eventForm.eventTime}` 
+    const dateStr = eventForm.eventTime
+      ? `${eventForm.eventDate}T${eventForm.eventTime}`
       : `${eventForm.eventDate}T00:00`;
     const validLinks = eventForm.eventLinks.filter(l => l.url.trim());
     createEventMutation.mutate({
@@ -433,17 +439,17 @@ export default function Events() {
       description: eventForm.description.trim() || undefined,
       eventDate: new Date(dateStr),
       location: eventForm.location.trim() || undefined,
-      eventLinks: validLinks.length > 0 ? validLinks : undefined
+      eventLinks: validLinks.length > 0 ? validLinks : undefined,
     });
   };
 
   const handleUpdateEvent = () => {
     if (!selectedEvent || !eventForm.title.trim() || !eventForm.eventDate) {
-      toast.error("Bitte Titel und Datum angeben");
+      toast.error('Bitte Titel und Datum angeben');
       return;
     }
-    const dateStr = eventForm.eventTime 
-      ? `${eventForm.eventDate}T${eventForm.eventTime}` 
+    const dateStr = eventForm.eventTime
+      ? `${eventForm.eventDate}T${eventForm.eventTime}`
       : `${eventForm.eventDate}T00:00`;
     const validLinks = eventForm.eventLinks.filter(l => l.url.trim());
     updateEventMutation.mutate({
@@ -452,30 +458,33 @@ export default function Events() {
       description: eventForm.description.trim() || undefined,
       eventDate: new Date(dateStr),
       location: eventForm.location.trim() || undefined,
-      eventLinks: validLinks.length > 0 ? validLinks : undefined
+      eventLinks: validLinks.length > 0 ? validLinks : undefined,
     });
   };
 
-  const openEditEvent = (event: typeof events[0]) => {
+  const openEditEvent = (event: (typeof events)[0]) => {
     setSelectedEvent({ id: event.id, title: event.title });
     const eventDate = new Date(event.eventDate);
     // Use local time (not UTC) to avoid timezone offset shifting the date by one day
     const yyyy = eventDate.getFullYear();
-    const mm = String(eventDate.getMonth() + 1).padStart(2, "0");
-    const dd = String(eventDate.getDate()).padStart(2, "0");
+    const mm = String(eventDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(eventDate.getDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
-    const timeStr = eventDate.getHours() > 0 || eventDate.getMinutes() > 0
-      ? eventDate.toTimeString().slice(0, 5)
-      : "";
+    const timeStr =
+      eventDate.getHours() > 0 || eventDate.getMinutes() > 0
+        ? eventDate.toTimeString().slice(0, 5)
+        : '';
     let parsedLinks: EventLink[] = [];
-    try { parsedLinks = JSON.parse((event as any).eventLinks || "[]"); } catch {}
+    try {
+      parsedLinks = JSON.parse((event as any).eventLinks || '[]');
+    } catch {}
     setEventForm({
       title: event.title,
-      description: event.description || "",
+      description: event.description || '',
       eventDate: dateStr,
       eventTime: timeStr,
-      location: event.location || "",
-      eventLinks: parsedLinks
+      location: event.location || '',
+      eventLinks: parsedLinks,
     });
     setEditEventOpen(true);
   };
@@ -485,7 +494,10 @@ export default function Events() {
     setDeleteEventOpen(true);
   };
 
-  const handlePhotoUpload = async (files: FileList | null, targetEventId: number) => {
+  const handlePhotoUpload = async (
+    files: FileList | null,
+    targetEventId: number,
+  ) => {
     if (!files || files.length === 0) return;
 
     setUploadingPhotos(true);
@@ -493,7 +505,7 @@ export default function Events() {
 
     try {
       for (const file of Array.from(files)) {
-        if (!file.type.startsWith("image/")) {
+        if (!file.type.startsWith('image/')) {
           toast.error(`${file.name} ist keine Bilddatei`);
           continue;
         }
@@ -504,18 +516,25 @@ export default function Events() {
         }
 
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append('file', file);
 
-        const response = await fetch("/api/upload/event-photo", {
-          method: "POST",
-          body: formData
+        const response = await fetch('/api/upload/event-photo', {
+          method: 'POST',
+          body: formData,
         });
 
         if (!response.ok) {
           throw new Error(`Upload fehlgeschlagen für ${file.name}`);
         }
 
-        const { url, key, compressedUrl, compressedKey, thumbnailUrl, thumbnailKey } = await response.json();
+        const {
+          url,
+          key,
+          compressedUrl,
+          compressedKey,
+          thumbnailUrl,
+          thumbnailKey,
+        } = await response.json();
 
         await createPhotoMutation.mutateAsync({
           eventId: targetEventId,
@@ -525,20 +544,20 @@ export default function Events() {
           compressedKey,
           thumbnailUrl,
           thumbnailKey,
-          title: file.name.replace(/\.[^/.]+$/, "")
+          title: file.name.replace(/\.[^/.]+$/, ''),
         });
       }
 
-      toast.success("Fotos erfolgreich hochgeladen!");
+      toast.success('Fotos erfolgreich hochgeladen!');
     } catch (error) {
-      console.error("Photo upload error:", error);
-      toast.error("Fehler beim Hochladen der Fotos");
+      console.error('Photo upload error:', error);
+      toast.error('Fehler beim Hochladen der Fotos');
     } finally {
       setUploadingPhotos(false);
       setUploadEventId(null);
       const inputRef = photoInputRefs.current.get(targetEventId);
       if (inputRef) {
-        inputRef.value = "";
+        inputRef.value = '';
       }
     }
   };
@@ -561,7 +580,8 @@ export default function Events() {
           <span className="gradient-text">Events & Fotos</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Erlebe unsere unvergesslichen Momente und entdecke die Highlights unserer Events.
+          Erlebe unsere unvergesslichen Momente und entdecke die Highlights
+          unserer Events.
         </p>
       </MotionDiv>
 
@@ -577,14 +597,23 @@ export default function Events() {
           <AlertDescription className="text-sm text-muted-foreground ml-2">
             <div className="flex flex-col items-start gap-3">
               <div className="flex-1">
-                <h1><strong className="text-foreground">Fotografie an Veranstaltungen:</strong></h1>
-                An unseren Veranstaltungen werden Fotos und Videos erstellt, welche für unsere Website, Social Media sowie Vereinskommunikation verwendet werden.
-                Die Veröffentlichung erfolgt auf Grundlage unseres berechtigten Interesses an der Öffentlichkeitsarbeit. Personen, die nicht fotografiert werden möchten oder mit einer
-                Veröffentlichung nicht einverstanden sind, können dies jederzeit unserem Team mitteilen oder eine nachträgliche Entfernung verlangen.
+                <h1>
+                  <strong className="text-foreground">
+                    Fotografie an Veranstaltungen:
+                  </strong>
+                </h1>
+                An unseren Veranstaltungen werden Fotos und Videos erstellt,
+                welche für unsere Website, Social Media sowie
+                Vereinskommunikation verwendet werden. Die Veröffentlichung
+                erfolgt auf Grundlage unseres berechtigten Interesses an der
+                Öffentlichkeitsarbeit. Personen, die nicht fotografiert werden
+                möchten oder mit einer Veröffentlichung nicht einverstanden
+                sind, können dies jederzeit unserem Team mitteilen oder eine
+                nachträgliche Entfernung verlangen.
               </div>
               <Link href="/contact">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   className="btn-animate border-blue-300 bg-blue-100/50 hover:bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 whitespace-nowrap"
                 >
@@ -600,10 +629,13 @@ export default function Events() {
       {/* Add Event Button */}
       {canManageEvents && (
         <div className="flex justify-center">
-          <Dialog open={createEventOpen} onOpenChange={(open) => {
-            setCreateEventOpen(open);
-            if (!open) resetEventForm();
-          }}>
+          <Dialog
+            open={createEventOpen}
+            onOpenChange={open => {
+              setCreateEventOpen(open);
+              if (!open) resetEventForm();
+            }}
+          >
             <DialogTrigger asChild>
               <Button size="lg" className="btn-animate gap-2">
                 <Plus className="h-5 w-5" />
@@ -619,21 +651,32 @@ export default function Events() {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Titel <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="title">
+                    Titel <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="title"
                     value={eventForm.title}
-                    onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                    onChange={e =>
+                      setEventForm({ ...eventForm, title: e.target.value })
+                    }
                     placeholder="Event-Titel"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
                   <div className="space-y-2 min-w-0">
-                    <Label htmlFor="date">Datum <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="date">
+                      Datum <span className="text-destructive">*</span>
+                    </Label>
                     <DateInput
                       id="date"
                       value={eventForm.eventDate}
-                      onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
+                      onChange={e =>
+                        setEventForm({
+                          ...eventForm,
+                          eventDate: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2 min-w-0">
@@ -641,7 +684,12 @@ export default function Events() {
                     <TimeInput
                       id="time"
                       value={eventForm.eventTime}
-                      onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
+                      onChange={e =>
+                        setEventForm({
+                          ...eventForm,
+                          eventTime: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -650,7 +698,9 @@ export default function Events() {
                   <Input
                     id="location"
                     value={eventForm.location}
-                    onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                    onChange={e =>
+                      setEventForm({ ...eventForm, location: e.target.value })
+                    }
                     placeholder="Veranstaltungsort"
                   />
                 </div>
@@ -659,7 +709,12 @@ export default function Events() {
                   <Textarea
                     id="description"
                     value={eventForm.description}
-                    onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                    onChange={e =>
+                      setEventForm({
+                        ...eventForm,
+                        description: e.target.value,
+                      })
+                    }
                     placeholder="Beschreibe das Event..."
                     rows={3}
                   />
@@ -674,7 +729,7 @@ export default function Events() {
                       <div key={i} className="flex gap-2">
                         <Input
                           value={link.url}
-                          onChange={(e) => {
+                          onChange={e => {
                             const updated = [...eventForm.eventLinks];
                             updated[i] = { ...updated[i], url: e.target.value };
                             setEventForm({ ...eventForm, eventLinks: updated });
@@ -685,9 +740,12 @@ export default function Events() {
                         />
                         <Input
                           value={link.label}
-                          onChange={(e) => {
+                          onChange={e => {
                             const updated = [...eventForm.eventLinks];
-                            updated[i] = { ...updated[i], label: e.target.value };
+                            updated[i] = {
+                              ...updated[i],
+                              label: e.target.value,
+                            };
                             setEventForm({ ...eventForm, eventLinks: updated });
                           }}
                           placeholder="Bezeichnung"
@@ -698,7 +756,9 @@ export default function Events() {
                           size="icon"
                           className="shrink-0"
                           onClick={() => {
-                            const updated = eventForm.eventLinks.filter((_, idx) => idx !== i);
+                            const updated = eventForm.eventLinks.filter(
+                              (_, idx) => idx !== i,
+                            );
                             setEventForm({ ...eventForm, eventLinks: updated });
                           }}
                         >
@@ -710,7 +770,15 @@ export default function Events() {
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => setEventForm({ ...eventForm, eventLinks: [...eventForm.eventLinks, { url: "", label: "" }] })}
+                      onClick={() =>
+                        setEventForm({
+                          ...eventForm,
+                          eventLinks: [
+                            ...eventForm.eventLinks,
+                            { url: '', label: '' },
+                          ],
+                        })
+                      }
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Link hinzufügen
@@ -719,13 +787,24 @@ export default function Events() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setCreateEventOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setCreateEventOpen(false)}
+                >
                   Abbrechen
                 </Button>
-                <Button onClick={handleCreateEvent} disabled={createEventMutation.isPending}>
+                <Button
+                  onClick={handleCreateEvent}
+                  disabled={createEventMutation.isPending}
+                >
                   {createEventMutation.isPending ? (
-                    <><Loader2 className="h-4 w-4 animate-spin mr-2" />Erstellen...</>
-                  ) : "Erstellen"}
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Erstellen...
+                    </>
+                  ) : (
+                    'Erstellen'
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -737,7 +816,7 @@ export default function Events() {
       <section id="event-cards" className="space-y-6">
         {eventsLoading ? (
           <div className="grid md:grid-cols-2 gap-6">
-            {[1, 2].map((i) => (
+            {[1, 2].map(i => (
               <Card key={i} className="overflow-hidden animate-pulse">
                 <div className="aspect-video bg-muted" />
                 <CardHeader>
@@ -765,24 +844,46 @@ export default function Events() {
           <div className="grid md:grid-cols-2 gap-6">
             <AnimatePresence>
               {(() => {
-                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
                 const futureEvents = [...events]
-                  .filter(e => { const d = new Date(e.eventDate); d.setHours(0,0,0,0); return d >= today; })
-                  .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+                  .filter(e => {
+                    const d = new Date(e.eventDate);
+                    d.setHours(0, 0, 0, 0);
+                    return d >= today;
+                  })
+                  .sort(
+                    (a, b) =>
+                      new Date(a.eventDate).getTime() -
+                      new Date(b.eventDate).getTime(),
+                  );
                 const pastEvents = [...events]
-                  .filter(e => { const d = new Date(e.eventDate); d.setHours(0,0,0,0); return d < today; })
-                  .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+                  .filter(e => {
+                    const d = new Date(e.eventDate);
+                    d.setHours(0, 0, 0, 0);
+                    return d < today;
+                  })
+                  .sort(
+                    (a, b) =>
+                      new Date(b.eventDate).getTime() -
+                      new Date(a.eventDate).getTime(),
+                  );
                 const sortedEvents = [...futureEvents, ...pastEvents];
                 return sortedEvents;
               })().map((event, index) => {
-                const eventPhotos = allPhotos.filter((p) => p.eventId === event.id);
-                const thumbnailPhoto = event.thumbnailPhotoId 
-                  ? eventPhotos.find(p => p.id === event.thumbnailPhotoId) || eventPhotos[0]
+                const eventPhotos = allPhotos.filter(
+                  p => p.eventId === event.id,
+                );
+                const thumbnailPhoto = event.thumbnailPhotoId
+                  ? eventPhotos.find(p => p.id === event.thumbnailPhotoId) ||
+                    eventPhotos[0]
                   : eventPhotos[0];
-                const _today = new Date(); _today.setHours(0, 0, 0, 0);
-                const eventDay = new Date(event.eventDate); eventDay.setHours(0, 0, 0, 0);
+                const _today = new Date();
+                _today.setHours(0, 0, 0, 0);
+                const eventDay = new Date(event.eventDate);
+                eventDay.setHours(0, 0, 0, 0);
                 const isFuture = eventDay >= _today;
-                
+
                 return (
                   <MotionDiv
                     key={event.id}
@@ -791,7 +892,9 @@ export default function Events() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 h-full flex flex-col relative ${isFuture ? "border-primary/60 shadow-primary/10 shadow-md" : "hover:border-primary/30"}`}>
+                    <Card
+                      className={`overflow-hidden hover:shadow-lg transition-all duration-300 h-full flex flex-col relative ${isFuture ? 'border-primary/60 shadow-primary/10 shadow-md' : 'hover:border-primary/30'}`}
+                    >
                       {/* Upcoming Badge */}
                       {isFuture && (
                         <div className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
@@ -802,16 +905,22 @@ export default function Events() {
                       {/* Event Cover Image — use compressed for cover */}
                       {thumbnailPhoto ? (
                         <SmartCoverImage
-                          src={pickSrc(thumbnailPhoto, "preview")}
+                          src={pickSrc(thumbnailPhoto, 'preview')}
                           alt={event.title}
                           containerClassName="aspect-video overflow-hidden bg-muted cursor-pointer relative group"
                           imgClassName="group-hover:scale-105 transition-transform duration-300"
                           eager={index < 2}
-                          onClick={() => openLightbox(eventPhotos.indexOf(thumbnailPhoto), event.id)}
+                          onClick={() =>
+                            openLightbox(
+                              eventPhotos.indexOf(thumbnailPhoto),
+                              event.id,
+                            )
+                          }
                         >
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-black/90 px-3 py-1.5 rounded-full text-sm font-medium">
-                              {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"}
+                              {eventPhotos.length}{' '}
+                              {eventPhotos.length === 1 ? 'Foto' : 'Fotos'}
                             </div>
                           </div>
                         </SmartCoverImage>
@@ -820,10 +929,12 @@ export default function Events() {
                           <ImageIcon className="h-16 w-16 text-muted-foreground/30" />
                         </div>
                       )}
-                      
+
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="text-xl">{event.title}</CardTitle>
+                          <CardTitle className="text-xl">
+                            {event.title}
+                          </CardTitle>
                           {canManageEvents && (
                             <div className="flex gap-1 shrink-0">
                               <Button
@@ -838,7 +949,12 @@ export default function Events() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-destructive hover:text-destructive"
-                                onClick={() => openDeleteEvent({ id: event.id, title: event.title })}
+                                onClick={() =>
+                                  openDeleteEvent({
+                                    id: event.id,
+                                    title: event.title,
+                                  })
+                                }
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -848,19 +964,26 @@ export default function Events() {
                         <CardDescription className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <span className="flex items-center gap-1.5">
                             <Calendar className="h-4 w-4 shrink-0" />
-                            {new Date(event.eventDate).toLocaleDateString("de-DE", {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
+                            {new Date(event.eventDate).toLocaleDateString(
+                              'de-DE',
+                              {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              },
+                            )}
                           </span>
                           {(() => {
                             const d = new Date(event.eventDate);
-                            return (d.getHours() > 0 || d.getMinutes() > 0) ? (
+                            return d.getHours() > 0 || d.getMinutes() > 0 ? (
                               <span className="flex items-center gap-1.5">
                                 <Clock className="h-4 w-4 shrink-0" />
-                                {d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+                                {d.toLocaleTimeString('de-DE', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}{' '}
+                                Uhr
                               </span>
                             ) : null;
                           })()}
@@ -872,14 +995,22 @@ export default function Events() {
                           </p>
                         )}
                       </CardHeader>
-                      
-                        <CardContent className="flex-1 flex flex-col gap-2 pt-0">
+
+                      <CardContent className="flex-1 flex flex-col gap-2 pt-0">
                         {event.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {event.description}
+                          </p>
                         )}
                         {(() => {
                           const links: EventLink[] = (() => {
-                            try { return JSON.parse((event as any).eventLinks || "[]"); } catch { return []; }
+                            try {
+                              return JSON.parse(
+                                (event as any).eventLinks || '[]',
+                              );
+                            } catch {
+                              return [];
+                            }
                           })();
                           if (links.length === 0) return null;
                           return (
@@ -891,7 +1022,7 @@ export default function Events() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-sm text-primary flex items-center gap-2 hover:underline"
-                                  onClick={(e) => e.stopPropagation()}
+                                  onClick={e => e.stopPropagation()}
                                 >
                                   <ExternalLink className="h-4 w-4 shrink-0" />
                                   {link.label || link.url}
@@ -900,7 +1031,7 @@ export default function Events() {
                             </div>
                           );
                         })()}
-                        
+
                         {/* Photo Gallery Preview — thumbnails for small grid */}
                         {eventPhotos.length > 0 && (
                           <div className="space-y-2 mt-auto pt-3">
@@ -909,14 +1040,17 @@ export default function Events() {
                                 <div
                                   key={photo.id}
                                   className={cn(
-                                    "aspect-square overflow-hidden rounded cursor-pointer relative group/thumb",
-                                    idx === 3 && eventPhotos.length > 4 && "relative",
-                                    photo.id === event.thumbnailPhotoId && "ring-2 ring-primary"
+                                    'aspect-square overflow-hidden rounded cursor-pointer relative group/thumb',
+                                    idx === 3 &&
+                                      eventPhotos.length > 4 &&
+                                      'relative',
+                                    photo.id === event.thumbnailPhotoId &&
+                                      'ring-2 ring-primary',
                                   )}
                                   onClick={() => openLightbox(idx, event.id)}
                                 >
                                   <LazyImage
-                                    src={pickSrc(photo, "thumb")}
+                                    src={pickSrc(photo, 'thumb')}
                                     alt=""
                                     className="w-full h-full object-cover hover:scale-110 transition-transform"
                                   />
@@ -926,20 +1060,24 @@ export default function Events() {
                                     </div>
                                   )}
                                   {/* Set as thumbnail button */}
-                                  {canManageEvents && photo.id !== event.thumbnailPhotoId && (
-                                    <Button
-                                      variant="secondary"
-                                      size="icon"
-                                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setThumbnailMutation.mutate({ eventId: event.id, photoId: photo.id });
-                                      }}
-                                      title="Als Thumbnail setzen"
-                                    >
-                                      <Star className="h-3 w-3" />
-                                    </Button>
-                                  )}
+                                  {canManageEvents &&
+                                    photo.id !== event.thumbnailPhotoId && (
+                                      <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          setThumbnailMutation.mutate({
+                                            eventId: event.id,
+                                            photoId: photo.id,
+                                          });
+                                        }}
+                                        title="Als Thumbnail setzen"
+                                      >
+                                        <Star className="h-3 w-3" />
+                                      </Button>
+                                    )}
                                 </div>
                               ))}
                             </div>
@@ -968,25 +1106,38 @@ export default function Events() {
                               accept="image/*"
                               multiple
                               className="hidden"
-                              ref={(el) => {
-                                if (el) photoInputRefs.current.set(event.id, el);
+                              ref={el => {
+                                if (el)
+                                  photoInputRefs.current.set(event.id, el);
                               }}
-                              onChange={(e) => handlePhotoUpload(e.target.files, event.id)}
+                              onChange={e =>
+                                handlePhotoUpload(e.target.files, event.id)
+                              }
                             />
                             <Button
                               variant="outline"
                               size="sm"
                               className="w-full gap-2"
                               onClick={() => {
-                                const inputRef = photoInputRefs.current.get(event.id);
+                                const inputRef = photoInputRefs.current.get(
+                                  event.id,
+                                );
                                 if (inputRef) inputRef.click();
                               }}
-                              disabled={uploadingPhotos && uploadEventId === event.id}
+                              disabled={
+                                uploadingPhotos && uploadEventId === event.id
+                              }
                             >
                               {uploadingPhotos && uploadEventId === event.id ? (
-                                <><Loader2 className="h-4 w-4 animate-spin" />Hochladen...</>
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  Hochladen...
+                                </>
                               ) : (
-                                <><Upload className="h-4 w-4" />Fotos hochladen</>
+                                <>
+                                  <Upload className="h-4 w-4" />
+                                  Fotos hochladen
+                                </>
                               )}
                             </Button>
                           </div>
@@ -1002,11 +1153,14 @@ export default function Events() {
       </section>
 
       {/* Edit Event Dialog */}
-      <Dialog open={editEventOpen} onOpenChange={(open) => {
-        setEditEventOpen(open);
-        if (!open) resetEventForm();
-      }}>
-          <DialogContent onEnterKey={handleUpdateEvent}>
+      <Dialog
+        open={editEventOpen}
+        onOpenChange={open => {
+          setEditEventOpen(open);
+          if (!open) resetEventForm();
+        }}
+      >
+        <DialogContent onEnterKey={handleUpdateEvent}>
           <DialogHeader>
             <DialogTitle>Event bearbeiten</DialogTitle>
             <DialogDescription>
@@ -1015,21 +1169,29 @@ export default function Events() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-title">Titel <span className="text-destructive">*</span></Label>
+              <Label htmlFor="edit-title">
+                Titel <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="edit-title"
                 value={eventForm.title}
-                onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                onChange={e =>
+                  setEventForm({ ...eventForm, title: e.target.value })
+                }
                 placeholder="Event-Titel"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
               <div className="space-y-2 min-w-0">
-                <Label htmlFor="edit-date">Datum <span className="text-destructive">*</span></Label>
+                <Label htmlFor="edit-date">
+                  Datum <span className="text-destructive">*</span>
+                </Label>
                 <DateInput
                   id="edit-date"
                   value={eventForm.eventDate}
-                  onChange={(e) => setEventForm({ ...eventForm, eventDate: e.target.value })}
+                  onChange={e =>
+                    setEventForm({ ...eventForm, eventDate: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2 min-w-0">
@@ -1037,7 +1199,9 @@ export default function Events() {
                 <TimeInput
                   id="edit-time"
                   value={eventForm.eventTime}
-                  onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
+                  onChange={e =>
+                    setEventForm({ ...eventForm, eventTime: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -1046,7 +1210,9 @@ export default function Events() {
               <Input
                 id="edit-location"
                 value={eventForm.location}
-                onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                onChange={e =>
+                  setEventForm({ ...eventForm, location: e.target.value })
+                }
                 placeholder="Veranstaltungsort"
               />
             </div>
@@ -1055,7 +1221,9 @@ export default function Events() {
               <Textarea
                 id="edit-description"
                 value={eventForm.description}
-                onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                onChange={e =>
+                  setEventForm({ ...eventForm, description: e.target.value })
+                }
                 placeholder="Beschreibe das Event..."
                 rows={3}
               />
@@ -1070,7 +1238,7 @@ export default function Events() {
                   <div key={i} className="flex gap-2">
                     <Input
                       value={link.url}
-                      onChange={(e) => {
+                      onChange={e => {
                         const updated = [...eventForm.eventLinks];
                         updated[i] = { ...updated[i], url: e.target.value };
                         setEventForm({ ...eventForm, eventLinks: updated });
@@ -1081,7 +1249,7 @@ export default function Events() {
                     />
                     <Input
                       value={link.label}
-                      onChange={(e) => {
+                      onChange={e => {
                         const updated = [...eventForm.eventLinks];
                         updated[i] = { ...updated[i], label: e.target.value };
                         setEventForm({ ...eventForm, eventLinks: updated });
@@ -1094,7 +1262,9 @@ export default function Events() {
                       size="icon"
                       className="shrink-0"
                       onClick={() => {
-                        const updated = eventForm.eventLinks.filter((_, idx) => idx !== i);
+                        const updated = eventForm.eventLinks.filter(
+                          (_, idx) => idx !== i,
+                        );
                         setEventForm({ ...eventForm, eventLinks: updated });
                       }}
                     >
@@ -1106,7 +1276,15 @@ export default function Events() {
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => setEventForm({ ...eventForm, eventLinks: [...eventForm.eventLinks, { url: "", label: "" }] })}
+                  onClick={() =>
+                    setEventForm({
+                      ...eventForm,
+                      eventLinks: [
+                        ...eventForm.eventLinks,
+                        { url: '', label: '' },
+                      ],
+                    })
+                  }
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Link hinzufügen
@@ -1118,10 +1296,18 @@ export default function Events() {
             <Button variant="outline" onClick={() => setEditEventOpen(false)}>
               Abbrechen
             </Button>
-            <Button onClick={handleUpdateEvent} disabled={updateEventMutation.isPending}>
+            <Button
+              onClick={handleUpdateEvent}
+              disabled={updateEventMutation.isPending}
+            >
               {updateEventMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Speichern...</>
-              ) : "Speichern"}
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Speichern...
+                </>
+              ) : (
+                'Speichern'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1133,19 +1319,28 @@ export default function Events() {
           <AlertDialogHeader>
             <AlertDialogTitle>Event löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Möchtest du das Event "{selectedEvent?.title}" wirklich löschen? 
-              Alle zugehörigen Fotos werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+              Möchtest du das Event "{selectedEvent?.title}" wirklich löschen?
+              Alle zugehörigen Fotos werden ebenfalls gelöscht. Diese Aktion
+              kann nicht rückgängig gemacht werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => selectedEvent && deleteEventMutation.mutate({ eventId: selectedEvent.id })}
+              onClick={() =>
+                selectedEvent &&
+                deleteEventMutation.mutate({ eventId: selectedEvent.id })
+              }
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteEventMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Löschen...</>
-              ) : "Löschen"}
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Löschen...
+                </>
+              ) : (
+                'Löschen'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1162,10 +1357,12 @@ export default function Events() {
         >
           {/* Hidden title and description for accessibility */}
           <DialogTitle className="sr-only">
-            {currentPhotoEventName || "Foto"} - Bild {currentPhotoIndex + 1} von {selectedPhotos.length}
+            {currentPhotoEventName || 'Foto'} - Bild {currentPhotoIndex + 1} von{' '}
+            {selectedPhotos.length}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Vollbild-Ansicht des Fotos. Verwende die Pfeiltasten oder Buttons zum Navigieren.
+            Vollbild-Ansicht des Fotos. Verwende die Pfeiltasten oder Buttons
+            zum Navigieren.
           </DialogDescription>
 
           {/* Close button */}
@@ -1181,7 +1378,7 @@ export default function Events() {
           {/* Photo info */}
           <div className="absolute top-4 left-4 z-50 text-white">
             <p className="text-lg font-medium">
-              {currentPhotoEventName || "Foto"}
+              {currentPhotoEventName || 'Foto'}
             </p>
             <p className="text-sm text-white/60">
               {currentPhotoIndex + 1} / {selectedPhotos.length}
@@ -1194,58 +1391,61 @@ export default function Events() {
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {selectedPhotos[currentPhotoIndex] && (() => {
-              const photo = selectedPhotos[currentPhotoIndex];
-              const previewSrc = pickSrc(photo, "preview");
-              const fullSrc = photo.imageUrl;
-              const isAlreadyFull = previewSrc === fullSrc;
+            {selectedPhotos[currentPhotoIndex] &&
+              (() => {
+                const photo = selectedPhotos[currentPhotoIndex];
+                const previewSrc = pickSrc(photo, 'preview');
+                const fullSrc = photo.imageUrl;
+                const isAlreadyFull = previewSrc === fullSrc;
 
-              return (
-                <>
-                  {/* Preview layer — always visible at full brightness, stays underneath */}
-                  <img
-                    key={`preview-${currentPhotoIndex}`}
-                    src={previewSrc}
-                    alt={currentPhotoEventName || "Event Foto"}
-                    className="absolute max-w-full max-h-full object-contain"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                    }}
-                    draggable={false}
-                  />
-
-                  {/* Full resolution image — positioned on top, fades in seamlessly */}
-                  {!isAlreadyFull && (
+                return (
+                  <>
+                    {/* Preview layer — always visible at full brightness, stays underneath */}
                     <img
-                      key={`full-${currentPhotoIndex}`}
-                      src={fullSrc}
-                      alt={currentPhotoEventName || "Event Foto"}
-                      className={cn(
-                        "absolute max-w-full max-h-full object-contain transition-opacity duration-300",
-                        fullResLoaded ? "opacity-100" : "opacity-0"
-                      )}
+                      key={`preview-${currentPhotoIndex}`}
+                      src={previewSrc}
+                      alt={currentPhotoEventName || 'Event Foto'}
+                      className="absolute max-w-full max-h-full object-contain"
                       style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "contain",
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
                       }}
-                      onLoad={() => setFullResLoaded(true)}
                       draggable={false}
                     />
-                  )}
 
-                  {/* Subtle loading indicator — small spinner bottom-right */}
-                  {!fullResLoaded && !isAlreadyFull && (
-                    <div className="absolute bottom-6 right-6 z-10 flex items-center gap-3 bg-black/40 px-5 py-3 rounded-full">
-                      <Loader2 className="h-6 w-6 animate-spin text-white/70" />
-                      <span className="text-base font-medium text-white/50">HD laden...</span>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
+                    {/* Full resolution image — positioned on top, fades in seamlessly */}
+                    {!isAlreadyFull && (
+                      <img
+                        key={`full-${currentPhotoIndex}`}
+                        src={fullSrc}
+                        alt={currentPhotoEventName || 'Event Foto'}
+                        className={cn(
+                          'absolute max-w-full max-h-full object-contain transition-opacity duration-300',
+                          fullResLoaded ? 'opacity-100' : 'opacity-0',
+                        )}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                        }}
+                        onLoad={() => setFullResLoaded(true)}
+                        draggable={false}
+                      />
+                    )}
+
+                    {/* Subtle loading indicator — small spinner bottom-right */}
+                    {!fullResLoaded && !isAlreadyFull && (
+                      <div className="absolute bottom-6 right-6 z-10 flex items-center gap-3 bg-black/40 px-5 py-3 rounded-full">
+                        <Loader2 className="h-6 w-6 animate-spin text-white/70" />
+                        <span className="text-base font-medium text-white/50">
+                          HD laden...
+                        </span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
             {/* Navigation arrows */}
             {selectedPhotos.length > 1 && (
@@ -1278,105 +1478,124 @@ export default function Events() {
       </Dialog>
 
       {/* Photo Management Dialog */}
-      <Dialog open={photoManagementOpen} onOpenChange={(open) => { setPhotoManagementOpen(open); if (!open) setActivePhotoId(null); }}>
+      <Dialog
+        open={photoManagementOpen}
+        onOpenChange={open => {
+          setPhotoManagementOpen(open);
+          if (!open) setActivePhotoId(null);
+        }}
+      >
         <DialogContent className="w-[90vw] h-[90vh] !max-w-[90vw] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
           <DialogHeader className="top-0 bg-background mb-8 pb-8 border-b border-muted/20">
-             <DialogTitle>Fotos verwalten</DialogTitle>
-             <DialogDescription>
-               Wähle ein Thumbnail oder lösche Fotos für dieses Event.
-             </DialogDescription>
-           </DialogHeader>
+            <DialogTitle>Fotos verwalten</DialogTitle>
+            <DialogDescription>
+              Wähle ein Thumbnail oder lösche Fotos für dieses Event.
+            </DialogDescription>
+          </DialogHeader>
           {(() => {
-             const eventPhotos = photoManagementEventId
-               ? allPhotos.filter((p) => p.eventId === photoManagementEventId)
-               : [];
-             const event = events.find((e) => e.id === photoManagementEventId);
+            const eventPhotos = photoManagementEventId
+              ? allPhotos.filter(p => p.eventId === photoManagementEventId)
+              : [];
+            const event = events.find(e => e.id === photoManagementEventId);
 
-             return (
+            return (
               <div className="space-y-4">
-                 <p className="text-sm text-muted-foreground">
-                   {eventPhotos.length} {eventPhotos.length === 1 ? "Foto" : "Fotos"} vorhanden
-                 </p>
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {eventPhotos.map((photo) => {
+                <p className="text-sm text-muted-foreground">
+                  {eventPhotos.length}{' '}
+                  {eventPhotos.length === 1 ? 'Foto' : 'Fotos'} vorhanden
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {eventPhotos.map(photo => {
                     const isActive = activePhotoId === photo.id;
                     return (
-                    <div
-                      key={photo.id}
-                      className={cn(
-                        "aspect-square overflow-hidden rounded-lg relative group border-2 transition-all",
-                        photo.id === event?.thumbnailPhotoId
-                          ? "border-primary ring-2 ring-primary/30"
-                          : "border-transparent hover:border-muted-foreground/30"
-                      )}
-                      onClick={() => {
-                        // On touch devices: first tap activates, second tap on button executes
-                        // On desktop: hover handles it, click on button executes directly
-                        if (window.matchMedia("(hover: none)").matches) {
-                          if (!isActive) {
-                            setActivePhotoId(photo.id);
-                          }
-                        }
-                      }}
-                    >
-                      <LazyImage
-                        src={pickSrc(photo, "thumb")}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                      {/* Thumbnail indicator */}
-                      {photo.id === event?.thumbnailPhotoId && (
-                        <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Star className="h-3 w-3" fill="currentColor" />
-                          <span className="hidden sm:inline">Thumbnail</span>
-                        </div>
-                      )}
-                      {/* Action overlay — hover on desktop, tap-activated on touch */}
-                      <div className={cn(
-                        "absolute inset-0 bg-black/60 transition-opacity flex flex-col items-center justify-center gap-2 p-2",
-                        isActive ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
-                      )}>
-                        {/* Close tap (touch only) */}
-                        {isActive && (
-                          <button
-                            className="absolute top-1 right-1 text-white/80 hover:text-white p-1"
-                            onClick={(e) => { e.stopPropagation(); setActivePhotoId(null); }}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
+                      <div
+                        key={photo.id}
+                        className={cn(
+                          'aspect-square overflow-hidden rounded-lg relative group border-2 transition-all',
+                          photo.id === event?.thumbnailPhotoId
+                            ? 'border-primary ring-2 ring-primary/30'
+                            : 'border-transparent hover:border-muted-foreground/30',
                         )}
-                        {photo.id !== event?.thumbnailPhotoId && (
+                        onClick={() => {
+                          // On touch devices: first tap activates, second tap on button executes
+                          // On desktop: hover handles it, click on button executes directly
+                          if (window.matchMedia('(hover: none)').matches) {
+                            if (!isActive) {
+                              setActivePhotoId(photo.id);
+                            }
+                          }
+                        }}
+                      >
+                        <LazyImage
+                          src={pickSrc(photo, 'thumb')}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Thumbnail indicator */}
+                        {photo.id === event?.thumbnailPhotoId && (
+                          <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Star className="h-3 w-3" fill="currentColor" />
+                            <span className="hidden sm:inline">Thumbnail</span>
+                          </div>
+                        )}
+                        {/* Action overlay — hover on desktop, tap-activated on touch */}
+                        <div
+                          className={cn(
+                            'absolute inset-0 bg-black/60 transition-opacity flex flex-col items-center justify-center gap-2 p-2',
+                            isActive
+                              ? 'opacity-100 pointer-events-auto'
+                              : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto',
+                          )}
+                        >
+                          {/* Close tap (touch only) */}
+                          {isActive && (
+                            <button
+                              className="absolute top-1 right-1 text-white/80 hover:text-white p-1"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setActivePhotoId(null);
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                          {photo.id !== event?.thumbnailPhotoId && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="gap-1.5 text-sm font-medium"
+                              onClick={e => {
+                                e.stopPropagation();
+                                if (photoManagementEventId) {
+                                  setThumbnailMutation.mutate({
+                                    eventId: photoManagementEventId,
+                                    photoId: photo.id,
+                                  });
+                                  setActivePhotoId(null);
+                                }
+                              }}
+                            >
+                              <Star className="h-4 w-4 shrink-0" />
+                              <span className="hidden sm:inline">
+                                Als Thumbnail
+                              </span>
+                            </Button>
+                          )}
                           <Button
-                            variant="secondary"
+                            variant="destructive"
                             size="sm"
                             className="gap-1.5 text-sm font-medium"
-                            onClick={(e) => {
+                            onClick={e => {
                               e.stopPropagation();
-                              if (photoManagementEventId) {
-                                setThumbnailMutation.mutate({ eventId: photoManagementEventId, photoId: photo.id });
-                                setActivePhotoId(null);
-                              }
+                              deletePhotoMutation.mutate({ photoId: photo.id });
+                              setActivePhotoId(null);
                             }}
                           >
-                            <Star className="h-4 w-4 shrink-0" />
-                            <span className="hidden sm:inline">Als Thumbnail</span>
+                            <Trash2 className="h-4 w-4 shrink-0" />
+                            <span className="hidden sm:inline">Löschen</span>
                           </Button>
-                        )}
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="gap-1.5 text-sm font-medium"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deletePhotoMutation.mutate({ photoId: photo.id });
-                            setActivePhotoId(null);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 shrink-0" />
-                          <span className="hidden sm:inline">Löschen</span>
-                        </Button>
+                        </div>
                       </div>
-                    </div>
                     );
                   })}
                 </div>
@@ -1384,7 +1603,10 @@ export default function Events() {
             );
           })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPhotoManagementOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setPhotoManagementOpen(false)}
+            >
               Schliessen
             </Button>
           </DialogFooter>

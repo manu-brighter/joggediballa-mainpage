@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -53,32 +53,32 @@
   /* Jogge di Balla Brand Colors */
   --teal: oklch(0.55 0.14 195);
   --coral: oklch(0.68 0.18 18);
-  
+
   /* Primary - Teal from logo */
   --primary: oklch(0.55 0.14 195);
   --primary-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(0.55 0.14 195);
   --sidebar-primary-foreground: oklch(1 0 0);
-  
+
   /* Secondary - Coral from logo */
   --secondary: oklch(0.68 0.18 18);
   --secondary-foreground: oklch(1 0 0);
   --accent: oklch(0.68 0.18 18);
   --accent-foreground: oklch(1 0 0);
-  
+
   /* Semantic colors */
-  --warning: oklch(0.80 0.15 85);
+  --warning: oklch(0.8 0.15 85);
   --warning-foreground: oklch(0.25 0.05 85);
   --success: oklch(0.65 0.15 145);
   --success-foreground: oklch(1 0 0);
-  
+
   /* Chart colors */
   --chart-1: oklch(0.55 0.14 195);
   --chart-2: oklch(0.68 0.18 18);
   --chart-3: oklch(0.65 0.12 200);
   --chart-4: oklch(0.45 0.12 200);
   --chart-5: oklch(0.78 0.15 20);
-  
+
   /* Base */
   --radius: 0.75rem;
   --background: oklch(0.99 0.002 250);
@@ -88,17 +88,17 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0.01 260);
   --muted: oklch(0.96 0.005 250);
-  --muted-foreground: oklch(0.50 0.02 260);
+  --muted-foreground: oklch(0.5 0.02 260);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.90 0.01 250);
-  --input: oklch(0.90 0.01 250);
+  --border: oklch(0.9 0.01 250);
+  --input: oklch(0.9 0.01 250);
   --ring: oklch(0.55 0.14 195);
   --sidebar: oklch(0.98 0.002 250);
   --sidebar-foreground: oklch(0.15 0.01 260);
   --sidebar-accent: oklch(0.96 0.005 250);
   --sidebar-accent-foreground: oklch(0.15 0.01 260);
-  --sidebar-border: oklch(0.90 0.01 250);
+  --sidebar-border: oklch(0.9 0.01 250);
   --sidebar-ring: oklch(0.55 0.14 195);
 }
 
@@ -106,32 +106,32 @@
   /* Jogge di Balla Brand Colors - Dark Mode */
   --teal: oklch(0.65 0.14 195);
   --coral: oklch(0.72 0.16 18);
-  
+
   /* Primary - Teal lighter for dark mode */
   --primary: oklch(0.65 0.14 195);
-  --primary-foreground: oklch(0.10 0.01 260);
+  --primary-foreground: oklch(0.1 0.01 260);
   --sidebar-primary: oklch(0.65 0.14 195);
-  --sidebar-primary-foreground: oklch(0.10 0.01 260);
-  
+  --sidebar-primary-foreground: oklch(0.1 0.01 260);
+
   /* Secondary - Coral */
   --secondary: oklch(0.72 0.16 18);
-  --secondary-foreground: oklch(0.10 0.01 260);
+  --secondary-foreground: oklch(0.1 0.01 260);
   --accent: oklch(0.72 0.16 18);
-  --accent-foreground: oklch(0.10 0.01 260);
-  
+  --accent-foreground: oklch(0.1 0.01 260);
+
   /* Semantic colors */
   --warning: oklch(0.75 0.12 85);
   --warning-foreground: oklch(0.15 0.05 85);
-  --success: oklch(0.70 0.14 145);
-  --success-foreground: oklch(0.10 0.01 145);
-  
+  --success: oklch(0.7 0.14 145);
+  --success-foreground: oklch(0.1 0.01 145);
+
   /* Chart colors */
   --chart-1: oklch(0.65 0.14 195);
   --chart-2: oklch(0.72 0.16 18);
-  --chart-3: oklch(0.70 0.12 200);
+  --chart-3: oklch(0.7 0.12 200);
   --chart-4: oklch(0.55 0.12 200);
-  --chart-5: oklch(0.80 0.14 20);
-  
+  --chart-5: oklch(0.8 0.14 20);
+
   /* Base - Deep dark blue-gray */
   --background: oklch(0.13 0.015 260);
   --foreground: oklch(0.92 0.01 250);
@@ -141,7 +141,7 @@
   --popover-foreground: oklch(0.92 0.01 250);
   --muted: oklch(0.22 0.015 260);
   --muted-foreground: oklch(0.65 0.02 250);
-  --destructive: oklch(0.60 0.20 25);
+  --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.28 0.015 260);
   --input: oklch(0.25 0.015 260);
@@ -152,9 +152,9 @@
   --sidebar-accent-foreground: oklch(0.92 0.01 250);
   --sidebar-border: oklch(0.28 0.015 260);
   --sidebar-ring: oklch(0.65 0.14 195);
-  
+
   /* Chart tooltip colors for dark mode */
-  --tooltip-bg: oklch(0.20 0.015 260);
+  --tooltip-bg: oklch(0.2 0.015 260);
   --tooltip-border: oklch(0.35 0.015 260);
   --tooltip-text: oklch(0.92 0.01 250);
 }
@@ -165,25 +165,25 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv11", "ss01", "ss03";
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
   }
   button:not(:disabled),
-  [role="button"]:not([aria-disabled="true"]),
-  [type="button"]:not(:disabled),
-  [type="submit"]:not(:disabled),
-  [type="reset"]:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [type='button']:not(:disabled),
+  [type='submit']:not(:disabled),
+  [type='reset']:not(:disabled),
   a[href],
   select:not(:disabled),
-  input[type="checkbox"]:not(:disabled),
-  input[type="radio"]:not(:disabled) {
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled) {
     @apply cursor-pointer;
   }
-  
+
   /* Smooth scroll */
   html {
     scroll-behavior: smooth;
   }
-  
+
   /* Selection color */
   ::selection {
     @apply bg-primary/20 text-foreground;
@@ -218,85 +218,103 @@
       max-width: 1280px;
     }
   }
-  
-  /* Glow effect for #1 team */
+
+  /* Glow effect for #1 team — colors adapt to dark mode via CSS custom properties */
+  :root {
+    --glow-base: oklch(0.55 0.14 195 / 40%);
+    --glow-spread: oklch(0.55 0.14 195 / 20%);
+    --glow-pulse-base: oklch(0.55 0.14 195 / 60%);
+    --glow-pulse-spread: oklch(0.55 0.14 195 / 30%);
+  }
+  .dark {
+    --glow-base: oklch(0.65 0.14 195 / 50%);
+    --glow-spread: oklch(0.65 0.14 195 / 25%);
+    --glow-pulse-base: oklch(0.65 0.14 195 / 70%);
+    --glow-pulse-spread: oklch(0.65 0.14 195 / 35%);
+  }
+
   .glow-primary {
-    box-shadow: 0 0 20px oklch(0.55 0.14 195 / 40%), 0 0 40px oklch(0.55 0.14 195 / 20%);
     animation: glow-pulse 2s ease-in-out infinite;
   }
-  
-  .dark .glow-primary {
-    box-shadow: 0 0 20px oklch(0.65 0.14 195 / 50%), 0 0 40px oklch(0.65 0.14 195 / 25%);
-  }
-  
+
   @keyframes glow-pulse {
-    0%, 100% {
-      box-shadow: 0 0 20px oklch(0.55 0.14 195 / 40%), 0 0 40px oklch(0.55 0.14 195 / 20%);
+    0%,
+    100% {
+      box-shadow:
+        0 0 20px var(--glow-base),
+        0 0 40px var(--glow-spread);
     }
     50% {
-      box-shadow: 0 0 30px oklch(0.55 0.14 195 / 60%), 0 0 60px oklch(0.55 0.14 195 / 30%);
+      box-shadow:
+        0 0 30px var(--glow-pulse-base),
+        0 0 60px var(--glow-pulse-spread);
     }
   }
-  
-  .dark .glow-pulse {
-    @keyframes glow-pulse {
-      0%, 100% {
-        box-shadow: 0 0 20px oklch(0.65 0.14 195 / 50%), 0 0 40px oklch(0.65 0.14 195 / 25%);
-      }
-      50% {
-        box-shadow: 0 0 30px oklch(0.65 0.14 195 / 70%), 0 0 60px oklch(0.65 0.14 195 / 35%);
-      }
-    }
-  }
-  
+
   /* Gradient text */
   .gradient-text {
-    background: linear-gradient(135deg, oklch(0.55 0.14 195), oklch(0.68 0.18 18));
+    background: linear-gradient(
+      135deg,
+      oklch(0.55 0.14 195),
+      oklch(0.68 0.18 18)
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .dark .gradient-text {
-    background: linear-gradient(135deg, oklch(0.65 0.14 195), oklch(0.72 0.16 18));
+    background: linear-gradient(
+      135deg,
+      oklch(0.65 0.14 195),
+      oklch(0.72 0.16 18)
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   /* Hero gradient background */
   .hero-gradient {
-    background: linear-gradient(135deg, oklch(0.55 0.14 195 / 8%) 0%, oklch(0.68 0.18 18 / 8%) 100%);
+    background: linear-gradient(
+      135deg,
+      oklch(0.55 0.14 195 / 8%) 0%,
+      oklch(0.68 0.18 18 / 8%) 100%
+    );
   }
-  
+
   .dark .hero-gradient {
-    background: linear-gradient(135deg, oklch(0.55 0.14 195 / 15%) 0%, oklch(0.68 0.18 18 / 15%) 100%);
+    background: linear-gradient(
+      135deg,
+      oklch(0.55 0.14 195 / 15%) 0%,
+      oklch(0.68 0.18 18 / 15%) 100%
+    );
   }
-  
+
   /* Card hover effect */
   .card-hover {
     @apply transition-all duration-300 ease-out;
   }
-  
+
   .card-hover:hover {
     @apply -translate-y-1 shadow-lg;
   }
-  
+
   /* Button animations */
   .btn-animate {
     @apply transition-all duration-200 ease-out active:scale-95;
   }
-  
+
   /* Counter animation */
   .counter-animate {
     @apply transition-all duration-300 ease-out;
   }
-  
+
   /* Fade in animation */
   .fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
-  
+
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -307,12 +325,12 @@
       transform: translateY(0);
     }
   }
-  
+
   /* Slide in from left */
   .slide-in-left {
     animation: slideInLeft 0.5s ease-out forwards;
   }
-  
+
   @keyframes slideInLeft {
     from {
       opacity: 0;
@@ -323,12 +341,12 @@
       transform: translateX(0);
     }
   }
-  
+
   /* Slide in from right */
   .slide-in-right {
     animation: slideInRight 0.5s ease-out forwards;
   }
-  
+
   @keyframes slideInRight {
     from {
       opacity: 0;
@@ -339,12 +357,12 @@
       transform: translateX(0);
     }
   }
-  
+
   /* Scale in animation */
   .scale-in {
     animation: scaleIn 0.3s ease-out forwards;
   }
-  
+
   @keyframes scaleIn {
     from {
       opacity: 0;
@@ -355,7 +373,7 @@
       transform: scale(1);
     }
   }
-  
+
   /* Beamer mode fullscreen */
   .beamer-mode {
     position: fixed !important;
@@ -369,22 +387,22 @@
     background: var(--background) !important;
     overflow: auto !important;
   }
-  
+
   /* Hide scrollbar in beamer mode */
   .beamer-mode::-webkit-scrollbar {
     display: none;
   }
-  
+
   .beamer-mode {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   /* Membership status colors */
   .membership-expiring {
     @apply bg-warning/20 border-warning;
   }
-  
+
   .membership-expired {
     @apply bg-destructive/10 border-destructive/30 opacity-70;
   }
@@ -395,41 +413,40 @@
   .text-balance {
     text-wrap: balance;
   }
-  
+
   /* Hide on mobile */
   .hide-mobile {
     @apply hidden sm:block;
   }
-  
+
   /* Show only on mobile */
   .show-mobile {
     @apply block sm:hidden;
   }
-  
+
   /* Date and time inputs: hide native icons globally.
      Custom DateInput/TimeInput components provide their own SVG icons. */
-  input[type="date"]::-webkit-calendar-picker-indicator,
-  input[type="time"]::-webkit-calendar-picker-indicator {
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator {
     display: none !important;
     -webkit-appearance: none !important;
   }
-  
-  input[type="date"]::-webkit-inner-spin-button,
-  input[type="time"]::-webkit-inner-spin-button,
-  input[type="date"]::-webkit-clear-button,
-  input[type="time"]::-webkit-clear-button {
+
+  input[type='date']::-webkit-inner-spin-button,
+  input[type='time']::-webkit-inner-spin-button,
+  input[type='date']::-webkit-clear-button,
+  input[type='time']::-webkit-clear-button {
     display: none !important;
     -webkit-appearance: none !important;
   }
 
   /* Number input: hide default spin buttons */
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-  input[type="number"] {
+  input[type='number'] {
     -moz-appearance: textfield;
   }
 }
-
