@@ -1,4 +1,4 @@
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/NotFound';
 import { Route, Switch, useLocation } from 'wouter';
@@ -29,6 +29,9 @@ import SdkControl from './pages/overlay/SdkControl';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
+import { useCookieConsent } from '@/_core/hooks/useCookieConsent';
+import { CookieConsentBanner } from '@/components/CookieConsentBanner';
+import { loadGoogleAnalyticsScript, disableGoogleAnalytics } from '@/_core/googleAnalytics';
 
 // Overlay routes — rendered without Navigation/Footer/background
 const OVERLAY_ROUTES = ['/overlay/sdk'];
@@ -79,6 +82,19 @@ function AppContent() {
   const [isBeamerMode, setBeamerMode] = useState(false);
   const [location] = useLocation();
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { consent, showBanner, isLoaded, acceptAll, rejectAll, setCustomConsent } = useCookieConsent();
+
+  // Load Google Analytics based on consent
+  useEffect(() => {
+    if (!isLoaded) return;
+    
+    const gaId = 'G-W5PQHY4GNN';
+    if (consent.analytics) {
+      loadGoogleAnalyticsScript(gaId);
+    } else {
+      disableGoogleAnalytics();
+    }
+  }, [consent.analytics, isLoaded]);
 
   // Overlay mode: no nav, no footer, transparent bg
   const isOverlayRoute = OVERLAY_ROUTES.some(r => location === r);
@@ -139,6 +155,17 @@ function AppContent() {
         {!isBeamerMode && <Footer />}
       </div>
       <Toaster richColors position="top-center" />
+      {/* Cookie Consent Banner */}
+      {isLoaded && (
+        <CookieConsentBanner
+          isVisible={showBanner}
+          onAcceptAll={acceptAll}
+          onRejectAll={rejectAll}
+          onCustom={(analytics, marketing) =>
+            setCustomConsent({ analytics, marketing })
+          }
+        />
+      )}
     </BeamerModeContext.Provider>
   );
 }

@@ -23,8 +23,16 @@
     />
     <meta name="author" content="Jogge di Balla" />
     <meta name="robots" content="index, follow" />
+    <!-- Overlay routes should not be indexed -->
+    <meta name="googlebot" content="noindex, nofollow" />
     <meta name="theme-color" content="#002f46" />
     <link rel="canonical" href="https://joggediballa.ch/" />
+    <!-- Prevent overlay routes from being indexed -->
+    <script>
+      if (window.location.pathname.includes('/overlay/')) {
+        document.documentElement.innerHTML = '';
+      }
+    </script>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -102,21 +110,7 @@
         }
       }
     </script>
-    <!-- Google Analytics -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-W5PQHY4GNN"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag('js', new Date());
-      gtag('config', 'G-W5PQHY4GNN', {
-        anonymize_ip: true,
-      });
-    </script>
+    <!-- Google Analytics: Loaded dynamically based on cookie consent -->
   </head>
 
   <body>
