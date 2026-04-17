@@ -27,8 +27,8 @@ export function CookieConsentBanner({
   isVisible,
 }: CookieConsentBannerProps) {
   const [expanded, setExpanded] = useState(false);
-  const [customAnalytics, setCustomAnalytics] = useState(false);
-  const [customMarketing, setCustomMarketing] = useState(false);
+  const [customAnalytics, setCustomAnalytics] = useState(true);
+  const [customMarketing, setCustomMarketing] = useState(true);
 
   if (!isVisible) return null;
 
@@ -73,7 +73,9 @@ export function CookieConsentBanner({
                 </Button>
                 <Button
                   size="sm"
-                  onClick={onAcceptAll}
+                  onClick={() => {
+                    onAcceptAll();
+                  }}
                   className="text-xs font-medium text-white bg-[#0B93A7] hover:bg-[#084f5f] transition-colors"
                 >
                   Akzeptieren
