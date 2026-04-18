@@ -47,16 +47,18 @@ async function startServer() {
     }),
   );
 
-  // Global rate limiter: 500 requests per 15 minutes per IP.
-  // tRPC batching makes per-procedure rate limiting via Express routes unreliable
-  // (batch URLs like /api/trpc/contact.send,auth.me bypass route-specific matchers).
-  // Per-procedure limiting should be implemented in tRPC middleware if needed.
+  // Rate limiter for non-tRPC routes (auth, upload, static assets).
+  // tRPC is excluded because the overlay/shotcounter pages poll every 1-2s legitimately,
+  // which would exhaust a per-IP limit and block unrelated pages for the same user.
+  // Abuse prevention for sensitive tRPC procedures (e.g. contact.send) must be
+  // implemented as tRPC middleware instead.
   app.use(
     rateLimit({
       windowMs: 15 * 60 * 1000,
-      limit: 500,
+      limit: 300,
       standardHeaders: 'draft-7',
       legacyHeaders: false,
+      skip: req => req.path.startsWith('/api/trpc'),
     }),
   );
 
