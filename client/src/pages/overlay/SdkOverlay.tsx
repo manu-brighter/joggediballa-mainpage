@@ -52,7 +52,7 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
         height: '100%',
         pointerEvents: 'none',
       }}
-      viewBox="0 0 1920 80"
+      viewBox="0 0 1920 120"
       preserveAspectRatio="xMidYMid slice"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -60,22 +60,22 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
       <g opacity="0.18">
         <line
           x1="-20"
-          y1="90"
+          y1="130"
           x2="180"
           y2="-10"
           stroke={RED}
           strokeWidth="28"
         />
-        <line x1="30" y1="90" x2="230" y2="-10" stroke={RED} strokeWidth="14" />
-        <line x1="80" y1="90" x2="280" y2="-10" stroke={RED} strokeWidth="8" />
-        <line x1="120" y1="90" x2="320" y2="-10" stroke={RED} strokeWidth="4" />
+        <line x1="30" y1="130" x2="230" y2="-10" stroke={RED} strokeWidth="14" />
+        <line x1="80" y1="130" x2="280" y2="-10" stroke={RED} strokeWidth="8" />
+        <line x1="120" y1="130" x2="320" y2="-10" stroke={RED} strokeWidth="4" />
       </g>
 
       {/* ── Right side speed lines (blue tint) ── */}
       <g opacity="0.18">
         <line
           x1="1940"
-          y1="90"
+          y1="130"
           x2="1740"
           y2="-10"
           stroke={BLUE}
@@ -83,7 +83,7 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
         />
         <line
           x1="1890"
-          y1="90"
+          y1="130"
           x2="1690"
           y2="-10"
           stroke={BLUE}
@@ -91,7 +91,7 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
         />
         <line
           x1="1840"
-          y1="90"
+          y1="130"
           x2="1640"
           y2="-10"
           stroke={BLUE}
@@ -99,7 +99,7 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
         />
         <line
           x1="1800"
-          y1="90"
+          y1="130"
           x2="1600"
           y2="-10"
           stroke={BLUE}
@@ -110,24 +110,24 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
       {/* ── Left decorative arcs ── */}
       <circle
         cx="0"
-        cy="80"
-        r="90"
+        cy="120"
+        r="130"
         fill="none"
         stroke="rgba(255,255,255,0.05)"
         strokeWidth="1.5"
       />
       <circle
         cx="0"
-        cy="80"
-        r="58"
+        cy="120"
+        r="85"
         fill="none"
         stroke="rgba(255,255,255,0.04)"
         strokeWidth="1"
       />
       <circle
         cx="0"
-        cy="80"
-        r="30"
+        cy="120"
+        r="44"
         fill="none"
         stroke="rgba(255,255,255,0.04)"
         strokeWidth="1"
@@ -136,24 +136,24 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
       {/* ── Right decorative arcs ── */}
       <circle
         cx="1920"
-        cy="80"
-        r="90"
+        cy="120"
+        r="130"
         fill="none"
         stroke="rgba(255,255,255,0.05)"
         strokeWidth="1.5"
       />
       <circle
         cx="1920"
-        cy="80"
-        r="58"
+        cy="120"
+        r="85"
         fill="none"
         stroke="rgba(255,255,255,0.04)"
         strokeWidth="1"
       />
       <circle
         cx="1920"
-        cy="80"
-        r="30"
+        cy="120"
+        r="44"
         fill="none"
         stroke="rgba(255,255,255,0.04)"
         strokeWidth="1"
@@ -162,28 +162,28 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
       {/* ── Centre geometric ring ── */}
       <circle
         cx="960"
-        cy="40"
-        r="55"
+        cy="60"
+        r="80"
         fill="none"
         stroke="rgba(255,255,255,0.04)"
         strokeWidth="1"
       />
       <circle
         cx="960"
-        cy="40"
-        r="38"
+        cy="60"
+        r="55"
         fill="none"
         stroke="rgba(255,255,255,0.03)"
         strokeWidth="1"
       />
 
       {/* ── Scattered dots ── */}
-      <circle cx="350" cy="18" r="3" fill="rgba(255,255,255,0.1)" />
-      <circle cx="420" cy="55" r="2" fill="rgba(255,255,255,0.07)" />
-      <circle cx="280" cy="40" r="4" fill="rgba(255,255,255,0.06)" />
-      <circle cx="1570" cy="18" r="3" fill="rgba(255,255,255,0.1)" />
-      <circle cx="1500" cy="55" r="2" fill="rgba(255,255,255,0.07)" />
-      <circle cx="1640" cy="40" r="4" fill="rgba(255,255,255,0.06)" />
+      <circle cx="350" cy="27" r="3" fill="rgba(255,255,255,0.1)" />
+      <circle cx="420" cy="83" r="2" fill="rgba(255,255,255,0.07)" />
+      <circle cx="280" cy="60" r="4" fill="rgba(255,255,255,0.06)" />
+      <circle cx="1570" cy="27" r="3" fill="rgba(255,255,255,0.1)" />
+      <circle cx="1500" cy="83" r="2" fill="rgba(255,255,255,0.07)" />
+      <circle cx="1640" cy="60" r="4" fill="rgba(255,255,255,0.06)" />
 
       {/* ── Thin horizontal accent lines ── */}
       <line
@@ -196,9 +196,9 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
       />
       <line
         x1="0"
-        y1="79"
+        y1="119"
         x2="1920"
-        y2="79"
+        y2="119"
         stroke="rgba(255,255,255,0.04)"
         strokeWidth="1"
       />
@@ -216,9 +216,9 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
           />
           <line
             x1="0"
-            y1="79"
+            y1="119"
             x2="1920"
-            y2="79"
+            y2="119"
             stroke="rgba(251,191,36,0.4)"
             strokeWidth="2"
           />
@@ -240,7 +240,7 @@ function GameDots({
   isFinished: boolean;
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       {Array.from({ length: total }, (_, i) => {
         const gameNum = i + 1;
         const isDone = gameNum < current || isFinished;
@@ -249,8 +249,8 @@ function GameDots({
           <div
             key={i}
             style={{
-              width: isCurrent ? 11 : 6,
-              height: isCurrent ? 11 : 6,
+              width: isCurrent ? 16 : 9,
+              height: isCurrent ? 16 : 9,
               borderRadius: '50%',
               background: isDone
                 ? 'rgba(255,255,255,0.75)'
@@ -258,7 +258,7 @@ function GameDots({
                   ? '#fff'
                   : 'rgba(255,255,255,0.18)',
               boxShadow: isCurrent
-                ? '0 0 7px 3px rgba(255,255,255,0.55)'
+                ? '0 0 10px 4px rgba(255,255,255,0.55)'
                 : 'none',
               transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
               flexShrink: 0,
@@ -295,7 +295,7 @@ function PlayerSide({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 14,
+        gap: 20,
         flex: 1,
         flexDirection: side === 'right' ? 'row-reverse' : 'row',
       }}
@@ -303,13 +303,13 @@ function PlayerSide({
       {/* Score bubble */}
       <div
         style={{
-          minWidth: 62,
-          height: 62,
+          minWidth: 90,
+          height: 90,
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 27,
+          fontSize: 38,
           fontWeight: 900,
           letterSpacing: '-1px',
           color: isWinner ? '#fbbf24' : '#fff',
@@ -350,7 +350,7 @@ function PlayerSide({
       >
         <span
           style={{
-            fontSize: 19,
+            fontSize: 26,
             fontWeight: 800,
             color: isWinner ? '#fbbf24' : '#fff',
             textShadow: isWinner
@@ -358,7 +358,7 @@ function PlayerSide({
               : '0 2px 10px rgba(0,0,0,0.55)',
             letterSpacing: '0.4px',
             lineHeight: 1,
-            maxWidth: 190,
+            maxWidth: 240,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -370,12 +370,12 @@ function PlayerSide({
         {isWinner && (
           <span
             style={{
-              fontSize: 10,
+              fontSize: 13,
               fontWeight: 700,
               color: '#fbbf24',
-              letterSpacing: '2.5px',
+              letterSpacing: '3px',
               textTransform: 'uppercase',
-              marginTop: 3,
+              marginTop: 5,
               textShadow: '0 0 10px rgba(251,191,36,0.65)',
             }}
           >
@@ -409,7 +409,7 @@ export default function SdkOverlay() {
 
   if (!session) {
     return (
-      <div style={{ width: '100%', height: 80, background: 'transparent' }} />
+      <div style={{ width: '100%', height: 120, background: 'transparent' }} />
     );
   }
 
@@ -463,7 +463,7 @@ export default function SdkOverlay() {
         style={{
           position: 'relative',
           overflow: 'hidden',
-          height: 80,
+          height: 120,
           display: 'flex',
           alignItems: 'center',
           background: `linear-gradient(90deg, #4a0d18 0%, #1a0a0a 30%, #0f0f1a 50%, #0a0a1a 70%, #052530 100%)`,
@@ -538,8 +538,8 @@ export default function SdkOverlay() {
             width: '100%',
             display: 'flex',
             alignItems: 'center',
-            padding: '0 22px',
-            gap: 14,
+            padding: '0 32px',
+            gap: 20,
           }}
         >
           {/* Player 1 */}
@@ -558,16 +558,16 @@ export default function SdkOverlay() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 5,
+              gap: 7,
               flexShrink: 0,
-              minWidth: 190,
+              minWidth: 250,
             }}
           >
             <span
               style={{
-                fontSize: 9,
+                fontSize: 12,
                 fontWeight: 700,
-                letterSpacing: '3.5px',
+                letterSpacing: '4px',
                 textTransform: 'uppercase',
                 color: hasWinner
                   ? 'rgba(251,191,36,0.9)'
@@ -580,7 +580,7 @@ export default function SdkOverlay() {
 
             <span
               style={{
-                fontSize: 14,
+                fontSize: 20,
                 fontWeight: 800,
                 color: hasWinner
                   ? '#fbbf24'
@@ -590,9 +590,9 @@ export default function SdkOverlay() {
                 letterSpacing: '0.4px',
                 lineHeight: 1,
                 textShadow: hasWinner
-                  ? '0 0 14px rgba(251,191,36,0.75)'
+                  ? '0 0 18px rgba(251,191,36,0.75)'
                   : anyMatchpoint
-                    ? '0 0 12px rgba(249,115,22,0.7)'
+                    ? '0 0 14px rgba(249,115,22,0.7)'
                     : '0 2px 8px rgba(0,0,0,0.6)',
               }}
             >
@@ -602,9 +602,9 @@ export default function SdkOverlay() {
             {anyMatchpoint && !hasWinner && (
               <span
                 style={{
-                  fontSize: 8,
+                  fontSize: 11,
                   fontWeight: 800,
-                  letterSpacing: '3px',
+                  letterSpacing: '3.5px',
                   textTransform: 'uppercase',
                   color: p1Matchpoint && p2Matchpoint
                     ? '#f97316'

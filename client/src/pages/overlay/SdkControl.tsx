@@ -852,7 +852,7 @@ export default function SdkControl() {
                 /overlay/sdk
               </code>{' '}
               — Empfohlene Breite: <strong>1920px</strong>, Höhe:{' '}
-              <strong>80px</strong>. Hintergrundfarbe auf transparent stellen.
+              <strong>120px</strong>. Hintergrundfarbe auf transparent stellen.
             </p>
           </CardContent>
         </Card>
