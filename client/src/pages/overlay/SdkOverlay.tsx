@@ -593,7 +593,7 @@ export default function SdkOverlay() {
               gap: 6,
               flexShrink: 0,
               minWidth: 280,
-              maxWidth: 420,
+              maxWidth: 720,
             }}
           >
             {/* Game name / winner */}
@@ -613,9 +613,6 @@ export default function SdkOverlay() {
                   : anyMatchpoint
                     ? '0 0 18px rgba(249,115,22,0.75)'
                     : '0 2px 10px rgba(0,0,0,0.7)',
-                maxWidth: 400,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
             >
