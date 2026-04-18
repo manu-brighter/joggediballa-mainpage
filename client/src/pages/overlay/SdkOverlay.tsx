@@ -25,6 +25,19 @@ function maxRemaining(current: number, total: number): number {
   return totalPoints(total) - totalPoints(current - 1);
 }
 
+// Returns true if winning the current game would clinch the series for myScore
+function hasMatchpoint(
+  myScore: number,
+  theirScore: number,
+  currentGame: number,
+  totalGames: number,
+): boolean {
+  if (currentGame > totalGames) return false;
+  const myNewScore = myScore + currentGame;
+  const theirMaxRemaining = totalPoints(totalGames) - totalPoints(currentGame);
+  return myNewScore > theirScore + theirMaxRemaining;
+}
+
 // ─── Abstract background SVG ─────────────────────────────────────────────────
 // Full-width abstract pattern: diagonal speed lines + geometric rings
 // No logo — purely abstract
@@ -424,6 +437,16 @@ export default function SdkOverlay() {
   const p2Winner = isFinished ? winnerId === 2 : p2MathWinner;
   const hasWinner = p1Winner || p2Winner;
 
+  const p1Matchpoint =
+    !hasWinner &&
+    !isFinished &&
+    hasMatchpoint(player1Score, player2Score, currentGame, totalGames);
+  const p2Matchpoint =
+    !hasWinner &&
+    !isFinished &&
+    hasMatchpoint(player2Score, player1Score, currentGame, totalGames);
+  const anyMatchpoint = p1Matchpoint || p2Matchpoint;
+
   const gameLabel = currentGameName?.trim()
     ? currentGameName
     : `Spiel ${currentGame}`;
@@ -559,18 +582,49 @@ export default function SdkOverlay() {
               style={{
                 fontSize: 14,
                 fontWeight: 800,
-                color: hasWinner ? '#fbbf24' : 'rgba(255,255,255,0.95)',
+                color: hasWinner
+                  ? '#fbbf24'
+                  : anyMatchpoint
+                    ? '#f97316'
+                    : 'rgba(255,255,255,0.95)',
                 letterSpacing: '0.4px',
                 lineHeight: 1,
                 textShadow: hasWinner
                   ? '0 0 14px rgba(251,191,36,0.75)'
-                  : '0 2px 8px rgba(0,0,0,0.6)',
+                  : anyMatchpoint
+                    ? '0 0 12px rgba(249,115,22,0.7)'
+                    : '0 2px 8px rgba(0,0,0,0.6)',
               }}
             >
               {hasWinner ? '🏆 Sieger steht fest!' : gameLabel}
             </span>
 
-            {!hasWinner && (
+            {anyMatchpoint && !hasWinner && (
+              <span
+                style={{
+                  fontSize: 8,
+                  fontWeight: 800,
+                  letterSpacing: '3px',
+                  textTransform: 'uppercase',
+                  color: p1Matchpoint && p2Matchpoint
+                    ? '#f97316'
+                    : p1Matchpoint
+                      ? RED
+                      : BLUE,
+                  lineHeight: 1,
+                  textShadow: '0 0 8px rgba(249,115,22,0.6)',
+                  animation: 'sdk-matchpoint-pulse 1.4s ease-in-out infinite',
+                }}
+              >
+                {p1Matchpoint && p2Matchpoint
+                  ? '⚡ Entscheidungsspiel'
+                  : p1Matchpoint
+                    ? `⚡ Matchpunkt ${player1Name}`
+                    : `⚡ Matchpunkt ${player2Name}`}
+              </span>
+            )}
+
+            {!hasWinner && !anyMatchpoint && (
               <GameDots
                 current={currentGame}
                 total={totalGames}
@@ -596,6 +650,10 @@ export default function SdkOverlay() {
           0%   { opacity: 0; transform: translateX(-60%); }
           50%  { opacity: 1; }
           100% { opacity: 0; transform: translateX(60%); }
+        }
+        @keyframes sdk-matchpoint-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
         }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { background: transparent !important; overflow: hidden; }

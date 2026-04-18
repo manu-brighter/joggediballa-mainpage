@@ -1076,6 +1076,7 @@ export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
   const session = await sdkGetSession(sessionId);
   if (!session) throw new Error('Session not found');
   if (!session.isActive) throw new Error('Session is not active');
+  if (session.winnerId !== null) throw new Error('Sieger ist bereits festgestellt');
 
   const gameNumber = session.currentGame;
   const points = gameNumber; // game N awards N points
