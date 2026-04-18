@@ -530,6 +530,38 @@ export default function SdkOverlay() {
           />
         )}
 
+        {/* ── Show title watermark ── */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 4,
+            pointerEvents: 'none',
+            overflow: 'hidden',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 68,
+              fontWeight: 900,
+              letterSpacing: '10px',
+              textTransform: 'uppercase',
+              color: hasWinner
+                ? 'rgba(251,191,36,0.06)'
+                : 'rgba(255,255,255,0.055)',
+              filter: 'blur(2.5px)',
+              whiteSpace: 'nowrap',
+              userSelect: 'none',
+              fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+            }}
+          >
+            {showTitle ?? 'Schlag den Kassier'}
+          </span>
+        </div>
+
         {/* ── Content ── */}
         <div
           style={{
@@ -558,53 +590,62 @@ export default function SdkOverlay() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 7,
+              gap: 6,
               flexShrink: 0,
-              minWidth: 250,
+              minWidth: 280,
+              maxWidth: 420,
             }}
           >
+            {/* Game name / winner */}
             <span
               style={{
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: '4px',
-                textTransform: 'uppercase',
-                color: hasWinner
-                  ? 'rgba(251,191,36,0.9)'
-                  : 'rgba(255,255,255,0.4)',
-                lineHeight: 1,
-              }}
-            >
-              {showTitle ?? 'Schlag den Kassier'}
-            </span>
-
-            <span
-              style={{
-                fontSize: 20,
-                fontWeight: 800,
+                fontSize: 28,
+                fontWeight: 900,
                 color: hasWinner
                   ? '#fbbf24'
                   : anyMatchpoint
                     ? '#f97316'
-                    : 'rgba(255,255,255,0.95)',
-                letterSpacing: '0.4px',
+                    : '#fff',
+                letterSpacing: '0.3px',
                 lineHeight: 1,
                 textShadow: hasWinner
-                  ? '0 0 18px rgba(251,191,36,0.75)'
+                  ? '0 0 22px rgba(251,191,36,0.8)'
                   : anyMatchpoint
-                    ? '0 0 14px rgba(249,115,22,0.7)'
-                    : '0 2px 8px rgba(0,0,0,0.6)',
+                    ? '0 0 18px rgba(249,115,22,0.75)'
+                    : '0 2px 10px rgba(0,0,0,0.7)',
+                maxWidth: 400,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
               {hasWinner ? '🏆 Sieger steht fest!' : gameLabel}
             </span>
 
+            {/* Points value */}
+            {!hasWinner && !isFinished && (
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: anyMatchpoint
+                    ? 'rgba(249,115,22,0.9)'
+                    : 'rgba(255,255,255,0.55)',
+                  letterSpacing: '1px',
+                  lineHeight: 1,
+                }}
+              >
+                +{currentGame} Spielpunkte
+              </span>
+            )}
+
+            {/* Matchpoint OR game dots */}
             {anyMatchpoint && !hasWinner && (
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 15,
                   fontWeight: 800,
-                  letterSpacing: '3.5px',
+                  letterSpacing: '3px',
                   textTransform: 'uppercase',
                   color: p1Matchpoint && p2Matchpoint
                     ? '#f97316'
@@ -612,7 +653,7 @@ export default function SdkOverlay() {
                       ? RED
                       : BLUE,
                   lineHeight: 1,
-                  textShadow: '0 0 8px rgba(249,115,22,0.6)',
+                  textShadow: '0 0 10px rgba(249,115,22,0.65)',
                   animation: 'sdk-matchpoint-pulse 1.4s ease-in-out infinite',
                 }}
               >
