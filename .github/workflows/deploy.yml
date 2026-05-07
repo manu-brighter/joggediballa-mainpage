@@ -1,0 +1,29 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH-trigger server deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Set up SSH agent with deploy key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Pin server host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -t ed25519,rsa,ecdsa -H 45.81.235.147 >> ~/.ssh/known_hosts
+
+      - name: Trigger server-side deploy
+        run: ssh deploy@45.81.235.147
