@@ -1,1 +1,0 @@
-ALTER TABLE `team_members` ADD `nickname` varchar(100);
