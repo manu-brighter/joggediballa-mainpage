@@ -1,6 +1,10 @@
 import { z } from 'zod';
-import { notifyOwner } from './notification';
-import { adminProcedure, publicProcedure, router } from './trpc';
+import { publicProcedure, router } from './trpc';
+
+// System-level tRPC procedures. Earlier versions also exposed a `notifyOwner`
+// admin mutation that POSTed to the Manus Forge SendNotification endpoint.
+// That procedure had no UI consumers and was removed along with
+// server/_core/notification.ts.
 
 export const systemRouter = router({
   health: publicProcedure
@@ -12,18 +16,4 @@ export const systemRouter = router({
     .query(() => ({
       ok: true,
     })),
-
-  notifyOwner: adminProcedure
-    .input(
-      z.object({
-        title: z.string().min(1, 'title is required'),
-        content: z.string().min(1, 'content is required'),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      const delivered = await notifyOwner(input);
-      return {
-        success: delivered,
-      } as const;
-    }),
 });
