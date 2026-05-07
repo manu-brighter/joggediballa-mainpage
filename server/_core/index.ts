@@ -40,10 +40,20 @@ async function startServer() {
 
   // Security headers — must come before all routes.
   // CSP is disabled here because it requires careful per-origin configuration
-  // (Google Analytics, S3 URLs, OAuth). Enable and configure once origins are stable.
+  // (Google OAuth popup origins, /uploads/, etc.). Enable and configure once
+  // origins are stable.
+  // HSTS bumped to 2 years + preload-eligible to match the manuelheller.dev
+  // origin's nginx-level HSTS header. The site is HTTPS-only behind Cloudflare;
+  // committing browsers to HTTPS for the joggediballa.ch + every subdomain is
+  // safe — nothing here serves plain HTTP.
   app.use(
     helmet({
       contentSecurityPolicy: false,
+      hsts: {
+        maxAge: 63072000, // 2 years
+        includeSubDomains: true,
+        preload: true,
+      },
     }),
   );
 
