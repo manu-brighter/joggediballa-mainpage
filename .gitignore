@@ -105,3 +105,6 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+
+# Runtime user uploads — must never enter git history.
+uploads/
