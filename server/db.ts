@@ -92,10 +92,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
     }
+    // Note: a previous OWNER_OPEN_ID env-var fallback that auto-promoted the
+    // matching openId to admin was removed. Admin assignment now happens in
+    // server/_core/googleAuth.ts via ADMIN_EMAIL on first sign-in.
 
     if (!values.lastSignedIn) {
       values.lastSignedIn = new Date();
