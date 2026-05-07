@@ -66,16 +66,11 @@ async function startServer() {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ limit: '1mb', extended: true }));
 
-  // OAuth routes - use Google OAuth for self-hosting or Manus OAuth for Manus platform
-  if (process.env.GOOGLE_CLIENT_ID) {
-    console.log('[Auth] Using Google OAuth for authentication');
-    registerGoogleAuthRoutes(app);
-  } else {
-    console.log('[Auth] Using Manus OAuth for authentication');
-    // Dynamic import prevents Manus SDK from initializing when Google OAuth is active
-    const { registerOAuthRoutes } = await import('./oauth');
-    registerOAuthRoutes(app);
-  }
+  // Google OAuth is the only supported auth flow. The original Manus OAuth
+  // integration (server/_core/oauth.ts + the Manus methods on the sdk
+  // singleton) was removed once it was clear we'd never run on the Manus
+  // platform — the auto-fall-back was the only consumer of OAUTH_SERVER_URL.
+  registerGoogleAuthRoutes(app);
   // tRPC API
   app.use(
     '/api/trpc',
