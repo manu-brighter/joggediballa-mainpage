@@ -1,8 +1,7 @@
 import { Link } from 'wouter';
-import { Instagram, Mail, ArrowRight } from 'lucide-react';
+import { Instagram, ArrowRight } from 'lucide-react';
 import { getLoginUrl } from '@/const';
 import { useAuth } from '@/_core/hooks/useAuth';
-import { Button } from '@/components/ui/button';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -10,56 +9,55 @@ export function Footer() {
 
   return (
     <footer className="mt-auto border-t bg-muted/30">
-      <div className="container py-12 md:py-16 space-y-10">
-        {/* Brand statement — logo + closing line */}
-        <div className="grid gap-6 md:grid-cols-[auto_1fr] md:items-end md:gap-12">
-          <img
-            src="/JoggediBalla-Logo.PNG"
-            alt="Jogge di Balla Logo"
-            className="h-16 md:h-24 w-auto"
-            loading="lazy"
-          />
-          <div className="space-y-2 md:pb-2">
-            <p className="text-3xl md:text-4xl font-black tracking-tight leading-tight">
-              Brislach laut,{' '}
-              <span className="gradient-text whitespace-nowrap">seit 2022</span>.
-            </p>
-            <p className="text-base text-muted-foreground">
-              Event- und Kulturverein.
-            </p>
+      <div className="container py-8 space-y-6">
+        {/* Top: brand-marker on the left, contact CTAs on the right */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src="/JoggediBalla-Logo.PNG"
+              alt="Jogge di Balla Logo"
+              className="h-10 w-auto"
+              loading="lazy"
+            />
+            <div className="text-sm leading-tight">
+              <p className="font-semibold">Brislach laut, seit 2022.</p>
+              <p className="text-xs text-muted-foreground">
+                Event- und Kulturverein
+              </p>
+            </div>
           </div>
-        </div>
-
-        {/* CTA row */}
-        <div className="flex flex-wrap items-center gap-3">
-          <Button asChild size="lg" className="btn-animate gap-2">
-            <Link href="/contact">
-              <Mail className="h-4 w-4" />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+            >
               Schreib uns
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
-          </Button>
-          <Button asChild size="lg" className="btn-animate social-instagram gap-2">
+            <span aria-hidden="true" className="text-muted-foreground/40">
+              ·
+            </span>
             <a
               href="https://instagram.com/joggediballa"
               target="_blank"
               rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Instagram className="h-4 w-4" />
+              <Instagram className="h-3.5 w-3.5" />
               @joggediballa
             </a>
-          </Button>
+          </div>
         </div>
 
-        {/* Service links + copyright */}
-        <div className="flex flex-col gap-4 border-t pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
+        {/* Bottom: legal + copyright */}
+        <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
           <nav
             aria-label="Footer"
-            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:justify-start"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1"
           >
             <Link
               href="/impressum"
-              className="hover:text-foreground transition-colors"
+              className="transition-colors hover:text-foreground"
             >
               Impressum
             </Link>
@@ -68,7 +66,7 @@ export function Footer() {
             </span>
             <Link
               href="/datenschutz"
-              className="hover:text-foreground transition-colors"
+              className="transition-colors hover:text-foreground"
             >
               Datenschutz
             </Link>
@@ -79,17 +77,20 @@ export function Footer() {
                 </span>
                 <a
                   href={getLoginUrl()}
-                  className="hover:text-foreground transition-colors"
+                  className="transition-colors hover:text-foreground"
                 >
                   Mitglieder-Login
                 </a>
               </>
             )}
           </nav>
-          <div className="text-center md:text-right">
-            <p>© {currentYear} Jogge di Balla</p>
-            <p className="opacity-70">Fotos © Manuel Heller</p>
-          </div>
+          <p>
+            © {currentYear} Jogge di Balla
+            <span aria-hidden="true" className="mx-2 opacity-50">
+              ·
+            </span>
+            <span className="opacity-70">Fotos © Manuel Heller</span>
+          </p>
         </div>
       </div>
     </footer>
