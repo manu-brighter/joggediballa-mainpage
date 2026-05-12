@@ -48,27 +48,27 @@ const roleConfig: Record<
 > = {
   admin: {
     label: 'Admin',
-    color: 'bg-destructive',
+    color: 'bg-destructive text-destructive-foreground',
     icon: <Shield className="h-3 w-3" />,
   },
   maintainer: {
     label: 'Maintainer',
-    color: 'bg-pending',
+    color: 'bg-pending text-pending-foreground',
     icon: <UserCheck className="h-3 w-3" />,
   },
   editor: {
     label: 'Editor',
-    color: 'bg-primary',
+    color: 'bg-primary text-primary-foreground',
     icon: <UserCheck className="h-3 w-3" />,
   },
   user: {
     label: 'Member',
-    color: 'bg-success',
+    color: 'bg-success text-success-foreground',
     icon: <UserCheck className="h-3 w-3" />,
   },
   visitor: {
     label: 'Visitor',
-    color: 'bg-muted-foreground',
+    color: 'bg-muted-foreground text-background',
     icon: <Eye className="h-3 w-3" />,
   },
 };
@@ -174,7 +174,7 @@ export default function UserManagement() {
                         {user.displayName || user.name || 'Unbekannt'}
                       </p>
                       <Badge
-                        className={`${roleConfig[user.role as UserRole].color} text-white`}
+                        className={roleConfig[user.role as UserRole].color}
                       >
                         <span className="mr-1">
                           {roleConfig[user.role as UserRole].icon}
