@@ -58,15 +58,17 @@
   --coral-800: oklch(0.40 0.130 18);
   --coral-900: oklch(0.30 0.100 18);
 
-  /* Neutral — slightly cool, blue-grey */
+  /* Neutral — slightly cool, blue-grey.
+   * 200 and 500 chosen to keep light-mode borders and helper text legible:
+   * higher lightness values made the page feel washed out / airy. */
   --neutral-0:    oklch(1.00 0.000 0);
   --neutral-50:   oklch(0.99 0.002 250);
   --neutral-100:  oklch(0.96 0.005 250);
-  --neutral-200:  oklch(0.93 0.008 250);
+  --neutral-200:  oklch(0.90 0.010 250);
   --neutral-300:  oklch(0.85 0.010 250);
   --neutral-400:  oklch(0.70 0.015 260);
-  --neutral-500:  oklch(0.55 0.020 260);
-  --neutral-600:  oklch(0.45 0.020 260);
+  --neutral-500:  oklch(0.50 0.020 260);
+  --neutral-600:  oklch(0.42 0.020 260);
   --neutral-700:  oklch(0.32 0.015 260);
   --neutral-800:  oklch(0.22 0.015 260);
   --neutral-900:  oklch(0.16 0.015 260);
@@ -152,9 +154,13 @@
 :root {
   --radius: 0.75rem;
 
-  /* Surfaces */
+  /* Surfaces.
+   * --foreground is set explicitly (slightly softer than --neutral-950)
+   * so light-mode text doesn't render at maximum contrast — using
+   * --neutral-950 directly looked harsh against the warm-cream
+   * --background. Dark mode keeps --neutral-50 (near-white) as foreground. */
   --background: var(--neutral-50);
-  --foreground: var(--neutral-950);
+  --foreground: oklch(0.18 0.012 260);
   --card: var(--neutral-0);
   --card-foreground: var(--neutral-950);
   --popover: var(--neutral-0);

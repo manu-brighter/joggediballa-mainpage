@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { dismissCookieConsent, forceInViewAnimations } from './helpers';
+import {
+  dismissCookieConsent,
+  forceInViewAnimations,
+  setTheme,
+} from './helpers';
 
 /**
  * Visual regression baselines for mostly-static public pages.
@@ -29,6 +33,7 @@ test.beforeEach(async ({ page }) => {
 
 for (const { name, path } of STABLE_PUBLIC_ROUTES) {
   test(`${name} page matches baseline`, async ({ page }) => {
+    await setTheme(page, 'light');
     await page.goto(path, { waitUntil: 'networkidle' });
     // Tiny settle wait so Framer Motion writes its final styles to the DOM.
     await page.waitForTimeout(150);
@@ -38,7 +43,7 @@ for (const { name, path } of STABLE_PUBLIC_ROUTES) {
   });
 
   test(`${name} page (dark mode) matches baseline`, async ({ page }) => {
-    await page.emulateMedia({ colorScheme: 'dark' });
+    await setTheme(page, 'dark');
     await page.goto(path, { waitUntil: 'networkidle' });
     // Tiny settle wait so Framer Motion writes its final styles to the DOM.
     await page.waitForTimeout(150);

@@ -22,6 +22,23 @@ export async function dismissCookieConsent(page: Page): Promise<void> {
 }
 
 /**
+ * Explicitly set the user's theme preference before navigation. Visual tests
+ * must pin this because the app default is now 'dark' — emulating
+ * prefers-color-scheme alone no longer switches the theme (the inline script
+ * in index.html prefers localStorage over the system query).
+ *
+ * Storage key must stay in sync with client/src/contexts/ThemeContext.tsx.
+ */
+export async function setTheme(
+  page: Page,
+  theme: 'light' | 'dark' | 'system',
+): Promise<void> {
+  await page.addInitScript(t => {
+    localStorage.setItem('theme', t);
+  }, theme);
+}
+
+/**
  * Patches `window.IntersectionObserver` so every observed element fires as
  * `isIntersecting: true` on its first observe() call. Framer Motion's
  * `whileInView` driver listens via IntersectionObserver — without this
