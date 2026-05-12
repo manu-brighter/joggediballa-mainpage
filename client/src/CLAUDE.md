@@ -105,9 +105,10 @@ All color tokens live in `index.css`:
   | `bg-accent`, `text-accent` | Subtle hover/highlight backdrop. Used by dropdown / menu / command hover states. |
   | `bg-muted`, `text-muted-foreground` | De-emphasised surfaces, captions, helper text. |
   | `bg-card`, `bg-popover` | Container surfaces. |
-  | `bg-destructive` | Errors, delete buttons. |
-  | `bg-warning` | Drafts, expiring memberships, pending payments. |
-  | `bg-success` | Confirmation states. |
+  | `bg-destructive` | Errors, failed states, delete buttons. (red) |
+  | `bg-warning` | Future-caution states: drafts, expiring memberships. (yellow) |
+  | `bg-pending` | In-progress / awaiting-action: provisional members, unpaid invoices. (orange) |
+  | `bg-success` | Confirmation states. (green) |
   | `bg-brand`, `bg-twitch` | Brand aliases for niche cases (e.g. Twitch overlay). |
 
 - **Layer 3 (Tailwind theme)** — `@theme inline` block at the top of
