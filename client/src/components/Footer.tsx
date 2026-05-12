@@ -41,10 +41,12 @@ export function Footer() {
               href="https://instagram.com/joggediballa"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex items-center gap-1 text-muted-foreground transition-opacity hover:opacity-80"
             >
               <Instagram className="h-3.5 w-3.5" />
-              @joggediballa
+              <span className="gradient-text-instagram font-medium">
+                @joggediballa
+              </span>
             </a>
           </div>
         </div>
