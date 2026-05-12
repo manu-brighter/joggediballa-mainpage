@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'wouter';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, LogOut } from 'lucide-react';
 import { getLoginUrl } from '@/const';
 import { useAuth } from '@/_core/hooks/useAuth';
+import { trpc } from '@/lib/trpc';
 
 // Inline copy of the lucide Instagram icon with a gradient stroke instead
 // of currentColor — needed because bg-clip:text breaks SVG icons that
@@ -49,7 +50,20 @@ function InstagramGradientIcon({ className }: { className?: string }) {
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const { isAuthenticated } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const utils = trpc.useUtils();
+  const logoutMutation = trpc.auth.logout.useMutation();
+
+  // Mirrors Navigation.tsx — SPA-style logout, clear auth cache, route home.
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+    } finally {
+      utils.auth.me.setData(undefined, null);
+      await utils.auth.me.invalidate();
+      setLocation('/');
+    }
+  };
 
   // On Home, Insta + Schreib-uns CTAs are already in the page itself
   // (Social section + Gönner-CTA). Swap them out of the footer-top and
@@ -128,9 +142,8 @@ export function Footer() {
         {/* Bottom: legal (off-Home) + copyright */}
         <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
           {isHome ? (
-            // Legal links already shown above on Home; keep just the
-            // optional Mitglieder-Login here so the bottom-left still has
-            // an anchor when relevant.
+            // Legal links already shown above on Home; the bottom-left
+            // stays useful: login when out, logout when in.
             !isAuthenticated ? (
               <a
                 href={getLoginUrl()}
@@ -139,7 +152,15 @@ export function Footer() {
                 Mitglieder-Login
               </a>
             ) : (
-              <span aria-hidden="true" />
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={logoutMutation.isPending}
+                className="inline-flex items-center gap-1 transition-colors hover:text-foreground disabled:opacity-60"
+              >
+                <LogOut className="h-3 w-3" aria-hidden="true" />
+                {logoutMutation.isPending ? 'Logout…' : 'Logout'}
+              </button>
             )
           ) : (
             <nav
