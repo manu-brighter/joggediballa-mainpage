@@ -23,6 +23,7 @@ import {
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/lib/errorMessages';
 import { Mail, Send, CheckCircle } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import {
   contactFormSchema,
   type ContactFormValues,
@@ -63,15 +64,19 @@ export default function Contact() {
   if (submitted) {
     return (
       <div className="container py-12">
+        <SEO
+          title="Jogge di Balla - Nachricht gesendet"
+          description="Vielen Dank für deine Nachricht an Jogge di Balla. Wir melden uns sobald wir können."
+          noIndex
+        />
         <div className="max-w-2xl mx-auto text-center space-y-6">
           <CheckCircle className="h-24 w-24 text-success mx-auto" />
-          <h1 className="text-4xl font-bold">Nachricht gesendet!</h1>
+          <h1 className="text-4xl font-bold">Ist angekommen.</h1>
           <p className="text-lg text-muted-foreground">
-            Vielen Dank für deine Nachricht. Wir werden uns so schnell wie
-            möglich bei dir melden.
+            Wir melden uns, sobald wir können. Versprechen halten wir gut.
           </p>
           <Button onClick={() => setSubmitted(false)} variant="outline">
-            Weitere Nachricht senden
+            Noch eine Nachricht
           </Button>
         </div>
       </div>
@@ -80,21 +85,27 @@ export default function Contact() {
 
   return (
     <div className="container py-12 space-y-8">
+      <SEO
+        title="Jogge di Balla - Kontakt"
+        description="Schreib uns. Fragen, Anregungen, Anliegen für DJ-, Foto- oder Vermietungs-Services — wir lesen jede Nachricht."
+        keywords="Jogge di Balla, Kontakt, Brislach, Verein"
+        ogUrl="https://joggediballa.ch/contact"
+      />
       <div className="text-center space-y-4">
         <Mail className="h-16 w-16 text-primary mx-auto" />
-        <h1 className="text-4xl md:text-5xl font-bold">Kontakt</h1>
+        <h1 className="text-4xl md:text-5xl font-bold">Schreib uns</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Hast du Fragen, Anregungen oder möchtest auf eines unserer Angebote
-          eingehen? Schreib uns eine Nachricht!
+          Was geht? Frage, Anliegen oder Auftrag für DJ, Foto, Vermietung —
+          wir lesen jede Nachricht.
         </p>
       </div>
 
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle>Kontaktformular</CardTitle>
+            <CardTitle>Sag Hallo</CardTitle>
             <CardDescription>
-              Fülle das Formular aus und wir melden uns bei dir.
+              Füll das Formular aus, drück senden, fertig.
             </CardDescription>
           </CardHeader>
           <CardContent>
