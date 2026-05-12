@@ -30,13 +30,12 @@ export default function NotFound() {
           <h1 className="text-4xl font-bold text-foreground mb-2">404</h1>
 
           <h2 className="text-xl font-semibold text-foreground mb-4">
-            Seite nicht gefunden
+            Diese Seite gibt's nicht
           </h2>
 
           <p className="text-muted-foreground mb-8 leading-relaxed">
-            Diese Seite gibt es nicht — vielleicht wurde sie verschoben
-            <br />
-            oder existiert nicht mehr.
+            Kein Plan was hier mal stand. Falls du etwas Bestimmtes gesucht
+            hast: schreib uns kurz, wir finden's.
           </p>
 
           <div
