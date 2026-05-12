@@ -116,6 +116,8 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-pending: var(--pending);
+  --color-pending-foreground: var(--pending-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
 
@@ -175,11 +177,17 @@
   --accent: var(--neutral-100);
   --accent-foreground: var(--neutral-950);
 
-  /* Status */
+  /* Status — three non-critical tiers:
+   *   pending  (orange)  in-progress / awaiting-action
+   *   warning  (yellow)  future caution / expiring soon
+   *   destructive (red)  failure / destructive action
+   */
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: var(--neutral-0);
   --warning: oklch(0.80 0.15 85);
   --warning-foreground: oklch(0.25 0.05 85);
+  --pending: oklch(0.70 0.17 50);
+  --pending-foreground: oklch(0.25 0.05 50);
   --success: oklch(0.65 0.15 145);
   --success-foreground: var(--neutral-0);
 
@@ -236,6 +244,8 @@
   --destructive-foreground: var(--neutral-0);
   --warning: oklch(0.75 0.12 85);
   --warning-foreground: oklch(0.15 0.05 85);
+  --pending: oklch(0.72 0.16 50);
+  --pending-foreground: oklch(0.15 0.05 50);
   --success: oklch(0.70 0.14 145);
   --success-foreground: var(--neutral-950);
 

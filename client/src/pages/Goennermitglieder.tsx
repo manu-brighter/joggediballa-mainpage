@@ -165,7 +165,7 @@ const MemberCard = React.memo(
             'bg-warning/10 border-warning/20 hover:bg-warning/20 hover:border-warning/40',
           status === 'active' &&
             member.paymentStatus === 'pending' &&
-            'bg-warning/10 border-warning/30 hover:bg-warning/20 hover:border-warning/40',
+            'bg-pending/10 border-pending/30 hover:bg-pending/20 hover:border-pending/40',
           status === 'active' &&
             member.paymentStatus === 'paid' &&
             'bg-card border-border hover:bg-muted/90 hover:border-primary/30',
@@ -196,7 +196,7 @@ const MemberCard = React.memo(
                   </span>
                 )}
               {member.paymentStatus === 'pending' && (
-                <span className="px-2 py-0.5 rounded-full bg-warning/20 text-warning-foreground text-xs font-medium flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-full bg-pending/20 text-pending-foreground text-xs font-medium flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   Zahlung fällig seit{' '}
                   {getDaysSincePaymentPending(member.paymentPendingSince)} Tagen
@@ -1096,8 +1096,8 @@ export default function Goennermitglieder() {
             Läuft bald ab
           </span>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-warning/10 border border-warning/20">
-          <Clock className="h-4 w-4 text-warning" />
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-pending/10 border border-pending/20">
+          <Clock className="h-4 w-4 text-pending" />
           <span className="text-sm font-medium">
             {pendingMembers.length} Provisorisch
           </span>
@@ -1165,8 +1165,8 @@ export default function Goennermitglieder() {
       {pendingMembers.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Clock className="h-6 w-6 text-warning" />
-            <span className="text-warning">
+            <Clock className="h-6 w-6 text-pending" />
+            <span className="text-pending">
               Provisorische Mitglieder ({pendingMembers.length})
             </span>
           </h2>
@@ -1617,15 +1617,15 @@ export default function Goennermitglieder() {
                 className={cn(
                   'flex items-center gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer',
                   pendingPaymentStatus === 'pending'
-                    ? 'border-warning bg-warning/10'
-                    : 'border-border hover:border-warning/50',
+                    ? 'border-pending bg-pending/10'
+                    : 'border-border hover:border-pending/50',
                 )}
               >
                 <AlertTriangle
                   className={cn(
                     'h-5 w-5',
                     pendingPaymentStatus === 'pending'
-                      ? 'text-warning'
+                      ? 'text-pending'
                       : 'text-muted-foreground',
                   )}
                 />
