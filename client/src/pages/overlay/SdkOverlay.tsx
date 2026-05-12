@@ -456,7 +456,7 @@ export default function SdkOverlay() {
       style={{
         width: '100%',
         background: 'transparent',
-        fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+        fontFamily: "'Inter Variable','Segoe UI',system-ui,sans-serif",
       }}
     >
       <div
@@ -555,7 +555,7 @@ export default function SdkOverlay() {
               filter: 'blur(2.5px)',
               whiteSpace: 'nowrap',
               userSelect: 'none',
-              fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
+              fontFamily: "'Inter Variable','Segoe UI',system-ui,sans-serif",
             }}
           >
             {showTitle ?? 'Schlag den Kassier'}

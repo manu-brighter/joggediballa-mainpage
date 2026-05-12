@@ -74,8 +74,8 @@ const roleConfig: Record<
 };
 
 export default function UserManagement() {
-  const { data: users, isLoading, refetch } = trpc.admin.getAllUsers.useQuery();
-  const promoteUserMutation = trpc.admin.promoteUser.useMutation({
+  const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
+  const promoteUserMutation = trpc.users.updateRole.useMutation({
     onSuccess: () => {
       toast.success('Benutzerrolle erfolgreich aktualisiert');
       refetch();
@@ -249,10 +249,10 @@ export default function UserManagement() {
 
       {/* Pending Visitors */}
       {visitors.length > 0 && (
-        <Card className="border-orange-200 dark:border-orange-900">
+        <Card className="border-warning/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-500" />
+              <Clock className="h-5 w-5 text-warning" />
               Wartende Besucher ({visitors.length})
             </CardTitle>
             <CardDescription>
