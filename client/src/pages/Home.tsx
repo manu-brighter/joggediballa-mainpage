@@ -446,20 +446,20 @@ export default function Home() {
                   </span>
                   <span className="text-muted-foreground ml-2">pro Jahr</span>
                 </div>
-                <div className="grid sm:grid-cols-3 gap-4 text-sm">
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <Gift className="h-6 w-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium">Giveaways nur für Gönner</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <Trophy className="h-6 w-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium">Reduzierter Eintritt</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <Heart className="h-6 w-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium">Du machst's möglich</p>
-                  </div>
-                </div>
+                <ul className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium">
+                  <li className="flex items-center gap-2">
+                    <Gift className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                    Giveaways nur für Gönner
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                    Reduzierter Eintritt
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Heart className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                    Du machst's möglich
+                  </li>
+                </ul>
                 <Button
                   size="lg"
                   className="btn-animate"
