@@ -649,9 +649,7 @@ export default function Goennermitglieder() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center md:text-left"
         >
-          <h1 className="text-4xl md:text-5xl font-black">
-            <span className="gradient-text">Gönnermitglieder</span>
-          </h1>
+          <h1 className="text-4xl md:text-5xl font-black">Gönnermitglieder</h1>
           <p className="text-muted-foreground mt-2 text-lg">
             Verwaltung der Gönnermitgliedschaften
           </p>

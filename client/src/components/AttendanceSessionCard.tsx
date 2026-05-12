@@ -77,7 +77,7 @@ export function AttendanceSessionCard({
       transition={{ duration: 0.2 }}
       className={cn(
         'hover:shadow-lg transition-shadow',
-        session.type === 'event' && 'border-teal-500 border-2',
+        session.type === 'event' && 'border-primary border-2',
       )}
     >
       <CardHeader>

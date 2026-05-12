@@ -259,10 +259,10 @@ export default function Home() {
                   href="/events"
                   className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
-                  <Card className="h-full card-hover border-2 group-hover:border-coral/50 bg-card">
+                  <Card className="h-full card-hover border-2 group-hover:border-primary/50 bg-card">
                     <CardHeader>
-                      <div className="w-12 h-12 rounded-xl bg-coral/15 flex items-center justify-center mb-3">
-                        <Calendar className="h-6 w-6 text-coral" />
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                        <Calendar className="h-6 w-6 text-primary" />
                       </div>
                       <CardTitle className="text-xl">Events & Fotos</CardTitle>
                       <CardDescription>
@@ -271,7 +271,7 @@ export default function Home() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <span className="flex items-center gap-2 font-semibold text-coral text-sm">
+                      <span className="flex items-center gap-2 font-semibold text-primary text-sm">
                         Zu den Events
                         <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                       </span>
@@ -395,8 +395,7 @@ export default function Home() {
             <p className="text-lg text-muted-foreground leading-relaxed">
               Event- und Kulturverein aus Brislach. Wir veranstalten Anlässe an
               Orten, die du sonst nicht gesehen hättest, mit Leuten, die du
-              sonst nicht getroffen hättest. Klingt überzeichnet — ist es aber
-              nicht.
+              sonst nicht getroffen hättest. Klingt nach viel. Ist es auch.
             </p>
             <Button
               variant="outline"
@@ -459,7 +458,7 @@ export default function Home() {
                   className="btn-animate"
                   onClick={() => navigate('/contact')}
                 >
-                  Jetzt Gönner werden, schreib uns!
+                  Ich bin dabei
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </CardContent>
