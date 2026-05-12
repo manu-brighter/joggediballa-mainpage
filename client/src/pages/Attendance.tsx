@@ -64,7 +64,7 @@ import { Link } from 'wouter';
 import { AttendanceMembersManagement } from '@/components/AttendanceMembersManagement';
 import { AttendanceSessionCard } from '@/components/AttendanceSessionCard';
 
-const MotionCard = motion(Card);
+const MotionCard = motion.create(Card);
 
 interface Session {
   id: number;

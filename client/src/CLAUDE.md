@@ -106,8 +106,8 @@ All color tokens live in `index.css`:
   | `bg-muted`, `text-muted-foreground` | De-emphasised surfaces, captions, helper text. |
   | `bg-card`, `bg-popover` | Container surfaces. |
   | `bg-destructive` | Errors, failed states, delete buttons. (red) |
-  | `bg-warning` | Future-caution states: drafts, expiring memberships. (yellow) |
-  | `bg-pending` | In-progress / awaiting-action: provisional members, unpaid invoices. (orange) |
+  | `bg-warning` | Future-caution states: drafts, expiring memberships, cancellation policies. (yellow) |
+  | `bg-pending` | Either (a) in-progress / awaiting-action — provisional members, unpaid invoices — or (b) design-intent attention/emphasis on a non-critical advisory block (e.g. the Harassenlauf "Regeln" panel). The orange reads as "look at me" without escalating to a true caution. (orange) |
   | `bg-success` | Confirmation states. (green) |
   | `bg-brand`, `bg-twitch` | Brand aliases for niche cases (e.g. Twitch overlay). |
 
