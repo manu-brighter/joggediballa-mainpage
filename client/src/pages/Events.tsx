@@ -376,12 +376,19 @@ export default function Events() {
     setLightboxOpen(true);
   }, []);
 
+  // Single-photo albums must no-op on navigation. Without the guard:
+  // (a) keyboard/swipe trigger a "navigation" that wraps to the same index, but
+  // (b) setFullResLoaded(false) still resets the loader state, and since the
+  //     <img src> doesn't change, onLoad never fires again → infinite spinner.
+  // The on-screen prev/next buttons are already hidden when length === 1.
   const nextPhoto = useCallback(() => {
+    if (selectedPhotos.length <= 1) return;
     setFullResLoaded(false);
     setCurrentPhotoIndex(prev => (prev + 1) % selectedPhotos.length);
   }, [selectedPhotos.length]);
 
   const prevPhoto = useCallback(() => {
+    if (selectedPhotos.length <= 1) return;
     setFullResLoaded(false);
     setCurrentPhotoIndex(
       prev => (prev - 1 + selectedPhotos.length) % selectedPhotos.length,
