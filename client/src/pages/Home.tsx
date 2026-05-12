@@ -210,75 +210,115 @@ export default function Home() {
             </p>
           </MotionDiv>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Trophy,
-                title: 'Shotcounter',
-                description:
-                  'Welches Team trinkt am meisten? Live-Ranking, kein Pardon.',
-                href: '/shotcounter',
-                cta: 'Zu den Shots',
-                delay: 0,
-              },
-              {
-                icon: Calendar,
-                title: 'Events & Fotos',
-                description:
-                  'Was wir veranstaltet haben. Mit Bildern, falls du nicht dabei warst.',
-                href: '/events',
-                cta: 'Zu den Events',
-                delay: 0.1,
-              },
-              {
-                icon: Users,
-                title: 'Unser Team',
-                description:
-                  'Das stattliche und äusserst attraktive Team hinter dem Verein.',
-                href: '/team',
-                cta: 'Zum Team',
-                delay: 0.2,
-              },
-            ]
-              .filter(feature => {
-                // Filter out features that are not visible
-                if (feature.href === '/events') return isEventsVisible;
-                // Add more filters here if needed
-                return true;
-              })
-              .map(feature => (
-                <MotionDiv
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: feature.delay }}
-                  className="group h-full"
-                >
-                  <Link
-                    href={feature.href}
-                    className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          <div className="grid gap-6 md:grid-cols-3 md:auto-rows-fr">
+            {/* Hero feature: Shotcounter — scale-jump dominant, breaks the identical-grid pattern */}
+            <MotionDiv
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="group md:col-span-2 md:row-span-2"
+            >
+              <Link
+                href="/shotcounter"
+                className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <Card className="relative h-full card-hover border-2 group-hover:border-primary/50 bg-card overflow-hidden">
+                  {/* Decorative editorial-style numeral */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none select-none absolute -right-6 -top-10 text-[12rem] md:text-[16rem] font-black leading-none text-primary/5 tracking-tighter"
                   >
-                    <Card className="h-full card-hover border-2 group-hover:border-primary/50 bg-card/50 backdrop-blur-sm">
-                      <CardHeader>
-                        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                          <feature.icon className="h-7 w-7 text-primary" />
-                        </div>
-                        <CardTitle className="text-xl">{feature.title}</CardTitle>
-                        <CardDescription className="text-base">
-                          {feature.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <span className="flex items-center gap-2 font-semibold text-primary">
-                          {feature.cta}
-                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </span>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </MotionDiv>
-              ))}
+                    01
+                  </span>
+                  <CardHeader className="relative z-10">
+                    <div className="w-20 h-20 rounded-2xl bg-primary/15 flex items-center justify-center mb-6">
+                      <Trophy className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle className="text-3xl md:text-4xl font-black tracking-tight">
+                      Shotcounter
+                    </CardTitle>
+                    <CardDescription className="text-lg max-w-md">
+                      Welches Team trinkt am meisten? Live-Ranking, kein Pardon.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="relative z-10 mt-auto">
+                    <span className="flex items-center gap-2 font-semibold text-primary text-base">
+                      Zu den Shots
+                      <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            </MotionDiv>
+
+            {/* Secondary: Events (optional via feature toggle) */}
+            {isEventsVisible && (
+              <MotionDiv
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="group"
+              >
+                <Link
+                  href="/events"
+                  className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  <Card className="h-full card-hover border-2 group-hover:border-coral/50 bg-card">
+                    <CardHeader>
+                      <div className="w-12 h-12 rounded-xl bg-coral/15 flex items-center justify-center mb-3">
+                        <Calendar className="h-6 w-6 text-coral" />
+                      </div>
+                      <CardTitle className="text-xl">Events & Fotos</CardTitle>
+                      <CardDescription>
+                        Was wir veranstaltet haben. Mit Bildern, falls du nicht
+                        dabei warst.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <span className="flex items-center gap-2 font-semibold text-coral text-sm">
+                        Zu den Events
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </MotionDiv>
+            )}
+
+            {/* Secondary: Team */}
+            <MotionDiv
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="group"
+            >
+              <Link
+                href="/team"
+                className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <Card className="h-full card-hover border-2 group-hover:border-foreground/30 bg-card">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-3">
+                      <Users className="h-6 w-6 text-foreground" />
+                    </div>
+                    <CardTitle className="text-xl">Unser Team</CardTitle>
+                    <CardDescription>
+                      Das stattliche und äusserst attraktive Team hinter dem
+                      Verein.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                      Zum Team
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            </MotionDiv>
           </div>
         </div>
       </section>
