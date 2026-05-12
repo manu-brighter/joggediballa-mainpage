@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-12T00:00:00Z",
+  "title": "Design System: Jogge di Balla",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Primary (Teal)",
+        "canonical": "oklch(0.55 0.140 195)",
+        "tonalRamp": [
+          "oklch(0.24 0.060 195)",
+          "oklch(0.32 0.090 195)",
+          "oklch(0.40 0.110 195)",
+          "oklch(0.48 0.130 195)",
+          "oklch(0.55 0.140 195)",
+          "oklch(0.70 0.120 195)",
+          "oklch(0.82 0.090 195)",
+          "oklch(0.95 0.030 195)"
+        ]
+      },
+      "coral": {
+        "role": "secondary",
+        "displayName": "Coral",
+        "canonical": "oklch(0.68 0.180 18)",
+        "tonalRamp": [
+          "oklch(0.30 0.100 18)",
+          "oklch(0.40 0.130 18)",
+          "oklch(0.50 0.160 18)",
+          "oklch(0.60 0.180 18)",
+          "oklch(0.68 0.180 18)",
+          "oklch(0.80 0.120 18)",
+          "oklch(0.88 0.080 18)",
+          "oklch(0.97 0.020 18)"
+        ]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Background",
+        "canonical": "oklch(0.99 0.002 250)",
+        "tonalRamp": [
+          "oklch(0.13 0.015 260)",
+          "oklch(0.22 0.015 260)",
+          "oklch(0.32 0.015 260)",
+          "oklch(0.45 0.020 260)",
+          "oklch(0.70 0.015 260)",
+          "oklch(0.85 0.010 250)",
+          "oklch(0.93 0.008 250)",
+          "oklch(0.99 0.002 250)"
+        ]
+      },
+      "destructive": {
+        "role": "status",
+        "displayName": "Destructive (Red)",
+        "canonical": "oklch(0.55 0.22 25)"
+      },
+      "warning": {
+        "role": "status",
+        "displayName": "Warning (Yellow)",
+        "canonical": "oklch(0.80 0.15 85)"
+      },
+      "pending": {
+        "role": "status",
+        "displayName": "Pending (Orange)",
+        "canonical": "oklch(0.70 0.17 50)"
+      },
+      "success": {
+        "role": "status",
+        "displayName": "Success (Green)",
+        "canonical": "oklch(0.65 0.15 145)"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero-Headlines auf Brand-Surfaces." },
+      "headline": { "displayName": "Headline", "purpose": "Page-Titel, Section-Header." },
+      "title": { "displayName": "Title", "purpose": "Card-Titel, Form-Group-Header." },
+      "body": { "displayName": "Body", "purpose": "Default-Text. Auf Mobile 1rem, ab md: 0.875rem." },
+      "label": { "displayName": "Label", "purpose": "Form-Labels, Badges, Status-Pills." }
+    },
+    "shadows": [
+      { "name": "shadow-xs", "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "purpose": "Inputs, Outline-Buttons." },
+      { "name": "shadow-sm", "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)", "purpose": "Card-Ruhezustand." },
+      { "name": "shadow-lg", "value": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)", "purpose": "Card-Hover, gehobene Surfaces." },
+      { "name": "glow-primary", "value": "0 0 20px var(--glow-base), 0 0 40px var(--glow-spread)", "purpose": "Pulsierender Brand-Glow für Rang #1 im Shotcounter." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0, 0, 0.2, 1)", "purpose": "Default-Easing für State-Transitions und Card-Hover." },
+      { "name": "duration-200", "value": "200ms", "purpose": "Button-Animationen (btn-animate)." },
+      { "name": "duration-300", "value": "300ms", "purpose": "Card-Hover, Entrance-Animations." },
+      { "name": "glow-pulse", "value": "2s ease-in-out infinite", "purpose": "Glow-Pulse-Loop." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default-CTA. Teal-Hintergrund, weißer Text, soft-rounded.",
+      "html": "<button class=\"ds-btn-primary\">Mitmachen</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0 1rem; background: oklch(0.55 0.140 195); color: oklch(1.00 0.000 0); font-family: 'Inter Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; border: 0; border-radius: 0.625rem; cursor: pointer; transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1), transform 200ms cubic-bezier(0, 0, 0.2, 1); } .ds-btn-primary:hover { background: oklch(0.55 0.140 195 / 0.9); } .ds-btn-primary:active { transform: scale(0.95); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.55 0.140 195 / 0.5); }"
+    },
+    {
+      "name": "Coral Accent Button",
+      "kind": "button",
+      "refersTo": "button-coral",
+      "description": "Brand-Akzent-CTA für besondere Brand-Momente (z.B. Goenner werden, Harassenlauf anmelden). Sparsam einsetzen.",
+      "html": "<button class=\"ds-btn-coral\">Gönner werden</button>",
+      "css": ".ds-btn-coral { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0 1rem; background: oklch(0.68 0.180 18); color: oklch(1.00 0.000 0); font-family: 'Inter Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; border: 0; border-radius: 0.625rem; cursor: pointer; transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1); } .ds-btn-coral:hover { background: oklch(0.68 0.180 18 / 0.9); } .ds-btn-coral:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.68 0.180 18 / 0.5); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Sekundäre Aktion. Transparent mit Border, hover füllt mit accent.",
+      "html": "<button class=\"ds-btn-outline\">Mehr erfahren</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0 1rem; background: transparent; color: oklch(0.13 0.015 260); font-family: 'Inter Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; border: 1px solid oklch(0.93 0.008 250); border-radius: 0.625rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); cursor: pointer; transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1); } .ds-btn-outline:hover { background: oklch(0.96 0.005 250); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.55 0.140 195 / 0.5); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Default-Container. Weißer Background, größerer Radius als Buttons, soft shadow im Ruhezustand. card-hover-Variante: Hover hebt translateY -4px + shadow-lg.",
+      "html": "<div class=\"ds-card\">\n  <h3 class=\"ds-card-title\">Spieltermin</h3>\n  <p class=\"ds-card-desc\">Samstag, 14.06. — 14:00, Vereinsplatz</p>\n</div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 1.5rem; padding: 1.5rem; background: oklch(1.00 0.000 0); color: oklch(0.13 0.015 260); border: 1px solid oklch(0.93 0.008 250); border-radius: 1rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); transition: transform 300ms cubic-bezier(0, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0, 0, 0.2, 1); } .ds-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); } .ds-card-title { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; font-size: 1.125rem; font-weight: 600; line-height: 1.3; } .ds-card-desc { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; font-size: 0.875rem; color: oklch(0.55 0.020 260); line-height: 1.55; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Default-Text-Input. Transparent mit Border, focus-Ring in Primary.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Dein Name\" />",
+      "css": ".ds-input { height: 2.25rem; width: 100%; padding: 0.25rem 0.75rem; background: transparent; color: oklch(0.13 0.015 260); font-family: 'Inter Variable', system-ui, sans-serif; font-size: 1rem; border: 1px solid oklch(0.93 0.008 250); border-radius: 0.625rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); outline: none; transition: border-color 200ms, box-shadow 200ms; } @media (min-width: 768px) { .ds-input { font-size: 0.875rem; } } .ds-input::placeholder { color: oklch(0.55 0.020 260); } .ds-input:focus-visible { border-color: oklch(0.55 0.140 195); box-shadow: 0 0 0 3px oklch(0.55 0.140 195 / 0.5); }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Status-Pill für Tags, Status, Counts.",
+      "html": "<span class=\"ds-badge\">3 Termine</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; background: oklch(0.96 0.005 250); color: oklch(0.13 0.015 260); font-family: 'Inter Variable', system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.02em; line-height: 1.4; border-radius: 0.625rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Das Vereinslokal nach dem Spiel",
+    "overview": "Wärme, lautes Reden, Bier auf dem Tisch, alle kennen alle. Die Energie kommt aus Gemeinschaft, nicht aus Profi-Sport-Pose. Das System balanciert zwei Pole: Teal als ruhige, vertrauenswürdige Hausfarbe und Coral als laute, schreiende Akzentstimme. Neutrals sind leicht kühl gestimmt (Blue-Grey, Hue 250–260), damit das Coral nicht warm-warm im Vereinsfest-Klischee landet.",
+    "keyCharacteristics": [
+      "OKLCH durchgängig, keine #000/#fff-Werte",
+      "Drei-Layer-Token-Architektur (Primitives → Semantic → Tailwind Theme)",
+      "shadcn/ui als Komponenten-Basis, eigene Brand-Tokens (--coral, --brand, --twitch)",
+      "Mobile-first auf Brand-Surfaces; desktop-first auf Product-Surfaces, mobile bedienbar",
+      "Motion via Framer Motion + CSS-Keyframes mit ease-out; prefers-reduced-motion respektiert"
+    ],
+    "rules": [
+      { "name": "The Two-Voice Rule", "body": "Teal und Coral gemeinsam nur in expliziten Brand-Momenten (gradient-text, hero-gradient). Sonst hat ein Surface einen Hauptakzent.", "section": "colors" },
+      { "name": "The Cool-Neutral Rule", "body": "Keine warmen Beige- oder Brown-Neutrals. Hue ≥ 250, Chroma ≤ 0.020.", "section": "colors" },
+      { "name": "The Pending-As-Attention Rule", "body": "Orange-Pending darf für bewusste Aufmerksamkeitslenkung verwendet werden, nicht nur strikt 'wartet auf Aktion'.", "section": "colors" },
+      { "name": "The Single-Family Rule", "body": "Inter Variable trägt alle Hierarchien. Kein Display-Serif, kein Mono-Akzent. Variations-Achse ersetzt Familien-Mix.", "section": "typography" },
+      { "name": "The Mobile-Body-Bump Rule", "body": "Body startet auf Mobile bei 1rem (kein iOS-Zoom), ab md: runter auf 0.875rem. Nicht umkehrbar.", "section": "typography" },
+      { "name": "The State-Response-Only Rule", "body": "Schatten erscheinen als Antwort auf State (Hover, Open, Focus), nicht als Ruhe-Dekoration.", "section": "elevation" },
+      { "name": "The Glow-Is-Earned Rule", "body": "glow-primary ist kein UI-Akzent — er markiert Rang #1. Nicht für Hover-Highlights.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do OKLCH durchgängig verwenden; erst Layer-2-Token erweitern, nicht Hex inlinen.",
+      "Do Brand-Surfaces mobile-first entwerfen.",
+      "Do Product-Surfaces desktop-first entwerfen, Mobile-Variante priorisiert Funktionsumfang.",
+      "Do Wortwitz im Copy als Designentscheidung behandeln.",
+      "Do Coral und Teal als zwei separate Stimmen einsetzen.",
+      "Do prefers-reduced-motion respektieren (CSS + Framer-Motion useReducedMotion)."
+    ],
+    "donts": [
+      "Don't raw Tailwind-Paletten-Farben verwenden (text-red-500, bg-orange-500, text-[#0B93A7]).",
+      "Don't #000 oder #fff direkt schreiben.",
+      "Don't die Seite wie eine generische Sportverein-Site aussehen lassen.",
+      "Don't in eine zweite, glattere Brand-Stimme für Sponsoren rutschen.",
+      "Don't ein trockenes Behörden-Layout bauen.",
+      "Don't gradient-text inflationär einsetzen.",
+      "Don't glow-primary als Hover-Akzent missbrauchen.",
+      "Don't Secondary-Button mit Coral umfärben.",
+      "Don't auf Product-Surfaces Read-only-Mobile-Views ausliefern.",
+      "Don't Side-Stripe-Borders (border-left > 1px als Akzent) verwenden."
+    ]
+  }
+}
