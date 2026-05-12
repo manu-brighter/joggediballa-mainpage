@@ -1,4 +1,4 @@
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { ArrowRight } from 'lucide-react';
 import { getLoginUrl } from '@/const';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -49,11 +49,18 @@ function InstagramGradientIcon({ className }: { className?: string }) {
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const { isAuthenticated } = useAuth();
+  const [location] = useLocation();
+
+  // On Home, Insta + Schreib-uns CTAs are already in the page itself
+  // (Social section + Gönner-CTA). Swap them out of the footer-top and
+  // put Impressum/Datenschutz there instead, leaving the bottom row to
+  // just the copyright (+ optional Mitglieder-Login).
+  const isHome = location === '/';
 
   return (
     <footer className="mt-auto border-t bg-muted/30">
       <div className="container py-8 space-y-6">
-        {/* Top: brand-marker on the left, contact CTAs on the right */}
+        {/* Top: brand-marker on the left, contextual links on the right */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <img
@@ -69,66 +76,106 @@ export function Footer() {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+
+          {isHome ? (
+            <nav
+              aria-label="Rechtliches"
+              className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm"
             >
-              Schreib uns
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-            <span aria-hidden="true" className="text-muted-foreground/40">
-              ·
-            </span>
-            <a
-              href="https://instagram.com/joggediballa"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 transition-opacity hover:opacity-80"
-            >
-              <InstagramGradientIcon className="h-3.5 w-3.5 shrink-0" />
-              <span className="gradient-text-instagram font-medium">
-                @joggediballa
+              <Link
+                href="/impressum"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Impressum
+              </Link>
+              <span aria-hidden="true" className="text-muted-foreground/40">
+                ·
               </span>
-            </a>
-          </div>
+              <Link
+                href="/datenschutz"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Datenschutz
+              </Link>
+            </nav>
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+              >
+                Schreib uns
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <span aria-hidden="true" className="text-muted-foreground/40">
+                ·
+              </span>
+              <a
+                href="https://instagram.com/joggediballa"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 transition-opacity hover:opacity-80"
+              >
+                <InstagramGradientIcon className="h-3.5 w-3.5 shrink-0" />
+                <span className="gradient-text-instagram font-medium">
+                  @joggediballa
+                </span>
+              </a>
+            </div>
+          )}
         </div>
 
-        {/* Bottom: legal + copyright */}
+        {/* Bottom: legal (off-Home) + copyright */}
         <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
-          <nav
-            aria-label="Footer"
-            className="flex flex-wrap items-center gap-x-3 gap-y-1"
-          >
-            <Link
-              href="/impressum"
-              className="transition-colors hover:text-foreground"
+          {isHome ? (
+            // Legal links already shown above on Home; keep just the
+            // optional Mitglieder-Login here so the bottom-left still has
+            // an anchor when relevant.
+            !isAuthenticated ? (
+              <a
+                href={getLoginUrl()}
+                className="transition-colors hover:text-foreground"
+              >
+                Mitglieder-Login
+              </a>
+            ) : (
+              <span aria-hidden="true" />
+            )
+          ) : (
+            <nav
+              aria-label="Footer"
+              className="flex flex-wrap items-center gap-x-3 gap-y-1"
             >
-              Impressum
-            </Link>
-            <span aria-hidden="true" className="opacity-50">
-              ·
-            </span>
-            <Link
-              href="/datenschutz"
-              className="transition-colors hover:text-foreground"
-            >
-              Datenschutz
-            </Link>
-            {!isAuthenticated && (
-              <>
-                <span aria-hidden="true" className="opacity-50">
-                  ·
-                </span>
-                <a
-                  href={getLoginUrl()}
-                  className="transition-colors hover:text-foreground"
-                >
-                  Mitglieder-Login
-                </a>
-              </>
-            )}
-          </nav>
+              <Link
+                href="/impressum"
+                className="transition-colors hover:text-foreground"
+              >
+                Impressum
+              </Link>
+              <span aria-hidden="true" className="opacity-50">
+                ·
+              </span>
+              <Link
+                href="/datenschutz"
+                className="transition-colors hover:text-foreground"
+              >
+                Datenschutz
+              </Link>
+              {!isAuthenticated && (
+                <>
+                  <span aria-hidden="true" className="opacity-50">
+                    ·
+                  </span>
+                  <a
+                    href={getLoginUrl()}
+                    className="transition-colors hover:text-foreground"
+                  >
+                    Mitglieder-Login
+                  </a>
+                </>
+              )}
+            </nav>
+          )}
           <p>
             © {currentYear} Jogge di Balla
             <span aria-hidden="true" className="mx-2 opacity-50">
