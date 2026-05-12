@@ -54,12 +54,15 @@ Diese Anleitung erklärt, wie du Google OAuth für deine Jogge di Balla Website 
 
 Erstelle eine `.env`-Datei im Root-Verzeichnis deines Projekts:
 
+> Vollständige Liste mit Kommentaren: siehe `.env.example` — diese Datei zeigt nur die Google-OAuth-relevanten Variablen.
+
 ```env
 # Database
 DATABASE_URL=mysql://username:password@localhost:3306/joggediballa
 
-# JWT Secret (generiere einen zufälligen String)
+# JWT & Session Secrets (je 32+ Zeichen, müssen unterschiedlich sein)
 JWT_SECRET=dein-super-geheimer-jwt-secret-mindestens-32-zeichen-lang
+SESSION_SECRET=dein-zweiter-32-zeichen-secret-fuer-oauth-state
 
 # Google OAuth
 GOOGLE_CLIENT_ID=123456789-abc123.apps.googleusercontent.com
@@ -67,17 +70,16 @@ GOOGLE_CLIENT_SECRET=GOCSPX-abc123xyz
 GOOGLE_CALLBACK_URL=https://deine-domain.de/api/auth/callback/google
 
 # App Configuration
-VITE_APP_TITLE=Jogge di Balla
-VITE_APP_LOGO=/Jogge_Di_Balla_Final_Transparent.png
 BASE_URL=https://deine-domain.de
+APP_ORIGIN=https://deine-domain.de
 
-# Admin User (deine Google E-Mail)
+# Admin User (deine Google E-Mail — erste Anmeldung wird automatisch Admin)
 ADMIN_EMAIL=deine@gmail.com
 ```
 
-### JWT Secret generieren
+### JWT & SESSION Secrets generieren
 
-Führe folgenden Befehl aus, um einen sicheren JWT Secret zu generieren:
+Führe den Befehl ZWEIMAL aus (für JWT_SECRET und SESSION_SECRET getrennt):
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"

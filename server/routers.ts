@@ -14,45 +14,42 @@ import {
   hasPermission,
   getUserPermissions,
   clearPermissionCache,
+  PERMISSION_KEYS,
 } from './permissions';
 import type { EventLink } from '@shared/types';
+
+/**
+ * Strip secret/internal columns from User rows before sending to the client
+ * (A-P1-06 / F-SEC-012). `openId` (Google's `sub` claim) is replaced with an
+ * empty string so the wire shape is preserved — the client doesn't currently
+ * read it. `email` is intentionally kept because admins need it.
+ *
+ * The return type is preserved as `T` so existing client code that reads
+ * `name`, `email`, `role` etc. continues to type-check.
+ */
+function toPublicUser<T extends { openId: string }>(user: T): T {
+  return { ...user, openId: '' };
+}
 
 // ============================================
 // ROLE-BASED MIDDLEWARE
 // ============================================
 
 /**
- * Admin-only procedure (hardcoded, not dynamic)
+ * Admin-only procedure (hardcoded, not dynamic). Canonical, single source of
+ * truth — used for admin-infrastructure procedures (users.*, features.*,
+ * activityLog.*, permissions.list/toggle, sdk.*, shotcounter.getAuditLog).
+ *
+ * B-P0-02 / F-BE-002: the previously co-existing `maintainerProcedure` and
+ * `editorProcedure` helpers had zero call sites and were removed. New
+ * procedures should prefer `requirePermission('<key>')` for content
+ * management; this `adminProcedure` is reserved for admin-infrastructure.
  */
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: 'Admin access required',
-    });
-  }
-  return next({ ctx });
-});
-
-/**
- * Legacy procedures - kept for backwards compatibility
- * Use requirePermission() for new procedures
- */
-const maintainerProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!['admin', 'maintainer'].includes(ctx.user.role)) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'Maintainer or Admin access required',
-    });
-  }
-  return next({ ctx });
-});
-
-const editorProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!['admin', 'maintainer', 'editor'].includes(ctx.user.role)) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'Editor, Maintainer or Admin access required',
     });
   }
   return next({ ctx });
@@ -67,9 +64,10 @@ const requirePermission = (permissionKey: string) => {
     const allowed = await hasPermission(ctx.user.role, permissionKey);
 
     if (!allowed) {
+      // A-P2-03: don't echo the permission key — just FORBIDDEN.
       throw new TRPCError({
         code: 'FORBIDDEN',
-        message: `Permission '${permissionKey}' required`,
+        message: 'Forbidden',
       });
     }
 
@@ -86,7 +84,9 @@ export const appRouter = router({
   attendance: attendanceRouter,
 
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(opts =>
+      opts.ctx.user ? toPublicUser(opts.ctx.user) : null,
+    ),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -99,7 +99,8 @@ export const appRouter = router({
   // ============================================
   users: router({
     list: adminProcedure.query(async () => {
-      return db.getAllUsers();
+      const all = await db.getAllUsers();
+      return all.map(toPublicUser);
     }),
     updateRole: adminProcedure
       .input(
@@ -275,16 +276,28 @@ export const appRouter = router({
   // EVENTS
   // ============================================
   events: router({
-    list: publicProcedure.query(async () => {
-      // isPublished defaults to false and there is no publish UI yet —
-      // show all events until a proper draft/publish workflow exists
-      return db.getAllEvents(false);
+    list: publicProcedure.query(async ({ ctx }) => {
+      // A-P0-06 / F-SEC-007: only editors+ see unpublished events. Anonymous
+      // and `user`/`visitor`-role callers get published-only.
+      const role = ctx.user?.role;
+      const canSeeDrafts =
+        role === 'admin' || role === 'maintainer' || role === 'editor';
+      return db.getAllEvents(!canSeeDrafts);
     }),
 
     getById: publicProcedure
-      .input(z.object({ eventId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getEventById(input.eventId);
+      .input(z.object({ eventId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        const event = await db.getEventById(input.eventId);
+        if (!event) return undefined;
+
+        const role = ctx.user?.role;
+        const canSeeDrafts =
+          role === 'admin' || role === 'maintainer' || role === 'editor';
+        if (!event.isPublished && !canSeeDrafts) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+        }
+        return event;
       }),
 
     create: requirePermission('edit_events')
@@ -586,9 +599,24 @@ export const appRouter = router({
     send: publicProcedure
       .input(
         z.object({
-          name: z.string().min(1, 'Name ist erforderlich').max(100),
-          email: z.string().email('Ungültige E-Mail-Adresse').max(320),
-          subject: z.string().min(1, 'Betreff ist erforderlich').max(200),
+          // A-P0-02: reject any value containing CR/LF that could end up in
+          // an SMTP header (reply-to / subject). Email module also validates
+          // defensively before passing to nodemailer.
+          name: z
+            .string()
+            .min(1, 'Name ist erforderlich')
+            .max(100)
+            .refine(v => !/[\r\n]/.test(v), 'Ungültige Zeichen'),
+          email: z
+            .string()
+            .email('Ungültige E-Mail-Adresse')
+            .max(320)
+            .refine(v => !/[\r\n]/.test(v), 'Ungültige Zeichen'),
+          subject: z
+            .string()
+            .min(1, 'Betreff ist erforderlich')
+            .max(200)
+            .refine(v => !/[\r\n]/.test(v), 'Ungültige Zeichen'),
           message: z
             .string()
             .min(10, 'Nachricht muss mindestens 10 Zeichen lang sein')
@@ -604,10 +632,10 @@ export const appRouter = router({
             email: input.email,
             subject: input.subject,
             message: input.message,
-            ipAddress:
-              ctx.req?.ip ||
-              (ctx.req?.headers['x-forwarded-for'] as string) ||
-              null,
+            // A-P1-11 / F-SEC-024: with `trust proxy 1` set in _core/index.ts,
+            // express resolves the real client IP into req.ip. The legacy
+            // X-Forwarded-For fallback would let a client forge any IP.
+            ipAddress: ctx.req?.ip ?? null,
             isRead: false,
             isArchived: false,
           });
@@ -745,23 +773,6 @@ export const appRouter = router({
   // ADMIN - USER MANAGEMENT
   // ============================================
   admin: router({
-    getAllUsers: adminProcedure.query(async () => {
-      const users = await db.getAllUsers();
-      return users;
-    }),
-
-    promoteUser: adminProcedure
-      .input(
-        z.object({
-          userId: z.number(),
-          role: z.enum(['admin', 'maintainer', 'editor', 'user', 'visitor']),
-        }),
-      )
-      .mutation(async ({ input }) => {
-        await db.updateUserRole(input.userId, input.role);
-        return { success: true };
-      }),
-
     deleteUser: adminProcedure
       .input(
         z.object({
@@ -834,7 +845,18 @@ export const appRouter = router({
     toggle: adminProcedure
       .input(
         z.object({
-          permissionKey: z.string(),
+          // A-P1-08 / F-SEC-015: validate against the canonical key list at
+          // runtime. We use refine() rather than z.enum() to keep the input
+          // type as `string` for the existing client call sites that still
+          // type it as `string` — the runtime guarantee is identical.
+          permissionKey: z
+            .string()
+            .max(64)
+            .refine(
+              (v): v is (typeof PERMISSION_KEYS)[number] =>
+                (PERMISSION_KEYS as readonly string[]).includes(v),
+              { message: 'Unknown permission key' },
+            ),
           role: z.enum(['admin', 'maintainer', 'editor', 'user']),
           enabled: z.boolean(),
         }),

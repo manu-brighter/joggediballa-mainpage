@@ -2,6 +2,22 @@ import * as db from './db';
 
 type UserRole = 'admin' | 'maintainer' | 'editor' | 'user' | 'visitor';
 
+/**
+ * Canonical list of permission keys used across the app.
+ * `permissions.toggle` validates input against this tuple (A-P1-08) and
+ * `initializeDefaultPermissions()` seeds these on first boot.
+ */
+export const PERMISSION_KEYS = [
+  'edit_events',
+  'manage_sponsors',
+  'manage_goennermitglieder',
+  'edit_shotcounter',
+  'reset_shotcounter',
+  'edit_team',
+  'manage_attendance',
+] as const;
+export type PermissionKey = (typeof PERMISSION_KEYS)[number];
+
 // In-memory permission cache per role, invalidated on admin toggle
 const permCache = new Map<string, { keys: string[]; exp: number }>();
 const PERM_TTL = 5 * 60 * 1000; // 5 minutes

@@ -17,13 +17,22 @@ server/
 
 ## Procedure Types — When to Use Which
 
-| Procedure                                 | Use case                                                              |
-| ----------------------------------------- | --------------------------------------------------------------------- |
-| `publicProcedure`                         | No auth required, visible to everyone                                 |
-| `protectedProcedure`                      | Auth required, any logged-in user                                     |
-| `requirePermission("key")`                | **Preferred for new procedures** — checks DB permission for role      |
-| `adminProcedure`                          | Hardcoded admin-only (use only for admin-infrastructure, not content) |
-| `maintainerProcedure` / `editorProcedure` | Legacy — do not add new uses, prefer `requirePermission()`            |
+| Procedure                  | Use case                                                              |
+| -------------------------- | --------------------------------------------------------------------- |
+| `publicProcedure`          | No auth required, visible to everyone                                 |
+| `protectedProcedure`       | Auth required, any logged-in user                                     |
+| `requirePermission("key")` | **Preferred for new content procedures** — checks DB permission       |
+| `adminProcedure`           | Hardcoded admin-only (use only for admin-infrastructure, not content) |
+
+**Convention (post-Phase 3b/3c, B-P0-02):** A single `adminProcedure` is
+defined locally in `routers.ts` (and re-implemented inline in
+`attendance_router.ts` to avoid a circular import). It is reserved for
+admin-infrastructure procedures — `users.*`, `features.*`, `activityLog.*`,
+`permissions.list/toggle`, `sdk.*`, `shotcounter.getAuditLog`. Everything else
+that gates by role should use `requirePermission('<key>')` so admins can flip
+permissions at runtime from the dashboard. The legacy `maintainerProcedure`
+and `editorProcedure` helpers and the unused `_core/trpc.ts` export of
+`adminProcedure` were removed.
 
 ## Database Pattern
 

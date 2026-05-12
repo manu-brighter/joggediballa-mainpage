@@ -335,7 +335,7 @@ export default function AttendanceStatistics() {
             <CardTitle className="text-sm font-medium">
               Beste Anwesenheit
             </CardTitle>
-            <Trophy className="h-4 w-4 text-green-500" />
+            <Trophy className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -354,7 +354,7 @@ export default function AttendanceStatistics() {
             <CardTitle className="text-sm font-medium">
               Meiste Fehlzeiten
             </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">

@@ -4,6 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans:
+    'Inter Variable', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -43,16 +46,20 @@
   /* Custom colors */
   --color-coral: var(--coral);
   --color-teal: var(--teal);
+  --color-brand: var(--brand);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-twitch: var(--twitch);
 }
 
 :root {
   /* Jogge di Balla Brand Colors */
   --teal: oklch(0.55 0.14 195);
   --coral: oklch(0.68 0.18 18);
+  --brand: oklch(0.55 0.14 195); /* alias for `--primary` teal — usable as `text-brand` */
+  --twitch: #9146ff;
 
   /* Primary - Teal from logo */
   --primary: oklch(0.55 0.14 195);
@@ -106,6 +113,8 @@
   /* Jogge di Balla Brand Colors - Dark Mode */
   --teal: oklch(0.65 0.14 195);
   --coral: oklch(0.72 0.16 18);
+  --brand: oklch(0.65 0.14 195);
+  --twitch: #a970ff;
 
   /* Primary - Teal lighter for dark mode */
   --primary: oklch(0.65 0.14 195);
@@ -405,6 +414,21 @@
 
   .membership-expired {
     @apply bg-destructive/10 border-destructive/30 opacity-70;
+  }
+}
+
+/* Respect prefers-reduced-motion (WCAG 2.3.3) — kills CSS animations,
+   keyframes, and smooth scroll for users who request reduced motion.
+   framer-motion components additionally use useReducedMotion() to gate
+   their entrance/loop animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

@@ -124,7 +124,7 @@ function InlineEdit({
           onSave(draft);
           setEditing(false);
         }}
-        className="text-green-500 hover:text-green-400"
+        className="text-success hover:text-success/80"
       >
         <Check className="h-4 w-4" />
       </button>
@@ -243,11 +243,11 @@ function ScoreDisplay({
   isLeading: boolean;
   color: 'red' | 'blue';
 }) {
-  const accent = color === 'red' ? 'text-[#E93F56]' : 'text-[#0B93A7]';
+  const accent = color === 'red' ? 'text-coral' : 'text-primary';
   const bg =
     color === 'red'
-      ? 'bg-[#E93F56]/10 ring-[#E93F56]/40'
-      : 'bg-[#0B93A7]/10 ring-[#0B93A7]/40';
+      ? 'bg-coral/10 ring-coral/40'
+      : 'bg-primary/10 ring-primary/40';
 
   return (
     <div className="flex flex-col items-center gap-1.5">
@@ -514,7 +514,7 @@ export default function SdkControl() {
               {/* Inline name editing */}
               <div className="flex items-center justify-between px-3 py-2 bg-muted/40 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#E93F56]" />
+                  <div className="w-3 h-3 rounded-full bg-coral" />
                   <InlineEdit
                     value={session.player1Name}
                     onSave={v =>
@@ -527,7 +527,7 @@ export default function SdkControl() {
                   />
                 </div>
                 <div className="flex items-center gap-2 flex-row-reverse">
-                  <div className="w-3 h-3 rounded-full bg-[#0B93A7]" />
+                  <div className="w-3 h-3 rounded-full bg-primary" />
                   <InlineEdit
                     value={session.player2Name}
                     onSave={v =>
@@ -546,8 +546,7 @@ export default function SdkControl() {
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     size="lg"
-                    className="h-16 text-base font-bold gap-2 border-0"
-                    style={{ background: '#E93F56' }}
+                    className="h-16 text-base font-bold gap-2 border-0 bg-coral text-white hover:bg-coral/90"
                     onClick={() =>
                       session &&
                       awardPoint.mutate({ sessionId: session.id, winnerId: 1 })
@@ -565,8 +564,7 @@ export default function SdkControl() {
                   </Button>
                   <Button
                     size="lg"
-                    className="h-16 text-base font-bold gap-2 border-0"
-                    style={{ background: '#0B93A7' }}
+                    className="h-16 text-base font-bold gap-2 border-0 bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={() =>
                       session &&
                       awardPoint.mutate({ sessionId: session.id, winnerId: 2 })
@@ -684,7 +682,7 @@ export default function SdkControl() {
                         <span
                           className={cn(
                             'font-medium',
-                            isP1 ? 'text-[#E93F56]' : 'text-[#0B93A7]',
+                            isP1 ? 'text-coral' : 'text-primary',
                           )}
                         >
                           {winner}
@@ -693,8 +691,8 @@ export default function SdkControl() {
                           className={cn(
                             'border-0',
                             isP1
-                              ? 'bg-[#E93F56]/20 text-[#E93F56]'
-                              : 'bg-[#0B93A7]/20 text-[#0B93A7]',
+                              ? 'bg-coral/20 text-coral'
+                              : 'bg-primary/20 text-primary',
                           )}
                         >
                           +{entry.pointsAwarded}
@@ -762,7 +760,7 @@ export default function SdkControl() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#E93F56]" />
+                  <div className="w-3 h-3 rounded-full bg-coral" />
                   <User className="h-3.5 w-3.5" /> Spieler 1
                 </Label>
                 <Input
@@ -773,7 +771,7 @@ export default function SdkControl() {
               </div>
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#0B93A7]" />
+                  <div className="w-3 h-3 rounded-full bg-primary" />
                   <User className="h-3.5 w-3.5" /> Spieler 2
                 </Label>
                 <Input

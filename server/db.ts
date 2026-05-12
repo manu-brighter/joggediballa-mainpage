@@ -93,9 +93,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.role = user.role;
       updateSet.role = user.role;
     }
-    // Note: a previous OWNER_OPEN_ID env-var fallback that auto-promoted the
-    // matching openId to admin was removed. Admin assignment now happens in
-    // server/_core/googleAuth.ts via ADMIN_EMAIL on first sign-in.
+    // Admin assignment happens in server/_core/googleAuth.ts via ADMIN_EMAIL on first sign-in.
 
     if (!values.lastSignedIn) {
       values.lastSignedIn = new Date();
@@ -317,24 +315,43 @@ export async function updateSponsor(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  // If logoKey is being updated, delete the old logo from storage
-  if (data.logoKey) {
-    const oldSponsor = await db
-      .select()
-      .from(sponsors)
-      .where(eq(sponsors.id, sponsorId))
-      .limit(1);
-    if (
-      oldSponsor.length > 0 &&
-      oldSponsor[0].logoKey &&
-      oldSponsor[0].logoKey !== data.logoKey
-    ) {
+  // B-P0-05 / F-BE-001: snapshot the old logoKey *before* the update inside a
+  // tx, then do the DB write atomically. S3 cleanup happens after commit so a
+  // failed DB update doesn't orphan a deleted asset. Storage is fire-and-forget
+  // — if the DB commit succeeds but the S3 delete fails, we log and move on
+  // rather than throwing (orphaned blobs are recoverable; failed mutations are
+  // worse for the caller).
+  const oldLogoKeyToDelete = await db.transaction(async tx => {
+    let oldKey: string | null = null;
+    if (data.logoKey) {
+      const oldSponsor = await tx
+        .select()
+        .from(sponsors)
+        .where(eq(sponsors.id, sponsorId))
+        .limit(1);
+      if (
+        oldSponsor.length > 0 &&
+        oldSponsor[0].logoKey &&
+        oldSponsor[0].logoKey !== data.logoKey
+      ) {
+        oldKey = oldSponsor[0].logoKey;
+      }
+    }
+    await tx.update(sponsors).set(data).where(eq(sponsors.id, sponsorId));
+    return oldKey;
+  });
+
+  if (oldLogoKeyToDelete) {
+    try {
       const { storageDelete } = await import('./storage');
-      await storageDelete(oldSponsor[0].logoKey);
+      await storageDelete(oldLogoKeyToDelete);
+    } catch (err) {
+      console.error(
+        '[Database] Failed to delete old sponsor logo from storage:',
+        err,
+      );
     }
   }
-
-  await db.update(sponsors).set(data).where(eq(sponsors.id, sponsorId));
 }
 
 export async function deleteSponsor(sponsorId: number) {
@@ -416,30 +433,41 @@ export async function deleteEvent(eventId: number) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  // Get all photos for this event to delete from storage
-  const eventPhotos = await db
-    .select()
-    .from(photos)
-    .where(eq(photos.eventId, eventId));
-  const { storageDelete } = await import('./storage');
+  // B-P0-05 / F-BE-001: snapshot photo S3 keys, then delete the event row in
+  // a transaction (photos cascade-delete via FK). Only after commit do we
+  // touch S3 — that way a failed DB delete doesn't orphan deleted assets.
+  // S3 deletes are best-effort: orphaned blobs are recoverable, a failed
+  // mutation that throws after partial cleanup is not.
+  const keysToDelete = await db.transaction(async tx => {
+    const eventPhotos = await tx
+      .select()
+      .from(photos)
+      .where(eq(photos.eventId, eventId));
 
-  for (const photo of eventPhotos) {
-    // Delete original image
-    if (photo.imageKey) {
-      await storageDelete(photo.imageKey);
+    await tx.delete(events).where(eq(events.id, eventId));
+
+    const keys: string[] = [];
+    for (const photo of eventPhotos) {
+      if (photo.imageKey) keys.push(photo.imageKey);
+      if (photo.compressedKey) keys.push(photo.compressedKey);
+      if (photo.thumbnailKey) keys.push(photo.thumbnailKey);
     }
-    // Delete compressed version
-    if (photo.compressedKey) {
-      await storageDelete(photo.compressedKey);
-    }
-    // Delete thumbnail
-    if (photo.thumbnailKey) {
-      await storageDelete(photo.thumbnailKey);
+    return keys;
+  });
+
+  if (keysToDelete.length > 0) {
+    const { storageDelete } = await import('./storage');
+    for (const key of keysToDelete) {
+      try {
+        await storageDelete(key);
+      } catch (err) {
+        console.error(
+          `[Database] Failed to delete event-photo asset ${key}:`,
+          err,
+        );
+      }
     }
   }
-
-  // Delete event (photos will be cascade deleted by DB)
-  await db.delete(events).where(eq(events.id, eventId));
 }
 
 export async function setEventThumbnail(eventId: number, photoId: number) {
@@ -987,6 +1015,8 @@ export async function initializeDefaultPermissions() {
     },
     { permissionKey: 'reset_shotcounter', roles: ['admin'] },
     { permissionKey: 'edit_team', roles: ['admin', 'maintainer'] },
+    // A-P0-05: attendance mutations require manage_attendance.
+    { permissionKey: 'manage_attendance', roles: ['admin', 'maintainer'] },
   ];
 
   try {
@@ -1039,8 +1069,6 @@ export async function sdkCreateSession(
 ) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
-  // Deactivate all existing sessions first
-  await db.update(sdkSession).set({ isActive: false });
 
   // Auto-set currentGameName from first entry in gameNames if not already set
   let initialGameName = data.currentGameName ?? '';
@@ -1053,11 +1081,23 @@ export async function sdkCreateSession(
     }
   }
 
-  const result = await db
-    .insert(sdkSession)
-    .values({ ...data, isActive: true, currentGameName: initialGameName });
-  const id = (result as any)[0]?.insertId ?? (result as any).insertId;
-  return sdkGetSession(id);
+  // B-P0-05 / B-P1-07: deactivate-then-insert in a single transaction so a
+  // failure between the two leaves no inconsistent "all sessions inactive"
+  // state. Also adds the previously missing `WHERE isActive = true` so
+  // historical rows aren't pointlessly rewritten on every new session.
+  const newId = await db.transaction(async tx => {
+    await tx
+      .update(sdkSession)
+      .set({ isActive: false })
+      .where(eq(sdkSession.isActive, true));
+
+    const result = await tx
+      .insert(sdkSession)
+      .values({ ...data, isActive: true, currentGameName: initialGameName });
+    return (result as any)[0]?.insertId ?? (result as any).insertId;
+  });
+
+  return sdkGetSession(newId);
 }
 
 export async function sdkUpdateSession(
@@ -1080,15 +1120,6 @@ export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
 
   const gameNumber = session.currentGame;
   const points = gameNumber; // game N awards N points
-
-  // Log the game result
-  await db.insert(sdkGameLog).values({
-    sessionId,
-    gameNumber,
-    gameName: session.currentGameName ?? '',
-    pointsAwarded: points,
-    winnerId,
-  } as InsertSdkGameLog);
 
   // Update scores and advance game
   const newPlayer1Score = session.player1Score + (winnerId === 1 ? points : 0);
@@ -1134,17 +1165,30 @@ export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
     }
   }
 
-  await db
-    .update(sdkSession)
-    .set({
-      player1Score: newPlayer1Score,
-      player2Score: newPlayer2Score,
-      currentGame: isLastGame ? gameNumber : nextGame,
-      winnerId: newWinnerId,
-      isActive: true, // keep active for display
-      currentGameName: nextGameName,
-    })
-    .where(eq(sdkSession.id, sessionId));
+  // B-P0-05 / F-BE-001: wrap the audit-log insert + session update in one
+  // transaction so we never have a game log row without the matching score
+  // bump (or vice versa).
+  await db.transaction(async tx => {
+    await tx.insert(sdkGameLog).values({
+      sessionId,
+      gameNumber,
+      gameName: session.currentGameName ?? '',
+      pointsAwarded: points,
+      winnerId,
+    } as InsertSdkGameLog);
+
+    await tx
+      .update(sdkSession)
+      .set({
+        player1Score: newPlayer1Score,
+        player2Score: newPlayer2Score,
+        currentGame: isLastGame ? gameNumber : nextGame,
+        winnerId: newWinnerId,
+        isActive: true, // keep active for display
+        currentGameName: nextGameName,
+      })
+      .where(eq(sdkSession.id, sessionId));
+  });
 
   return sdkGetSession(sessionId);
 }

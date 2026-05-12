@@ -21,8 +21,18 @@ class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Always log to console — observability/Sentry wiring is owned by Cluster A.
+    console.error('[ErrorBoundary]', error, errorInfo);
+  }
+
   render() {
     if (this.state.hasError) {
+      // In production we MUST NOT leak the raw error message or stack trace
+      // to end users (C-P0-04 / F-FE-011). In dev we keep the full stack for
+      // local debugging.
+      const isDev = import.meta.env.DEV;
+
       return (
         <div className="flex items-center justify-center min-h-screen p-8 bg-background">
           <div className="flex flex-col items-center w-full max-w-2xl p-8">
@@ -31,13 +41,19 @@ class ErrorBoundary extends Component<Props, State> {
               className="text-destructive mb-6 flex-shrink-0"
             />
 
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
+            <h2 className="text-xl mb-2">Ein unerwarteter Fehler ist aufgetreten.</h2>
+            <p className="text-sm text-muted-foreground mb-6 text-center">
+              Bitte lade die Seite neu. Wenn das Problem weiterhin besteht,
+              melde dich bei uns.
+            </p>
 
-            <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
-              <pre className="text-sm text-muted-foreground whitespace-break-spaces">
-                {this.state.error?.stack}
-              </pre>
-            </div>
+            {isDev && this.state.error?.stack ? (
+              <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
+                <pre className="text-sm text-muted-foreground whitespace-break-spaces">
+                  {this.state.error.stack}
+                </pre>
+              </div>
+            ) : null}
 
             <button
               onClick={() => window.location.reload()}
@@ -48,7 +64,7 @@ class ErrorBoundary extends Component<Props, State> {
               )}
             >
               <RotateCcw size={16} />
-              Reload Page
+              Seite neu laden
             </button>
           </div>
         </div>
