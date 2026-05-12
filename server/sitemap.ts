@@ -3,7 +3,10 @@ import { getAllEvents, getAllTeamMembers, getAllSponsors } from './db';
 
 const router = Router();
 
-const BASE_URL = 'https://joggediballa.ch';
+const BASE_URL = (process.env.BASE_URL || 'https://joggediballa.ch').replace(
+  /\/+$/,
+  '',
+);
 
 // Static pages with their priority and change frequency
 const staticPages = [

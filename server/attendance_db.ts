@@ -147,12 +147,18 @@ export async function reorderAttendanceMembers(memberIds: number[]) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  for (let i = 0; i < memberIds.length; i++) {
-    await db
-      .update(attendanceMembers)
-      .set({ displayOrder: i })
-      .where(eq(attendanceMembers.id, memberIds[i]));
-  }
+  // B-P1-06 / F-BE-015: parallelize the per-row updates (mirrors
+  // reorderTeamMembers in db.ts). MySQL handles N concurrent UPDATEs fine and
+  // this drops a 30-member reorder from 30 sequential RTs to one batched
+  // burst.
+  await Promise.all(
+    memberIds.map((id, i) =>
+      db
+        .update(attendanceMembers)
+        .set({ displayOrder: i })
+        .where(eq(attendanceMembers.id, id)),
+    ),
+  );
 }
 
 // ============================================
@@ -223,14 +229,28 @@ export async function bulkUpsertAttendanceRecords(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  for (const record of records) {
-    await upsertAttendanceRecord({
-      sessionId,
-      memberId: record.memberId,
-      status: record.status,
-      notes: record.notes,
+  if (records.length === 0) return;
+
+  // B-P1-03 / F-BE-005: one INSERT ... ON DUPLICATE KEY UPDATE replaces the
+  // previous per-record SELECT-then-INSERT-or-UPDATE loop (which was 2×N
+  // round trips). Relies on the `unique_session_member` UNIQUE index on
+  // (sessionId, memberId) already declared in drizzle/schema.ts.
+  const rows: InsertAttendanceRecord[] = records.map(r => ({
+    sessionId,
+    memberId: r.memberId,
+    status: r.status,
+    notes: r.notes,
+  }));
+
+  await db
+    .insert(attendanceRecords)
+    .values(rows)
+    .onDuplicateKeyUpdate({
+      set: {
+        status: sql`VALUES(${attendanceRecords.status})`,
+        notes: sql`VALUES(${attendanceRecords.notes})`,
+      },
     });
-  }
 }
 
 // ============================================

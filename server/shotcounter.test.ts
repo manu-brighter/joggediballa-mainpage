@@ -10,7 +10,7 @@ function createMaintainerContext(): TrpcContext {
     openId: 'test-maintainer',
     email: 'maintainer@test.com',
     name: 'Test Maintainer',
-    loginMethod: 'manus',
+    loginMethod: 'google',
     role: 'maintainer',
     createdAt: new Date(),
     updatedAt: new Date(),
