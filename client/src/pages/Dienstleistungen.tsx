@@ -16,12 +16,30 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SEO } from '@/components/SEO';
 
 const MotionDiv = motion.div;
 
 type ExternalLinkItem = {
   href: string;
   label: string;
+};
+
+type Accent = 'primary' | 'coral' | 'neutral';
+
+const accentStyles: Record<Accent, { icon: string; border: string }> = {
+  primary: {
+    icon: 'bg-primary/10 text-primary',
+    border: 'hover:border-primary/30',
+  },
+  coral: {
+    icon: 'bg-coral/15 text-coral',
+    border: 'hover:border-coral/40',
+  },
+  neutral: {
+    icon: 'bg-muted text-foreground',
+    border: 'hover:border-foreground/30',
+  },
 };
 
 interface ServiceCardProps {
@@ -35,6 +53,7 @@ interface ServiceCardProps {
   };
   image?: string;
   externalLinks?: ExternalLinkItem[];
+  accent?: Accent;
   delay?: number;
 }
 
@@ -45,15 +64,17 @@ function ServiceCard({
   person,
   image,
   externalLinks,
+  accent = 'primary',
   delay = 0,
 }: ServiceCardProps) {
+  const styles = accentStyles[accent];
   return (
     <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
     >
-      <Card className="h-full overflow-hidden group hover:border-primary/30 transition-all duration-300">
+      <Card className={`h-full overflow-hidden group transition-all duration-300 ${styles.border}`}>
         {image && (
           <div className="aspect-video overflow-hidden bg-muted">
             <img
@@ -65,7 +86,7 @@ function ServiceCard({
         )}
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+            <div className={`p-2 rounded-lg ${styles.icon}`}>
               {icon}
             </div>
             <CardTitle className="text-xl">{title}</CardTitle>
@@ -124,13 +145,14 @@ function ServiceCard({
 }
 
 export default function Dienstleistungen() {
-  const services = [
+  const services: Array<ServiceCardProps & { title: string }> = [
     {
       icon: <Package className="h-6 w-6" />,
       title: 'Vermietung',
       description:
         'Wir vermieten hochwertiges Equipment für deine Events!\n\u2022 Sound-Equipment & Zubehör\n\u2022 Beerpong-Tische & Zubehör\n\u2022 Verschiedene Elektronikartikel',
       image: '/images/vermietung.JPEG',
+      accent: 'primary',
     },
     {
       icon: <Music className="h-6 w-6" />,
@@ -147,6 +169,7 @@ export default function Dienstleistungen() {
         { href: 'https://www.youtube.com/@djjayjay2001', label: 'Youtube' },
       ],
       image: '/images/dj.JPEG',
+      accent: 'coral',
     },
     {
       icon: <Camera className="h-6 w-6" />,
@@ -165,11 +188,18 @@ export default function Dienstleistungen() {
         },
       ],
       image: '/images/fotografie.JPEG',
+      accent: 'neutral',
     },
   ];
 
   return (
     <div className="container py-12 space-y-12">
+      <SEO
+        title="Jogge di Balla - Dienstleistungen (Vermietung, DJ, Foto)"
+        description="Vermietung von Sound- und Beerpong-Equipment, DJ-Services von Jan, Event-Fotografie von Manu. Anfragen direkt an den Verein."
+        keywords="Jogge di Balla, Vermietung, DJ, Fotografie, Brislach, Event-Services"
+        ogUrl="https://joggediballa.ch/dienstleistungen"
+      />
       {/* Header */}
       <MotionDiv
         initial={{ opacity: 0, y: -20 }}
@@ -178,7 +208,7 @@ export default function Dienstleistungen() {
       >
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
           <Package className="h-4 w-4" />
-          Unsere Services
+          Drei Dinge die wir auch ausserhalb des Vereins tun
         </div>
         <h1 className="text-4xl md:text-5xl font-black">
           <span className="gradient-text">Dienstleistungen</span>
@@ -199,19 +229,19 @@ export default function Dienstleistungen() {
         transition={{ delay: 0.4 }}
         className="text-center"
       >
-        <Card className="bg-gradient-to-br from-primary/5 to-coral/5 border-primary/20">
+        <Card className="bg-coral/5 border-coral/20">
           <CardContent className="py-12 space-y-6">
             <h2 className="text-2xl md:text-3xl font-bold">
-              Interesse an unseren Dienstleistungen?
+              Was im Kopf? Schreib uns.
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Kontaktiere uns für ein unverbindliches Angebot. Wir freuen uns
-              auf deine Anfrage!
+              Unverbindliche Anfrage, keine Verpflichtung. Wir antworten in
+              der Regel innert ein paar Tagen.
             </p>
             <Button asChild size="lg" className="btn-animate gap-2">
               <Link href="/contact">
                 <Mail className="h-5 w-5" />
-                Jetzt Kontakt aufnehmen
+                Anfrage starten
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
