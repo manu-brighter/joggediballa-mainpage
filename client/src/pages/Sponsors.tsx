@@ -206,7 +206,7 @@ export default function Sponsors() {
     <div className="container py-12 space-y-8">
       <SEO
         title="Unsere Sponsoren - Jogge di Balla"
-        description="Entdecke die Unternehmen und Partner, die Jogge di Balla unterstützen. Gemeinsam schaffen wir unvergessliche Events und stärken unsere Community in Brislach und dem Laufental."
+        description="Diese Unternehmen und Partner machen Jogge di Balla möglich. Ohne sie keine Events, keine laute Truppe. Wir sagen Danke und zeigen sie hier."
         keywords="Jogge di Balla, Sponsoren, Partner, Brislach, Laufental, Event-Sponsoring, Community Support"
         ogUrl="https://joggediballa.ch/sponsors"
         ogImage="https://joggediballa.ch/JoggediBalla-Logo.PNG"
@@ -217,15 +217,15 @@ export default function Sponsors() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-coral/20 to-coral/5 mb-4">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-coral/15 mb-4">
           <Heart className="h-10 w-10 text-coral" />
         </div>
         <h1 className="text-4xl md:text-5xl font-black">
           <span className="gradient-text">Unsere Sponsoren</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Ein grosses Dankeschön an alle, die uns unterstützen und unsere Events
-          möglich machen!
+          Diese Firmen machen es möglich. Ohne sie keine Events, keine laute
+          Truppe. Wir sagen Danke und zeigen sie hier.
         </p>
       </MotionDiv>
 
@@ -483,19 +483,19 @@ export default function Sponsors() {
         transition={{ delay: 0.3 }}
         className="mt-12"
       >
-        <Card className="bg-gradient-to-br from-primary/5 via-coral/5 to-primary/5 border-primary/20 overflow-hidden">
+        <Card className="bg-primary/5 border-primary/20 overflow-hidden">
           <CardContent className="p-8">
             <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-coral/20">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/15">
                 <Heart className="h-8 w-8 text-primary" />
               </div>
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold">
-                  Werde Sponsor von Jogge di Balla
+                  Auch Sponsor werden?
                 </h2>
                 <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-                  Unterstütze unseren Verein und profitiere von unseren
-                  Werbe-Vorteilen!
+                  Zwei Pakete, klare Sichtbarkeit. Du unterstützt, wir geben
+                  zurück.
                 </p>
               </div>
 
@@ -529,8 +529,8 @@ export default function Sponsors() {
                 </div>
 
                 {/* Premium Package */}
-                <div className="bg-gradient-to-br from-primary/10 to-coral/10 rounded-xl p-6 border-2 border-primary/30 hover:border-primary/50 transition-all relative">
-                  <div className="absolute -top-3 right-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
+                <div className="bg-coral/10 rounded-xl p-6 border-2 border-coral/40 hover:border-coral/60 transition-all relative">
+                  <div className="absolute -top-3 right-4 px-3 py-1 bg-coral text-coral-foreground text-xs font-bold rounded-full">
                     Empfohlen
                   </div>
                   {/* Header */}
@@ -570,7 +570,7 @@ export default function Sponsors() {
               <Button asChild size="lg" className="btn-animate gap-2">
                 <Link href="/contact">
                   <Mail className="h-5 w-5" />
-                  Jetzt Kontakt aufnehmen
+                  Anfrage starten
                 </Link>
               </Button>
             </div>
@@ -592,10 +592,10 @@ export default function Sponsors() {
               <Gift className="h-8 w-8 text-primary" />
             </div>
             <CardTitle className="text-2xl md:text-3xl">
-              Werde Gönnermitglied!
+              Werde Gönner
             </CardTitle>
             <CardDescription className="text-lg">
-              Unterstütze Jogge di Balla und profitiere von exklusiven Vorteilen
+              20 Stutz pro Jahr. Wenig Aufwand, viel Wirkung.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-6">
@@ -603,20 +603,20 @@ export default function Sponsors() {
               <span className="text-3xl font-bold text-primary">CHF 20.-</span>
               <span className="text-muted-foreground ml-2">pro Jahr</span>
             </div>
-            <div className="grid sm:grid-cols-3 gap-4 text-sm">
-              <div className="p-4 rounded-lg bg-muted/50">
-                <Gift className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="font-medium">Exklusive Giveaways</p>
-              </div>
-              <div className="p-4 rounded-lg bg-muted/50">
-                <Trophy className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="font-medium">Reduzierte Preise</p>
-              </div>
-              <div className="p-4 rounded-lg bg-muted/50">
-                <Heart className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="font-medium">Verein unterstützen</p>
-              </div>
-            </div>
+            <ul className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium">
+              <li className="flex items-center gap-2">
+                <Gift className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                Giveaways nur für Gönner
+              </li>
+              <li className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                Reduzierter Eintritt
+              </li>
+              <li className="flex items-center gap-2">
+                <Heart className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                Du machst's möglich
+              </li>
+            </ul>
             <Button
               size="lg"
               className="btn-animate"
