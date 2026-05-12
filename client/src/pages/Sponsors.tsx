@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { usePermission } from '@/hooks/usePermissions';
-import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/lib/errorMessages';
 import {
@@ -101,17 +102,6 @@ export default function Sponsors() {
   });
 
   const canManageSponsors = usePermission('manage_sponsors');
-
-  // SEO Meta Tags for Google Search Results
-  useSEO({
-    title: 'Unsere Sponsoren - Jogge di Balla',
-    description:
-      'Entdecke die Unternehmen und Partner, die Jogge di Balla unterstützen. Gemeinsam schaffen wir unvergessliche Events und stärken unsere Community in Brislach und dem Laufental.',
-    keywords:
-      'Jogge di Balla, Sponsoren, Partner, Brislach, Laufental, Event-Sponsoring, Community Support',
-    ogUrl: 'https://joggediballa.ch/sponsors',
-    ogImage: 'https://joggediballa.ch/JoggediBalla-Logo.PNG',
-  });
 
   const resetForm = () => {
     setName('');
@@ -214,6 +204,13 @@ export default function Sponsors() {
 
   return (
     <div className="container py-12 space-y-8">
+      <SEO
+        title="Unsere Sponsoren - Jogge di Balla"
+        description="Entdecke die Unternehmen und Partner, die Jogge di Balla unterstützen. Gemeinsam schaffen wir unvergessliche Events und stärken unsere Community in Brislach und dem Laufental."
+        keywords="Jogge di Balla, Sponsoren, Partner, Brislach, Laufental, Event-Sponsoring, Community Support"
+        ogUrl="https://joggediballa.ch/sponsors"
+        ogImage="https://joggediballa.ch/JoggediBalla-Logo.PNG"
+      />
       {/* Header */}
       <MotionDiv
         initial={{ opacity: 0, y: -20 }}
@@ -375,8 +372,16 @@ export default function Sponsors() {
 
       {/* Sponsors Grid */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="p-6">
+              <Skeleton className="aspect-video w-full" />
+            </Card>
+          ))}
         </div>
       ) : sponsors.length === 0 ? (
         <Card className="max-w-md mx-auto">
@@ -410,6 +415,8 @@ export default function Sponsors() {
                         <img
                           src={sponsor.logoUrl}
                           alt={sponsor.name}
+                          loading="lazy"
+                          decoding="async"
                           className="max-w-full max-h-full object-contain p-4"
                         />
                       ) : (
