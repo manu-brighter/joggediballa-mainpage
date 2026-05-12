@@ -3,12 +3,10 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import type { Profile } from 'passport-google-oauth20';
 import { upsertUser, getUserByOpenId, createActivityLog } from '../db';
 import type { User } from '../../drizzle/schema';
-import { sendEmail } from './email';
+import { sendEmail, escapeHtml } from './email';
 
 /**
  * Google OAuth Configuration
- *
- * This module replaces the Manus OAuth system with Google OAuth for self-hosting.
  *
  * Setup:
  * 1. Create OAuth credentials in Google Cloud Console
@@ -67,12 +65,26 @@ passport.use(
           | undefined = undefined;
         if (isNewUser) {
           role = 'visitor';
+          // F-SEC-016: only auto-promote to admin if Google reports the email
+          // is verified. Otherwise an attacker could spoof the admin email by
+          // claiming it on an unverified Google account.
+          const emailVerified = (profile as any)?._json?.email_verified === true;
           if (
             email &&
+            emailVerified &&
             ADMIN_EMAIL &&
             email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
           ) {
             role = 'admin';
+          } else if (
+            email &&
+            !emailVerified &&
+            ADMIN_EMAIL &&
+            email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
+          ) {
+            console.warn(
+              '[Google OAuth] Admin email match but email_verified=false; refusing admin promotion.',
+            );
           }
         }
 
@@ -116,13 +128,13 @@ passport.use(
                 <h2 style="color: #0ea5e9;">Neue Benutzerregistrierung</h2>
                 <p>Ein neuer Benutzer hat sich auf der Jogge di Balla Website registriert und wartet auf Freischaltung:</p>
                 <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                  <p><strong>Name:</strong> ${name || 'Nicht angegeben'}</p>
-                  <p><strong>E-Mail:</strong> ${email || 'Nicht angegeben'}</p>
+                  <p><strong>Name:</strong> ${escapeHtml(name || 'Nicht angegeben')}</p>
+                  <p><strong>E-Mail:</strong> ${escapeHtml(email || 'Nicht angegeben')}</p>
                   <p><strong>Login-Methode:</strong> Google OAuth</p>
                   <p><strong>Status:</strong> Visitor (wartet auf Freischaltung)</p>
                 </div>
                 <p>Bitte logge dich ins Admin-Dashboard ein, um den Benutzer freizuschalten:</p>
-                <p><a href="${process.env.GOOGLE_CALLBACK_URL?.replace('/api/auth/callback/google', '')}/admin/users" style="background-color: #0ea5e9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Zur Benutzerverwaltung</a></p>
+                <p><a href="${escapeHtml(process.env.GOOGLE_CALLBACK_URL?.replace('/api/auth/callback/google', '') || '')}/admin/users" style="background-color: #0ea5e9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Zur Benutzerverwaltung</a></p>
               </div>
             `,
           })

@@ -5,13 +5,12 @@ import type { Request } from 'express';
 import { jwtVerify } from 'jose';
 import type { User } from '../../drizzle/schema';
 import * as db from '../db';
-import { ENV } from './env';
+import { getJwtSecretBytes } from './env';
 
 // JWT verification + tRPC-context user lookup, used by createContext below.
 // Sessions are MINTED in server/_core/googleAuthRoutes.ts (the Google OAuth
 // callback signs its own JWT with `appId: 'google-oauth'`); this module is
-// the verify side. Earlier versions exported a sign side too (signSession,
-// createSessionToken) for the Manus OAuth flow that has since been removed.
+// only the verify side.
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.length > 0;
@@ -26,7 +25,7 @@ class SDKServer {
   }
 
   private getSessionSecret() {
-    return new TextEncoder().encode(ENV.cookieSecret);
+    return getJwtSecretBytes();
   }
 
   /**

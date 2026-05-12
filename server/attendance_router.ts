@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { router, protectedProcedure } from './_core/trpc';
+import { hasPermission } from './permissions';
 import {
   listAttendanceSessions,
   getAttendanceSession,
@@ -18,6 +20,23 @@ import {
   upsertAttendanceSetting,
   getAttendanceStatistics,
 } from './attendance_db';
+
+/**
+ * Local copy of the requirePermission middleware factory. Mirrors the one in
+ * routers.ts (no shared import to avoid a circular dependency since
+ * routers.ts imports this router). A-P0-05 — every mutation here must check
+ * `manage_attendance` rather than relying on bare protectedProcedure.
+ */
+const requirePermission = (permissionKey: string) =>
+  protectedProcedure.use(async ({ ctx, next }) => {
+    const allowed = await hasPermission(ctx.user.role, permissionKey);
+    if (!allowed) {
+      throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden' });
+    }
+    return next({ ctx });
+  });
+
+const manageAttendance = requirePermission('manage_attendance');
 
 export const attendanceRouter = router({
   // ============================================
@@ -46,13 +65,13 @@ export const attendanceRouter = router({
       return getAttendanceSession(input.sessionId);
     }),
 
-  createSession: protectedProcedure
+  createSession: manageAttendance
     .input(
       z.object({
         date: z.string(), // ISO date string
-        title: z.string().min(1),
+        title: z.string().min(1).max(500),
         type: z.enum(['meeting', 'event']),
-        notes: z.string().optional(),
+        notes: z.string().max(10_000).optional(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -64,14 +83,14 @@ export const attendanceRouter = router({
       });
     }),
 
-  updateSession: protectedProcedure
+  updateSession: manageAttendance
     .input(
       z.object({
         sessionId: z.number(),
         date: z.string().optional(),
-        title: z.string().min(1).optional(),
+        title: z.string().min(1).max(500).optional(),
         type: z.enum(['meeting', 'event']).optional(),
-        notes: z.string().optional(),
+        notes: z.string().max(10_000).optional(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -83,7 +102,7 @@ export const attendanceRouter = router({
       await updateAttendanceSession(sessionId, updates);
     }),
 
-  deleteSession: protectedProcedure
+  deleteSession: manageAttendance
     .input(
       z.object({
         sessionId: z.number(),
@@ -119,10 +138,10 @@ export const attendanceRouter = router({
       return getAttendanceMember(input.memberId);
     }),
 
-  createMember: protectedProcedure
+  createMember: manageAttendance
     .input(
       z.object({
-        name: z.string().min(1),
+        name: z.string().min(1).max(500),
       }),
     )
     .mutation(async ({ input }) => {
@@ -133,11 +152,11 @@ export const attendanceRouter = router({
       });
     }),
 
-  updateMember: protectedProcedure
+  updateMember: manageAttendance
     .input(
       z.object({
         memberId: z.number(),
-        name: z.string().min(1).optional(),
+        name: z.string().min(1).max(500).optional(),
         isActive: z.boolean().optional(),
       }),
     )
@@ -146,7 +165,7 @@ export const attendanceRouter = router({
       await updateAttendanceMember(memberId, data);
     }),
 
-  deleteMember: protectedProcedure
+  deleteMember: manageAttendance
     .input(
       z.object({
         memberId: z.number(),
@@ -156,10 +175,10 @@ export const attendanceRouter = router({
       await deleteAttendanceMember(input.memberId);
     }),
 
-  reorderMembers: protectedProcedure
+  reorderMembers: manageAttendance
     .input(
       z.object({
-        memberIds: z.array(z.number()),
+        memberIds: z.array(z.number()).max(1000),
       }),
     )
     .mutation(async ({ input }) => {
@@ -180,17 +199,19 @@ export const attendanceRouter = router({
       return listAttendanceRecords(input.sessionId);
     }),
 
-  saveAttendance: protectedProcedure
+  saveAttendance: manageAttendance
     .input(
       z.object({
         sessionId: z.number(),
-        records: z.array(
-          z.object({
-            memberId: z.number(),
-            status: z.enum(['present', 'partial', 'absent']),
-            notes: z.string().optional(),
-          }),
-        ),
+        records: z
+          .array(
+            z.object({
+              memberId: z.number(),
+              status: z.enum(['present', 'partial', 'absent']),
+              notes: z.string().max(2000).optional(),
+            }),
+          )
+          .max(1000),
       }),
     )
     .mutation(async ({ input }) => {
@@ -204,14 +225,14 @@ export const attendanceRouter = router({
   getSetting: protectedProcedure
     .input(
       z.object({
-        key: z.string(),
+        key: z.string().max(100),
       }),
     )
     .query(async ({ input }) => {
       return getAttendanceSetting(input.key);
     }),
 
-  updateEventWeight: protectedProcedure
+  updateEventWeight: manageAttendance
     .input(
       z.object({
         weight: z.number().min(1).max(10),
