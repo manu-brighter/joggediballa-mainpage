@@ -85,6 +85,39 @@ React 19 natively hoists `<title>` and `<meta>` tags to `<head>` and removes the
 - Tailwind v4 via `@tailwindcss/vite` (no config file, uses CSS `@import "tailwindcss"`)
 - Theme: `useTheme()` from `@/contexts/ThemeContext` — dark/light/system
 
+## Design Tokens — three-layer system
+
+All color tokens live in `index.css`:
+
+- **Layer 1 (primitives)** — raw scales: `--teal-50..900`, `--coral-50..900`,
+  `--neutral-0..950`, `--twitch-light`, `--twitch-dark`. **Never reference
+  these directly in JSX/Tailwind classes** — they are only the source of
+  Layer 2 mappings.
+
+- **Layer 2 (semantic)** — shadcn-style intent names mapped to Layer 1.
+  Use these in code:
+
+  | Token | When to use |
+  | --- | --- |
+  | `bg-primary`, `text-primary` | Main brand color (teal). Default CTAs. |
+  | `bg-coral`, `text-coral` | Secondary brand accent. Hearts, highlight pills, brand-tinted blobs. |
+  | `bg-secondary`, `text-secondary` | **Muted neutral** (shadcn semantic). Secondary buttons, badges. |
+  | `bg-accent`, `text-accent` | Subtle hover/highlight backdrop. Used by dropdown / menu / command hover states. |
+  | `bg-muted`, `text-muted-foreground` | De-emphasised surfaces, captions, helper text. |
+  | `bg-card`, `bg-popover` | Container surfaces. |
+  | `bg-destructive` | Errors, delete buttons. |
+  | `bg-warning` | Drafts, expiring memberships, pending payments. |
+  | `bg-success` | Confirmation states. |
+  | `bg-brand`, `bg-twitch` | Brand aliases for niche cases (e.g. Twitch overlay). |
+
+- **Layer 3 (Tailwind theme)** — `@theme inline` block at the top of
+  `index.css` exposes Layer 2 as Tailwind utility classes (`text-primary`,
+  `bg-coral/10`, `border-coral`, etc.).
+
+**Do NOT use raw Tailwind palette colors** (`text-red-500`, `bg-orange-500`,
+`text-[#0B93A7]`) — every color must go through Layer 2 so dark mode and
+future theme swaps work automatically.
+
 ## Path Aliases
 
 | Alias      | Maps to             |

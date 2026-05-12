@@ -114,3 +114,9 @@ uploads/
 
 # Drizzle-kit local journal / generated artifacts (we use db:push, not migrations)
 drizzle/meta/
+
+# Playwright artifacts (HTML reports + traces) — visual baselines under
+# tests/e2e/visual/__screenshots__/ ARE committed.
+test-results/
+playwright-report/
+playwright/.cache/

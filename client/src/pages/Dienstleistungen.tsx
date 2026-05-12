@@ -199,7 +199,7 @@ export default function Dienstleistungen() {
         transition={{ delay: 0.4 }}
         className="text-center"
       >
-        <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+        <Card className="bg-gradient-to-br from-primary/5 to-coral/5 border-primary/20">
           <CardContent className="py-12 space-y-6">
             <h2 className="text-2xl md:text-3xl font-bold">
               Interesse an unseren Dienstleistungen?
