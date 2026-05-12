@@ -432,6 +432,19 @@
     filter: brightness(0.92);
   }
 
+  /* Same Instagram gradient applied to text glyphs only (icon stays
+     inherited). For inline mentions like @handle in compact contexts. */
+  .gradient-text-instagram {
+    background: linear-gradient(
+      to right,
+      oklch(0.61 0.24 305),
+      oklch(0.65 0.23 6)
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   /* Card hover effect */
   .card-hover {
     @apply transition-all duration-300 ease-out;
