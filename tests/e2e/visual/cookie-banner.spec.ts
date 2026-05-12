@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { setTheme } from './helpers';
 
 /**
  * One dedicated baseline for the cookie consent banner — captured WITHOUT
@@ -9,6 +10,7 @@ import { test, expect } from '@playwright/test';
  */
 test.describe('Cookie consent banner', () => {
   test('appears at bottom of page on first visit (light)', async ({ page }) => {
+    await setTheme(page, 'light');
     await page.goto('/', { waitUntil: 'networkidle' });
     // The banner mounts after isLoaded flips true (one tick after navigation).
     await expect(page.getByText(/Google Analytics/)).toBeVisible();
@@ -16,7 +18,7 @@ test.describe('Cookie consent banner', () => {
   });
 
   test('appears at bottom of page on first visit (dark)', async ({ page }) => {
-    await page.emulateMedia({ colorScheme: 'dark' });
+    await setTheme(page, 'dark');
     await page.goto('/', { waitUntil: 'networkidle' });
     await expect(page.getByText(/Google Analytics/)).toBeVisible();
     await expect(page).toHaveScreenshot('cookie-banner-dark.png');
