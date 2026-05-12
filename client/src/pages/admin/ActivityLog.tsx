@@ -99,13 +99,13 @@ export default function ActivityLog() {
         );
       case 'registration':
         return (
-          <Badge className="bg-green-500 hover:bg-green-600 gap-1">
+          <Badge className="bg-success text-success-foreground hover:bg-success/90 gap-1">
             {getActionIcon(action)} Registrierung
           </Badge>
         );
       case 'role_change':
         return (
-          <Badge className="bg-orange-500 hover:bg-orange-600 gap-1">
+          <Badge className="bg-warning text-warning-foreground hover:bg-warning/90 gap-1">
             {getActionIcon(action)} Rollenänderung
           </Badge>
         );

@@ -118,34 +118,12 @@ export default function Datenschutz() {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">8. Google Fonts</h3>
+              <h3 className="font-semibold mb-2">8. Schriftarten</h3>
               <p className="text-muted-foreground">
-                Diese Website verwendet Google Fonts, einen Dienst der Google
-                LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA.
-                Beim Laden einer Seite wird die Schriftart «Inter» direkt von
-                den Servern von Google abgerufen. Dabei wird Ihre IP-Adresse an
-                Google übermittelt und kann auf Servern in den USA verarbeitet
-                werden.
-              </p>
-              <p className="text-muted-foreground mt-2">
-                Die Einbindung erfolgt auf Grundlage unseres berechtigten
-                Interesses an einer einheitlichen und ansprechenden Darstellung
-                der Website (Art. 6 Abs. 1 lit. f DSGVO bzw. Art. 13 DSG). Für
-                die USA besteht kein Angemessenheitsbeschluss der EU-Kommission;
-                Google LLC ist jedoch unter dem EU-US Data Privacy Framework
-                zertifiziert.
-              </p>
-              <p className="text-muted-foreground mt-2">
-                Weitere Informationen zum Datenschutz bei Google finden Sie
-                unter:{' '}
-                <a
-                  href="https://policies.google.com/privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline underline-offset-2"
-                >
-                  policies.google.com/privacy
-                </a>
+                Diese Website verwendet die Schriftart «Inter», die direkt vom
+                eigenen Server ausgeliefert wird. Es findet kein Abruf von
+                externen Schriftarten-Diensten (z.&nbsp;B. Google Fonts) statt;
+                Ihre IP-Adresse wird dafür nicht an Dritte übermittelt.
               </p>
             </div>
 

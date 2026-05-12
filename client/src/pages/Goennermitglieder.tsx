@@ -160,15 +160,15 @@ const MemberCard = React.memo(
         className={cn(
           'rounded-xl border-2 p-4 transition-all duration-300 cursor-pointer',
           status === 'expired' &&
-            'bg-muted/50 border-muted-foreground/20 hover:bg-muted/90 hover:border-red-500/30',
+            'bg-muted/50 border-muted-foreground/20 hover:bg-muted/90 hover:border-destructive/30',
           status === 'expiring' &&
-            'bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20 hover:border-yellow-500/40',
+            'bg-warning/10 border-warning/20 hover:bg-warning/20 hover:border-warning/40',
           status === 'active' &&
             member.paymentStatus === 'pending' &&
-            'bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20 hover:border-orange-500/40',
+            'bg-warning/10 border-warning/30 hover:bg-warning/20 hover:border-warning/40',
           status === 'active' &&
             member.paymentStatus === 'paid' &&
-            'bg-card border-border hover:bg-muted/90 hover:border-teal-500/30',
+            'bg-card border-border hover:bg-muted/90 hover:border-primary/30',
         )}
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -184,7 +184,7 @@ const MemberCard = React.memo(
                 </span>
               )}
               {status === 'expiring' && (
-                <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-xs font-medium">
+                <span className="px-2 py-0.5 rounded-full bg-warning/20 text-warning-foreground text-xs font-medium">
                   {daysLeft} Tage
                 </span>
               )}
@@ -196,7 +196,7 @@ const MemberCard = React.memo(
                   </span>
                 )}
               {member.paymentStatus === 'pending' && (
-                <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-medium flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-full bg-warning/20 text-warning-foreground text-xs font-medium flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   Zahlung fällig seit{' '}
                   {getDaysSincePaymentPending(member.paymentPendingSince)} Tagen
@@ -1086,8 +1086,8 @@ export default function Goennermitglieder() {
             Aktiv
           </span>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20">
-          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-warning/10 border border-warning/20">
+          <AlertTriangle className="h-4 w-4 text-warning" />
           <span className="text-sm font-medium">
             {
               activeMembers.filter(m => getMemberStatus(m) === 'expiring')
@@ -1096,14 +1096,14 @@ export default function Goennermitglieder() {
             Läuft bald ab
           </span>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20">
-          <Clock className="h-4 w-4 text-orange-500" />
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-warning/10 border border-warning/20">
+          <Clock className="h-4 w-4 text-warning" />
           <span className="text-sm font-medium">
             {pendingMembers.length} Provisorisch
           </span>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20">
-          <XCircle className="h-4 w-4 text-red-500" />
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/10 border border-destructive/20">
+          <XCircle className="h-4 w-4 text-destructive" />
           <span className="text-sm font-medium">
             {expiredMembers.length} Abgelaufen
           </span>
@@ -1165,8 +1165,8 @@ export default function Goennermitglieder() {
       {pendingMembers.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Clock className="h-6 w-6 text-orange-500" />
-            <span className="text-orange-500">
+            <Clock className="h-6 w-6 text-warning" />
+            <span className="text-warning">
               Provisorische Mitglieder ({pendingMembers.length})
             </span>
           </h2>
@@ -1195,8 +1195,8 @@ export default function Goennermitglieder() {
       {/* Expired Members Section */}
       {expiredMembers.length > 0 && (
         <section>
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-red-500/70">
-            <XCircle className="h-6 w-6 text-red-500/70" />
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-destructive/70">
+            <XCircle className="h-6 w-6 text-destructive/70" />
             Abgelaufene Mitgliedschaften ({expiredMembers.length})
           </h2>
           <div className="space-y-3">
@@ -1593,15 +1593,15 @@ export default function Goennermitglieder() {
                 className={cn(
                   'flex items-center gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer',
                   pendingPaymentStatus === 'paid'
-                    ? 'border-green-500 bg-green-500/10'
-                    : 'border-border hover:border-green-500/50',
+                    ? 'border-success bg-success/10'
+                    : 'border-border hover:border-success/50',
                 )}
               >
                 <CheckCircle
                   className={cn(
                     'h-5 w-5',
                     pendingPaymentStatus === 'paid'
-                      ? 'text-green-600'
+                      ? 'text-success'
                       : 'text-muted-foreground',
                   )}
                 />
@@ -1617,15 +1617,15 @@ export default function Goennermitglieder() {
                 className={cn(
                   'flex items-center gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer',
                   pendingPaymentStatus === 'pending'
-                    ? 'border-orange-500 bg-orange-500/10'
-                    : 'border-border hover:border-orange-500/50',
+                    ? 'border-warning bg-warning/10'
+                    : 'border-border hover:border-warning/50',
                 )}
               >
                 <AlertTriangle
                   className={cn(
                     'h-5 w-5',
                     pendingPaymentStatus === 'pending'
-                      ? 'text-orange-600'
+                      ? 'text-warning'
                       : 'text-muted-foreground',
                   )}
                 />

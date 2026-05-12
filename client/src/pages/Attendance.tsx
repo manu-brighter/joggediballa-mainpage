@@ -502,7 +502,7 @@ export default function Attendance() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">
-                Titel <span className="text-red-500">*</span>
+                Titel <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="title"
@@ -522,7 +522,7 @@ export default function Attendance() {
             </div>
             <div className="space-y-2 min-w-0">
               <Label htmlFor="date">
-                Datum <span className="text-red-500">*</span>
+                Datum <span className="text-destructive">*</span>
               </Label>
               <DateInput
                 id="sessionDate"
@@ -540,7 +540,7 @@ export default function Attendance() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">
-                Typ <span className="text-red-500">*</span>
+                Typ <span className="text-destructive">*</span>
               </Label>
               <SafeSelect
                 id="type"
@@ -630,7 +630,7 @@ export default function Attendance() {
                       className={cn(
                         'gap-1 flex-1 sm:flex-none',
                         attendanceForm[member.id]?.status === 'present' &&
-                          'bg-green-500 hover:bg-green-600',
+                          'bg-success text-success-foreground hover:bg-success/90',
                       )}
                       onClick={() =>
                         setAttendanceForm({
@@ -655,7 +655,7 @@ export default function Attendance() {
                       className={cn(
                         'gap-1 flex-1 sm:flex-none',
                         attendanceForm[member.id]?.status === 'partial' &&
-                          'bg-orange-500 hover:bg-orange-600',
+                          'bg-warning text-warning-foreground hover:bg-warning/90',
                       )}
                       onClick={() =>
                         setAttendanceForm({
@@ -680,7 +680,7 @@ export default function Attendance() {
                       className={cn(
                         'gap-1 flex-1 sm:flex-none',
                         attendanceForm[member.id]?.status === 'absent' &&
-                          'bg-red-500 hover:bg-red-600',
+                          'bg-destructive text-destructive-foreground hover:bg-destructive/90',
                       )}
                       onClick={() =>
                         setAttendanceForm({
@@ -743,7 +743,7 @@ export default function Attendance() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="memberName">
-                Name <span className="text-red-500">*</span>
+                Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="memberName"

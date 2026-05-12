@@ -518,7 +518,7 @@ export default function AdminDashboard() {
                               title="Klicken zum Umschalten"
                             >
                               {hasPermission('admin') ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                <CheckCircle2 className="h-4 w-4 text-success" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-muted-foreground/30" />
                               )}
@@ -537,7 +537,7 @@ export default function AdminDashboard() {
                               title="Klicken zum Umschalten"
                             >
                               {hasPermission('maintainer') ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                <CheckCircle2 className="h-4 w-4 text-success" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-muted-foreground/30" />
                               )}
@@ -556,7 +556,7 @@ export default function AdminDashboard() {
                               title="Klicken zum Umschalten"
                             >
                               {hasPermission('editor') ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                <CheckCircle2 className="h-4 w-4 text-success" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-muted-foreground/30" />
                               )}
@@ -572,7 +572,7 @@ export default function AdminDashboard() {
                               title="Klicken zum Umschalten"
                             >
                               {hasPermission('user') ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                <CheckCircle2 className="h-4 w-4 text-success" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-muted-foreground/30" />
                               )}
@@ -645,8 +645,8 @@ export default function AdminDashboard() {
                 {/* Maintenance Mode Toggle */}
                 <div className="flex items-center justify-between p-4 border rounded-xl hover:border-primary/30 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
-                      <Shield className="h-5 w-5 text-orange-500" />
+                    <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                      <Shield className="h-5 w-5 text-warning" />
                     </div>
                     <div className="min-w-0">
                       <Label
@@ -758,13 +758,13 @@ export default function AdminDashboard() {
                         className={cn(
                           'flex items-center justify-between p-3 border rounded-lg transition-colors',
                           isEnabled
-                            ? 'border-green-500/30 bg-green-500/5'
+                            ? 'border-success/30 bg-success/5'
                             : 'border-muted bg-muted/30',
                         )}
                       >
                         <div className="flex items-center gap-2">
                           {isEnabled ? (
-                            <Eye className="h-4 w-4 text-green-500" />
+                            <Eye className="h-4 w-4 text-success" />
                           ) : (
                             <EyeOff className="h-4 w-4 text-muted-foreground" />
                           )}
@@ -841,7 +841,7 @@ export default function AdminDashboard() {
                   <div className="flex flex-col sm:flex-row gap-2 mt-3">
                     <Button
                       variant="outline"
-                      className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
+                      className="border-warning/50 text-warning hover:bg-warning/10"
                       onClick={() => handleResetChoice('scores_only')}
                       disabled={teams.length === 0}
                     >
@@ -921,8 +921,8 @@ export default function AdminDashboard() {
                               className={cn(
                                 'font-medium text-xs',
                                 log.amount > 0
-                                  ? 'text-green-500'
-                                  : 'text-red-500',
+                                  ? 'text-success'
+                                  : 'text-destructive',
                               )}
                             >
                               {log.amount > 0 ? `+${log.amount}` : log.amount}
@@ -964,7 +964,7 @@ export default function AdminDashboard() {
                 <>
                   Alle Scores werden auf 0 zurückgesetzt. Die Teams bleiben
                   erhalten.
-                  <strong className="block mt-2 text-orange-600">
+                  <strong className="block mt-2 text-warning">
                     Diese Aktion kann nicht rückgängig gemacht werden!
                   </strong>
                 </>
@@ -987,7 +987,7 @@ export default function AdminDashboard() {
               onClick={handleConfirmReset}
               className={cn(
                 resetType === 'scores_only'
-                  ? 'bg-orange-500 text-white hover:bg-orange-600'
+                  ? 'bg-warning text-warning-foreground hover:bg-warning/90'
                   : 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
               )}
             >

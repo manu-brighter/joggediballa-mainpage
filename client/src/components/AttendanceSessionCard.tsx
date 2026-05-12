@@ -101,7 +101,7 @@ export function AttendanceSessionCard({
           <Badge
             variant={session.type === 'event' ? 'default' : 'secondary'}
             className={cn(
-              session.type === 'event' && 'bg-teal-500 hover:bg-teal-600',
+              session.type === 'event' && 'bg-primary text-primary-foreground hover:bg-primary/90',
             )}
           >
             {session.type === 'event' ? 'Event' : 'Meeting'}
@@ -120,19 +120,19 @@ export function AttendanceSessionCard({
             <div className="flex gap-2">
               {presentCount > 0 && (
                 <div className="flex items-center gap-1 text-sm">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-4 w-4 text-success" />
                   <span className="font-medium">{presentCount}</span>
                 </div>
               )}
               {partialCount > 0 && (
                 <div className="flex items-center gap-1 text-sm">
-                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                  <AlertTriangle className="h-4 w-4 text-warning" />
                   <span className="font-medium">{partialCount}</span>
                 </div>
               )}
               {absentCount > 0 && (
                 <div className="flex items-center gap-1 text-sm">
-                  <XCircle className="h-4 w-4 text-red-500" />
+                  <XCircle className="h-4 w-4 text-destructive" />
                   <span className="font-medium">{absentCount}</span>
                 </div>
               )}
@@ -149,11 +149,11 @@ export function AttendanceSessionCard({
                     className={cn(
                       'text-xs',
                       record.status === 'present' &&
-                        'border-green-500 text-green-700 dark:text-green-400',
+                        'border-success text-success',
                       record.status === 'partial' &&
-                        'border-orange-500 text-orange-700 dark:text-orange-400',
+                        'border-warning text-warning',
                       record.status === 'absent' &&
-                        'border-red-500 text-red-700 dark:text-red-400',
+                        'border-destructive text-destructive',
                     )}
                   >
                     {member.name}
