@@ -254,7 +254,7 @@ export function AttendanceMembersManagement({
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="editName">
-                Name <span className="text-red-500">*</span>
+                Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="editName"

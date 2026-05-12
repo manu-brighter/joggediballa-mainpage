@@ -1,23 +1,15 @@
 # Self-Hosted File Upload Setup Guide
 
-Diese Anleitung erklärt, wie du den Datei-Upload auf deinem selbst gehosteten Server einrichtest.
-
-## Übersicht
-
-Die Website unterstützt zwei Upload-Modi:
-
-1. **Manus S3 Storage** (Standard) - Verwendet den integrierten Manus Storage-Proxy
-2. **Self-Hosted Storage** - Speichert Dateien lokal auf deinem Server
+Diese Anleitung erklärt, wie du den Datei-Upload auf deinem selbst gehosteten Server einrichtest. Die Anwendung schreibt Uploads auf lokale Disk und liefert sie via nginx aus — kein externer Storage-Provider.
 
 ## Self-Hosted Setup
 
 ### 1. Umgebungsvariablen konfigurieren
 
-Füge folgende Umgebungsvariablen zu deiner `.env` Datei hinzu:
+Füge folgende Umgebungsvariablen zu deiner `.env` Datei hinzu (vollständige Liste in `.env.example`):
 
 ```bash
 # Self-hosted file storage
-SELF_HOSTED_STORAGE=true
 UPLOAD_DIR=/var/www/joggediballa-mainpage/uploads
 PUBLIC_UPLOAD_URL=https://joggediballa.ch/uploads
 ```
@@ -164,8 +156,8 @@ tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa-mainpage/u
 
 ## Umgebungsvariablen Referenz
 
-| Variable              | Beschreibung                          | Beispiel                                 |
-| --------------------- | ------------------------------------- | ---------------------------------------- |
-| `SELF_HOSTED_STORAGE` | Aktiviert lokalen Speicher            | `true`                                   |
-| `UPLOAD_DIR`          | Absoluter Pfad zum Upload-Verzeichnis | `/var/www/joggediballa-mainpage/uploads` |
-| `PUBLIC_UPLOAD_URL`   | Öffentliche URL für Uploads           | `https://joggediballa.ch/uploads`        |
+| Variable            | Beschreibung                          | Beispiel                                 |
+| ------------------- | ------------------------------------- | ---------------------------------------- |
+| `UPLOAD_DIR`        | Absoluter Pfad zum Upload-Verzeichnis | `/var/www/joggediballa-mainpage/uploads` |
+| `PUBLIC_UPLOAD_URL` | Öffentliche URL für Uploads           | `https://joggediballa.ch/uploads`        |
+| `UPLOAD_MAX_BYTES`  | Optional. Max Dateigrösse in Bytes    | `15728640` (15 MB, Default)              |

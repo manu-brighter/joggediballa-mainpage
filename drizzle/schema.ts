@@ -8,8 +8,10 @@ import {
   boolean,
   bigint,
   unique,
+  uniqueIndex,
   date,
   index,
+  type AnyMySqlColumn,
 } from 'drizzle-orm/mysql-core';
 
 /**
@@ -21,6 +23,10 @@ export const users = mysqlTable('users', {
   openId: varchar('openId', { length: 64 }).notNull().unique(),
   name: text('name'),
   displayName: varchar('displayName', { length: 255 }), // Custom display name (editable)
+  // TODO (F-DB-010 / A-P2-04): add .unique() once a one-off
+  //   SELECT email, COUNT(*) FROM users GROUP BY email HAVING COUNT(*) > 1
+  // pre-check confirms zero duplicates on the live DB. Deferred from Phase 3c
+  // because UNIQUE index creation would fail mid-push if dupes exist.
   email: varchar('email', { length: 320 }),
   loginMethod: varchar('loginMethod', { length: 64 }),
   role: mysqlEnum('role', ['admin', 'maintainer', 'editor', 'user', 'visitor'])
@@ -41,16 +47,25 @@ export type InsertUser = typeof users.$inferInsert;
  * Shotcounter Teams - stores team names and their scores
  * Persists across years with year field
  */
-export const shotcounterTeams = mysqlTable('shotcounter_teams', {
-  id: int('id').autoincrement().primaryKey(),
-  name: varchar('name', { length: 100 }).notNull(),
-  score: int('score').default(0).notNull(),
-  year: int('year').notNull(), // Jahr für Persistenz
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
-  createdBy: int('createdBy').references(() => users.id),
-  deletedAt: timestamp('deletedAt'),
-});
+export const shotcounterTeams = mysqlTable(
+  'shotcounter_teams',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    name: varchar('name', { length: 100 }).notNull(),
+    score: int('score').default(0).notNull(),
+    year: int('year').notNull(), // Jahr für Persistenz
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
+    createdBy: int('createdBy').references(() => users.id),
+    deletedAt: timestamp('deletedAt'),
+  },
+  table => ({
+    yearDeletedIdx: index('idx_shotcounter_teams_year_deletedAt').on(
+      table.year,
+      table.deletedAt,
+    ),
+  }),
+);
 
 export type ShotcounterTeam = typeof shotcounterTeams.$inferSelect;
 export type InsertShotcounterTeam = typeof shotcounterTeams.$inferInsert;
@@ -58,20 +73,26 @@ export type InsertShotcounterTeam = typeof shotcounterTeams.$inferInsert;
 /**
  * Shotcounter Audit Log - tracks all score changes
  */
-export const shotcounterAuditLog = mysqlTable('shotcounter_audit_log', {
-  id: int('id').autoincrement().primaryKey(),
-  teamId: int('teamId')
-    .notNull()
-    .references(() => shotcounterTeams.id, { onDelete: 'cascade' }),
-  action: varchar('action', { length: 50 }).notNull(), // "add", "subtract", "reset", "create_team", "delete_team"
-  amount: int('amount'), // Betrag der Änderung (null bei create/delete)
-  previousScore: int('previousScore'),
-  newScore: int('newScore'),
-  performedBy: int('performedBy').references(() => users.id),
-  performedByName: varchar('performedByName', { length: 255 }), // Fallback wenn User gelöscht
-  timestamp: timestamp('timestamp').defaultNow().notNull(),
-  note: text('note'), // Optional: zusätzliche Notizen
-});
+export const shotcounterAuditLog = mysqlTable(
+  'shotcounter_audit_log',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    teamId: int('teamId')
+      .notNull()
+      .references(() => shotcounterTeams.id, { onDelete: 'cascade' }),
+    action: varchar('action', { length: 50 }).notNull(), // "add", "subtract", "reset", "create_team", "delete_team"
+    amount: int('amount'), // Betrag der Änderung (null bei create/delete)
+    previousScore: int('previousScore'),
+    newScore: int('newScore'),
+    performedBy: int('performedBy').references(() => users.id),
+    performedByName: varchar('performedByName', { length: 255 }), // Fallback wenn User gelöscht
+    timestamp: timestamp('timestamp').defaultNow().notNull(),
+    note: text('note'), // Optional: zusätzliche Notizen
+  },
+  table => ({
+    teamIdx: index('idx_shotcounter_audit_log_teamId').on(table.teamId),
+  }),
+);
 
 export type ShotcounterAuditLog = typeof shotcounterAuditLog.$inferSelect;
 export type InsertShotcounterAuditLog = typeof shotcounterAuditLog.$inferInsert;
@@ -79,18 +100,27 @@ export type InsertShotcounterAuditLog = typeof shotcounterAuditLog.$inferInsert;
 /**
  * Sponsors - stores sponsor information with logo and link
  */
-export const sponsors = mysqlTable('sponsors', {
-  id: int('id').autoincrement().primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  logoUrl: text('logoUrl'), // S3 URL (optional)
-  logoKey: text('logoKey'), // S3 Key (optional)
-  websiteUrl: text('websiteUrl'),
-  displayOrder: int('displayOrder').default(0).notNull(), // Sortierung
-  isActive: boolean('isActive').default(true).notNull(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
-  createdBy: int('createdBy').references(() => users.id),
-});
+export const sponsors = mysqlTable(
+  'sponsors',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
+    logoUrl: text('logoUrl'), // S3 URL (optional)
+    logoKey: text('logoKey'), // S3 Key (optional)
+    websiteUrl: text('websiteUrl'),
+    displayOrder: int('displayOrder').default(0).notNull(), // Sortierung
+    isActive: boolean('isActive').default(true).notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
+    createdBy: int('createdBy').references(() => users.id),
+  },
+  table => ({
+    activeOrderIdx: index('idx_sponsors_isActive_displayOrder').on(
+      table.isActive,
+      table.displayOrder,
+    ),
+  }),
+);
 
 export type Sponsor = typeof sponsors.$inferSelect;
 export type InsertSponsor = typeof sponsors.$inferInsert;
@@ -98,20 +128,36 @@ export type InsertSponsor = typeof sponsors.$inferInsert;
 /**
  * Events - stores club events
  */
-export const events = mysqlTable('events', {
-  id: int('id').autoincrement().primaryKey(),
-  title: varchar('title', { length: 255 }).notNull(),
-  description: text('description'),
-  eventDate: timestamp('eventDate').notNull(),
-  location: varchar('location', { length: 255 }),
-  eventUrl: text('eventUrl'), // Legacy: kept for migration compatibility
-  eventLinks: text('eventLinks'), // JSON array of {url, label} objects
-  thumbnailPhotoId: int('thumbnailPhotoId'), // Reference to photo used as thumbnail
-  isPublished: boolean('isPublished').default(false).notNull(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
-  createdBy: int('createdBy').references(() => users.id),
-});
+export const events = mysqlTable(
+  'events',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
+    eventDate: timestamp('eventDate').notNull(),
+    location: varchar('location', { length: 255 }),
+    eventUrl: text('eventUrl'), // Legacy: kept for migration compatibility
+    eventLinks: text('eventLinks'), // JSON array of {url, label} objects
+    // Reference to photo used as thumbnail. set null on delete so events
+    // outlive their thumbnail photo (cf. F-DB-017 / A-P2-07).
+    // Explicit AnyMySqlColumn annotation breaks the circular type between
+    // events.thumbnailPhotoId -> photos.id and photos.eventId -> events.id.
+    thumbnailPhotoId: int('thumbnailPhotoId').references(
+      (): AnyMySqlColumn => photos.id,
+      { onDelete: 'set null' },
+    ),
+    isPublished: boolean('isPublished').default(false).notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
+    createdBy: int('createdBy').references(() => users.id),
+  },
+  table => ({
+    publishedDateIdx: index('idx_events_isPublished_eventDate').on(
+      table.isPublished,
+      table.eventDate,
+    ),
+  }),
+);
 
 export type Event = typeof events.$inferSelect;
 export type InsertEvent = typeof events.$inferInsert;
@@ -119,22 +165,28 @@ export type InsertEvent = typeof events.$inferInsert;
 /**
  * Photos - stores event photos with metadata
  */
-export const photos = mysqlTable('photos', {
-  id: int('id').autoincrement().primaryKey(),
-  eventId: int('eventId').references(() => events.id, { onDelete: 'cascade' }),
-  title: varchar('title', { length: 255 }),
-  description: text('description'),
-  imageUrl: text('imageUrl').notNull(), // S3 URL - Original high-res image
-  imageKey: text('imageKey').notNull(), // S3 Key - Original high-res image
-  compressedUrl: text('compressedUrl'), // S3 URL - Compressed version for gallery (~2MB)
-  compressedKey: text('compressedKey'), // S3 Key - Compressed version
-  thumbnailUrl: text('thumbnailUrl'), // Optional: Event thumbnail (for event card)
-  thumbnailKey: text('thumbnailKey'),
-  displayOrder: int('displayOrder').default(0).notNull(),
-  isPublished: boolean('isPublished').default(true).notNull(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  uploadedBy: int('uploadedBy').references(() => users.id),
-});
+export const photos = mysqlTable(
+  'photos',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    eventId: int('eventId').references(() => events.id, { onDelete: 'cascade' }),
+    title: varchar('title', { length: 255 }),
+    description: text('description'),
+    imageUrl: text('imageUrl').notNull(), // S3 URL - Original high-res image
+    imageKey: text('imageKey').notNull(), // S3 Key - Original high-res image
+    compressedUrl: text('compressedUrl'), // S3 URL - Compressed version for gallery (~2MB)
+    compressedKey: text('compressedKey'), // S3 Key - Compressed version
+    thumbnailUrl: text('thumbnailUrl'), // Optional: Event thumbnail (for event card)
+    thumbnailKey: text('thumbnailKey'),
+    displayOrder: int('displayOrder').default(0).notNull(),
+    isPublished: boolean('isPublished').default(true).notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    uploadedBy: int('uploadedBy').references(() => users.id),
+  },
+  table => ({
+    eventIdx: index('idx_photos_eventId').on(table.eventId),
+  }),
+);
 
 export type Photo = typeof photos.$inferSelect;
 export type InsertPhoto = typeof photos.$inferInsert;
@@ -198,29 +250,40 @@ export type InsertContactSubmission = typeof contactSubmissions.$inferInsert;
 /**
  * Gönnermitglieder - Sponsor members with membership tracking
  */
-export const goennermitglieder = mysqlTable('goennermitglieder', {
-  id: int('id').autoincrement().primaryKey(),
-  firstName: varchar('firstName', { length: 100 }).notNull(),
-  lastName: varchar('lastName', { length: 100 }).notNull(),
-  street: varchar('street', { length: 255 }).notNull(),
-  houseNumber: varchar('houseNumber', { length: 20 }).notNull(),
-  zipCode: varchar('zipCode', { length: 10 }).notNull(),
-  city: varchar('city', { length: 100 }).notNull(),
-  email: varchar('email', { length: 320 }),
-  phone: varchar('phone', { length: 50 }),
-  membershipStartDate: timestamp('membershipStartDate').notNull(),
-  membershipEndDate: timestamp('membershipEndDate').notNull(), // Default: start + 1 year
-  notes: text('notes'),
-  isActive: boolean('isActive').default(true).notNull(),
-  paymentStatus: mysqlEnum('paymentStatus', ['paid', 'pending'])
-    .default('paid')
-    .notNull(), // Zahlungsstatus
-  paymentPendingSince: timestamp('paymentPendingSince'), // Datum wenn Zahlung noch aussteht
-  contributionAmount: int('contributionAmount').default(20).notNull(), // Gönnerbeitrag in CHF
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
-  createdBy: int('createdBy').references(() => users.id),
-});
+export const goennermitglieder = mysqlTable(
+  'goennermitglieder',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    firstName: varchar('firstName', { length: 100 }).notNull(),
+    lastName: varchar('lastName', { length: 100 }).notNull(),
+    street: varchar('street', { length: 255 }).notNull(),
+    houseNumber: varchar('houseNumber', { length: 20 }).notNull(),
+    zipCode: varchar('zipCode', { length: 10 }).notNull(),
+    city: varchar('city', { length: 100 }).notNull(),
+    email: varchar('email', { length: 320 }),
+    phone: varchar('phone', { length: 50 }),
+    membershipStartDate: timestamp('membershipStartDate').notNull(),
+    membershipEndDate: timestamp('membershipEndDate').notNull(), // Default: start + 1 year
+    notes: text('notes'),
+    isActive: boolean('isActive').default(true).notNull(),
+    paymentStatus: mysqlEnum('paymentStatus', ['paid', 'pending'])
+      .default('paid')
+      .notNull(), // Zahlungsstatus
+    paymentPendingSince: timestamp('paymentPendingSince'), // Datum wenn Zahlung noch aussteht
+    // TODO (F-DB-018 / DB-4): contributionAmount should be DECIMAL(10,2) for
+    // money. Deferred from Phase 3c — non-additive type change requires
+    // hand-written ALTER on the live DB.
+    contributionAmount: int('contributionAmount').default(20).notNull(), // Gönnerbeitrag in CHF
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
+    createdBy: int('createdBy').references(() => users.id),
+  },
+  table => ({
+    membershipEndIdx: index('idx_goennermitglieder_membershipEndDate').on(
+      table.membershipEndDate,
+    ),
+  }),
+);
 
 export type Goennermitglied = typeof goennermitglieder.$inferSelect;
 export type InsertGoennermitglied = typeof goennermitglieder.$inferInsert;
@@ -228,16 +291,23 @@ export type InsertGoennermitglied = typeof goennermitglieder.$inferInsert;
 /**
  * User Activity Log - tracks user logins, role changes, and admin actions
  */
-export const userActivityLog = mysqlTable('user_activity_log', {
-  id: int('id').autoincrement().primaryKey(),
-  userId: int('userId').references(() => users.id, { onDelete: 'set null' }),
-  userName: varchar('userName', { length: 255 }), // Fallback wenn User gelöscht
-  action: varchar('action', { length: 100 }).notNull(), // "login", "role_change", "admin_action"
-  details: text('details'), // JSON oder Text mit Details
-  ipAddress: varchar('ipAddress', { length: 45 }), // IPv4/IPv6
-  userAgent: text('userAgent'),
-  timestamp: timestamp('timestamp').defaultNow().notNull(),
-});
+export const userActivityLog = mysqlTable(
+  'user_activity_log',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    userId: int('userId').references(() => users.id, { onDelete: 'set null' }),
+    userName: varchar('userName', { length: 255 }), // Fallback wenn User gelöscht
+    action: varchar('action', { length: 100 }).notNull(), // "login", "role_change", "admin_action"
+    details: text('details'), // JSON oder Text mit Details
+    ipAddress: varchar('ipAddress', { length: 45 }), // IPv4/IPv6
+    userAgent: text('userAgent'),
+    timestamp: timestamp('timestamp').defaultNow().notNull(),
+  },
+  table => ({
+    userIdx: index('idx_user_activity_log_userId').on(table.userId),
+    timestampIdx: index('idx_user_activity_log_timestamp').on(table.timestamp),
+  }),
+);
 
 export type UserActivityLog = typeof userActivityLog.$inferSelect;
 export type InsertUserActivityLog = typeof userActivityLog.$inferInsert;
@@ -324,8 +394,12 @@ export const attendanceRecords = mysqlTable(
   'attendance_records',
   {
     id: int('id').autoincrement().primaryKey(),
-    sessionId: int('sessionId').notNull(),
-    memberId: int('memberId').notNull(),
+    sessionId: int('sessionId')
+      .notNull()
+      .references(() => attendanceSessions.id, { onDelete: 'cascade' }),
+    memberId: int('memberId')
+      .notNull()
+      .references(() => attendanceMembers.id, { onDelete: 'cascade' }),
     status: mysqlEnum('status', ['present', 'partial', 'absent'])
       .notNull()
       .default('absent'),

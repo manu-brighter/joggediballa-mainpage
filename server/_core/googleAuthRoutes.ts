@@ -1,75 +1,108 @@
-import type { Express, Request, Response, NextFunction } from 'express';
-import session from 'express-session';
+import type { Express, Request, Response } from 'express';
+import cookieSession from 'cookie-session';
 import { passport } from './googleAuth';
 import { SignJWT } from 'jose';
 import { COOKIE_NAME } from '../../shared/const';
 import { getSessionCookieOptions } from './cookies';
-
-const JWT_SECRET =
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production';
-const SESSION_SECRET = process.env.SESSION_SECRET || JWT_SECRET;
+import { ENV, getJwtSecretBytes } from './env';
 
 /**
- * Register Google OAuth routes
+ * Register Google OAuth routes.
  *
  * Routes:
- * - GET /api/auth/google - Initiates Google OAuth flow
- * - GET /api/auth/callback/google - Handles OAuth callback
- * - GET /api/auth/logout - Logs out the user
+ * - GET  /api/auth/google             — initiate OAuth flow
+ * - GET  /api/auth/callback/google    — OAuth callback
+ * - POST /api/auth/logout             — log out (POST per CSRF policy, A-P0-04)
+ *
+ * Sessions: we replaced the in-process `express-session` MemoryStore
+ * (F-SEC-018) with `cookie-session`, a signed, stateless cookie store. It only
+ * exists to satisfy `passport-google-oauth20`'s requirement for somewhere to
+ * stash the OAuth `state` parameter (A-P0-08). Authenticated sessions live in
+ * the JWT cookie (`COOKIE_NAME`), not in this cookie.
  */
 export function registerGoogleAuthRoutes(app: Express) {
-  // Session middleware (required for passport)
+  // Cookie-backed session ONLY for OAuth state (10 min lifetime). The signed
+  // secret is distinct from JWT_SECRET. Both are fail-fast validated in env.ts.
   app.use(
-    session({
-      secret: SESSION_SECRET,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      },
+    cookieSession({
+      name: 'oauth_state',
+      keys: [ENV.sessionSecret],
+      maxAge: 10 * 60 * 1000, // 10 minutes — OAuth flow only
+      httpOnly: true,
+      secure: ENV.isProduction,
+      sameSite: 'lax', // required: OAuth callback is a cross-site GET redirect
     }),
   );
 
-  // Initialize passport
+  // Shim required by passport: it calls req.session.regenerate / req.session.save
+  // (introduced in passport@0.7). cookie-session has neither, so we stub them.
+  app.use((req, _res, next) => {
+    const session = req.session as unknown as Record<string, unknown> | null;
+    if (session) {
+      if (typeof (session as { regenerate?: unknown }).regenerate !== 'function') {
+        (session as { regenerate: (cb: (err?: unknown) => void) => void }).regenerate =
+          cb => cb();
+      }
+      if (typeof (session as { save?: unknown }).save !== 'function') {
+        (session as { save: (cb: (err?: unknown) => void) => void }).save = cb =>
+          cb();
+      }
+    }
+    next();
+  });
+
   app.use(passport.initialize());
-  app.use(passport.session());
+  // passport.session() is intentionally omitted — JWT cookie is the source of
+  // truth for "is the user logged in". The cookie-session above only carries
+  // OAuth state across the redirect.
 
   /**
-   * Initiate Google OAuth flow
-   * Redirects user to Google login page
+   * Initiate Google OAuth flow.
+   * `state: true` lets passport-google-oauth20 generate & verify a CSRF state
+   * token automatically (stored in the cookie-session above).
    */
   app.get(
     '/api/auth/google',
-    passport.authenticate('google', {
-      scope: ['profile', 'email'],
-    }),
+    // passport-google-oauth20@2 types don't expose `state: true`, but the
+    // underlying OAuth2 strategy honors it. Cast through unknown to opt in.
+    passport.authenticate(
+      'google',
+      {
+        scope: ['profile', 'email'],
+        state: true,
+      } as unknown as { scope: string[] },
+    ),
   );
 
   /**
-   * Google OAuth callback
-   * Handles the redirect from Google after authentication
+   * Google OAuth callback.
    */
   app.get(
     '/api/auth/callback/google',
     passport.authenticate('google', {
       failureRedirect: '/login-failed',
-      session: false, // We'll use JWT instead of sessions
+      session: false, // we issue our own JWT below
     }),
     async (req: Request, res: Response) => {
       try {
-        const user = req.user as any;
+        const user = req.user as
+          | {
+              openId: string;
+              name?: string | null;
+              email?: string | null;
+              role: string;
+            }
+          | undefined;
 
         if (!user) {
           console.error('[Google OAuth] No user returned from passport');
           return res.redirect('/login-failed');
         }
 
-        // Create JWT token - must include openId, appId, and name for verifySession compatibility
+        // Create JWT - must include openId, appId, and name for verifySession compatibility.
         const token = await new SignJWT({
           openId: user.openId,
-          appId: 'google-oauth', // Required by verifySession
+          appId: 'google-oauth',
           name: user.name || '',
           email: user.email,
           role: user.role,
@@ -77,24 +110,20 @@ export function registerGoogleAuthRoutes(app: Express) {
           .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
           .setIssuedAt()
           .setExpirationTime('7d')
-          .sign(new TextEncoder().encode(JWT_SECRET));
+          .sign(getJwtSecretBytes());
 
-        // Set cookie with JWT
         const cookieOptions = getSessionCookieOptions(req);
         res.cookie(COOKIE_NAME, token, {
           ...cookieOptions,
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
-        // Redirect to the same origin (supports localhost dev and production)
-        const host = req.get('host') || 'localhost:3000';
-        const protocol =
-          req.headers['x-forwarded-proto'] || req.protocol || 'http';
-        const redirectUrl = `${protocol}://${host}/`;
         console.log(
           `[Google OAuth] Login successful: ${user.email} (role: ${user.role})`,
         );
-        res.redirect(redirectUrl);
+
+        // F-SEC-011: fixed-path redirect — no Host/X-Forwarded-Proto juggling.
+        res.redirect('/');
       } catch (error) {
         console.error('[Google OAuth] Error in callback:', error);
         res.redirect('/login-failed');
@@ -103,13 +132,14 @@ export function registerGoogleAuthRoutes(app: Express) {
   );
 
   /**
-   * Logout endpoint
-   * Clears the session cookie
+   * Logout — POST (A-P0-04 / F-SEC-005: state-changing endpoints must not be
+   * triggerable from a cross-site GET). We accept POST only; the client must
+   * be updated to POST instead of following a GET link.
    */
-  app.get('/api/auth/logout', (req: Request, res: Response) => {
+  app.post('/api/auth/logout', (req: Request, res: Response) => {
     const cookieOptions = getSessionCookieOptions(req);
     res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-    res.redirect('/');
+    res.status(200).json({ success: true });
   });
 
   console.log('[Google OAuth] Routes registered');

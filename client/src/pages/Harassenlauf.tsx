@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/components/SEO';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,7 @@ import {
   FileText,
   Download,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 const MotionDiv = motion.div;
 
@@ -47,13 +47,7 @@ const RULES_DETAILED = [
 ];
 
 export default function Harassenlauf() {
-  useSEO({
-    title: 'Harassenlauf Anmeldung – Jogge di Balla',
-    description:
-      'Melde dein Team für den Harassenlauf an! Max. 5er Teams, CHF 75.– Startgeld pro Team.',
-    noIndex: true,
-  });
-
+  const shouldReduceMotion = useReducedMotion();
   const [rulesOpen, setRulesOpen] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [notRobot, setNotRobot] = useState(false);
@@ -235,7 +229,7 @@ export default function Harassenlauf() {
           }}
         />
         <MotionDiv
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           className="relative z-10 text-center space-y-6 max-w-md"
         >
@@ -266,6 +260,11 @@ export default function Harassenlauf() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
+      <SEO
+        title="Harassenlauf Anmeldung – Jogge di Balla"
+        description="Melde dein Team für den Harassenlauf an! Max. 5er Teams, CHF 75.– Startgeld pro Team."
+        noIndex
+      />
       {/* Full page gradient background */}
       <div className="absolute inset-0 hero-gradient" />
       <div
@@ -287,7 +286,7 @@ export default function Harassenlauf() {
           <div className="container text-center space-y-4 max-w-3xl mx-auto">
             <div className="flex items-center justify-center gap-3">
               <MotionDiv
-                initial={{ opacity: 0, y: -20 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold"
               >
@@ -316,9 +315,9 @@ export default function Harassenlauf() {
             </div>
 
             <MotionDiv
-              initial={{ opacity: 0, y: 20 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: shouldReduceMotion ? 0 : 0.1 }}
               className="relative md:inline-block"
             >
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
@@ -347,9 +346,9 @@ export default function Harassenlauf() {
             </MotionDiv>
 
             <MotionDiv
-              initial={{ opacity: 0 }}
+              initial={shouldReduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: shouldReduceMotion ? 0 : 0.2 }}
               className="text-lg text-muted-foreground max-w-xl mx-auto"
             >
               Schnapp dir dein Team, schultert die Harasse und zeigt was ihr
@@ -391,8 +390,8 @@ export default function Harassenlauf() {
               className="w-full flex items-center justify-between p-4 rounded-2xl bg-card/80 backdrop-blur-sm border hover:border-primary/40 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center">
-                  <AlertTriangle className="h-5 w-5 text-orange-500" />
+                <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-warning" />
                 </div>
                 <div>
                   <p className="font-bold text-sm">Regeln</p>
@@ -417,10 +416,10 @@ export default function Harassenlauf() {
                   transition={{ duration: 0.3 }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-2 p-4 rounded-2xl bg-orange-500/5 border border-orange-500/20 space-y-2">
+                  <div className="mt-2 p-4 rounded-2xl bg-warning/5 border border-warning/20 space-y-2">
                     {RULES_DETAILED.map((rule, i) => (
                       <div key={i} className="flex items-start gap-3">
-                        <span className="text-orange-500 font-bold text-sm mt-0.5 shrink-0">
+                        <span className="text-warning font-bold text-sm mt-0.5 shrink-0">
                           {i + 1}.
                         </span>
                         <p className="text-sm text-foreground/80">{rule}</p>
@@ -640,7 +639,7 @@ export default function Harassenlauf() {
 
                             {wurstTotal > 0 && (
                               <div className="flex items-center justify-center gap-2 pt-2 border-t text-sm">
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                <CheckCircle2 className="h-4 w-4 text-success" />
                                 <span className="font-medium">
                                   Total: {wurstTotal} Würste bestellt
                                 </span>
@@ -686,8 +685,8 @@ export default function Harassenlauf() {
                   </div>
 
                   {/* Cancellation policy notice */}
-                  <div className="flex gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-muted-foreground">
-                    <Info className="h-4 w-4 mt-0.5 shrink-0 text-amber-500/70" />
+                  <div className="flex gap-3 rounded-lg border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-muted-foreground">
+                    <Info className="h-4 w-4 mt-0.5 shrink-0 text-warning/70" />
                     <p>
                       <span className="font-medium text-foreground">
                         Stornierungs&shy;hinweis:

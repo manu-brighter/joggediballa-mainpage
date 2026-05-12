@@ -1,24 +1,21 @@
 /**
  * generate-thumbnails.ts
  *
- * Einmaliges Migrations-Script: Generiert Thumbnails für alle bestehenden Fotos
- * die noch kein thumbnailUrl haben.
+ * One-shot migration script: generates 400px JPEG thumbnails for every photo
+ * row that still has a NULL thumbnailUrl.
  *
- * Funktionsweise:
- * 1. Alle Fotos aus der DB laden die kein thumbnailUrl haben
- * 2. Für jedes Foto: compressedUrl oder imageUrl herunterladen
- * 3. Mit sharp auf 400px verkleinern (JPEG q60)
- * 4. Thumbnail in Storage hochladen (self-hosted oder S3)
- * 5. DB-Eintrag mit thumbnailUrl und thumbnailKey updaten
+ * Pipeline:
+ *   DB photos lacking thumbnailUrl
+ *     → download compressedUrl|imageUrl
+ *     → sharp resize 400px / JPEG q60
+ *     → write to UPLOAD_DIR/events/thumbnails/<nanoid>.jpg
+ *     → UPDATE photos SET thumbnailUrl, thumbnailKey
  *
- * Ausführung auf dem Server:
+ * Run on the server:
  *   cd /var/www/joggediballa-mainpage
- *   npx tsx scripts/generate-thumbnails.ts
- *
- * Oder mit pnpm:
  *   pnpm tsx scripts/generate-thumbnails.ts
  *
- * Umgebungsvariablen werden aus .env geladen (dotenv).
+ * Env vars (loaded via dotenv): DATABASE_URL, UPLOAD_DIR, PUBLIC_UPLOAD_URL.
  */
 
 import 'dotenv/config';
@@ -26,72 +23,29 @@ import sharp from 'sharp';
 import { drizzle } from 'drizzle-orm/mysql2';
 import { eq, isNull } from 'drizzle-orm';
 import { photos } from '../drizzle/schema.js';
-import * as fs from 'fs';
+import { promises as fs } from 'fs';
 import * as path from 'path';
 import { nanoid } from 'nanoid';
 
 // ---------------------------------------------------------------------------
-// Storage helpers (copied/simplified from server/storage.ts to be standalone)
+// Storage helper — writes to self-hosted disk (mirrors server/storage.ts).
 // ---------------------------------------------------------------------------
-
-function isSelfHosted(): boolean {
-  return process.env.SELF_HOSTED_STORAGE === 'true';
-}
-
-function getSelfHostedConfig() {
-  const uploadDir =
-    process.env.UPLOAD_DIR || '/var/www/joggediballa-mainpage/uploads';
-  const publicUrl =
-    process.env.PUBLIC_UPLOAD_URL || 'https://joggediballa.ch/uploads';
-  return { uploadDir, publicUrl };
-}
 
 async function storagePut(
   relKey: string,
   data: Buffer,
-  contentType = 'image/jpeg',
 ): Promise<{ key: string; url: string }> {
+  const uploadDir =
+    process.env.UPLOAD_DIR || '/var/www/joggediballa-mainpage/uploads';
+  const publicUrl =
+    process.env.PUBLIC_UPLOAD_URL || 'https://joggediballa.ch/uploads';
+
   const key = relKey.replace(/^\/+/, '');
-
-  if (isSelfHosted()) {
-    const { uploadDir, publicUrl } = getSelfHostedConfig();
-    const filePath = path.join(uploadDir, key);
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(filePath, data);
-    const url = `${publicUrl.replace(/\/+$/, '')}/${key}`;
-    return { key, url };
-  } else {
-    // S3 via Manus forge proxy
-    const baseUrl = (process.env.BUILT_IN_FORGE_API_URL || '').replace(
-      /\/+$/,
-      '',
-    );
-    const apiKey = process.env.BUILT_IN_FORGE_API_KEY || '';
-    if (!baseUrl || !apiKey) throw new Error('S3 credentials missing');
-
-    const uploadUrl = new URL('v1/storage/upload', baseUrl + '/');
-    uploadUrl.searchParams.set('path', key);
-
-    const blob = new Blob([new Uint8Array(data)], { type: contentType });
-    const form = new FormData();
-    form.append('file', blob, key.split('/').pop() ?? 'thumb.jpg');
-
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: form,
-    });
-
-    if (!response.ok) {
-      const msg = await response.text().catch(() => response.statusText);
-      throw new Error(`Upload failed (${response.status}): ${msg}`);
-    }
-    const url = (await response.json()).url;
-    return { key, url };
-  }
+  const filePath = path.join(uploadDir, key);
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, data);
+  const url = `${publicUrl.replace(/\/+$/, '')}/${key}`;
+  return { key, url };
 }
 
 // ---------------------------------------------------------------------------
@@ -170,7 +124,6 @@ async function main() {
       const { url: thumbnailUrl, key: storedKey } = await storagePut(
         thumbnailKey,
         thumbnailBuffer,
-        'image/jpeg',
       );
 
       // 4. Update database

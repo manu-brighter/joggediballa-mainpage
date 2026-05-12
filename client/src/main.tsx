@@ -5,10 +5,19 @@ import { httpBatchStreamLink, TRPCClientError } from '@trpc/client';
 import { createRoot } from 'react-dom/client';
 import superjson from 'superjson';
 import App from './App';
-// getLoginUrl removed - no auto-redirect to login
+// Self-hosted Inter variable font (no Google Fonts CDN → no third-party
+// data transfer, simpler revDSG/GDPR posture).
+import '@fontsource-variable/inter';
 import './index.css';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Log errors but don't auto-redirect to login
 // Users should be able to browse the public website without authentication
@@ -43,6 +52,9 @@ const trpcClient = trpc.createClient({
     httpBatchStreamLink({
       url: '/api/trpc',
       transformer: superjson,
+      // Phase 3b CSRF guard: the server accepts /api/* non-GET requests when
+      // either the Origin matches APP_ORIGIN OR this header is present.
+      headers: () => ({ 'x-trpc-source': 'web' }),
       fetch(input, init) {
         return globalThis.fetch(input, {
           ...(init ?? {}),

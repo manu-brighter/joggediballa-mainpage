@@ -20,9 +20,9 @@ import {
   Twitch,
   Zap,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/components/SEO';
 import { useNavVisibility } from '@/hooks/useNavVisibility';
 
 const MotionDiv = motion.div;
@@ -31,6 +31,7 @@ export default function Home() {
   const { data: events = [] } = trpc.events.list.useQuery();
   const [, navigate] = useLocation();
   const { theme, resolvedTheme } = useTheme();
+  const shouldReduceMotion = useReducedMotion();
 
   const nextEvent = [...events]
     .sort(
@@ -58,17 +59,6 @@ export default function Home() {
   const TEMP_BUTTON_URL = '/harassenlauf';
   const TEMP_BUTTON_TEXT = 'Harassenlauf Anmeldung';
 
-  // SEO Meta Tags
-  useSEO({
-    title: 'Jogge di Balla - Event- und Kulturverein seit 2022',
-    description:
-      'Event- und Kulturverein aus Brislach. Wir bringen Menschen zusammen für unvergessliche Momente, grossartige Events und jede Menge Spass! Shotcounter, Gönnermitglieder, DJ & Fotografie Services.',
-    keywords:
-      'Jogge di Balla, Verein, Events, Brislach, Baselland, Laufental, Shotcounter, Party, Community, DJ, Fotografie, Vermietung, Beerpong',
-    ogUrl: 'https://joggediballa.ch/',
-    ogImage: 'https://joggediballa.ch/JoggediBalla-Logo.PNG',
-  });
-
   // Determine which logo to show based on theme
   const isDark =
     resolvedTheme === 'dark' ||
@@ -80,6 +70,13 @@ export default function Home() {
 
   return (
     <div className="space-y-0">
+      <SEO
+        title="Jogge di Balla - Event- und Kulturverein seit 2022"
+        description="Event- und Kulturverein aus Brislach. Wir bringen Menschen zusammen für unvergessliche Momente, grossartige Events und jede Menge Spass! Shotcounter, Gönnermitglieder, DJ & Fotografie Services."
+        keywords="Jogge di Balla, Verein, Events, Brislach, Baselland, Laufental, Shotcounter, Party, Community, DJ, Fotografie, Vermietung, Beerpong"
+        ogUrl="https://joggediballa.ch/"
+        ogImage="https://joggediballa.ch/JoggediBalla-Logo.PNG"
+      />
       {/* Hero Section - Bold and Modern */}
       <section className="relative min-h-[85vh] flex items-center overflow-hidden pt-20 md:pt-0">
         {/* Animated Background */}
@@ -103,9 +100,9 @@ export default function Home() {
         <div className="container relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             <MotionDiv
-              initial={{ opacity: 0, y: 30 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.6 }}
               className="space-y-6 text-center lg:text-left"
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
@@ -169,9 +166,9 @@ export default function Home() {
             </MotionDiv>
 
             <MotionDiv
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.6, delay: shouldReduceMotion ? 0 : 0.2 }}
               className="flex justify-center lg:justify-end"
             >
               <div className="relative">
@@ -473,7 +470,7 @@ export default function Home() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="btn-animate bg-[#9146FF]/10 border-[#9146FF]/30 hover:bg-[#9146FF]/20 text-[#9146FF]"
+                  className="btn-animate bg-twitch/10 border-twitch/30 hover:bg-twitch/20 text-twitch"
                 >
                   <Twitch className="h-5 w-5 mr-2" />
                   Twitch

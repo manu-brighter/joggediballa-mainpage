@@ -38,8 +38,8 @@ export default function MaintenancePage() {
 
         <Card className="border-2 shadow-xl">
           <CardHeader className="text-center pb-2">
-            <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
-              <Wrench className="h-8 w-8 text-orange-500" />
+            <div className="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
+              <Wrench className="h-8 w-8 text-warning" />
             </div>
             <CardTitle className="text-2xl">Wartungsmodus</CardTitle>
             <CardDescription className="text-base">

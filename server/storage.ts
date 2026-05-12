@@ -1,11 +1,8 @@
-// Self-hosted file storage. Earlier versions branched on a SELF_HOSTED_STORAGE
-// env-var to choose between local disk and a Manus S3 proxy (gated by the
-// BUILT_IN_FORGE_API_URL/KEY pair). The S3 path was never used in production
-// and has been removed; this module now writes/reads/deletes files on local
-// disk under UPLOAD_DIR (default /var/www/joggediballa-mainpage/uploads),
-// which nginx serves at PUBLIC_UPLOAD_URL/<key> via the /uploads/ location.
+// Self-hosted file storage. Writes/reads/deletes files on local disk under
+// UPLOAD_DIR (default /var/www/joggediballa-mainpage/uploads), which nginx
+// serves at PUBLIC_UPLOAD_URL/<key> via the /uploads/ location.
 
-import * as fs from 'fs';
+import { promises as fs } from 'fs';
 import * as path from 'path';
 
 type StorageConfig = { uploadDir: string; publicUrl: string };
@@ -26,6 +23,10 @@ function buildPublicUrl(publicUrl: string, key: string): string {
   return `${publicUrl.replace(/\/+$/, '')}/${key}`;
 }
 
+// B-P2-02 / F-BE-020: fs.promises (async) variants so request handlers don't
+// block the event loop on disk I/O. mkdir({recursive: true}) is idempotent so
+// we no longer need an existsSync probe before it. unlink is wrapped in a
+// try/catch and we tolerate ENOENT (already gone) rather than stat-then-act.
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
@@ -39,13 +40,11 @@ export async function storagePut(
   const filePath = path.join(uploadDir, key);
 
   const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  await fs.mkdir(dir, { recursive: true });
 
   const buffer =
     typeof data === 'string' ? Buffer.from(data) : Buffer.from(data);
-  fs.writeFileSync(filePath, buffer);
+  await fs.writeFile(filePath, buffer);
 
   return { key, url: buildPublicUrl(publicUrl, key) };
 }
@@ -64,20 +63,20 @@ export async function storageDelete(relKey: string): Promise<void> {
     return;
   }
 
-  try {
-    const { uploadDir } = getConfig();
-    const key = normalizeKey(relKey);
-    const filePath = path.join(uploadDir, key);
+  const { uploadDir } = getConfig();
+  const key = normalizeKey(relKey);
+  const filePath = path.join(uploadDir, key);
 
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log(`[Storage] Deleted local file: ${filePath}`);
-    } else {
-      console.warn(`[Storage] File not found for deletion: ${filePath}`);
+  try {
+    await fs.unlink(filePath);
+  } catch (error: unknown) {
+    // ENOENT (file already gone) is benign — treat as success silently.
+    const code = (error as NodeJS.ErrnoException | undefined)?.code;
+    if (code === 'ENOENT') {
+      return;
     }
-  } catch (error) {
     // Don't throw — we don't want to fail the entire delete operation if
-    // storage cleanup fails (e.g. file already gone, permissions glitch).
+    // storage cleanup fails (e.g. permissions glitch).
     console.error(`[Storage] Failed to delete file ${relKey}:`, error);
   }
 }
