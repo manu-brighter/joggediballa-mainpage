@@ -1,7 +1,50 @@
 import { Link } from 'wouter';
-import { Instagram, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { getLoginUrl } from '@/const';
 import { useAuth } from '@/_core/hooks/useAuth';
+
+// Inline copy of the lucide Instagram icon with a gradient stroke instead
+// of currentColor — needed because bg-clip:text breaks SVG icons that
+// inherit text-color.
+function InstagramGradientIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="footer-insta-gradient" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="oklch(0.61 0.24 305)" />
+          <stop offset="1" stopColor="oklch(0.65 0.23 6)" />
+        </linearGradient>
+      </defs>
+      <rect
+        x="2"
+        y="2"
+        width="20"
+        height="20"
+        rx="5"
+        stroke="url(#footer-insta-gradient)"
+      />
+      <path
+        d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"
+        stroke="url(#footer-insta-gradient)"
+      />
+      <line
+        x1="17.5"
+        y1="6.5"
+        x2="17.51"
+        y2="6.5"
+        stroke="url(#footer-insta-gradient)"
+      />
+    </svg>
+  );
+}
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -41,9 +84,9 @@ export function Footer() {
               href="https://instagram.com/joggediballa"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-muted-foreground transition-opacity hover:opacity-80"
+              className="inline-flex items-center gap-1 transition-opacity hover:opacity-80"
             >
-              <Instagram className="h-3.5 w-3.5" />
+              <InstagramGradientIcon className="h-3.5 w-3.5 shrink-0" />
               <span className="gradient-text-instagram font-medium">
                 @joggediballa
               </span>
