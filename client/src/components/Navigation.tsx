@@ -42,11 +42,21 @@ const ALWAYS_VISIBLE = ['/', '/team', '/contact'];
 
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { user, isAuthenticated, loading } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const utils = trpc.useUtils();
   const logoutMutation = trpc.auth.logout.useMutation();
   const [location, setLocation] = useLocation();
+
+  // Close both nav menus whenever the route changes. Belt-and-braces:
+  // burger menu items already call setMobileMenuOpen(false), but profile
+  // dropdown links inside Radix DropdownMenuItem only close the dropdown
+  // itself — they used to leave the burger open behind them.
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setProfileMenuOpen(false);
+  }, [location]);
 
   // Scroll to top on navigation. Instant rather than smooth so it naturally
   // respects prefers-reduced-motion and never fights anchor scrolling.
@@ -268,7 +278,16 @@ export function Navigation() {
             {!loading && (
               <>
                 {isAuthenticated && user ? (
-                  <DropdownMenu>
+                  <DropdownMenu
+                    open={profileMenuOpen}
+                    onOpenChange={open => {
+                      setProfileMenuOpen(open);
+                      // Mutually exclusive with the burger menu: opening the
+                      // profile dropdown auto-closes the burger so they don't
+                      // stack on top of each other on mobile.
+                      if (open) setMobileMenuOpen(false);
+                    }}
+                  >
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
@@ -376,7 +395,11 @@ export function Navigation() {
               variant="ghost"
               size="icon"
               className="md:hidden h-9 w-9"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => {
+                setMobileMenuOpen(open => !open);
+                // Mutually exclusive with the profile dropdown.
+                setProfileMenuOpen(false);
+              }}
             >
               {mobileMenuOpen ? (
                 <X className="h-5 w-5" />

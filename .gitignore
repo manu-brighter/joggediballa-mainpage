@@ -120,3 +120,5 @@ drizzle/meta/
 test-results/
 playwright-report/
 playwright/.cache/
+# Playwright MCP plugin scratch dir (interactive browser screenshots)
+.playwright-mcp/
