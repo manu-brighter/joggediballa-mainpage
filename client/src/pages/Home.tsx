@@ -343,7 +343,7 @@ export default function Home() {
                 </h2>
               </div>
 
-              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-coral/5 overflow-hidden">
+              <Card className="border-2 border-primary/30 bg-card overflow-hidden">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl md:text-3xl">
                     {nextEvent.title}
@@ -418,7 +418,7 @@ export default function Home() {
       </section>
 
       {/* Gönnermitgliedschaft Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/5 to-coral/5">
+      <section className="py-20 bg-coral/5">
         <div className="container">
           <MotionDiv
             initial={{ opacity: 0, y: 20 }}
@@ -475,9 +475,8 @@ export default function Home() {
       </section>
 
       {/* Social Media Section */}
-      <section className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-coral/10 via-background to-primary/10" />
-        <div className="container relative z-10">
+      <section className="py-20 bg-muted/30">
+        <div className="container">
           <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
