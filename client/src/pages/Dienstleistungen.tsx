@@ -158,7 +158,7 @@ export default function Dienstleistungen() {
       icon: <Music className="h-6 w-6" />,
       title: 'DJ',
       description:
-        'Professionelle DJ-Services für jeden Anlass. Unser Revisor Jan legt an unseren Events Musik auf bis die Bude bebt.\n\ \n\Ausserhalb des Vereins selbstständig nebenbei als DJ tätig und offen für Anfragen.',
+        'Unser Revisor Jan legt an unseren Events Musik auf, bis die Bude bebt.\n\nAusserhalb des Vereins selbstständig nebenbei als DJ tätig und offen für Anfragen.',
       person: {
         role: 'DJ & Revisor',
         name: 'Jan',
@@ -175,7 +175,7 @@ export default function Dienstleistungen() {
       icon: <Camera className="h-6 w-6" />,
       title: 'Fotografie',
       description:
-        "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Schau dir gerne den 'Events & Fotos'-Tab oder mein persönliches Portfolio an, um dir ein Eindruck zu verschaffen.\n\ \n\Ausserhalb des Vereins selbstständig nebenbei als Fotograf tätig und offen für Anfragen.",
+        "Event-Fotografie, die deine besonderen Momente festhält. Schau im 'Events & Fotos'-Tab oder im Portfolio rein.\n\nAusserhalb des Vereins selbstständig nebenbei als Fotograf tätig und offen für Anfragen.",
       person: {
         role: 'Social Media & Vize',
         name: 'Manu',

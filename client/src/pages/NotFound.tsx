@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, Home } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { AlertCircle, Home, Mail } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
 
 export default function NotFound() {
   const [, setLocation] = useLocation();
@@ -45,6 +45,12 @@ export default function NotFound() {
             <Button onClick={handleGoHome}>
               <Home className="w-4 h-4 mr-2" aria-hidden="true" />
               Zurück zur Startseite
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/contact">
+                <Mail className="w-4 h-4 mr-2" aria-hidden="true" />
+                Schreib uns
+              </Link>
             </Button>
           </div>
         </CardContent>
