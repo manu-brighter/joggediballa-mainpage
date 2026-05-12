@@ -217,8 +217,8 @@ export default function Sponsors() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-secondary/20 to-secondary/5 mb-4">
-          <Heart className="h-10 w-10 text-secondary" />
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-coral/20 to-coral/5 mb-4">
+          <Heart className="h-10 w-10 text-coral" />
         </div>
         <h1 className="text-4xl md:text-5xl font-black">
           <span className="gradient-text">Unsere Sponsoren</span>
@@ -480,10 +480,10 @@ export default function Sponsors() {
         transition={{ delay: 0.3 }}
         className="mt-12"
       >
-        <Card className="bg-gradient-to-br from-primary/5 via-secondary/5 to-primary/5 border-primary/20 overflow-hidden">
+        <Card className="bg-gradient-to-br from-primary/5 via-coral/5 to-primary/5 border-primary/20 overflow-hidden">
           <CardContent className="p-8">
             <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-coral/20">
                 <Heart className="h-8 w-8 text-primary" />
               </div>
               <div>
@@ -526,7 +526,7 @@ export default function Sponsors() {
                 </div>
 
                 {/* Premium Package */}
-                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl p-6 border-2 border-primary/30 hover:border-primary/50 transition-all relative">
+                <div className="bg-gradient-to-br from-primary/10 to-coral/10 rounded-xl p-6 border-2 border-primary/30 hover:border-primary/50 transition-all relative">
                   <div className="absolute -top-3 right-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
                     Empfohlen
                   </div>

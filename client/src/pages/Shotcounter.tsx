@@ -440,7 +440,7 @@ export default function Shotcounter() {
                 className={cn(
                   'rounded-lg border transition-all duration-300',
                   index === 0
-                    ? 'bg-gradient-to-r from-primary/20 to-secondary/20 border-primary'
+                    ? 'bg-gradient-to-r from-primary/20 to-coral/20 border-primary'
                     : 'bg-card/50 border-border',
                 )}
                 style={{
@@ -535,7 +535,7 @@ export default function Shotcounter() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-secondary/5 overflow-hidden">
+        <Card className="border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-coral/5 overflow-hidden">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -667,7 +667,7 @@ export default function Shotcounter() {
                 className={cn(
                   'p-4 md:p-6 rounded-xl border-2 transition-all duration-300',
                   index === 0
-                    ? 'bg-gradient-to-r from-primary/10 to-secondary/10 border-primary shadow-lg shadow-primary/10'
+                    ? 'bg-gradient-to-r from-primary/10 to-coral/10 border-primary shadow-lg shadow-primary/10'
                     : 'bg-card border-border hover:border-muted-foreground/30',
                 )}
               >

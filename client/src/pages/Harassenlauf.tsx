@@ -278,7 +278,7 @@ export default function Harassenlauf() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.55_0.14_195_/_0.15),transparent_50%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,oklch(0.68_0.18_18_/_0.1),transparent_50%)]" />
       <div className="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-20 right-10 w-40 h-40 bg-secondary/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      <div className="absolute bottom-20 right-10 w-40 h-40 bg-coral/10 rounded-full blur-3xl animate-pulse delay-1000" />
 
       <div className="relative z-10" translate="no">
         {/* Hero Banner */}

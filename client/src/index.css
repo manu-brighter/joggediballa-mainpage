@@ -3,38 +3,130 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================================================
+ * DESIGN TOKENS — three-layer architecture
+ * ============================================================================
+ *
+ * Layer 1  PRIMITIVES         raw color scales (--teal-500, --coral-500, ...)
+ *                             never used directly in component classes; only
+ *                             as the source of Layer 2 mappings.
+ *
+ * Layer 2  SEMANTIC TOKENS    shadcn-style intent names (--primary, --muted,
+ *                             --destructive, ...) plus brand-extra slots
+ *                             (--coral, --brand, --twitch). Component CSS
+ *                             and Tailwind utilities should always go through
+ *                             this layer.
+ *
+ * Layer 3  TAILWIND THEME     @theme inline block exposes Layer 2 as
+ *                             `text-*`, `bg-*`, etc. utility classes.
+ *
+ * Convention recap (see client/src/CLAUDE.md):
+ *   - `bg-primary` / `text-primary`  → main brand color, teal
+ *   - `bg-coral`   / `text-coral`    → secondary brand accent, coral
+ *   - `bg-secondary` / `text-secondary` → muted neutral (shadcn UI default)
+ *   - `bg-accent`  / `text-accent`   → subtle hover/highlight, neutral
+ *   - `bg-muted`   / `text-muted-foreground` → de-emphasised surfaces / labels
+ *   - `bg-destructive` / `bg-warning` / `bg-success` → status colors
+ * ============================================================================
+ */
+
+/* ---------------------------------------------------------------------------
+ * LAYER 1: PRIMITIVES (light and dark share these)
+ * --------------------------------------------------------------------------- */
+:root {
+  /* Brand — teal (primary) */
+  --teal-50:  oklch(0.98 0.015 195);
+  --teal-100: oklch(0.95 0.030 195);
+  --teal-200: oklch(0.90 0.060 195);
+  --teal-300: oklch(0.82 0.090 195);
+  --teal-400: oklch(0.70 0.120 195);
+  --teal-500: oklch(0.55 0.140 195); /* primary baseline */
+  --teal-600: oklch(0.48 0.130 195);
+  --teal-700: oklch(0.40 0.110 195);
+  --teal-800: oklch(0.32 0.090 195);
+  --teal-900: oklch(0.24 0.060 195);
+
+  /* Brand — coral (secondary accent) */
+  --coral-50:  oklch(0.97 0.020 18);
+  --coral-100: oklch(0.94 0.040 18);
+  --coral-200: oklch(0.88 0.080 18);
+  --coral-300: oklch(0.80 0.120 18);
+  --coral-400: oklch(0.74 0.160 18);
+  --coral-500: oklch(0.68 0.180 18); /* coral baseline */
+  --coral-600: oklch(0.60 0.180 18);
+  --coral-700: oklch(0.50 0.160 18);
+  --coral-800: oklch(0.40 0.130 18);
+  --coral-900: oklch(0.30 0.100 18);
+
+  /* Neutral — slightly cool, blue-grey */
+  --neutral-0:    oklch(1.00 0.000 0);
+  --neutral-50:   oklch(0.99 0.002 250);
+  --neutral-100:  oklch(0.96 0.005 250);
+  --neutral-200:  oklch(0.93 0.008 250);
+  --neutral-300:  oklch(0.85 0.010 250);
+  --neutral-400:  oklch(0.70 0.015 260);
+  --neutral-500:  oklch(0.55 0.020 260);
+  --neutral-600:  oklch(0.45 0.020 260);
+  --neutral-700:  oklch(0.32 0.015 260);
+  --neutral-800:  oklch(0.22 0.015 260);
+  --neutral-900:  oklch(0.16 0.015 260);
+  --neutral-950:  oklch(0.13 0.015 260);
+
+  /* External-brand exact (Twitch logo color must match Twitch spec) */
+  --twitch-light: #9146ff;
+  --twitch-dark:  #a970ff;
+}
+
+/* ---------------------------------------------------------------------------
+ * LAYER 3: TAILWIND THEME — exposes Layer 2 (defined further down per mode)
+ * --------------------------------------------------------------------------- */
 @theme inline {
   --font-sans:
     'Inter Variable', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, sans-serif;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Surfaces */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Actionable */
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
+  /* Status */
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  /* Brand accents (in addition to --primary which is teal) */
+  --color-coral: var(--coral);
+  --color-coral-foreground: var(--coral-foreground);
+  --color-brand: var(--brand);
+  --color-teal: var(--teal);
+  --color-twitch: var(--twitch);
+
+  /* Sidebar — typically the same as the base palette, named for clarity */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -43,129 +135,135 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  /* Custom colors */
-  --color-coral: var(--coral);
-  --color-teal: var(--teal);
-  --color-brand: var(--brand);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-twitch: var(--twitch);
+
+  /* Charts (recharts) */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 }
 
+/* ---------------------------------------------------------------------------
+ * LAYER 2: SEMANTIC TOKENS (light mode)
+ * --------------------------------------------------------------------------- */
 :root {
-  /* Jogge di Balla Brand Colors */
-  --teal: oklch(0.55 0.14 195);
-  --coral: oklch(0.68 0.18 18);
-  --brand: oklch(0.55 0.14 195); /* alias for `--primary` teal — usable as `text-brand` */
-  --twitch: #9146ff;
+  --radius: 0.75rem;
 
-  /* Primary - Teal from logo */
-  --primary: oklch(0.55 0.14 195);
-  --primary-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.55 0.14 195);
-  --sidebar-primary-foreground: oklch(1 0 0);
+  /* Surfaces */
+  --background: var(--neutral-50);
+  --foreground: var(--neutral-950);
+  --card: var(--neutral-0);
+  --card-foreground: var(--neutral-950);
+  --popover: var(--neutral-0);
+  --popover-foreground: var(--neutral-950);
+  --muted: var(--neutral-100);
+  --muted-foreground: var(--neutral-500);
+  --border: var(--neutral-200);
+  --input: var(--neutral-200);
+  --ring: var(--teal-500);
 
-  /* Secondary - Coral from logo */
-  --secondary: oklch(0.68 0.18 18);
-  --secondary-foreground: oklch(1 0 0);
-  --accent: oklch(0.68 0.18 18);
-  --accent-foreground: oklch(1 0 0);
+  /* Actionable */
+  --primary: var(--teal-500);
+  --primary-foreground: var(--neutral-0);
+  /* secondary / accent are intentionally NEUTRAL — shadcn primitives
+   * (Button variant=secondary, dropdown hover, command active-state, ...)
+   * expect a subtle non-brand backdrop. Use --coral for the second brand
+   * color instead. */
+  --secondary: var(--neutral-100);
+  --secondary-foreground: var(--neutral-950);
+  --accent: var(--neutral-100);
+  --accent-foreground: var(--neutral-950);
 
-  /* Semantic colors */
-  --warning: oklch(0.8 0.15 85);
+  /* Status */
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: var(--neutral-0);
+  --warning: oklch(0.80 0.15 85);
   --warning-foreground: oklch(0.25 0.05 85);
   --success: oklch(0.65 0.15 145);
-  --success-foreground: oklch(1 0 0);
+  --success-foreground: var(--neutral-0);
 
-  /* Chart colors */
-  --chart-1: oklch(0.55 0.14 195);
-  --chart-2: oklch(0.68 0.18 18);
+  /* Brand accents */
+  --teal: var(--teal-500);
+  --brand: var(--teal-500); /* alias of --primary */
+  --coral: var(--coral-500);
+  --coral-foreground: var(--neutral-0);
+  --twitch: var(--twitch-light);
+
+  /* Sidebar */
+  --sidebar: var(--neutral-50);
+  --sidebar-foreground: var(--neutral-950);
+  --sidebar-primary: var(--teal-500);
+  --sidebar-primary-foreground: var(--neutral-0);
+  --sidebar-accent: var(--neutral-100);
+  --sidebar-accent-foreground: var(--neutral-950);
+  --sidebar-border: var(--neutral-200);
+  --sidebar-ring: var(--teal-500);
+
+  /* Charts */
+  --chart-1: var(--teal-500);
+  --chart-2: var(--coral-500);
   --chart-3: oklch(0.65 0.12 200);
   --chart-4: oklch(0.45 0.12 200);
   --chart-5: oklch(0.78 0.15 20);
-
-  /* Base */
-  --radius: 0.75rem;
-  --background: oklch(0.99 0.002 250);
-  --foreground: oklch(0.15 0.01 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.01 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.01 260);
-  --muted: oklch(0.96 0.005 250);
-  --muted-foreground: oklch(0.5 0.02 260);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.9 0.01 250);
-  --input: oklch(0.9 0.01 250);
-  --ring: oklch(0.55 0.14 195);
-  --sidebar: oklch(0.98 0.002 250);
-  --sidebar-foreground: oklch(0.15 0.01 260);
-  --sidebar-accent: oklch(0.96 0.005 250);
-  --sidebar-accent-foreground: oklch(0.15 0.01 260);
-  --sidebar-border: oklch(0.9 0.01 250);
-  --sidebar-ring: oklch(0.55 0.14 195);
 }
 
+/* ---------------------------------------------------------------------------
+ * LAYER 2: SEMANTIC TOKENS (dark mode)
+ * Primitives shift one step lighter so contrast against neutral-950 works.
+ * --------------------------------------------------------------------------- */
 .dark {
-  /* Jogge di Balla Brand Colors - Dark Mode */
-  --teal: oklch(0.65 0.14 195);
-  --coral: oklch(0.72 0.16 18);
-  --brand: oklch(0.65 0.14 195);
-  --twitch: #a970ff;
+  --background: var(--neutral-950);
+  --foreground: var(--neutral-50);
+  --card: var(--neutral-900);
+  --card-foreground: var(--neutral-50);
+  --popover: var(--neutral-900);
+  --popover-foreground: var(--neutral-50);
+  --muted: var(--neutral-800);
+  --muted-foreground: var(--neutral-400);
+  --border: var(--neutral-700);
+  --input: var(--neutral-800);
+  --ring: var(--teal-400);
 
-  /* Primary - Teal lighter for dark mode */
-  --primary: oklch(0.65 0.14 195);
-  --primary-foreground: oklch(0.1 0.01 260);
-  --sidebar-primary: oklch(0.65 0.14 195);
-  --sidebar-primary-foreground: oklch(0.1 0.01 260);
+  --primary: var(--teal-400);
+  --primary-foreground: var(--neutral-950);
+  --secondary: var(--neutral-800);
+  --secondary-foreground: var(--neutral-50);
+  --accent: var(--neutral-800);
+  --accent-foreground: var(--neutral-50);
 
-  /* Secondary - Coral */
-  --secondary: oklch(0.72 0.16 18);
-  --secondary-foreground: oklch(0.1 0.01 260);
-  --accent: oklch(0.72 0.16 18);
-  --accent-foreground: oklch(0.1 0.01 260);
-
-  /* Semantic colors */
+  --destructive: oklch(0.60 0.20 25);
+  --destructive-foreground: var(--neutral-0);
   --warning: oklch(0.75 0.12 85);
   --warning-foreground: oklch(0.15 0.05 85);
-  --success: oklch(0.7 0.14 145);
-  --success-foreground: oklch(0.1 0.01 145);
+  --success: oklch(0.70 0.14 145);
+  --success-foreground: var(--neutral-950);
 
-  /* Chart colors */
-  --chart-1: oklch(0.65 0.14 195);
-  --chart-2: oklch(0.72 0.16 18);
-  --chart-3: oklch(0.7 0.12 200);
+  --teal: var(--teal-400);
+  --brand: var(--teal-400);
+  --coral: var(--coral-400);
+  --coral-foreground: var(--neutral-950);
+  --twitch: var(--twitch-dark);
+
+  --sidebar: var(--neutral-950);
+  --sidebar-foreground: var(--neutral-50);
+  --sidebar-primary: var(--teal-400);
+  --sidebar-primary-foreground: var(--neutral-950);
+  --sidebar-accent: var(--neutral-800);
+  --sidebar-accent-foreground: var(--neutral-50);
+  --sidebar-border: var(--neutral-700);
+  --sidebar-ring: var(--teal-400);
+
+  --chart-1: var(--teal-400);
+  --chart-2: var(--coral-400);
+  --chart-3: oklch(0.70 0.12 200);
   --chart-4: oklch(0.55 0.12 200);
-  --chart-5: oklch(0.8 0.14 20);
+  --chart-5: oklch(0.80 0.14 20);
 
-  /* Base - Deep dark blue-gray */
-  --background: oklch(0.13 0.015 260);
-  --foreground: oklch(0.92 0.01 250);
-  --card: oklch(0.18 0.015 260);
-  --card-foreground: oklch(0.92 0.01 250);
-  --popover: oklch(0.18 0.015 260);
-  --popover-foreground: oklch(0.92 0.01 250);
-  --muted: oklch(0.22 0.015 260);
-  --muted-foreground: oklch(0.65 0.02 250);
-  --destructive: oklch(0.6 0.2 25);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.28 0.015 260);
-  --input: oklch(0.25 0.015 260);
-  --ring: oklch(0.65 0.14 195);
-  --sidebar: oklch(0.15 0.015 260);
-  --sidebar-foreground: oklch(0.92 0.01 250);
-  --sidebar-accent: oklch(0.22 0.015 260);
-  --sidebar-accent-foreground: oklch(0.92 0.01 250);
-  --sidebar-border: oklch(0.28 0.015 260);
-  --sidebar-ring: oklch(0.65 0.14 195);
-
-  /* Chart tooltip colors for dark mode */
-  --tooltip-bg: oklch(0.2 0.015 260);
-  --tooltip-border: oklch(0.35 0.015 260);
-  --tooltip-text: oklch(0.92 0.01 250);
+  /* Chart tooltip — keeps the recharts default tooltip readable on dark */
+  --tooltip-bg: var(--neutral-900);
+  --tooltip-border: var(--neutral-700);
+  --tooltip-text: var(--neutral-50);
 }
 
 @layer base {
@@ -188,12 +286,10 @@
     @apply cursor-pointer;
   }
 
-  /* Smooth scroll */
   html {
     scroll-behavior: smooth;
   }
 
-  /* Selection color */
   ::selection {
     @apply bg-primary/20 text-foreground;
   }
@@ -228,18 +324,12 @@
     }
   }
 
-  /* Glow effect for #1 team — colors adapt to dark mode via CSS custom properties */
+  /* Glow effect for #1 team — derives from --primary so dark mode adapts */
   :root {
-    --glow-base: oklch(0.55 0.14 195 / 40%);
-    --glow-spread: oklch(0.55 0.14 195 / 20%);
-    --glow-pulse-base: oklch(0.55 0.14 195 / 60%);
-    --glow-pulse-spread: oklch(0.55 0.14 195 / 30%);
-  }
-  .dark {
-    --glow-base: oklch(0.65 0.14 195 / 50%);
-    --glow-spread: oklch(0.65 0.14 195 / 25%);
-    --glow-pulse-base: oklch(0.65 0.14 195 / 70%);
-    --glow-pulse-spread: oklch(0.65 0.14 195 / 35%);
+    --glow-base: color-mix(in oklch, var(--primary), transparent 60%);
+    --glow-spread: color-mix(in oklch, var(--primary), transparent 80%);
+    --glow-pulse-base: color-mix(in oklch, var(--primary), transparent 40%);
+    --glow-pulse-spread: color-mix(in oklch, var(--primary), transparent 70%);
   }
 
   .glow-primary {
@@ -260,43 +350,27 @@
     }
   }
 
-  /* Gradient text */
+  /* Two-color brand gradients — uses tokens so colors stay in sync with theme */
   .gradient-text {
-    background: linear-gradient(
-      135deg,
-      oklch(0.55 0.14 195),
-      oklch(0.68 0.18 18)
-    );
+    background: linear-gradient(135deg, var(--primary), var(--coral));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .dark .gradient-text {
-    background: linear-gradient(
-      135deg,
-      oklch(0.65 0.14 195),
-      oklch(0.72 0.16 18)
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Hero gradient background */
   .hero-gradient {
     background: linear-gradient(
       135deg,
-      oklch(0.55 0.14 195 / 8%) 0%,
-      oklch(0.68 0.18 18 / 8%) 100%
+      color-mix(in oklch, var(--primary), transparent 92%) 0%,
+      color-mix(in oklch, var(--coral), transparent 92%) 100%
     );
   }
 
   .dark .hero-gradient {
     background: linear-gradient(
       135deg,
-      oklch(0.55 0.14 195 / 15%) 0%,
-      oklch(0.68 0.18 18 / 15%) 100%
+      color-mix(in oklch, var(--primary), transparent 85%) 0%,
+      color-mix(in oklch, var(--coral), transparent 85%) 100%
     );
   }
 
@@ -304,26 +378,22 @@
   .card-hover {
     @apply transition-all duration-300 ease-out;
   }
-
   .card-hover:hover {
     @apply -translate-y-1 shadow-lg;
   }
 
-  /* Button animations */
+  /* Button + counter animations */
   .btn-animate {
     @apply transition-all duration-200 ease-out active:scale-95;
   }
-
-  /* Counter animation */
   .counter-animate {
     @apply transition-all duration-300 ease-out;
   }
 
-  /* Fade in animation */
+  /* Reusable entrance animations */
   .fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
-
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -335,11 +405,9 @@
     }
   }
 
-  /* Slide in from left */
   .slide-in-left {
     animation: slideInLeft 0.5s ease-out forwards;
   }
-
   @keyframes slideInLeft {
     from {
       opacity: 0;
@@ -351,11 +419,9 @@
     }
   }
 
-  /* Slide in from right */
   .slide-in-right {
     animation: slideInRight 0.5s ease-out forwards;
   }
-
   @keyframes slideInRight {
     from {
       opacity: 0;
@@ -367,11 +433,9 @@
     }
   }
 
-  /* Scale in animation */
   .scale-in {
     animation: scaleIn 0.3s ease-out forwards;
   }
-
   @keyframes scaleIn {
     from {
       opacity: 0;
@@ -383,7 +447,7 @@
     }
   }
 
-  /* Beamer mode fullscreen */
+  /* Beamer mode — fullscreen on the shotcounter overlay */
   .beamer-mode {
     position: fixed !important;
     top: 0 !important;
@@ -395,23 +459,17 @@
     z-index: 9999 !important;
     background: var(--background) !important;
     overflow: auto !important;
-  }
-
-  /* Hide scrollbar in beamer mode */
-  .beamer-mode::-webkit-scrollbar {
-    display: none;
-  }
-
-  .beamer-mode {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  .beamer-mode::-webkit-scrollbar {
+    display: none;
   }
 
   /* Membership status colors */
   .membership-expiring {
     @apply bg-warning/20 border-warning;
   }
-
   .membership-expired {
     @apply bg-destructive/10 border-destructive/30 opacity-70;
   }
@@ -433,23 +491,18 @@
 }
 
 @layer utilities {
-  /* Text balance for headings */
   .text-balance {
     text-wrap: balance;
   }
 
-  /* Hide on mobile */
   .hide-mobile {
     @apply hidden sm:block;
   }
-
-  /* Show only on mobile */
   .show-mobile {
     @apply block sm:hidden;
   }
 
-  /* Date and time inputs: hide native icons globally.
-     Custom DateInput/TimeInput components provide their own SVG icons. */
+  /* Date + time inputs: hide native picker icons (custom SVG used instead). */
   input[type='date']::-webkit-calendar-picker-indicator,
   input[type='time']::-webkit-calendar-picker-indicator {
     display: none !important;
@@ -464,7 +517,6 @@
     -webkit-appearance: none !important;
   }
 
-  /* Number input: hide default spin buttons */
   input[type='number']::-webkit-inner-spin-button,
   input[type='number']::-webkit-outer-spin-button {
     -webkit-appearance: none;

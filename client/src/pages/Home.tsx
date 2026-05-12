@@ -95,7 +95,7 @@ export default function Home() {
 
         {/* Floating Elements */}
         <div className="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-secondary/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-coral/10 rounded-full blur-3xl animate-pulse delay-1000" />
 
         <div className="container relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
@@ -128,7 +128,7 @@ export default function Home() {
                   <div className="flex justify-center lg:justify-start">
                     <Button
                       size="lg"
-                      className="btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-secondary to-orange-500 hover:from-secondary/90 hover:to-orange-500/90 text-white shadow-lg shadow-secondary/30 hover:shadow-secondary/50 border-0 animate-pulse hover:animate-none"
+                      className="btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-coral to-orange-500 hover:from-coral/90 hover:to-orange-500/90 text-white shadow-lg shadow-coral/30 hover:shadow-coral/50 border-0 animate-pulse hover:animate-none"
                       onClick={() => navigate(TEMP_BUTTON_URL)}
                     >
                       <Zap className="h-5 w-5 mr-2" />
@@ -290,7 +290,7 @@ export default function Home() {
               className="max-w-3xl mx-auto"
             >
               <div className="text-center mb-8">
-                <span className="inline-block px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-semibold mb-4">
+                <span className="inline-block px-4 py-1.5 rounded-full bg-coral/10 text-coral text-sm font-semibold mb-4">
                   Kommendes Event
                 </span>
                 <h2 className="text-3xl md:text-4xl font-bold">
@@ -298,7 +298,7 @@ export default function Home() {
                 </h2>
               </div>
 
-              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5 overflow-hidden">
+              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-coral/5 overflow-hidden">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl md:text-3xl">
                     {nextEvent.title}
@@ -348,8 +348,8 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="max-w-3xl mx-auto text-center space-y-6"
           >
-            <div className="w-20 h-20 rounded-full bg-secondary/10 flex items-center justify-center mx-auto">
-              <Heart className="h-10 w-10 text-secondary" />
+            <div className="w-20 h-20 rounded-full bg-coral/10 flex items-center justify-center mx-auto">
+              <Heart className="h-10 w-10 text-coral" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold">Über uns</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
@@ -374,7 +374,7 @@ export default function Home() {
       </section>
 
       {/* Gönnermitgliedschaft Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
+      <section className="py-20 bg-gradient-to-br from-primary/5 to-coral/5">
         <div className="container">
           <MotionDiv
             initial={{ opacity: 0, y: 20 }}
@@ -433,7 +433,7 @@ export default function Home() {
 
       {/* Social Media Section */}
       <section className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 via-background to-primary/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-coral/10 via-background to-primary/10" />
         <div className="container relative z-10">
           <MotionDiv
             initial={{ opacity: 0, y: 20 }}
