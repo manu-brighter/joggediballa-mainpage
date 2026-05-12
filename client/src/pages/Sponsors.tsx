@@ -54,7 +54,6 @@ import {
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
 const MotionDiv = motion.div;
 
@@ -622,7 +621,7 @@ export default function Sponsors() {
               className="btn-animate"
               onClick={() => navigate('/contact')}
             >
-              Jetzt Gönner werden, schreib uns!
+              Ich bin dabei
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </CardContent>

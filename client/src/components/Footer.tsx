@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowRight, LogOut } from 'lucide-react';
 import { getLoginUrl } from '@/const';
@@ -6,8 +7,10 @@ import { trpc } from '@/lib/trpc';
 
 // Inline copy of the lucide Instagram icon with a gradient stroke instead
 // of currentColor — needed because bg-clip:text breaks SVG icons that
-// inherit text-color.
+// inherit text-color. useId() so multiple instances on one page don't
+// collide on the <defs> gradient id.
 function InstagramGradientIcon({ className }: { className?: string }) {
+  const gradientId = `insta-gradient-${useId()}`;
   return (
     <svg
       className={className}
@@ -19,7 +22,7 @@ function InstagramGradientIcon({ className }: { className?: string }) {
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="footer-insta-gradient" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="oklch(0.61 0.24 305)" />
           <stop offset="1" stopColor="oklch(0.65 0.23 6)" />
         </linearGradient>
@@ -30,18 +33,18 @@ function InstagramGradientIcon({ className }: { className?: string }) {
         width="20"
         height="20"
         rx="5"
-        stroke="url(#footer-insta-gradient)"
+        stroke={`url(#${gradientId})`}
       />
       <path
         d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"
-        stroke="url(#footer-insta-gradient)"
+        stroke={`url(#${gradientId})`}
       />
       <line
         x1="17.5"
         y1="6.5"
         x2="17.51"
         y2="6.5"
-        stroke="url(#footer-insta-gradient)"
+        stroke={`url(#${gradientId})`}
       />
     </svg>
   );
