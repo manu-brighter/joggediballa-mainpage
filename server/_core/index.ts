@@ -184,12 +184,17 @@ async function startServer() {
   //   - All non-tRPC routes (auth, uploads, static) keep the existing 300-req
   //     per-IP window.
   // -----------------------------------------------------------------------
+  // In production, both limiters enforce per-IP windows. In dev/test the
+  // limits are off so HMR reloads, Playwright suites, and manual refreshes
+  // don't trip 429s. Production behavior is unchanged.
+  const skipInNonProd = (): boolean => process.env.NODE_ENV !== 'production';
+
   const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 300,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: req => req.path.startsWith('/api/trpc'),
+    skip: req => skipInNonProd() || req.path.startsWith('/api/trpc'),
   });
   app.use(generalLimiter);
 
@@ -198,7 +203,7 @@ async function startServer() {
     limit: 60, // 60 mutations / 15 min / IP — well above normal use
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: req => req.method.toUpperCase() === 'GET',
+    skip: req => skipInNonProd() || req.method.toUpperCase() === 'GET',
   });
 
   // Body parsing — file uploads use multipart (not JSON), so 1 MB is sufficient here
