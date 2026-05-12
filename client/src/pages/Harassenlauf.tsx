@@ -275,10 +275,7 @@ export default function Harassenlauf() {
           backgroundSize: '1129px 610px',
         }}
       />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.55_0.14_195_/_0.15),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,oklch(0.68_0.18_18_/_0.1),transparent_50%)]" />
-      <div className="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-20 right-10 w-40 h-40 bg-coral/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      <div className="absolute inset-0 hero-radials" />
 
       <div className="relative z-10" translate="no">
         {/* Hero Banner */}
@@ -703,7 +700,7 @@ export default function Harassenlauf() {
                     type="submit"
                     size="lg"
                     disabled={submitMutation.isPending || !isFormValid}
-                    className="w-full h-14 text-base font-bold btn-animate bg-gradient-to-r from-primary to-teal-400 hover:from-primary/90 hover:to-teal-400/90 shadow-lg shadow-primary/20"
+                    className="w-full h-14 text-base font-bold btn-animate bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
                   >
                     {submitMutation.isPending ? (
                       <>
