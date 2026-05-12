@@ -106,6 +106,33 @@
   </head>
 
   <body>
+    <!--
+      Apply the theme class BEFORE React mounts so the first paint is in the
+      correct mode. Without this, a light-mode default :root paints first
+      and React's ThemeContext effect flips to .dark a moment later (FOUC).
+      Logic mirrors client/src/contexts/ThemeContext.tsx but runs synchronously.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          var DEFAULT_THEME = 'dark';
+          var theme = stored || DEFAULT_THEME;
+          var resolved =
+            theme === 'system'
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : theme;
+          if (resolved === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (_) {
+          /* localStorage blocked — fall back to default dark */
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

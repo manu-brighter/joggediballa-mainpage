@@ -198,7 +198,7 @@ function AppContent() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="system" switchable>
+      <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
           <AppContent />
         </TooltipProvider>
