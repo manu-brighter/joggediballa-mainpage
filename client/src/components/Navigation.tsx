@@ -44,12 +44,14 @@ export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, loading } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const utils = trpc.useUtils();
   const logoutMutation = trpc.auth.logout.useMutation();
   const [location, setLocation] = useLocation();
 
-  // Scroll to top on navigation
+  // Scroll to top on navigation. Instant rather than smooth so it naturally
+  // respects prefers-reduced-motion and never fights anchor scrolling.
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [location]);
 
   // Fetch feature toggles for navbar visibility
@@ -58,8 +60,16 @@ export function Navigation() {
   });
 
   const handleLogout = async () => {
-    await logoutMutation.mutateAsync();
-    window.location.href = '/';
+    try {
+      await logoutMutation.mutateAsync();
+    } finally {
+      // C-P0-05: SPA-style logout — no hard reload. Clear the auth cache so
+      // Navigation/Footer/Profile re-render as unauthenticated, then navigate
+      // home via Wouter.
+      utils.auth.me.setData(undefined, null);
+      await utils.auth.me.invalidate();
+      setLocation('/');
+    }
   };
 
   const tempButtonEnabled =
@@ -469,11 +479,11 @@ export function Navigation() {
 
       {/* Visitor Banner */}
       {isAuthenticated && user?.role === 'visitor' && (
-        <div className="bg-orange-500/10 border-b border-orange-500/20 py-3">
+        <div className="bg-warning/10 border-b border-warning/20 py-3">
           <div className="container">
             <div className="flex items-center justify-center gap-2 text-sm">
-              <Lock className="h-4 w-4 text-orange-500" />
-              <span className="text-orange-700 dark:text-orange-300">
+              <Lock className="h-4 w-4 text-warning" />
+              <span className="text-warning-foreground">
                 Dein Account wartet auf Freischaltung. Du hast derzeit
                 eingeschränkten Zugriff.
               </span>

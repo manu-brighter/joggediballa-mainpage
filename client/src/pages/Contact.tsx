@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,51 +11,52 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/lib/errorMessages';
 import { Mail, Send, CheckCircle } from 'lucide-react';
+import {
+  contactFormSchema,
+  type ContactFormValues,
+} from '@shared/contact.schema';
 
 export default function Contact() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      subject: '',
+      message: '',
+    },
+    mode: 'onBlur',
+  });
 
   const submitMutation = trpc.contact.send.useMutation({
     onSuccess: () => {
       setSubmitted(true);
       toast.success('Nachricht erfolgreich gesendet!');
-      setName('');
-      setEmail('');
-      setSubject('');
-      setMessage('');
+      form.reset();
     },
-    onError: (error: any) => {
+    onError: error => {
       toast.error(parseErrorMessage(error));
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      toast.error('Bitte fülle alle Pflichtfelder aus');
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error('Bitte gib eine gültige E-Mail-Adresse ein');
-      return;
-    }
-
+  const onSubmit = (values: ContactFormValues) => {
     submitMutation.mutate({
-      name,
-      email,
-      subject: subject || 'Kein Betreff',
-      message,
+      ...values,
+      subject: values.subject.trim() || 'Kein Betreff',
     });
   };
 
@@ -61,7 +64,7 @@ export default function Contact() {
     return (
       <div className="container py-12">
         <div className="max-w-2xl mx-auto text-center space-y-6">
-          <CheckCircle className="h-24 w-24 text-green-500 mx-auto" />
+          <CheckCircle className="h-24 w-24 text-success mx-auto" />
           <h1 className="text-4xl font-bold">Nachricht gesendet!</h1>
           <p className="text-lg text-muted-foreground">
             Vielen Dank für deine Nachricht. Wir werden uns so schnell wie
@@ -95,73 +98,103 @@ export default function Contact() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Dein Name"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  E-Mail <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="deine@email.de"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="subject">Betreff</Label>
-                <Input
-                  id="subject"
-                  value={subject}
-                  onChange={e => setSubject(e.target.value)}
-                  placeholder="Worum geht es?"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">
-                  Nachricht <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={e => setMessage(e.target.value)}
-                  placeholder="Deine Nachricht an uns..."
-                  rows={6}
-                  required
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={submitMutation.isPending}
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+                noValidate
               >
-                {submitMutation.isPending ? (
-                  'Wird gesendet...'
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Nachricht senden
-                  </>
-                )}
-              </Button>
-            </form>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Name <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Dein Name"
+                          autoComplete="name"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        E-Mail <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="deine@email.ch"
+                          autoComplete="email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="subject"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Betreff</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Worum geht es?" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Nachricht <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Deine Nachricht an uns..."
+                          rows={6}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={submitMutation.isPending}
+                >
+                  {submitMutation.isPending ? (
+                    'Wird gesendet...'
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Nachricht senden
+                    </>
+                  )}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       </div>

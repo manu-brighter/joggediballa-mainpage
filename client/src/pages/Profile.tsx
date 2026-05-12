@@ -1,3 +1,5 @@
+// Profile picture upload + crop logic is inlined below. If a second consumer
+// of this UI appears, lift it out into a shared component first.
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { usePermission } from '@/hooks/usePermissions';
@@ -33,7 +35,6 @@ import {
   Camera,
   ArrowLeft,
   Upload,
-  Loader2,
   ZoomIn,
   Move,
   Pencil,
@@ -42,6 +43,7 @@ import {
   Users,
   ClipboardList,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useLocation } from 'wouter';
 import { getLoginUrl } from '@/const';
 import { motion } from 'framer-motion';
@@ -344,7 +346,7 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <Spinner className="size-12 text-primary" />
       </div>
     );
   }
@@ -385,14 +387,12 @@ export default function Profile() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'admin':
-        return <Badge className="bg-red-500 hover:bg-red-600">Admin</Badge>;
+        return <Badge variant="destructive">Admin</Badge>;
       case 'maintainer':
-        return (
-          <Badge className="bg-blue-500 hover:bg-blue-600">Maintainer</Badge>
-        );
+        return <Badge className="bg-primary text-primary-foreground">Maintainer</Badge>;
       case 'editor':
         return (
-          <Badge className="bg-green-500 hover:bg-green-600">Editor</Badge>
+          <Badge className="bg-success text-success-foreground">Editor</Badge>
         );
       default:
         return <Badge variant="secondary">Mitglied</Badge>;
@@ -760,7 +760,7 @@ export default function Profile() {
             >
               {isUploading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Spinner className="size-4" />
                   Hochladen...
                 </>
               ) : (

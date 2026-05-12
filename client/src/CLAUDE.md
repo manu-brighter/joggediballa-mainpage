@@ -52,7 +52,7 @@ const [, navigate] = useLocation();
 navigate('/events');
 ```
 
-No lazy loading — all pages are imported statically.
+All page routes are lazy-loaded via `React.lazy()` and wrapped in a `<Suspense>` boundary with a route fallback. Eagerly loaded: shell (Navigation, Footer, ErrorBoundary, providers, NotFound).
 
 ## Beamer Mode
 
@@ -64,17 +64,18 @@ No lazy loading — all pages are imported statically.
 
 ## SEO
 
-Use the `useSEO()` hook from `@/hooks/useSEO` at the top of each page component:
+Render the `<SEO />` component from `@/components/SEO` near the top of the page's JSX:
 
-```typescript
-useSEO({
-  title: 'Jogge di Balla - Events',
-  description: '...',
-  keywords: '...',
-});
+```tsx
+<SEO
+  title="Jogge di Balla - Events"
+  description="..."
+  keywords="..."
+  noIndex // optional, for admin / auth-only pages
+/>
 ```
 
-Admin pages and auth-required pages should set `noIndex: true`. The hook resets title and meta to defaults on unmount.
+React 19 natively hoists `<title>` and `<meta>` tags to `<head>` and removes them on unmount — no DOM imperatives. Defaults come from `client/index.html`.
 
 ## Component Conventions
 
