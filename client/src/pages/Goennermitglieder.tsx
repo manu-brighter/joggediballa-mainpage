@@ -1067,14 +1067,14 @@ export default function Goennermitglieder() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border-teal-500/20">
+        <Card className="bg-primary/5 border-primary/20">
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Gesamtsumme aktiver Mitglieder
                 </p>
-                <p className="text-3xl font-bold text-teal-600 dark:text-teal-400 mt-1">
+                <p className="text-3xl font-bold text-primary mt-1">
                   CHF {totalActiveContributions.toLocaleString('de-CH')}.-
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -1082,8 +1082,8 @@ export default function Goennermitglieder() {
                   {activeMembers.length === 1 ? 'Mitglied' : 'Mitglieder'}
                 </p>
               </div>
-              <div className="h-16 w-16 rounded-full bg-teal-500/20 flex items-center justify-center">
-                <Banknote className="h-8 w-8 text-teal-600 dark:text-teal-400" />
+              <div className="h-16 w-16 rounded-full bg-primary/15 flex items-center justify-center">
+                <Banknote className="h-8 w-8 text-primary" />
               </div>
             </div>
           </CardContent>
