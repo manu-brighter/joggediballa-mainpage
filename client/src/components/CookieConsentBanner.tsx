@@ -45,43 +45,41 @@ export function CookieConsentBanner({
       {/* Banner */}
       <div className="relative border-t shadow-2xl bg-card text-card-foreground">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          {/* Collapsed view */}
+          {/* Collapsed view — stacks vertically on mobile, side-by-side on md+ */}
           {!expanded && (
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Wir nutzen <strong>Google Analytics</strong> um die Website zu
-                  verbessern. Deine Zustimmung ist erforderlich. Weitere Details
-                  findest du in unserer{' '}
-                  <a
-                    href="/datenschutz"
-                    className="font-medium text-primary hover:underline transition-colors"
-                  >
-                    Datenschutzerklärung
-                  </a>
-                  .
-                </p>
-              </div>
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
+              <p className="text-sm leading-relaxed text-muted-foreground flex-1">
+                Wir nutzen <strong>Google Analytics</strong> um die Website zu
+                verbessern. Deine Zustimmung ist erforderlich. Weitere Details
+                findest du in unserer{' '}
+                <a
+                  href="/datenschutz"
+                  className="font-medium text-primary hover:underline transition-colors"
+                >
+                  Datenschutzerklärung
+                </a>
+                .
+              </p>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 md:flex-shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={onRejectAll}
-                  className="text-xs font-medium"
+                  className="flex-1 md:flex-none text-xs font-medium"
                 >
                   Ablehnen
                 </Button>
                 <Button
                   size="sm"
                   onClick={onAcceptAll}
-                  className="text-xs font-medium"
+                  className="flex-1 md:flex-none text-xs font-medium"
                 >
                   Akzeptieren
                 </Button>
                 <button
                   onClick={() => setExpanded(true)}
-                  className="p-1.5 rounded transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="p-1.5 rounded transition-colors text-muted-foreground hover:bg-muted hover:text-foreground shrink-0"
                   aria-label="Mehr Optionen"
                 >
                   <ChevronDown className="h-4 w-4" />
