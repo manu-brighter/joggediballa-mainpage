@@ -182,6 +182,9 @@ const MemberCard = React.memo(
                   status === 'active' &&
                     member.paymentStatus === 'pending' &&
                     'text-pending',
+                  status === 'active' &&
+                    member.paymentStatus === 'paid' &&
+                    'text-primary',
                 )}
               >
                 {member.firstName} {member.lastName}
@@ -1205,8 +1208,8 @@ export default function Goennermitglieder() {
       {/* Expired Members Section */}
       {expiredMembers.length > 0 && (
         <section>
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-destructive/70">
-            <XCircle className="h-6 w-6 text-destructive/70" />
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-destructive">
+            <XCircle className="h-6 w-6 text-destructive" />
             Abgelaufene Mitgliedschaften ({expiredMembers.length})
           </h2>
           <div className="space-y-3">
