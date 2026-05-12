@@ -804,7 +804,7 @@ export default function Attendance() {
                       selectedSession.type === 'event' ? 'default' : 'secondary'
                     }
                     className={cn(
-                      selectedSession.type === 'event' && 'bg-teal-500',
+                      selectedSession.type === 'event' && 'bg-primary',
                     )}
                   >
                     {selectedSession.type === 'event' ? 'Event' : 'Meeting'}

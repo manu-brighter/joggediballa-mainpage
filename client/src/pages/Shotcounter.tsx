@@ -459,7 +459,7 @@ export default function Shotcounter() {
                         'flex-shrink-0 rounded-full flex items-center justify-center font-black',
                         getRankSize(),
                         index === 0
-                          ? 'bg-yellow-500/30 text-yellow-500'
+                          ? 'bg-gold/30 text-gold'
                           : 'bg-muted text-muted-foreground',
                       )}
                     >
@@ -678,7 +678,7 @@ export default function Shotcounter() {
                       className={cn(
                         'flex-shrink-0 w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center font-black text-sm md:text-lg',
                         index === 0
-                          ? 'bg-yellow-500/20 text-yellow-500'
+                          ? 'bg-gold/20 text-gold'
                           : 'bg-muted text-muted-foreground',
                       )}
                     >
@@ -778,7 +778,7 @@ export default function Shotcounter() {
             </DialogTitle>
           </DialogHeader>
           <div className="text-center py-8">
-            <Crown className="h-16 w-16 mx-auto text-yellow-500 mb-4" />
+            <Crown className="h-16 w-16 mx-auto text-gold mb-4" />
             <h2 className="text-3xl font-black gradient-text mb-2">
               {winner?.name}
             </h2>

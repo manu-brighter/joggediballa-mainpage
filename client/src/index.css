@@ -126,6 +126,8 @@
   /* Brand accents (in addition to --primary which is teal) */
   --color-coral: var(--coral);
   --color-coral-foreground: var(--coral-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
   --color-brand: var(--brand);
   --color-teal: var(--teal);
   --color-twitch: var(--twitch);
@@ -204,6 +206,11 @@
   --coral-foreground: var(--neutral-0);
   --twitch: var(--twitch-light);
 
+  /* Achievement / winner marker — distinct from --warning even though both
+     are yellow-family; semantics matter (celebratory vs cautious). */
+  --gold: oklch(0.78 0.16 86);
+  --gold-foreground: oklch(0.25 0.05 86);
+
   /* Sidebar */
   --sidebar: var(--neutral-50);
   --sidebar-foreground: var(--neutral-950);
@@ -260,6 +267,9 @@
   --coral: var(--coral-400);
   --coral-foreground: var(--neutral-950);
   --twitch: var(--twitch-dark);
+
+  --gold: oklch(0.85 0.14 86);
+  --gold-foreground: oklch(0.15 0.05 86);
 
   --sidebar: var(--neutral-950);
   --sidebar-foreground: var(--neutral-50);
