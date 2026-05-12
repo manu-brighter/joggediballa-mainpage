@@ -254,7 +254,7 @@ function ScoreDisplay({
       <span
         className={cn(
           'text-xs font-semibold truncate max-w-[140px]',
-          isWinner ? 'text-yellow-500' : 'text-muted-foreground',
+          isWinner ? 'text-gold' : 'text-muted-foreground',
         )}
       >
         {name}
@@ -263,7 +263,7 @@ function ScoreDisplay({
         className={cn(
           'text-5xl font-black tabular-nums transition-all duration-300 rounded-2xl px-6 py-2.5 ring-2',
           isWinner
-            ? 'text-yellow-500 bg-yellow-500/10 ring-yellow-500/40'
+            ? 'text-gold bg-gold/10 ring-gold/40'
             : isLeading
               ? `${accent} ${bg}`
               : 'text-foreground bg-muted ring-transparent',
@@ -274,7 +274,7 @@ function ScoreDisplay({
       {isWinner && (
         <Badge
           variant="outline"
-          className="text-yellow-500 border-yellow-500/50 gap-1 text-xs"
+          className="text-gold border-gold/50 gap-1 text-xs"
         >
           <Trophy className="h-3 w-3" /> Sieger
         </Badge>
@@ -430,7 +430,7 @@ export default function SdkControl() {
             className={cn(
               'border-2 transition-all duration-500',
               hasWinner
-                ? 'border-yellow-500/50 bg-yellow-500/5'
+                ? 'border-gold/50 bg-gold/5'
                 : 'border-primary/30',
             )}
           >
@@ -584,8 +584,8 @@ export default function SdkControl() {
               )}
 
               {hasWinner && (
-                <div className="text-center py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
-                  <p className="text-lg font-bold text-yellow-500 flex items-center justify-center gap-2">
+                <div className="text-center py-3 rounded-xl bg-gold/10 border border-gold/30">
+                  <p className="text-lg font-bold text-gold flex items-center justify-center gap-2">
                     <Trophy className="h-6 w-6" />
                     {p1Winner ? session.player1Name : session.player2Name} hat
                     gewonnen!

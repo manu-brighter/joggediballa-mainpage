@@ -48,27 +48,27 @@ const roleConfig: Record<
 > = {
   admin: {
     label: 'Admin',
-    color: 'bg-red-500',
+    color: 'bg-destructive',
     icon: <Shield className="h-3 w-3" />,
   },
   maintainer: {
     label: 'Maintainer',
-    color: 'bg-orange-500',
+    color: 'bg-pending',
     icon: <UserCheck className="h-3 w-3" />,
   },
   editor: {
     label: 'Editor',
-    color: 'bg-blue-500',
+    color: 'bg-primary',
     icon: <UserCheck className="h-3 w-3" />,
   },
   user: {
     label: 'Member',
-    color: 'bg-green-500',
+    color: 'bg-success',
     icon: <UserCheck className="h-3 w-3" />,
   },
   visitor: {
     label: 'Visitor',
-    color: 'bg-gray-500',
+    color: 'bg-muted-foreground',
     icon: <Eye className="h-3 w-3" />,
   },
 };
