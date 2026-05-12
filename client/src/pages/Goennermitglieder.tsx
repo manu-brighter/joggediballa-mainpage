@@ -207,7 +207,7 @@ const MemberCard = React.memo(
               {member.street} {member.houseNumber}, {member.zipCode}{' '}
               {member.city}
             </p>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 Start:{' '}
@@ -679,9 +679,9 @@ export default function Goennermitglieder() {
                 <SelectValue placeholder="Sortieren" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="endDate">Nach Ablaufdatum</SelectItem>
-                <SelectItem value="firstName">Nach Vorname</SelectItem>
-                <SelectItem value="lastName">Nach Nachname</SelectItem>
+                <SelectItem value="endDate">Ablaufdatum</SelectItem>
+                <SelectItem value="firstName">Vorname</SelectItem>
+                <SelectItem value="lastName">Nachname</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -699,7 +699,7 @@ export default function Goennermitglieder() {
                   className="gap-2 h-9.5 flex-1 sm:flex-initial sm:w-auto"
                 >
                   <Banknote className="h-4 w-4" />
-                  <span className="hidden sm:inline">Einzahlen</span>
+                  <span>Einzahlen</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
@@ -842,6 +842,7 @@ export default function Goennermitglieder() {
                 <DialogTrigger asChild>
                   <Button className="btn-animate gap-2 h-9.5 flex-1 sm:flex-initial sm:w-auto">
                     <Plus className="h-4 w-4" />
+                    <span className="sm:hidden">Neu</span>
                     <span className="hidden sm:inline">Neues Mitglied</span>
                   </Button>
                 </DialogTrigger>
