@@ -1,172 +1,95 @@
 import { Link } from 'wouter';
-import { Instagram, Heart } from 'lucide-react';
+import { Instagram, Mail, ArrowRight } from 'lucide-react';
 import { getLoginUrl } from '@/const';
 import { useAuth } from '@/_core/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const { isAuthenticated } = useAuth();
 
-  const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/shotcounter', label: 'Shotcounter' },
-    { href: '/team', label: 'Team' },
-    { href: '/events', label: 'Events' },
-    { href: '/sponsors', label: 'Sponsoren' },
-    { href: '/contact', label: 'Kontakt' },
-  ];
-
-  const legalLinks = [
-    { href: '/impressum', label: 'Impressum' },
-    { href: '/datenschutz', label: 'Datenschutz' },
-  ];
-
   return (
-    <footer className="border-t bg-muted/30 mt-auto">
-      <div className="container py-8 md:py-12">
-        {/* Desktop Layout */}
-        <div className="hidden md:grid md:grid-cols-4 gap-8">
-          {/* Logo & About */}
-          <div className="space-y-4">
-            <img
-              src="/JoggediBalla-Logo.PNG"
-              alt="Jogge di Balla Logo"
-              className="h-14 w-auto"
-              loading="lazy"
-            />
-            <p className="text-sm text-muted-foreground">
-              Gemeinsam feiern seit 2022
+    <footer className="mt-auto border-t bg-muted/30">
+      <div className="container py-12 md:py-16 space-y-10">
+        {/* Brand statement — logo + closing line */}
+        <div className="grid gap-6 md:grid-cols-[auto_1fr] md:items-end md:gap-12">
+          <img
+            src="/JoggediBalla-Logo.PNG"
+            alt="Jogge di Balla Logo"
+            className="h-16 md:h-24 w-auto"
+            loading="lazy"
+          />
+          <div className="space-y-2 md:pb-2">
+            <p className="text-3xl md:text-4xl font-black tracking-tight leading-tight">
+              Brislach laut,{' '}
+              <span className="gradient-text whitespace-nowrap">seit 2022</span>.
             </p>
+            <p className="text-base text-muted-foreground">
+              Event- und Kulturverein.
+            </p>
+          </div>
+        </div>
+
+        {/* CTA row */}
+        <div className="flex flex-wrap items-center gap-3">
+          <Button asChild size="lg" className="btn-animate gap-2">
+            <Link href="/contact">
+              <Mail className="h-4 w-4" />
+              Schreib uns
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button asChild size="lg" className="btn-animate social-instagram gap-2">
             <a
               href="https://instagram.com/joggediballa"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               <Instagram className="h-4 w-4" />
               @joggediballa
             </a>
-          </div>
-
-          {/* Navigation */}
-          <div>
-            <h3 className="font-semibold mb-4 text-sm">Navigation</h3>
-            <ul className="space-y-2.5 text-sm">
-              {navLinks.map(link => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h3 className="font-semibold mb-4 text-sm">Rechtliches</h3>
-            <ul className="space-y-2.5 text-sm">
-              {legalLinks.map(link => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="font-semibold mb-4 text-sm">Kontakt</h3>
-            <p className="text-sm text-muted-foreground">
-              Fragen oder Anregungen?
-            </p>
-            <Link
-              href="/contact"
-              className="inline-block mt-2 text-sm text-primary hover:underline"
-            >
-              Schreib uns →
-            </Link>
-          </div>
+          </Button>
         </div>
 
-        {/* Mobile Layout - Compact & Centered */}
-        <div className="md:hidden text-center space-y-6">
-          {/* Logo */}
-          <div className="flex justify-center">
-            <img
-              src="/JoggediBalla-Logo.PNG"
-              alt="Jogge di Balla Logo"
-              className="h-12 w-auto"
-              loading="lazy"
-            />
-          </div>
-
-          {/* Navigation Links - Horizontal */}
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
-            {navLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Legal Links */}
-          <div className="flex justify-center gap-4 text-sm">
-            {legalLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Instagram */}
-          <a
-            href="https://instagram.com/joggediballa"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+        {/* Service links + copyright */}
+        <div className="flex flex-col gap-4 border-t pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
+          <nav
+            aria-label="Footer"
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:justify-start"
           >
-            <Instagram className="h-4 w-4" />
-            @joggediballa
-          </a>
-        </div>
-
-        {/* Copyright - Both layouts */}
-        <div className="mt-8 pt-6 border-t text-center">
-          <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-            © {currentYear} Jogge di Balla. Made with{' '}
-            <Heart className="h-3 w-3 text-coral fill-coral" /> in
-            Switzerland
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground/70">
-            Fotos © Manuel Heller
-          </p>
-          {!isAuthenticated && (
-            <p className="mt-3 text-xs">
-              <a
-                href={getLoginUrl()}
-                className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-              >
-                Mitglieder-Login
-              </a>
-            </p>
-          )}
+            <Link
+              href="/impressum"
+              className="hover:text-foreground transition-colors"
+            >
+              Impressum
+            </Link>
+            <span aria-hidden="true" className="opacity-50">
+              ·
+            </span>
+            <Link
+              href="/datenschutz"
+              className="hover:text-foreground transition-colors"
+            >
+              Datenschutz
+            </Link>
+            {!isAuthenticated && (
+              <>
+                <span aria-hidden="true" className="opacity-50">
+                  ·
+                </span>
+                <a
+                  href={getLoginUrl()}
+                  className="hover:text-foreground transition-colors"
+                >
+                  Mitglieder-Login
+                </a>
+              </>
+            )}
+          </nav>
+          <div className="text-center md:text-right">
+            <p>© {currentYear} Jogge di Balla</p>
+            <p className="opacity-70">Fotos © Manuel Heller</p>
+          </div>
         </div>
       </div>
     </footer>
