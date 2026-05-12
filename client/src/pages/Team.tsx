@@ -668,8 +668,16 @@ export default function Team() {
                         </div>
                       )}
                       {!member.photoUrl && (
-                        <div className="aspect-square bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                          <Users className="h-20 w-20 text-primary/30" />
+                        <div className="aspect-square bg-gradient-to-br from-primary/30 to-coral/30 flex items-center justify-center">
+                          <span className="text-6xl font-bold text-foreground/80 select-none">
+                            {member.name
+                              .split(/\s+/)
+                              .map(part => part[0])
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .join('')
+                              .toUpperCase()}
+                          </span>
                         </div>
                       )}
 

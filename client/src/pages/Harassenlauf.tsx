@@ -390,8 +390,8 @@ export default function Harassenlauf() {
               className="w-full flex items-center justify-between p-4 rounded-2xl bg-card/80 backdrop-blur-sm border hover:border-primary/40 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center">
-                  <AlertTriangle className="h-5 w-5 text-warning" />
+                <div className="w-9 h-9 rounded-xl bg-pending/10 flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-pending" />
                 </div>
                 <div>
                   <p className="font-bold text-sm">Regeln</p>
@@ -416,10 +416,10 @@ export default function Harassenlauf() {
                   transition={{ duration: 0.3 }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-2 p-4 rounded-2xl bg-warning/5 border border-warning/20 space-y-2">
+                  <div className="mt-2 p-4 rounded-2xl bg-pending/5 border border-pending/20 space-y-2">
                     {RULES_DETAILED.map((rule, i) => (
                       <div key={i} className="flex items-start gap-3">
-                        <span className="text-warning font-bold text-sm mt-0.5 shrink-0">
+                        <span className="text-pending font-bold text-sm mt-0.5 shrink-0">
                           {i + 1}.
                         </span>
                         <p className="text-sm text-foreground/80">{rule}</p>

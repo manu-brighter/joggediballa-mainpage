@@ -410,7 +410,10 @@ export default function Sponsors() {
               >
                 <Card className="group relative overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300">
                   <CardHeader className="p-4">
-                    <div className="aspect-square flex items-center justify-center bg-muted/50 rounded-xl overflow-hidden">
+                    {/* Logo container is always light — sponsor logos are
+                        usually designed for a white background and become
+                        invisible on the dark theme's bg-muted surface. */}
+                    <div className="aspect-square flex items-center justify-center bg-white rounded-xl overflow-hidden">
                       {sponsor.logoUrl ? (
                         <img
                           src={sponsor.logoUrl}
@@ -428,7 +431,7 @@ export default function Sponsors() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    <CardTitle className="text-center text-sm truncate">
+                    <CardTitle className="text-center text-sm line-clamp-2 leading-tight min-h-[2.5rem] flex items-center justify-center">
                       {sponsor.name}
                     </CardTitle>
                     <div className="flex items-center justify-center gap-2 mt-3">

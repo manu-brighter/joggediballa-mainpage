@@ -173,8 +173,20 @@ const MemberCard = React.memo(
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-lg">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3
+                className={cn(
+                  'font-bold text-lg',
+                  status === 'expired' && 'text-destructive',
+                  status === 'expiring' && 'text-warning',
+                  status === 'active' &&
+                    member.paymentStatus === 'pending' &&
+                    'text-pending',
+                  status === 'active' &&
+                    member.paymentStatus === 'paid' &&
+                    'text-primary',
+                )}
+              >
                 {member.firstName} {member.lastName}
               </h3>
               {status === 'expired' && (
@@ -184,7 +196,7 @@ const MemberCard = React.memo(
                 </span>
               )}
               {status === 'expiring' && (
-                <span className="px-2 py-0.5 rounded-full bg-warning/20 text-warning-foreground text-xs font-medium">
+                <span className="px-2 py-0.5 rounded-full bg-warning/20 text-warning text-xs font-medium">
                   {daysLeft} Tage
                 </span>
               )}
@@ -196,7 +208,7 @@ const MemberCard = React.memo(
                   </span>
                 )}
               {member.paymentStatus === 'pending' && (
-                <span className="px-2 py-0.5 rounded-full bg-pending/20 text-pending-foreground text-xs font-medium flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-full bg-pending/20 text-pending text-xs font-medium flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   Zahlung fällig seit{' '}
                   {getDaysSincePaymentPending(member.paymentPendingSince)} Tagen
@@ -207,7 +219,7 @@ const MemberCard = React.memo(
               {member.street} {member.houseNumber}, {member.zipCode}{' '}
               {member.city}
             </p>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 Start:{' '}
@@ -679,9 +691,9 @@ export default function Goennermitglieder() {
                 <SelectValue placeholder="Sortieren" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="endDate">Nach Ablaufdatum</SelectItem>
-                <SelectItem value="firstName">Nach Vorname</SelectItem>
-                <SelectItem value="lastName">Nach Nachname</SelectItem>
+                <SelectItem value="endDate">Ablaufdatum</SelectItem>
+                <SelectItem value="firstName">Vorname</SelectItem>
+                <SelectItem value="lastName">Nachname</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -699,7 +711,7 @@ export default function Goennermitglieder() {
                   className="gap-2 h-9.5 flex-1 sm:flex-initial sm:w-auto"
                 >
                   <Banknote className="h-4 w-4" />
-                  <span className="hidden sm:inline">Einzahlen</span>
+                  <span>Einzahlen</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
@@ -842,6 +854,7 @@ export default function Goennermitglieder() {
                 <DialogTrigger asChild>
                   <Button className="btn-animate gap-2 h-9.5 flex-1 sm:flex-initial sm:w-auto">
                     <Plus className="h-4 w-4" />
+                    <span className="sm:hidden">Neu</span>
                     <span className="hidden sm:inline">Neues Mitglied</span>
                   </Button>
                 </DialogTrigger>
@@ -1077,18 +1090,18 @@ export default function Goennermitglieder() {
         </Card>
       </MotionDiv>
 
-      {/* Stats Badges */}
+      {/* Stats Badges — text color matches the pill's status color */}
       <div className="flex flex-wrap gap-3 justify-center md:justify-start">
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
           <CheckCircle className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium text-primary">
             {activeMembers.filter(m => getMemberStatus(m) === 'active').length}{' '}
             Aktiv
           </span>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-warning/10 border border-warning/20">
           <AlertTriangle className="h-4 w-4 text-warning" />
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium text-warning">
             {
               activeMembers.filter(m => getMemberStatus(m) === 'expiring')
                 .length
@@ -1098,13 +1111,13 @@ export default function Goennermitglieder() {
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-pending/10 border border-pending/20">
           <Clock className="h-4 w-4 text-pending" />
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium text-pending">
             {pendingMembers.length} Provisorisch
           </span>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/10 border border-destructive/20">
           <XCircle className="h-4 w-4 text-destructive" />
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium text-destructive">
             {expiredMembers.length} Abgelaufen
           </span>
         </div>
@@ -1195,8 +1208,8 @@ export default function Goennermitglieder() {
       {/* Expired Members Section */}
       {expiredMembers.length > 0 && (
         <section>
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-destructive/70">
-            <XCircle className="h-6 w-6 text-destructive/70" />
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-destructive">
+            <XCircle className="h-6 w-6 text-destructive" />
             Abgelaufene Mitgliedschaften ({expiredMembers.length})
           </h2>
           <div className="space-y-3">

@@ -459,7 +459,11 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto px-3 sm:px-6">
-              <div className="min-w-[320px] sm:min-w-[400px]">
+              {/* min-w forces the table wider than the mobile viewport so the
+                  overflow-x-auto wrapper actually scrolls instead of squeezing
+                  the role columns until "Editor" truncates and "Member" is
+                  cut off entirely. */}
+              <div className="min-w-[440px] sm:min-w-[400px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
