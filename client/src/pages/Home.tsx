@@ -107,7 +107,7 @@ export default function Home() {
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 <Sparkles className="h-4 w-4" />
-                Since 2022
+                Seit 2022 zu laut für die Nachbarn
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black leading-[1.1] tracking-tight">
@@ -118,8 +118,7 @@ export default function Home() {
               </h1>
 
               <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0">
-                Event- und Kulturverein. Wir bringen Menschen zusammen für
-                unvergessliche Momente, grossartige Events und jede Menge Spass!
+                Wir veranstalten was. Du kommst, lachst, und bleibst zu lang.
               </p>
 
               <div className="flex flex-col gap-3 justify-center lg:justify-start">
@@ -204,10 +203,10 @@ export default function Home() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Was uns ausmacht
+              Was bei uns abgeht
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Entdecke, was Jogge di Balla so besonders macht
+              Kein langer Pitch. Drei Sachen, dann scrollst du weiter.
             </p>
           </MotionDiv>
 
@@ -217,24 +216,27 @@ export default function Home() {
                 icon: Trophy,
                 title: 'Shotcounter',
                 description:
-                  'Welches Team trinkt die meisten Jogge di Balla Shots? Live Wettbewerb!',
+                  'Welches Team trinkt am meisten? Live-Ranking, kein Pardon.',
                 href: '/shotcounter',
+                cta: 'Zu den Shots',
                 delay: 0,
               },
               {
                 icon: Calendar,
                 title: 'Events & Fotos',
                 description:
-                  'Erlebe unsere unvergesslichen Events und entdecke die besten Momente.',
+                  'Was wir veranstaltet haben. Mit Bildern, falls du nicht dabei warst.',
                 href: '/events',
+                cta: 'Zu den Events',
                 delay: 0.1,
               },
               {
                 icon: Users,
                 title: 'Unser Team',
                 description:
-                  'Lerne das stattliche und äusserst attraktive Team hinter Jogge di Balla kennen!',
+                  'Das stattliche und äusserst attraktive Team hinter dem Verein.',
                 href: '/team',
+                cta: 'Zum Team',
                 delay: 0.2,
               },
             ]
@@ -267,7 +269,7 @@ export default function Home() {
                     </CardHeader>
                     <CardContent>
                       <span className="flex items-center gap-2 font-semibold text-primary group">
-                        Mehr erfahren
+                        {feature.cta}
                         <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </span>
                     </CardContent>
@@ -291,10 +293,10 @@ export default function Home() {
             >
               <div className="text-center mb-8">
                 <span className="inline-block px-4 py-1.5 rounded-full bg-coral/10 text-coral text-sm font-semibold mb-4">
-                  Kommendes Event
+                  Bald ist's wieder soweit
                 </span>
                 <h2 className="text-3xl md:text-4xl font-bold">
-                  Nächstes Event
+                  Was als nächstes ansteht
                 </h2>
               </div>
 
@@ -328,7 +330,7 @@ export default function Home() {
                     className="btn-animate mt-4"
                     onClick={() => navigate('/events#event-cards')}
                   >
-                    Mehr erfahren
+                    Zum Event
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </CardContent>
@@ -351,14 +353,12 @@ export default function Home() {
             <div className="w-20 h-20 rounded-full bg-coral/10 flex items-center justify-center mx-auto">
               <Heart className="h-10 w-10 text-coral" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold">Über uns</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Wer wir sind</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Jogge di Balla ist mehr als nur ein Verein! Jedes Jahr
-              organisieren wir besondere Events, die durch ihre einzigartige
-              Atmosphäre, interessante Locations und unvergessliche Erlebnisse
-              begeistern. Unsere Veranstaltungen sind kreativ und
-              abwechslungsreich und bieten immer wieder neue Highlights für
-              alle, die etwas Aussergewöhnliches suchen.
+              Event- und Kulturverein aus Brislach. Wir veranstalten Anlässe an
+              Orten, die du sonst nicht gesehen hättest, mit Leuten, die du
+              sonst nicht getroffen hättest. Klingt überzeichnet — ist es aber
+              nicht.
             </p>
             <Button
               variant="outline"
@@ -366,7 +366,7 @@ export default function Home() {
               className="btn-animate"
               onClick={() => navigate('/contact')}
             >
-              Kontakt aufnehmen
+              Schreib uns
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </MotionDiv>
@@ -389,11 +389,10 @@ export default function Home() {
                   <Gift className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-2xl md:text-3xl">
-                  Werde Gönnermitglied!
+                  Werde Gönner
                 </CardTitle>
                 <CardDescription className="text-lg">
-                  Unterstütze Jogge di Balla und profitiere von exklusiven
-                  Vorteilen
+                  20 Stutz pro Jahr. Wenig Aufwand, viel Wirkung.
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center space-y-6">
@@ -406,15 +405,15 @@ export default function Home() {
                 <div className="grid sm:grid-cols-3 gap-4 text-sm">
                   <div className="p-4 rounded-lg bg-muted/50">
                     <Gift className="h-6 w-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium">Exklusive Giveaways</p>
+                    <p className="font-medium">Giveaways nur für Gönner</p>
                   </div>
                   <div className="p-4 rounded-lg bg-muted/50">
                     <Trophy className="h-6 w-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium">Reduzierte Preise</p>
+                    <p className="font-medium">Reduzierter Eintritt</p>
                   </div>
                   <div className="p-4 rounded-lg bg-muted/50">
                     <Heart className="h-6 w-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium">Verein unterstützen</p>
+                    <p className="font-medium">Du machst's möglich</p>
                   </div>
                 </div>
                 <Button
@@ -442,9 +441,9 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="text-center space-y-6"
           >
-            <h2 className="text-3xl md:text-4xl font-bold">Folge uns</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Wir sind auch online</h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Bleib auf dem Laufenden und verpasse keine Updates!
+              Falls du nichts verpassen willst. Falls doch, auch okay.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               {/* Instagram */}
