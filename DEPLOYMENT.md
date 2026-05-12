@@ -22,12 +22,14 @@ ssh root@deine-server-ip
 apt update && apt upgrade -y
 ```
 
-### 1.3 Node.js 20 installieren
+### 1.3 Node.js 22 installieren
+
+Das Projekt verlangt Node `>=22.11.0` (siehe `engines` in `package.json`).
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt install -y nodejs
-node --version  # Sollte v20.x.x anzeigen
+node --version  # Sollte v22.x.x anzeigen
 ```
 
 ### 1.4 pnpm installieren
@@ -113,27 +115,31 @@ cp .env.example .env
 nano .env
 ```
 
-Fülle die `.env` mit deinen echten Werten (siehe `GOOGLE_OAUTH_SETUP.md` für Google OAuth):
+Fülle die `.env` mit deinen echten Werten (siehe `.env.example` für die vollständige Liste mit Kommentaren und `GOOGLE_OAUTH_SETUP.md` für Google OAuth):
 
 ```env
 DATABASE_URL=mysql://joggediballa_user:dein_sicheres_passwort@localhost:3306/joggediballa
-JWT_SECRET=generiere-einen-zufälligen-32-zeichen-string
+JWT_SECRET=generiere-einen-zufaelligen-32-zeichen-string
+SESSION_SECRET=generiere-einen-zweiten-32-zeichen-string
 GOOGLE_CLIENT_ID=deine-google-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=dein-google-client-secret
-GOOGLE_CALLBACK_URL=https://joggediballa.de/api/auth/callback/google
+GOOGLE_CALLBACK_URL=https://joggediballa.ch/api/auth/callback/google
 ADMIN_EMAIL=deine@gmail.com
-BASE_URL=https://joggediballa.de
-VITE_APP_TITLE=Jogge di Balla
-VITE_APP_LOGO=/Jogge_Di_Balla_Final_Transparent.png
+BASE_URL=https://joggediballa.ch
+APP_ORIGIN=https://joggediballa.ch
 NODE_ENV=production
 PORT=3000
+UPLOAD_DIR=/var/www/joggediballa-mainpage/uploads
+PUBLIC_UPLOAD_URL=https://joggediballa.ch/uploads
 ```
 
-**JWT Secret generieren:**
+**JWT & SESSION Secret generieren (je 32+ Zeichen, MÜSSEN unterschiedlich sein):**
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
+
+Der Server startet nicht, wenn `JWT_SECRET` oder `SESSION_SECRET` fehlt oder kürzer als 32 Zeichen ist.
 
 Speichern: `Ctrl+O`, `Enter`, `Ctrl+X`
 
@@ -151,11 +157,15 @@ pnpm build
 
 ### 3.7 Mit PM2 starten
 
+Das Repo enthält `ecosystem.config.cjs` als kanonische PM2-Konfiguration. Damit ist auf dem Server immer derselbe App-Name, Cwd und Restart-Verhalten gesetzt — keine Ad-hoc-Befehle nötig.
+
 ```bash
-pm2 start dist/index.js --name joggediballa
+pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup
 ```
+
+Updates später entsprechend mit `pm2 reload ecosystem.config.cjs` (zero-downtime) oder `pm2 restart joggediballa`.
 
 Kopiere den ausgegebenen Befehl und führe ihn aus (sieht aus wie):
 

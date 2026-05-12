@@ -237,7 +237,7 @@ pnpm test
 
 - **Primärfarben:** Coral Red (#FF5A6B), Teal Blue (#1B9BA8)
 - **Dark Mode:** Automatische System-Erkennung + manueller Toggle
-- **Schriftart:** Inter (Google Fonts)
+- **Schriftart:** Inter Variable (self-hosted via `@fontsource-variable/inter`)
 - **Animationen:** Framer Motion für smooth Transitions
 
 ## 📝 Entwicklungs-Workflow

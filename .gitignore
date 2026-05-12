@@ -108,3 +108,9 @@ temp/
 
 # Runtime user uploads — must never enter git history.
 uploads/
+
+# Local Claude Code settings
+.claude/
+
+# Drizzle-kit local journal / generated artifacts (we use db:push, not migrations)
+drizzle/meta/
