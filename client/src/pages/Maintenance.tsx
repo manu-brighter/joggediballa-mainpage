@@ -41,15 +41,15 @@ export default function MaintenancePage() {
             <div className="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
               <Wrench className="h-8 w-8 text-warning" />
             </div>
-            <CardTitle className="text-2xl">Wartungsmodus</CardTitle>
+            <CardTitle className="text-2xl">Kurz pausiert</CardTitle>
             <CardDescription className="text-base">
-              Wir arbeiten gerade an Verbesserungen für euch!
+              Wir schrauben an der Seite.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-center text-muted-foreground">
-              Die Website ist vorübergehend nicht verfügbar. Bitte versuche es
-              später erneut oder melde dich an, um auf die Website zuzugreifen.
+              Komm später nochmal vorbei. Mitglieder können sich anmelden und
+              die internen Tools weiter nutzen.
             </p>
 
             <div className="flex flex-col gap-3">
