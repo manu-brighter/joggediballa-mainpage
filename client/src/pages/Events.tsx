@@ -21,7 +21,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +57,8 @@ import {
   Link2,
   Eye,
   EyeOff,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -235,6 +236,7 @@ export default function Events() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [fullResLoaded, setFullResLoaded] = useState(false);
+  const [photoNoticeOpen, setPhotoNoticeOpen] = useState(false);
 
   // Event management state
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -606,45 +608,73 @@ export default function Events() {
         </p>
       </MotionDiv>
 
-      {/* Datenschutz-Hinweis */}
+      {/* Datenschutz-Hinweis — collapsible */}
       <MotionDiv
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="max-w-4xl mx-auto"
       >
-        <Alert className="border-primary/30 bg-primary/5">
-          <Info className="h-4 w-4 text-primary" />
-          <AlertDescription className="text-sm text-muted-foreground ml-2">
-            <div className="flex flex-col items-start gap-3">
-              <div className="flex-1">
-                <h1>
-                  <strong className="text-foreground">
-                    Fotografie an Veranstaltungen:
-                  </strong>
-                </h1>
-                An unseren Veranstaltungen werden Fotos und Videos erstellt,
-                welche für unsere Website, Social Media sowie
-                Vereinskommunikation verwendet werden. Die Veröffentlichung
-                erfolgt auf Grundlage unseres berechtigten Interesses an der
-                Öffentlichkeitsarbeit. Personen, die nicht fotografiert werden
-                möchten oder mit einer Veröffentlichung nicht einverstanden
-                sind, können dies jederzeit unserem Team mitteilen oder eine
-                nachträgliche Entfernung verlangen.
-              </div>
-              <Link href="/contact">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="btn-animate border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary whitespace-nowrap"
-                >
-                  Fotos © Manuel Heller → Für Anfragen
-                  <Mail className="h-4 w-4" />
-                </Button>
-              </Link>
+        <button
+          type="button"
+          onClick={() => setPhotoNoticeOpen(prev => !prev)}
+          className="w-full flex items-center justify-between gap-3 p-4 rounded-2xl border border-primary/30 bg-primary/5 hover:border-primary/50 transition-colors text-left"
+          aria-expanded={photoNoticeOpen}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Info className="h-5 w-5 text-primary" />
             </div>
-          </AlertDescription>
-        </Alert>
+            <div>
+              <p className="font-bold text-sm text-primary">
+                Fotografie an Veranstaltungen
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Wie wir Bilder verwenden — kurz erklärt
+              </p>
+            </div>
+          </div>
+          {photoNoticeOpen ? (
+            <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
+          )}
+        </button>
+
+        <AnimatePresence>
+          {photoNoticeOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-2 p-4 rounded-2xl border border-primary/20 bg-primary/5 space-y-3 text-sm text-muted-foreground">
+                <p>
+                  An unseren Veranstaltungen werden Fotos und Videos erstellt,
+                  welche für unsere Website, Social Media sowie
+                  Vereinskommunikation verwendet werden. Die Veröffentlichung
+                  erfolgt auf Grundlage unseres berechtigten Interesses an der
+                  Öffentlichkeitsarbeit. Personen, die nicht fotografiert
+                  werden möchten oder mit einer Veröffentlichung nicht
+                  einverstanden sind, können dies jederzeit unserem Team
+                  mitteilen oder eine nachträgliche Entfernung verlangen.
+                </p>
+                <Link href="/contact">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="btn-animate border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary whitespace-nowrap"
+                  >
+                    Fotos © Manuel Heller → Für Anfragen
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </MotionDiv>
 
       {/* Add Event Button */}
