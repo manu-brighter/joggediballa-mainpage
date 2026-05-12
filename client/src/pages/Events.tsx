@@ -62,6 +62,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { SEO } from '@/components/SEO';
 
 const MotionDiv = motion.div;
 
@@ -590,21 +591,26 @@ export default function Events() {
   // =========================================================================
   return (
     <div className="container py-12 space-y-12">
+      <SEO
+        title="Jogge di Balla - Events & Fotos"
+        description="Was wir veranstaltet haben. Mit Bildern, falls du nicht dabei warst. Termine, Galerien, Fotos aus dem Vereinsleben."
+        keywords="Jogge di Balla, Events, Veranstaltungen, Fotos, Galerie, Brislach"
+        ogUrl="https://joggediballa.ch/events"
+      />
       {/* Header */}
       <MotionDiv
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 mb-4">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/15 mb-4">
           <Calendar className="h-10 w-10 text-primary" />
         </div>
         <h1 className="text-4xl md:text-5xl font-black">
           <span className="gradient-text">Events & Fotos</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Erlebe unsere unvergesslichen Momente und entdecke die Highlights
-          unserer Events.
+          Was wir veranstaltet haben. Mit Bildern, falls du nicht dabei warst.
         </p>
       </MotionDiv>
 
