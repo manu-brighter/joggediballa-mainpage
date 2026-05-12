@@ -191,7 +191,7 @@ export default function UserManagement() {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
                   <Select
                     value={user.role}
                     onValueChange={value =>
@@ -199,7 +199,7 @@ export default function UserManagement() {
                     }
                     disabled={changingRole === user.id}
                   >
-                    <SelectTrigger className="w-full sm:w-[140px]">
+                    <SelectTrigger className="flex-1 sm:flex-initial sm:w-[140px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
