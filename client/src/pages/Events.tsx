@@ -56,6 +56,8 @@ import {
   Clock,
   ExternalLink,
   Link2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -288,6 +290,18 @@ export default function Events() {
       toast.success('Event aktualisiert!');
       setEditEventOpen(false);
       resetEventForm();
+    },
+    onError: error => toast.error(parseErrorMessage(error)),
+  });
+
+  // Lightweight publish toggle — same `events.update` mutation but isolated
+  // from the edit dialog so it can run without opening/resetting any form.
+  const togglePublishMutation = trpc.events.update.useMutation({
+    onSuccess: (_, vars) => {
+      utils.events.list.invalidate();
+      toast.success(
+        vars.isPublished ? 'Event veröffentlicht!' : 'Event als Entwurf gespeichert.',
+      );
     },
     onError: error => toast.error(parseErrorMessage(error)),
   });
@@ -592,8 +606,8 @@ export default function Events() {
         transition={{ delay: 0.2 }}
         className="max-w-4xl mx-auto"
       >
-        <Alert className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <Alert className="border-primary/30 bg-primary/5">
+          <Info className="h-4 w-4 text-primary" />
           <AlertDescription className="text-sm text-muted-foreground ml-2">
             <div className="flex flex-col items-start gap-3">
               <div className="flex-1">
@@ -615,7 +629,7 @@ export default function Events() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="btn-animate border-blue-300 bg-blue-100/50 hover:bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 whitespace-nowrap"
+                  className="btn-animate border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary whitespace-nowrap"
                 >
                   Fotos © Manuel Heller → Für Anfragen
                   <Mail className="h-4 w-4" />
@@ -901,6 +915,12 @@ export default function Events() {
                           Kommendes Event
                         </div>
                       )}
+                      {/* Draft Badge — only visible to editors */}
+                      {canManageEvents && !event.isPublished && (
+                        <div className="absolute top-3 right-3 z-10 bg-warning text-warning-foreground text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+                          Entwurf
+                        </div>
+                      )}
 
                       {/* Event Cover Image — use compressed for cover */}
                       {thumbnailPhoto ? (
@@ -937,6 +957,34 @@ export default function Events() {
                           </CardTitle>
                           {canManageEvents && (
                             <div className="flex gap-1 shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  togglePublishMutation.mutate({
+                                    eventId: event.id,
+                                    isPublished: !event.isPublished,
+                                  })
+                                }
+                                disabled={togglePublishMutation.isPending}
+                                title={
+                                  event.isPublished
+                                    ? 'Veröffentlicht — klicken um als Entwurf zu setzen'
+                                    : 'Entwurf — klicken um zu veröffentlichen'
+                                }
+                                aria-label={
+                                  event.isPublished
+                                    ? 'Auf Entwurf setzen'
+                                    : 'Veröffentlichen'
+                                }
+                              >
+                                {event.isPublished ? (
+                                  <Eye className="h-4 w-4 text-success" />
+                                ) : (
+                                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
