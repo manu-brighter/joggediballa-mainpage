@@ -73,7 +73,7 @@ export default function Home() {
     <div className="space-y-0">
       <SEO
         title="Jogge di Balla - Event- und Kulturverein seit 2022"
-        description="Event- und Kulturverein aus Brislach. Wir bringen Menschen zusammen für unvergessliche Momente, grossartige Events und jede Menge Spass! Shotcounter, Gönnermitglieder, DJ & Fotografie Services."
+        description="Event- und Kulturverein aus Brislach. Wir veranstalten was. Du kommst, lachst, und bleibst zu lang. Mit Shotcounter, Events, Gönnermitgliedern und DJ- und Fotografie-Services."
         keywords="Jogge di Balla, Verein, Events, Brislach, Baselland, Laufental, Shotcounter, Party, Community, DJ, Fotografie, Vermietung, Beerpong"
         ogUrl="https://joggediballa.ch/"
         ogImage="https://joggediballa.ch/JoggediBalla-Logo.PNG"
@@ -92,10 +92,6 @@ export default function Home() {
           }}
         />
         <div className="absolute inset-0 hero-radials" />
-
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-coral/10 rounded-full blur-3xl animate-pulse delay-1000" />
 
         <div className="container relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
@@ -151,10 +147,8 @@ export default function Home() {
                     <Button
                       variant="outline"
                       size="lg"
-                      className="btn-animate text-base h-12 px-8 bg-background/50 backdrop-blur-sm flex-1 sm:flex-none"
-                      onClick={() =>
-                        navigate(nextEvent ? `/events` : '/events')
-                      }
+                      className="btn-animate text-base h-12 px-8 flex-1 sm:flex-none"
+                      onClick={() => navigate('/events')}
                     >
                       <Calendar className="h-5 w-5 mr-2" />
                       {nextEvent ? 'Nächstes Event' : 'Unsere Events'}
