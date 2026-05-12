@@ -390,6 +390,38 @@
     );
   }
 
+  /* Hero radial accents — Primary + Coral spotlights over the hero gradient.
+     Token-driven so dark mode / theme swaps just work. */
+  .hero-radials {
+    background-image:
+      radial-gradient(
+        circle at 30% 20%,
+        color-mix(in oklch, var(--primary), transparent 85%),
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 70% 80%,
+        color-mix(in oklch, var(--coral), transparent 90%),
+        transparent 50%
+      );
+  }
+
+  /* Instagram brand gradient — external-brand requirement (analog to --twitch).
+     Two-step purple -> pink, OKLCH approximations of tailwind purple-500/pink-500. */
+  .social-instagram {
+    background: linear-gradient(
+      to right,
+      oklch(0.61 0.24 305),
+      oklch(0.65 0.23 6)
+    );
+    color: var(--neutral-0);
+    border: 0;
+    transition: filter 200ms ease-out;
+  }
+  .social-instagram:hover {
+    filter: brightness(0.92);
+  }
+
   /* Card hover effect */
   .card-hover {
     @apply transition-all duration-300 ease-out;

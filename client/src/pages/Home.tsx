@@ -19,6 +19,7 @@ import {
   Gift,
   Twitch,
   Zap,
+  MapPin,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -90,8 +91,7 @@ export default function Home() {
             backgroundSize: '1129px 610px',
           }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.55_0.14_195_/_0.15),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,oklch(0.68_0.18_18_/_0.1),transparent_50%)]" />
+        <div className="absolute inset-0 hero-radials" />
 
         {/* Floating Elements */}
         <div className="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse" />
@@ -127,7 +127,7 @@ export default function Home() {
                   <div className="flex justify-center lg:justify-start">
                     <Button
                       size="lg"
-                      className="btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-coral to-orange-500 hover:from-coral/90 hover:to-orange-500/90 text-white shadow-lg shadow-coral/30 hover:shadow-coral/50 border-0 animate-pulse hover:animate-none"
+                      className="btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-coral to-pending hover:from-coral/90 hover:to-pending/90 text-white shadow-lg shadow-coral/30 hover:shadow-coral/50 border-0 animate-pulse hover:animate-none"
                       onClick={() => navigate(TEMP_BUTTON_URL)}
                     >
                       <Zap className="h-5 w-5 mr-2" />
@@ -253,27 +253,30 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: feature.delay }}
+                  className="group h-full"
                 >
-                  <Card
-                    className="h-full card-hover border-2 hover:border-primary/50 bg-card/50 backdrop-blur-sm cursor-pointer"
-                    onClick={() => navigate(feature.href)}
+                  <Link
+                    href={feature.href}
+                    className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <CardHeader>
-                      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                        <feature.icon className="h-7 w-7 text-primary" />
-                      </div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
-                      <CardDescription className="text-base">
-                        {feature.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <span className="flex items-center gap-2 font-semibold text-primary group">
-                        {feature.cta}
-                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    </CardContent>
-                  </Card>
+                    <Card className="h-full card-hover border-2 group-hover:border-primary/50 bg-card/50 backdrop-blur-sm">
+                      <CardHeader>
+                        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                          <feature.icon className="h-7 w-7 text-primary" />
+                        </div>
+                        <CardTitle className="text-xl">{feature.title}</CardTitle>
+                        <CardDescription className="text-base">
+                          {feature.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <span className="flex items-center gap-2 font-semibold text-primary">
+                          {feature.cta}
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </MotionDiv>
               ))}
           </div>
@@ -292,7 +295,7 @@ export default function Home() {
               className="max-w-3xl mx-auto"
             >
               <div className="text-center mb-8">
-                <span className="inline-block px-4 py-1.5 rounded-full bg-coral/10 text-coral text-sm font-semibold mb-4">
+                <span className="inline-block px-4 py-1.5 rounded-full bg-coral/20 text-coral text-sm font-semibold mb-4">
                   Bald ist's wieder soweit
                 </span>
                 <h2 className="text-3xl md:text-4xl font-bold">
@@ -322,7 +325,8 @@ export default function Home() {
                   )}
                   {nextEvent.location && (
                     <p className="text-muted-foreground flex items-center gap-2">
-                      <span className="text-xl">📍</span> {nextEvent.location}
+                      <MapPin className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      {nextEvent.location}
                     </p>
                   )}
                   <Button
@@ -452,10 +456,7 @@ export default function Home() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button
-                  size="lg"
-                  className="btn-animate bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
-                >
+                <Button size="lg" className="btn-animate social-instagram">
                   <Instagram className="h-5 w-5 mr-2" />
                   @joggediballa
                 </Button>
