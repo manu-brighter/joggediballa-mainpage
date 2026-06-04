@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import { StyledQr } from '@/components/StyledQr';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { usePermission } from '@/hooks/usePermissions';
@@ -247,8 +247,8 @@ export default function DiashowControl() {
           <CardTitle>QR-Code & Link</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-6 items-center">
-          <div className="bg-white p-3 rounded-lg">
-            <QRCodeSVG value={uploadUrl} size={160} />
+          <div className="bg-white p-3 rounded-xl">
+            <StyledQr value={uploadUrl} size={160} />
           </div>
           <div className="flex-1 space-y-3 w-full">
             <div className="flex gap-2">
