@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lt, isNull } from 'drizzle-orm';
+import { eq, desc, and, gte, lt, isNull, inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/mysql2';
 import {
   InsertUser,
@@ -29,8 +29,14 @@ import {
   sdkGameLog,
   InsertSdkSession,
   InsertSdkGameLog,
+  slideshowPhotos,
+  slideshowSettings,
+  SlideshowSettings,
+  InsertSlideshowPhoto,
+  InsertSlideshowSettings,
 } from '../drizzle/schema';
 import { ENV } from './_core/env';
+import { nanoid } from 'nanoid';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -1017,6 +1023,7 @@ export async function initializeDefaultPermissions() {
     { permissionKey: 'edit_team', roles: ['admin', 'maintainer'] },
     // A-P0-05: attendance mutations require manage_attendance.
     { permissionKey: 'manage_attendance', roles: ['admin', 'maintainer'] },
+    { permissionKey: 'manage_slideshow', roles: ['admin', 'maintainer'] },
   ];
 
   try {
@@ -1213,4 +1220,187 @@ export async function sdkDeleteSessionGameLog(sessionId: number) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
   await db.delete(sdkGameLog).where(eq(sdkGameLog.sessionId, sessionId));
+}
+
+// ============================================
+// LIVE-DIASHOW (SLIDESHOW)
+// ============================================
+
+/** Single-Row Settings; legt die Row mit frischem Token an, falls sie fehlt. */
+export async function getSlideshowSettings(): Promise<SlideshowSettings> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const existing = await db
+    .select()
+    .from(slideshowSettings)
+    .where(eq(slideshowSettings.id, 1))
+    .limit(1);
+  if (existing.length > 0) return existing[0];
+  // Single-row table (id=1). Idempotent create — concurrent first-hits collide
+  // on the primary key instead of inserting duplicate settings rows.
+  await db
+    .insert(slideshowSettings)
+    .values({ id: 1, uploadToken: nanoid(16) })
+    .onDuplicateKeyUpdate({ set: { id: 1 } });
+  const created = await db
+    .select()
+    .from(slideshowSettings)
+    .where(eq(slideshowSettings.id, 1))
+    .limit(1);
+  return created[0];
+}
+
+export async function updateSlideshowSettings(
+  patch: Partial<InsertSlideshowSettings>,
+  updatedBy: number | null,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const settings = await getSlideshowSettings();
+  await db
+    .update(slideshowSettings)
+    .set({ ...patch, updatedBy })
+    .where(eq(slideshowSettings.id, settings.id));
+}
+
+export async function bumpPhotoVersion(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const settings = await getSlideshowSettings();
+  await db
+    .update(slideshowSettings)
+    .set({ photoVersion: settings.photoVersion + 1 })
+    .where(eq(slideshowSettings.id, settings.id));
+}
+
+export async function createSlideshowPhoto(
+  data: InsertSlideshowPhoto,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const result = await db.insert(slideshowPhotos).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listApprovedSlideshowPhotos() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(slideshowPhotos)
+    .where(eq(slideshowPhotos.status, 'approved'))
+    .orderBy(slideshowPhotos.createdAt);
+}
+
+export async function listPendingSlideshowPhotos() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(slideshowPhotos)
+    .where(eq(slideshowPhotos.status, 'pending'))
+    .orderBy(slideshowPhotos.createdAt);
+}
+
+export async function listAllSlideshowPhotos() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(slideshowPhotos)
+    .orderBy(desc(slideshowPhotos.createdAt));
+}
+
+/** Status for a set of photo ids (for the guest upload page's live polling).
+ * Ids missing from the result were rejected/deleted by a moderator. */
+export async function getSlideshowPhotoStatuses(ids: number[]) {
+  const db = await getDb();
+  if (!db || ids.length === 0) return [];
+  return db
+    .select({ id: slideshowPhotos.id, status: slideshowPhotos.status })
+    .from(slideshowPhotos)
+    .where(inArray(slideshowPhotos.id, ids));
+}
+
+export async function getSlideshowPhotoById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(slideshowPhotos)
+    .where(eq(slideshowPhotos.id, id))
+    .limit(1);
+  return rows.length > 0 ? rows[0] : undefined;
+}
+
+export async function approveSlideshowPhoto(
+  id: number,
+  moderatedBy: number,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(slideshowPhotos)
+    .set({ status: 'approved', moderatedBy, moderatedAt: new Date() })
+    .where(eq(slideshowPhotos.id, id));
+}
+
+export async function approveAllPendingSlideshowPhotos(
+  moderatedBy: number,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(slideshowPhotos)
+    .set({ status: 'approved', moderatedBy, moderatedAt: new Date() })
+    .where(eq(slideshowPhotos.status, 'pending'));
+}
+
+/** Löscht Row, gibt die Storage-Keys zum Unlink zurück. */
+export async function deleteSlideshowPhoto(
+  id: number,
+): Promise<{ displayKey: string; thumbnailKey: string } | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const photo = await getSlideshowPhotoById(id);
+  if (!photo) return undefined;
+  await db.delete(slideshowPhotos).where(eq(slideshowPhotos.id, id));
+  return { displayKey: photo.displayKey, thumbnailKey: photo.thumbnailKey };
+}
+
+/** Löscht alle Rows, gibt alle Storage-Keys zum Unlink zurück. */
+export async function clearAllSlideshowPhotos(): Promise<
+  Array<{ displayKey: string; thumbnailKey: string }>
+> {
+  const db = await getDb();
+  if (!db) return [];
+  const all = await db
+    .select({
+      displayKey: slideshowPhotos.displayKey,
+      thumbnailKey: slideshowPhotos.thumbnailKey,
+    })
+    .from(slideshowPhotos);
+  await db.delete(slideshowPhotos);
+  return all;
+}
+
+export async function getSlideshowStats(): Promise<{
+  pending: number;
+  approved: number;
+  totalBytes: number;
+}> {
+  const db = await getDb();
+  if (!db) return { pending: 0, approved: 0, totalBytes: 0 };
+  const rows = await db
+    .select({ status: slideshowPhotos.status, bytes: slideshowPhotos.bytes })
+    .from(slideshowPhotos);
+  let pending = 0;
+  let approved = 0;
+  let totalBytes = 0;
+  for (const r of rows) {
+    if (r.status === 'approved') approved++;
+    else pending++;
+    totalBytes += r.bytes;
+  }
+  return { pending, approved, totalBytes };
 }

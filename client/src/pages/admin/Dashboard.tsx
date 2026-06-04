@@ -61,6 +61,8 @@ import {
   Eye,
   EyeOff,
   Zap,
+  Projector,
+  ExternalLink,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -109,6 +111,12 @@ const PERMISSIONS = [
     key: 'manage_attendance',
     label: 'Anwesenheitsliste verwalten',
     icon: ClipboardList,
+    roles: ['admin', 'maintainer'],
+  },
+  {
+    key: 'manage_slideshow',
+    label: 'Live-Diashow verwalten',
+    icon: Projector,
     roles: ['admin', 'maintainer'],
   },
 ];
@@ -801,6 +809,51 @@ export default function AdminDashboard() {
                 </p>
               </div>
             )}
+          </CardContent>
+        </Card>
+      </MotionDiv>
+
+      {/* Hidden / unlinked control pages */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.37 }}
+      >
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Monitor className="h-5 w-5 text-primary" />
+              Versteckte Seiten
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Nicht verlinkte Steuerungs-Seiten — nur über diese Links
+              erreichbar. Von dort gelangst du auf die jeweiligen Anzeige- und
+              Upload-Seiten.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-2">
+              <a
+                href="/diashow/control"
+                className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-accent"
+              >
+                <span className="flex items-center gap-2">
+                  <Projector className="h-4 w-4 text-muted-foreground" />
+                  Live-Diashow — Steuerung
+                </span>
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              </a>
+              <a
+                href="/overlay/sdk/control"
+                className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-accent"
+              >
+                <span className="flex items-center gap-2">
+                  <Wine className="h-4 w-4 text-muted-foreground" />
+                  Schlag den Kassier — Overlay-Steuerung
+                </span>
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              </a>
+            </div>
           </CardContent>
         </Card>
       </MotionDiv>

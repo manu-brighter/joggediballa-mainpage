@@ -21,12 +21,19 @@ import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
 import { nanoid } from 'nanoid';
+import rateLimit from 'express-rate-limit';
 import { parse as parseCookieHeader } from 'cookie';
 import { jwtVerify } from 'jose';
 import { COOKIE_NAME } from '../shared/const';
 import { ENV, getJwtSecretBytes } from './_core/env';
 import { storagePut } from './storage';
-import { getUserByOpenId } from './db';
+import {
+  getUserByOpenId,
+  getSlideshowSettings,
+  getSlideshowStats,
+  createSlideshowPhoto,
+  bumpPhotoVersion,
+} from './db';
 
 // ---------------------------------------------------------------------------
 // Auth middleware — JWT cookie verification at the Express layer.
@@ -300,6 +307,119 @@ router.post(
       },
     ],
   }),
+);
+
+// ---------------------------------------------------------------------------
+// Public guest upload for the live slideshow. NO auth — gated by token +
+// rate limit. Same-origin POST passes csrfGuard (Origin === appOrigin / same
+// host in dev). All-in-one: validate -> sharp -> store -> DB insert. Low orphan
+// risk — stored files may be left if the DB insert fails (acceptable here).
+// Limit is DB-configurable (slideshowSettings.uploadRateLimit).
+// ---------------------------------------------------------------------------
+
+const slideshowUploadLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: async () => {
+    try {
+      const s = await getSlideshowSettings();
+      return s.uploadRateLimit;
+    } catch {
+      return 80;
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Zu viele Uploads. Bitte einen Moment warten.' },
+});
+
+router.post(
+  '/slideshow-photo',
+  slideshowUploadLimiter,
+  upload.single('file'),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const token =
+        (typeof req.query.token === 'string' ? req.query.token : '') ||
+        (typeof req.body?.token === 'string' ? req.body.token : '');
+      const settings = await getSlideshowSettings();
+      if (!token || token !== settings.uploadToken) {
+        res.status(403).json({ error: 'Ungültiger Link' });
+        return;
+      }
+      if (!settings.uploadsOpen) {
+        res.status(423).json({ error: 'Uploads sind aktuell geschlossen' });
+        return;
+      }
+      const stats = await getSlideshowStats();
+      if (stats.pending + stats.approved >= settings.maxPhotos) {
+        res.status(409).json({ error: 'Das Album ist voll' });
+        return;
+      }
+      if (!req.file) {
+        res.status(400).json({ error: 'No file provided (field name: "file")' });
+        return;
+      }
+      const sniffed = await sniffImage(req.file.buffer);
+      if (!sniffed) {
+        res.status(415).json({ error: 'Ungültiges Bild (nur JPEG/PNG/WebP)' });
+        return;
+      }
+
+      const id = nanoid();
+      // .rotate() ohne Args = EXIF-Auto-Orientierung, dann EXIF/GPS gestrippt.
+      // resolveWithObject liefert die finalen Dimensionen aus der Encode-
+      // Pipeline — kein zweiter Decode des Display-Buffers nötig.
+      const { data: displayBuf, info: displayInfo } = await sharp(sniffed.buffer, {
+        limitInputPixels: MAX_PIXELS,
+      })
+        .rotate()
+        .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 72, mozjpeg: true })
+        .toBuffer({ resolveWithObject: true });
+      const thumbBuf = await sharp(sniffed.buffer, {
+        limitInputPixels: MAX_PIXELS,
+      })
+        .rotate()
+        .resize(480, 480, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 55 })
+        .toBuffer();
+
+      const display = await storagePut(
+        `slideshow/display/${id}.jpg`,
+        displayBuf,
+        'image/jpeg',
+      );
+      const thumb = await storagePut(
+        `slideshow/thumb/${id}.jpg`,
+        thumbBuf,
+        'image/jpeg',
+      );
+
+      const status: 'pending' | 'approved' = settings.moderationEnabled
+        ? 'pending'
+        : 'approved';
+      const photoId = await createSlideshowPhoto({
+        status,
+        displayUrl: display.url,
+        displayKey: display.key,
+        thumbnailUrl: thumb.url,
+        thumbnailKey: thumb.key,
+        width: displayInfo.width,
+        height: displayInfo.height,
+        bytes: displayBuf.length,
+        uploaderIp: req.ip ?? null,
+      });
+      if (status === 'approved') await bumpPhotoVersion();
+
+      res.json({
+        status: status === 'approved' ? 'live' : 'pending',
+        id: photoId,
+      });
+    } catch (error) {
+      console.error('[Upload] slideshow-photo failed:', error);
+      res.status(500).json({ error: 'Upload fehlgeschlagen' });
+    }
+  },
 );
 
 router.use(multerErrorMiddleware);
