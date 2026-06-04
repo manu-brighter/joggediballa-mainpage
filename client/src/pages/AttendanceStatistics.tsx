@@ -167,19 +167,30 @@ export default function AttendanceStatistics() {
     return Math.max(...absenceData.map(d => d.weighted));
   }, [absenceData]);
 
-  // All members tied at the best / worst attendance rate, so a shared
-  // high/low score lists everyone instead of just the first match.
+  // All members tied with the best / worst member on the SAME key the server
+  // ranks by — weightedAbsences (attendance_db.ts sorts memberStats by it and
+  // picks best/worst from the ends). bestMember/worstMember are themselves
+  // entries of memberStats, so `===` compares same-source values (safe).
   const bestMembers = useMemo(() => {
     if (!stats?.bestMember) return [];
-    const rate = stats.bestMember.attendanceRate;
-    return stats.memberStats.filter(m => m.attendanceRate === rate);
+    const target = stats.bestMember.weightedAbsences;
+    return stats.memberStats.filter(m => m.weightedAbsences === target);
   }, [stats]);
 
   const worstMembers = useMemo(() => {
     if (!stats?.worstMember) return [];
-    const rate = stats.worstMember.attendanceRate;
-    return stats.memberStats.filter(m => m.attendanceRate === rate);
+    const target = stats.worstMember.weightedAbsences;
+    return stats.memberStats.filter(m => m.weightedAbsences === target);
   }, [stats]);
+
+  // Only surface a "+N tied" badge when the tie is a real subset — if every
+  // member shares the value there is no meaningful best/worst to single out
+  // (and both cards would otherwise list the whole roster).
+  const memberCount = stats?.memberStats.length ?? 0;
+  const showBestTie =
+    bestMembers.length > 1 && bestMembers.length < memberCount;
+  const showWorstTie =
+    worstMembers.length > 1 && worstMembers.length < memberCount;
 
   const sessionTypeData = useMemo(() => {
     if (!stats) return [];
@@ -361,7 +372,7 @@ export default function AttendanceStatistics() {
               <span className="min-w-0 truncate">
                 {stats.bestMember?.memberName || '-'}
               </span>
-              {bestMembers.length > 1 && (
+              {showBestTie && (
                 <UITooltip>
                   <TooltipTrigger asChild>
                     <span className="shrink-0 cursor-help text-sm font-semibold text-muted-foreground">
@@ -394,7 +405,7 @@ export default function AttendanceStatistics() {
               <span className="min-w-0 truncate">
                 {stats.worstMember?.memberName || '-'}
               </span>
-              {worstMembers.length > 1 && (
+              {showWorstTie && (
                 <UITooltip>
                   <TooltipTrigger asChild>
                     <span className="shrink-0 cursor-help text-sm font-semibold text-muted-foreground">
