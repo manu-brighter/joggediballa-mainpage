@@ -76,10 +76,11 @@ export default function Diashow() {
   );
 
   const utils = trpc.useUtils();
-  const { data: photos = [] } = trpc.slideshow.listApproved.useQuery(
-    { token: token ?? '' },
-    { enabled: !!token, refetchInterval: 60000 },
-  );
+  const { data: photos = [], isLoading: photosLoading } =
+    trpc.slideshow.listApproved.useQuery(
+      { token: token ?? '' },
+      { enabled: !!token, refetchInterval: 60000 },
+    );
 
   // Bei photoVersion-Änderung listApproved neu laden.
   const lastVersion = useRef<number>(-1);
@@ -96,11 +97,20 @@ export default function Diashow() {
   // dann von der Bühne verschwindet, wenn die Anzahl gleich bleibt (z.B. Löschen
   // + Freigabe zwischen zwei Polls).
   const photoSig = photos.map(p => p.id).join(',');
-  const slides = useMemo(() => {
-    if (photos.length === 0) return [];
-    return buildSlides(shuffle(photos as LayoutPhoto[]), screenAR);
+  // Random order is computed ONCE per photo set — NOT re-randomized on viewport
+  // changes. (Shuffling inside the AR-keyed memo jumped the deck mid-cycle every
+  // time the AR flickered — e.g. a mobile address bar showing/hiding — which read
+  // as "the slideshow switches far too fast".)
+  const shuffledPhotos = useMemo(() => {
+    return shuffle(photos as LayoutPhoto[]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoSig, screenAR]);
+  }, [photoSig]);
+  // Layout (portrait grouping) depends on the viewport. Recomputing it on an AR
+  // change keeps the same order, so the slide at the current index only changes
+  // when the grouping genuinely changes (a real orientation change), not on flicker.
+  const slides = useMemo(() => {
+    return buildSlides(shuffledPhotos, screenAR);
+  }, [shuffledPhotos, screenAR]);
 
   const [index, setIndex] = useState(0);
 
@@ -139,8 +149,14 @@ export default function Diashow() {
       ? `${window.location.origin}/diashow/${token}/upload`
       : '';
 
+  // While the queries are still loading the data needed to decide what to show,
+  // render the bare black stage — never flash the idle/welcome screen before the
+  // slideshow appears when the show is set visible.
+  const initialLoading =
+    !state || (state.valid && state.isVisible && photosLoading);
   const showIdle =
-    !state?.valid || !state.isVisible || (slides.length === 0 && !featured);
+    !initialLoading &&
+    (!state?.valid || !state.isVisible || (slides.length === 0 && !featured));
 
   const currentSlide = featured
     ? ({ kind: 'solo', photos: [featured] } as const)
