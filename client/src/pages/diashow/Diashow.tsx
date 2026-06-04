@@ -85,11 +85,15 @@ export default function Diashow() {
   }, [state?.valid, state?.photoVersion, utils]);
 
   // Slide-Reihenfolge: gemischt, bei Bestandsänderung neu gemischt.
+  // Signatur über die IDs (nicht nur die Länge), damit ein gelöschtes Foto auch
+  // dann von der Bühne verschwindet, wenn die Anzahl gleich bleibt (z.B. Löschen
+  // + Freigabe zwischen zwei Polls).
+  const photoSig = photos.map(p => p.id).join(',');
   const slides = useMemo(() => {
     if (photos.length === 0) return [];
     return buildSlides(shuffle(photos as LayoutPhoto[]), screenAR);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photos.length, screenAR]);
+  }, [photoSig, screenAR]);
 
   const [index, setIndex] = useState(0);
 
