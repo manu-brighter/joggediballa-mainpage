@@ -61,6 +61,7 @@ import {
   Eye,
   EyeOff,
   Zap,
+  Projector,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -109,6 +110,12 @@ const PERMISSIONS = [
     key: 'manage_attendance',
     label: 'Anwesenheitsliste verwalten',
     icon: ClipboardList,
+    roles: ['admin', 'maintainer'],
+  },
+  {
+    key: 'manage_slideshow',
+    label: 'Live-Diashow verwalten',
+    icon: Projector,
     roles: ['admin', 'maintainer'],
   },
 ];
