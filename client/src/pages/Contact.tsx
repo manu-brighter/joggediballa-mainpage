@@ -37,6 +37,7 @@ export default function Contact() {
     defaultValues: {
       name: '',
       email: '',
+      phone: '',
       subject: '',
       message: '',
     },
@@ -148,6 +149,25 @@ export default function Contact() {
                           type="email"
                           placeholder="deine@email.ch"
                           autoComplete="email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefon (optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="+41 79 123 45 67"
+                          autoComplete="tel"
                           {...field}
                         />
                       </FormControl>

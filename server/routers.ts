@@ -234,7 +234,10 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const photo = await db.getSlideshowPhotoById(input.id);
         if (!photo)
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Photo not found' });
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Photo not found',
+          });
         await db.approveSlideshowPhoto(input.id, ctx.user.id);
         await db.bumpPhotoVersion();
         await db.createActivityLog({
@@ -268,7 +271,10 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const keys = await db.deleteSlideshowPhoto(input.id);
         if (!keys)
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Photo not found' });
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Photo not found',
+          });
         await storageDelete(keys.displayKey);
         await storageDelete(keys.thumbnailKey);
         await db.createActivityLog({
@@ -287,7 +293,10 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const keys = await db.deleteSlideshowPhoto(input.id);
         if (!keys)
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Photo not found' });
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Photo not found',
+          });
         await storageDelete(keys.displayKey);
         await storageDelete(keys.thumbnailKey);
         await db.bumpPhotoVersion();
@@ -301,27 +310,29 @@ export const appRouter = router({
         });
         return { success: true };
       }),
-    clearAll: requirePermission('manage_slideshow').mutation(async ({ ctx }) => {
-      const keys = await db.clearAllSlideshowPhotos();
-      // DB rows are deleted first (consistent DB > consistent disk): a crash
-      // mid-loop orphans files on disk unrecoverably — acceptable for this
-      // admin "reset between events" action. TODO: parallelize storageDelete
-      // (Promise.all) if maxPhotos grows large.
-      for (const k of keys) {
-        await storageDelete(k.displayKey);
-        await storageDelete(k.thumbnailKey);
-      }
-      await db.bumpPhotoVersion();
-      await db.createActivityLog({
-        userId: ctx.user.id,
-        userName: ctx.user.name || 'Unknown',
-        action: 'slideshow_clear_all',
-        details: `Deleted ${keys.length} photos`,
-        ipAddress: null,
-        userAgent: null,
-      });
-      return { success: true, deleted: keys.length };
-    }),
+    clearAll: requirePermission('manage_slideshow').mutation(
+      async ({ ctx }) => {
+        const keys = await db.clearAllSlideshowPhotos();
+        // DB rows are deleted first (consistent DB > consistent disk): a crash
+        // mid-loop orphans files on disk unrecoverably — acceptable for this
+        // admin "reset between events" action. TODO: parallelize storageDelete
+        // (Promise.all) if maxPhotos grows large.
+        for (const k of keys) {
+          await storageDelete(k.displayKey);
+          await storageDelete(k.thumbnailKey);
+        }
+        await db.bumpPhotoVersion();
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_clear_all',
+          details: `Deleted ${keys.length} photos`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true, deleted: keys.length };
+      },
+    ),
   }),
 
   auth: router({
@@ -536,7 +547,10 @@ export const appRouter = router({
         const canSeeDrafts =
           role === 'admin' || role === 'maintainer' || role === 'editor';
         if (!event.isPublished && !canSeeDrafts) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Event not found' });
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Event not found',
+          });
         }
         return event;
       }),
@@ -853,6 +867,11 @@ export const appRouter = router({
             .email('Ungültige E-Mail-Adresse')
             .max(320)
             .refine(v => !/[\r\n]/.test(v), 'Ungültige Zeichen'),
+          phone: z
+            .string()
+            .max(30)
+            .refine(v => !/[\r\n]/.test(v), 'Ungültige Zeichen')
+            .optional(),
           subject: z
             .string()
             .min(1, 'Betreff ist erforderlich')
@@ -871,6 +890,7 @@ export const appRouter = router({
           await database.insert(contactSubmissions).values({
             name: input.name,
             email: input.email,
+            phone: input.phone || null,
             subject: input.subject,
             message: input.message,
             // A-P1-11 / F-SEC-024: with `trust proxy 1` set in _core/index.ts,
