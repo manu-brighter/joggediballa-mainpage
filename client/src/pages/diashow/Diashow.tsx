@@ -3,15 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { trpc } from '@/lib/trpc';
 import { SEO } from '@/components/SEO';
-import { StyledQr } from '@/components/StyledQr';
+import { StyledQr, QR_BG } from '@/components/StyledQr';
 import { buildSlides, shuffle, type LayoutPhoto } from '@/lib/slideshow-layout';
 import { QrCode } from 'lucide-react';
-
-// QR styling for the dark beamer stage: dark teal-tinted modules on a warm
-// off-white (never pure #000/#fff). The high lightness contrast keeps it
-// reliably scannable from across a room; the teal tint ties it to the brand.
-const QR_FG = 'oklch(0.22 0.05 200)';
-const QR_BG = 'oklch(0.98 0.004 250)';
 
 function useScreenAR(): number {
   const [ar, setAr] = useState(
@@ -235,12 +229,7 @@ export default function Diashow() {
                       boxShadow: '0 24px 80px -16px oklch(0.55 0.14 195 / 0.5)',
                     }}
                   >
-                    <StyledQr
-                      value={uploadUrl}
-                      size={260}
-                      fgColor={QR_FG}
-                      bgColor={QR_BG}
-                    />
+                    <StyledQr value={uploadUrl} size={260} />
                   </div>
                   <p className="flex items-center gap-2.5 text-lg font-medium text-white/85">
                     <QrCode className="size-5 text-primary" />
@@ -285,12 +274,7 @@ export default function Diashow() {
           }}
         >
           <div className="rounded-xl p-2" style={{ backgroundColor: QR_BG }}>
-            <StyledQr
-              value={uploadUrl}
-              size={74}
-              fgColor={QR_FG}
-              bgColor={QR_BG}
-            />
+            <StyledQr value={uploadUrl} size={74} />
           </div>
           <div className="max-w-[130px] leading-tight">
             <p className="text-sm font-semibold text-white">
