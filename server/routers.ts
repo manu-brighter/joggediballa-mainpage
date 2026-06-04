@@ -6,6 +6,7 @@ import { publicProcedure, protectedProcedure, router } from './_core/trpc';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import * as db from './db';
+import { nanoid } from 'nanoid';
 import {
   contactSubmissions,
   harassenlaufRegistrations,
@@ -134,6 +135,65 @@ export const appRouter = router({
           createdAt: p.createdAt,
         }));
       }),
+
+    // ---- Maintainer+ (requirePermission) ----
+    getSettings: requirePermission('manage_slideshow').query(async () => {
+      const s = await db.getSlideshowSettings();
+      const stats = await db.getSlideshowStats();
+      return {
+        ...s,
+        pendingCount: stats.pending,
+        approvedCount: stats.approved,
+        totalBytes: stats.totalBytes,
+      };
+    }),
+    listPending: requirePermission('manage_slideshow').query(async () => {
+      return db.listPendingSlideshowPhotos();
+    }),
+    listAll: requirePermission('manage_slideshow').query(async () => {
+      return db.listAllSlideshowPhotos();
+    }),
+    updateSettings: requirePermission('manage_slideshow')
+      .input(
+        z.object({
+          isVisible: z.boolean().optional(),
+          uploadsOpen: z.boolean().optional(),
+          moderationEnabled: z.boolean().optional(),
+          showQr: z.boolean().optional(),
+          eventTitle: z.string().max(255).nullable().optional(),
+          slideDurationMs: z.number().int().min(2000).max(60000).optional(),
+          transition: z.enum(['fade', 'kenburns']).optional(),
+          maxPhotos: z.number().int().min(1).max(100000).optional(),
+          uploadRateLimit: z.number().int().min(1).max(100000).optional(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.updateSlideshowSettings(input, ctx.user.id);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_settings',
+          details: `Updated: ${Object.keys(input).join(', ')}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      }),
+    rotateToken: requirePermission('manage_slideshow').mutation(
+      async ({ ctx }) => {
+        const token = nanoid(16);
+        await db.updateSlideshowSettings({ uploadToken: token }, ctx.user.id);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_rotate_token',
+          details: 'Rotated upload token',
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { token };
+      },
+    ),
   }),
 
   auth: router({
