@@ -1,10 +1,17 @@
 import { useParams } from 'wouter';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { QRCodeSVG } from 'qrcode.react';
 import { trpc } from '@/lib/trpc';
 import { SEO } from '@/components/SEO';
+import { StyledQr } from '@/components/StyledQr';
 import { buildSlides, shuffle, type LayoutPhoto } from '@/lib/slideshow-layout';
+import { QrCode } from 'lucide-react';
+
+// QR styling for the dark beamer stage: dark teal-tinted modules on a warm
+// off-white (never pure #000/#fff). The high lightness contrast keeps it
+// reliably scannable from across a room; the teal tint ties it to the brand.
+const QR_FG = 'oklch(0.22 0.05 200)';
+const QR_BG = 'oklch(0.98 0.004 250)';
 
 function useScreenAR(): number {
   const [ar, setAr] = useState(
@@ -154,19 +161,78 @@ export default function Diashow() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 flex flex-col items-center justify-center text-white gap-6"
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center"
           >
-            <h1 className="text-4xl font-bold">
-              {state?.valid && state.eventTitle ? state.eventTitle : 'Live-Diashow'}
-            </h1>
-            {uploadUrl && (
-              <>
-                <div className="bg-white p-4 rounded-xl">
-                  <QRCodeSVG value={uploadUrl} size={220} />
+            {/* Ambient brand glow so the stage isn't a flat black void. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  'radial-gradient(120% 85% at 50% 16%, oklch(0.55 0.14 195 / 0.20), transparent 55%), radial-gradient(90% 70% at 50% 102%, oklch(0.68 0.18 18 / 0.13), transparent 60%)',
+              }}
+            />
+
+            <div className="relative flex flex-col items-center gap-7">
+              <img
+                src="/JoggediBalla-Logo.PNG"
+                alt=""
+                className="h-20 w-auto drop-shadow-2xl"
+                onError={e => (e.currentTarget.style.display = 'none')}
+              />
+
+              <div className="flex items-center gap-2.5 text-primary">
+                <span className="relative flex size-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+                  <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
+                </span>
+                <span className="text-sm font-semibold uppercase tracking-[0.3em]">
+                  Live
+                </span>
+              </div>
+
+              <motion.h1
+                animate={{
+                  textShadow: [
+                    '0 0 18px oklch(0.55 0.14 195 / 0.25)',
+                    '0 0 38px oklch(0.55 0.14 195 / 0.55)',
+                    '0 0 18px oklch(0.55 0.14 195 / 0.25)',
+                  ],
+                }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                className="max-w-4xl text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-7xl"
+              >
+                {state?.valid && state.eventTitle
+                  ? state.eventTitle
+                  : 'Live-Diashow'}
+              </motion.h1>
+
+              {uploadUrl && (
+                <div className="mt-1 flex flex-col items-center gap-5">
+                  {/* QR stays pixel-stable (no scaling) so even slower phone
+                      cameras lock focus and scan reliably. */}
+                  <div
+                    className="rounded-[2rem] p-5 ring-1 ring-primary/30"
+                    style={{
+                      backgroundColor: QR_BG,
+                      boxShadow: '0 24px 80px -16px oklch(0.55 0.14 195 / 0.5)',
+                    }}
+                  >
+                    <StyledQr
+                      value={uploadUrl}
+                      size={260}
+                      fgColor={QR_FG}
+                      bgColor={QR_BG}
+                    />
+                  </div>
+                  <p className="flex items-center gap-2.5 text-lg font-medium text-white/85">
+                    <QrCode className="size-5 text-primary" />
+                    Scan & lade deine Fotos hoch
+                  </p>
                 </div>
-                <p className="text-xl opacity-80">Scan & lade deine Fotos hoch</p>
-              </>
-            )}
+              )}
+            </div>
           </motion.div>
         ) : currentSlide ? (
           <motion.div
@@ -193,13 +259,29 @@ export default function Diashow() {
         ) : null}
       </AnimatePresence>
 
-      {/* QR-Overlay unten im Eck */}
+      {/* QR-Overlay unten im Eck — themed dark chip, not a stark white box. */}
       {state?.valid && state.showQr && !showIdle && uploadUrl && (
-        <div className="absolute bottom-5 right-5 bg-white/95 rounded-lg p-2 flex items-center gap-2 shadow-lg">
-          <QRCodeSVG value={uploadUrl} size={84} />
-          <span className="text-black text-xs max-w-[90px] leading-tight pr-1">
-            Scan & lade dein Foto hoch
-          </span>
+        <div
+          className="absolute bottom-6 right-6 flex items-center gap-3 rounded-2xl p-3 pr-4 ring-1 ring-white/10"
+          style={{
+            backgroundColor: 'oklch(0.16 0.015 260 / 0.92)',
+            boxShadow: '0 16px 50px -12px oklch(0.10 0.02 260 / 0.7)',
+          }}
+        >
+          <div className="rounded-xl p-2" style={{ backgroundColor: QR_BG }}>
+            <StyledQr
+              value={uploadUrl}
+              size={74}
+              fgColor={QR_FG}
+              bgColor={QR_BG}
+            />
+          </div>
+          <div className="max-w-[130px] leading-tight">
+            <p className="text-sm font-semibold text-white">
+              Dein Foto auf die Leinwand
+            </p>
+            <p className="text-xs font-medium text-primary">Scan & lade hoch</p>
+          </div>
         </div>
       )}
     </div>
