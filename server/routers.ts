@@ -83,6 +83,59 @@ export const appRouter = router({
   system: systemRouter,
   attendance: attendanceRouter,
 
+  // ============================================
+  // LIVE-DIASHOW (SLIDESHOW)
+  // ============================================
+  slideshow: router({
+    // ---- Public (Token-validiert) ----
+    publicState: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const s = await db.getSlideshowSettings();
+        if (input.token !== s.uploadToken) {
+          return {
+            valid: false as const,
+            isVisible: false,
+            showQr: false,
+            moderationEnabled: true,
+            uploadsOpen: false,
+            eventTitle: null as string | null,
+            slideDurationMs: 6000,
+            transition: 'kenburns' as 'fade' | 'kenburns',
+            photoVersion: 0,
+            approvedCount: 0,
+          };
+        }
+        const stats = await db.getSlideshowStats();
+        return {
+          valid: true as const,
+          isVisible: s.isVisible,
+          showQr: s.showQr,
+          moderationEnabled: s.moderationEnabled,
+          uploadsOpen: s.uploadsOpen,
+          eventTitle: s.eventTitle,
+          slideDurationMs: s.slideDurationMs,
+          transition: s.transition,
+          photoVersion: s.photoVersion,
+          approvedCount: stats.approved,
+        };
+      }),
+    listApproved: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const s = await db.getSlideshowSettings();
+        if (input.token !== s.uploadToken) return [];
+        const photos = await db.listApprovedSlideshowPhotos();
+        return photos.map(p => ({
+          id: p.id,
+          displayUrl: p.displayUrl,
+          width: p.width,
+          height: p.height,
+          createdAt: p.createdAt,
+        }));
+      }),
+  }),
+
   auth: router({
     me: publicProcedure.query(opts =>
       opts.ctx.user ? toPublicUser(opts.ctx.user) : null,
