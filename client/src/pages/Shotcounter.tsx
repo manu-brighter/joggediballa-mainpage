@@ -567,10 +567,10 @@ export default function Shotcounter() {
                     { value: timeToNewYear.seconds, label: 'Sek' },
                   ].map(item => (
                     <div key={item.label} className="text-center">
-                      <div className="text-2xl md:text-4xl font-black tabular-nums text-primary">
+                      <div className="text-4xl md:text-5xl font-black tabular-nums text-primary">
                         {item.value.toString().padStart(2, '0')}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs md:text-sm text-muted-foreground">
                         {item.label}
                       </div>
                     </div>
