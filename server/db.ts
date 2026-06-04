@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lt, isNull } from 'drizzle-orm';
+import { eq, desc, and, gte, lt, isNull, inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/mysql2';
 import {
   InsertUser,
@@ -1309,6 +1309,17 @@ export async function listAllSlideshowPhotos() {
     .select()
     .from(slideshowPhotos)
     .orderBy(desc(slideshowPhotos.createdAt));
+}
+
+/** Status for a set of photo ids (for the guest upload page's live polling).
+ * Ids missing from the result were rejected/deleted by a moderator. */
+export async function getSlideshowPhotoStatuses(ids: number[]) {
+  const db = await getDb();
+  if (!db || ids.length === 0) return [];
+  return db
+    .select({ id: slideshowPhotos.id, status: slideshowPhotos.status })
+    .from(slideshowPhotos)
+    .where(inArray(slideshowPhotos.id, ids));
 }
 
 export async function getSlideshowPhotoById(id: number) {

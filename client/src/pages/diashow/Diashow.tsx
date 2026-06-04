@@ -3,15 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { trpc } from '@/lib/trpc';
 import { SEO } from '@/components/SEO';
-import { StyledQr } from '@/components/StyledQr';
+import { StyledQr, QR_BG } from '@/components/StyledQr';
 import { buildSlides, shuffle, type LayoutPhoto } from '@/lib/slideshow-layout';
 import { QrCode } from 'lucide-react';
-
-// QR styling for the dark beamer stage: dark teal-tinted modules on a warm
-// off-white (never pure #000/#fff). The high lightness contrast keeps it
-// reliably scannable from across a room; the teal tint ties it to the brand.
-const QR_FG = 'oklch(0.22 0.05 200)';
-const QR_BG = 'oklch(0.98 0.004 250)';
 
 function useScreenAR(): number {
   const [ar, setAr] = useState(
@@ -76,10 +70,11 @@ export default function Diashow() {
   );
 
   const utils = trpc.useUtils();
-  const { data: photos = [] } = trpc.slideshow.listApproved.useQuery(
-    { token: token ?? '' },
-    { enabled: !!token, refetchInterval: 60000 },
-  );
+  const { data: photos = [], isLoading: photosLoading } =
+    trpc.slideshow.listApproved.useQuery(
+      { token: token ?? '' },
+      { enabled: !!token, refetchInterval: 60000 },
+    );
 
   // Bei photoVersion-Änderung listApproved neu laden.
   const lastVersion = useRef<number>(-1);
@@ -96,11 +91,20 @@ export default function Diashow() {
   // dann von der Bühne verschwindet, wenn die Anzahl gleich bleibt (z.B. Löschen
   // + Freigabe zwischen zwei Polls).
   const photoSig = photos.map(p => p.id).join(',');
-  const slides = useMemo(() => {
-    if (photos.length === 0) return [];
-    return buildSlides(shuffle(photos as LayoutPhoto[]), screenAR);
+  // Random order is computed ONCE per photo set — NOT re-randomized on viewport
+  // changes. (Shuffling inside the AR-keyed memo jumped the deck mid-cycle every
+  // time the AR flickered — e.g. a mobile address bar showing/hiding — which read
+  // as "the slideshow switches far too fast".)
+  const shuffledPhotos = useMemo(() => {
+    return shuffle(photos as LayoutPhoto[]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoSig, screenAR]);
+  }, [photoSig]);
+  // Layout (portrait grouping) depends on the viewport. Recomputing it on an AR
+  // change keeps the same order, so the slide at the current index only changes
+  // when the grouping genuinely changes (a real orientation change), not on flicker.
+  const slides = useMemo(() => {
+    return buildSlides(shuffledPhotos, screenAR);
+  }, [shuffledPhotos, screenAR]);
 
   const [index, setIndex] = useState(0);
 
@@ -139,8 +143,14 @@ export default function Diashow() {
       ? `${window.location.origin}/diashow/${token}/upload`
       : '';
 
+  // While the queries are still loading the data needed to decide what to show,
+  // render the bare black stage — never flash the idle/welcome screen before the
+  // slideshow appears when the show is set visible.
+  const initialLoading =
+    !state || (state.valid && state.isVisible && photosLoading);
   const showIdle =
-    !state?.valid || !state.isVisible || (slides.length === 0 && !featured);
+    !initialLoading &&
+    (!state?.valid || !state.isVisible || (slides.length === 0 && !featured));
 
   const currentSlide = featured
     ? ({ kind: 'solo', photos: [featured] } as const)
@@ -219,12 +229,7 @@ export default function Diashow() {
                       boxShadow: '0 24px 80px -16px oklch(0.55 0.14 195 / 0.5)',
                     }}
                   >
-                    <StyledQr
-                      value={uploadUrl}
-                      size={260}
-                      fgColor={QR_FG}
-                      bgColor={QR_BG}
-                    />
+                    <StyledQr value={uploadUrl} size={260} />
                   </div>
                   <p className="flex items-center gap-2.5 text-lg font-medium text-white/85">
                     <QrCode className="size-5 text-primary" />
@@ -269,12 +274,7 @@ export default function Diashow() {
           }}
         >
           <div className="rounded-xl p-2" style={{ backgroundColor: QR_BG }}>
-            <StyledQr
-              value={uploadUrl}
-              size={74}
-              fgColor={QR_FG}
-              bgColor={QR_BG}
-            />
+            <StyledQr value={uploadUrl} size={74} />
           </div>
           <div className="max-w-[130px] leading-tight">
             <p className="text-sm font-semibold text-white">
