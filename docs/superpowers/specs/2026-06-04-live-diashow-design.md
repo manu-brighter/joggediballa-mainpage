@@ -88,6 +88,7 @@ keine Drizzle-Relations-API.
 - `transition` — `mysqlEnum('fade','kenburns')`, default `kenburns`, notNull
 - `photoVersion` — int, default 0, notNull (Bump bei Freigabe/Löschen/Clear → triggert Client-Refetch)
 - `maxPhotos` — int, default 3000, notNull (Disk-Schutz)
+- `uploadRateLimit` — int, default 80, notNull (max Uploads pro IP pro 10-min-Fenster; im Control anpassbar wegen Event-WLAN/NAT)
 - `updatedAt` — timestamp, defaultNow, onUpdateNow, notNull
 - `updatedBy` — int, `references(() => users.id)`, nullable
 
@@ -132,7 +133,7 @@ strippt Metadaten und erzeugt das Thumbnail.
 - `approveAll()` — alle pending → approved, ein Version-Bump.
 - `updateSettings(partial)` — ein Mutation für alle Toggles/Felder
   (`isVisible`, `uploadsOpen`, `moderationEnabled`, `showQr`, `eventTitle`,
-  `slideDurationMs`, `transition`), Zod-validiert partial.
+  `slideDurationMs`, `transition`, `maxPhotos`, `uploadRateLimit`), Zod-validiert partial.
 - `rotateToken()` — neuer `nanoid`-Token (alte Links/QR sterben).
 - `clearAll()` — alle Files + Rows löschen, `photoVersion` bumpen.
 
@@ -141,7 +142,7 @@ bumpt `photoVersion` wo Bild-Bestand betroffen ist.
 
 ### Express-Route (public): `POST /api/upload/slideshow-photo`
 In `server/uploadRoutes.ts`. Token via Query/Body. Ablauf:
-1. `express-rate-limit` (z.B. ~30 Uploads / 10 min pro IP).
+1. `express-rate-limit` mit **dynamischem `limit`** (Funktion liest `slideshowSettings.uploadRateLimit`, default 80 / 10-min-Fenster pro IP). Großzügig wegen geteilter Event-WLAN-IPs; im Control anpassbar falls es Probleme macht.
 2. Token gegen `slideshowSettings.uploadToken` prüfen → sonst 403.
 3. `uploadsOpen`-Check → sonst 423/409 mit Klartext.
 4. `maxPhotos`-Check (aktuelle Anzahl) → sonst „Album voll".
@@ -225,7 +226,8 @@ echte Durchsetzung serverseitig via `requirePermission`.
 
 Sektionen:
 1. **Status**: Switches `isVisible`/`uploadsOpen`/`moderationEnabled`/`showQr`,
-   Event-Titel-Input, Slide-Dauer + Transition-Select, Speicher-/Anzahl-Anzeige,
+   Event-Titel-Input, Slide-Dauer + Transition-Select, Upload-Rate-Limit-Input
+   (default 80/10min), Speicher-/Anzahl-Anzeige,
    Links „Slideshow öffnen" / „Upload öffnen".
 2. **QR & Link**: QR-Vorschau + Upload-URL + Copy-Button, „Token rotieren"
    (Confirm-Dialog → alter QR wird ungültig).
@@ -256,7 +258,8 @@ Drei lazy-geladene Page-Komponenten + Routen im `<Switch>` (Reihenfolge s. §4).
 
 - Geheim-Token im Pfad gegen Drive-by/Scraper; im Control rotierbar.
 - `express-rate-limit` auf der Upload-Route (echte Express-Route → nicht vom
-  tRPC-Batch-Bypass betroffen).
+  tRPC-Batch-Bypass betroffen), Limit DB-konfigurierbar (`uploadRateLimit`,
+  default 80 / 10 min pro IP).
 - `maxPhotos`-Cap schützt Disk vor Flooding.
 - EXIF/GPS wird serverseitig gestrippt (sharp default) — keine Standortdaten
   der Gäste auf der Leinwand/Disk.
