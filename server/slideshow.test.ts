@@ -113,4 +113,23 @@ describe('slideshow moderation', () => {
     const editor = appRouter.createCaller(ctx('editor'));
     await expect(editor.slideshow.approve({ id: 999999 })).rejects.toThrow();
   });
+
+  it('reject does NOT bump photoVersion', async () => {
+    const admin = appRouter.createCaller(ctx('admin'));
+    const id = await db.createSlideshowPhoto({
+      status: 'pending',
+      displayUrl: 'https://example.com/d.jpg',
+      displayKey: 'slideshow/display/reject-test.jpg',
+      thumbnailUrl: 'https://example.com/t.jpg',
+      thumbnailKey: 'slideshow/thumb/reject-test.jpg',
+      width: 1000,
+      height: 1500,
+      bytes: 12345,
+      uploaderIp: null,
+    });
+    const before = (await admin.slideshow.getSettings()).photoVersion;
+    await admin.slideshow.reject({ id });
+    const after = (await admin.slideshow.getSettings()).photoVersion;
+    expect(after).toBe(before);
+  });
 });
