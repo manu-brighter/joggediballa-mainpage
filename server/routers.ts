@@ -19,6 +19,7 @@ import {
   PERMISSION_KEYS,
 } from './permissions';
 import type { EventLink } from '@shared/types';
+import { contactFormSchema } from '@shared/contact.schema';
 
 /**
  * Strip secret/internal columns from User rows before sending to the client
@@ -852,37 +853,9 @@ export const appRouter = router({
   // ============================================
   contact: router({
     send: publicProcedure
-      .input(
-        z.object({
-          // A-P0-02: reject any value containing CR/LF that could end up in
-          // an SMTP header (reply-to / subject). Email module also validates
-          // defensively before passing to nodemailer.
-          name: z
-            .string()
-            .min(1, 'Name ist erforderlich')
-            .max(100)
-            .refine(v => !/[\r\n]/.test(v), 'Ungültige Zeichen'),
-          email: z
-            .string()
-            .email('Ungültige E-Mail-Adresse')
-            .max(320)
-            .refine(v => !/[\r\n]/.test(v), 'Ungültige Zeichen'),
-          phone: z
-            .string()
-            .max(30)
-            .refine(v => !/[\r\n]/.test(v), 'Ungültige Zeichen')
-            .optional(),
-          subject: z
-            .string()
-            .min(1, 'Betreff ist erforderlich')
-            .max(200)
-            .refine(v => !/[\r\n]/.test(v), 'Ungültige Zeichen'),
-          message: z
-            .string()
-            .min(10, 'Nachricht muss mindestens 10 Zeichen lang sein')
-            .max(5000),
-        }),
-      )
+      // Single source of truth shared with the client RHF resolver; includes
+      // the A-P0-02 CR/LF guard that keeps field values out of SMTP headers.
+      .input(contactFormSchema)
       .mutation(async ({ input, ctx }) => {
         // Save to database
         const database = await db.getDb();
