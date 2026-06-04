@@ -1,15 +1,26 @@
 import { useParams } from 'wouter';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import imageCompression from 'browser-image-compression';
 import { trpc } from '@/lib/trpc';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Camera, ImagePlus, Check, Loader2, X } from 'lucide-react';
 
+// Growing poll intervals (ms, fibonacci-ish) so checking the moderation status
+// of pending uploads backs off and never hammers the server.
+const FIB_MS = [3000, 4000, 6000, 9000, 14000, 22000, 30000];
+
 type Item = {
   localId: string;
   previewUrl: string;
-  state: 'compressing' | 'uploading' | 'pending' | 'live' | 'error';
+  state:
+    | 'compressing'
+    | 'uploading'
+    | 'pending'
+    | 'live'
+    | 'rejected'
+    | 'error';
+  photoId?: number;
   error?: string;
 };
 
@@ -35,6 +46,35 @@ export default function DiashowUpload() {
       prev.map(it => (it.localId === localId ? { ...it, ...next } : it)),
     );
   }
+
+  // Live moderation status for this device's pending uploads, polled with a
+  // backing-off interval. Stops automatically once nothing is pending.
+  const pendingIds = items
+    .filter(it => it.state === 'pending' && it.photoId != null)
+    .map(it => it.photoId as number)
+    .sort((a, b) => a - b);
+
+  const { data: statuses } = trpc.slideshow.photoStatuses.useQuery(
+    { token: token ?? '', ids: pendingIds },
+    {
+      enabled: !!token && pendingIds.length > 0,
+      refetchInterval: query =>
+        FIB_MS[Math.min(query.state.dataUpdateCount ?? 0, FIB_MS.length - 1)],
+    },
+  );
+
+  useEffect(() => {
+    if (!statuses) return;
+    setItems(prev =>
+      prev.map(it => {
+        if (it.state !== 'pending' || it.photoId == null) return it;
+        const found = statuses.find(s => s.id === it.photoId);
+        if (!found) return { ...it, state: 'rejected' as const };
+        if (found.status === 'approved') return { ...it, state: 'live' as const };
+        return it;
+      }),
+    );
+  }, [statuses]);
 
   async function handleFiles(files: FileList | null) {
     if (!files || !token) return;
@@ -62,8 +102,11 @@ export default function DiashowUpload() {
           });
           continue;
         }
-        const body = (await res.json()) as { status: 'pending' | 'live' };
-        patch(localId, { state: body.status });
+        const body = (await res.json()) as {
+          status: 'pending' | 'live';
+          id: number;
+        };
+        patch(localId, { state: body.status, photoId: body.id });
       } catch {
         patch(localId, { state: 'error', error: 'Fehler beim Verarbeiten' });
       }
@@ -164,6 +207,11 @@ export default function DiashowUpload() {
                     </span>
                   )}
                   {it.state === 'live' && <Check className="size-6 text-success" />}
+                  {it.state === 'rejected' && (
+                    <span className="text-[10px] text-white/70 text-center px-1">
+                      nicht übernommen
+                    </span>
+                  )}
                   {it.state === 'error' && (
                     <X className="size-6 text-destructive" />
                   )}

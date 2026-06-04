@@ -137,4 +137,36 @@ describe('slideshow moderation', () => {
     const after = (await admin.slideshow.getSettings()).photoVersion;
     expect(after).toBe(before);
   });
+
+  it.skipIf(skipIntegration)('photoStatuses: token-gated + reflects approval', async () => {
+    const anon = appRouter.createCaller(ctx(null));
+    const admin = appRouter.createCaller(ctx('admin'));
+    const settings = await admin.slideshow.getSettings();
+    const id = await db.createSlideshowPhoto({
+      status: 'pending',
+      displayUrl: 'https://example.com/d.jpg',
+      displayKey: 'slideshow/display/status-test.jpg',
+      thumbnailUrl: 'https://example.com/t.jpg',
+      thumbnailKey: 'slideshow/thumb/status-test.jpg',
+      width: 1000,
+      height: 1500,
+      bytes: 12345,
+      uploaderIp: null,
+    });
+    expect(
+      await anon.slideshow.photoStatuses({ token: 'nope', ids: [id] }),
+    ).toEqual([]);
+    const pending = await anon.slideshow.photoStatuses({
+      token: settings.uploadToken,
+      ids: [id],
+    });
+    expect(pending.find(s => s.id === id)?.status).toBe('pending');
+    await admin.slideshow.approve({ id });
+    const approved = await anon.slideshow.photoStatuses({
+      token: settings.uploadToken,
+      ids: [id],
+    });
+    expect(approved.find(s => s.id === id)?.status).toBe('approved');
+    await admin.slideshow.deletePhoto({ id });
+  });
 });
