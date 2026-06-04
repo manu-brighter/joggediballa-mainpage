@@ -1023,6 +1023,7 @@ export async function initializeDefaultPermissions() {
     { permissionKey: 'edit_team', roles: ['admin', 'maintainer'] },
     // A-P0-05: attendance mutations require manage_attendance.
     { permissionKey: 'manage_attendance', roles: ['admin', 'maintainer'] },
+    { permissionKey: 'manage_slideshow', roles: ['admin', 'maintainer'] },
   ];
 
   try {
