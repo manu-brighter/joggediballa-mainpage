@@ -398,7 +398,7 @@ router.post(
       const status: 'pending' | 'approved' = settings.moderationEnabled
         ? 'pending'
         : 'approved';
-      await createSlideshowPhoto({
+      const photoId = await createSlideshowPhoto({
         status,
         displayUrl: display.url,
         displayKey: display.key,
@@ -411,7 +411,10 @@ router.post(
       });
       if (status === 'approved') await bumpPhotoVersion();
 
-      res.json({ status: status === 'approved' ? 'live' : 'pending' });
+      res.json({
+        status: status === 'approved' ? 'live' : 'pending',
+        id: photoId,
+      });
     } catch (error) {
       console.error('[Upload] slideshow-photo failed:', error);
       res.status(500).json({ error: 'Upload fehlgeschlagen' });

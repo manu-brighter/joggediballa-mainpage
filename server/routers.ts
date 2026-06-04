@@ -136,6 +136,20 @@ export const appRouter = router({
           createdAt: p.createdAt,
         }));
       }),
+    // Live moderation status for a guest's own uploads (by id). Ids missing
+    // from the result were rejected/deleted. Token-gated, capped list.
+    photoStatuses: publicProcedure
+      .input(
+        z.object({
+          token: z.string(),
+          ids: z.array(z.number().int().positive()).max(60),
+        }),
+      )
+      .query(async ({ input }) => {
+        const s = await db.getSlideshowSettings();
+        if (input.token !== s.uploadToken || input.ids.length === 0) return [];
+        return db.getSlideshowPhotoStatuses(input.ids);
+      }),
 
     // ---- Maintainer+ (requirePermission) ----
     getSettings: requirePermission('manage_slideshow').query(async () => {
