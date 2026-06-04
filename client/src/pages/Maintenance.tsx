@@ -14,13 +14,7 @@ const MotionDiv = motion.div;
 
 export default function MaintenancePage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-coral/5 rounded-full blur-3xl" />
-      </div>
-
+    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 p-4">
       <MotionDiv
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -48,8 +42,8 @@ export default function MaintenancePage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-center text-muted-foreground">
-              Die Website ist vorübergehend nicht verfügbar. Bitte versuche es
-              später erneut oder melde dich an, um auf die Website zuzugreifen.
+              Komm später nochmal vorbei. Mitglieder können sich anmelden und
+              die internen Tools weiter nutzen.
             </p>
 
             <div className="flex flex-col gap-3">

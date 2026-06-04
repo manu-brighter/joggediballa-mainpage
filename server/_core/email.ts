@@ -24,7 +24,8 @@ export function escapeHtml(value: string | null | undefined): string {
  * matching this shape is rejected before `sendMail`, preventing SMTP header
  * injection (CRLF → forged Bcc, etc.).
  */
-const STRICT_EMAIL_RE = /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,}$/;
+const STRICT_EMAIL_RE =
+  /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,}$/;
 
 function safeReplyTo(name: string, email: string): string | undefined {
   if (!email || !STRICT_EMAIL_RE.test(email)) return undefined;
@@ -85,6 +86,7 @@ export async function sendEmail(options: {
 export async function sendContactFormEmail(data: {
   name: string;
   email: string;
+  phone?: string;
   subject: string;
   message: string;
 }): Promise<{ success: boolean; error?: string }> {
@@ -92,7 +94,7 @@ export async function sendContactFormEmail(data: {
 Neue Kontaktanfrage von der Jogge di Balla Website
 
 Name: ${data.name}
-E-Mail: ${data.email}
+E-Mail: ${data.email}${data.phone ? `\nTelefon: ${data.phone}` : ''}
 Betreff: ${data.subject}
 
 Nachricht:
@@ -125,7 +127,14 @@ ${data.message}
       </div>
       <div class="field">
         <span class="label">E-Mail:</span> ${escapeHtml(data.email)}
-      </div>
+      </div>${
+        data.phone
+          ? `
+      <div class="field">
+        <span class="label">Telefon:</span> ${escapeHtml(data.phone)}
+      </div>`
+          : ''
+      }
       <div class="field">
         <span class="label">Betreff:</span> ${escapeHtml(data.subject)}
       </div>
