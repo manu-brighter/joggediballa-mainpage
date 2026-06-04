@@ -87,8 +87,10 @@ export function Footer() {
               loading="lazy"
             />
             <div className="text-sm leading-tight">
-              <p className="font-semibold">Gemeinsam feiern seit 2022</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="font-medium text-muted-foreground">
+                Gemeinsam feiern seit 2022
+              </p>
+              <p className="text-xs text-muted-foreground/70">
                 Event- und Kulturverein
               </p>
             </div>
@@ -116,19 +118,18 @@ export function Footer() {
               </Link>
             </nav>
           ) : (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-              <a
-                href="https://instagram.com/joggediballa"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 transition-opacity hover:opacity-80"
-              >
-                <InstagramGradientIcon className="h-3.5 w-3.5 shrink-0" />
-                <span className="gradient-text-instagram font-medium">
-                  @joggediballa
-                </span>
-              </a>
-            </div>
+            <a
+              href="https://instagram.com/joggediballa"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram @joggediballa"
+              className="inline-flex items-center gap-2 self-start rounded-full border bg-background px-3 py-1.5 text-sm shadow-xs transition-colors hover:bg-accent md:self-auto"
+            >
+              <InstagramGradientIcon className="h-4 w-4 shrink-0" />
+              <span className="gradient-text-instagram font-medium">
+                @joggediballa
+              </span>
+            </a>
           )}
         </div>
 
@@ -175,18 +176,26 @@ export function Footer() {
               >
                 Datenschutz
               </Link>
-              {!isAuthenticated && (
-                <>
-                  <span aria-hidden="true" className="opacity-50">
-                    ·
-                  </span>
-                  <a
-                    href={getLoginUrl()}
-                    className="transition-colors hover:text-foreground"
-                  >
-                    Mitglieder-Login
-                  </a>
-                </>
+              <span aria-hidden="true" className="opacity-50">
+                ·
+              </span>
+              {!isAuthenticated ? (
+                <a
+                  href={getLoginUrl()}
+                  className="transition-colors hover:text-foreground"
+                >
+                  Mitglieder-Login
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={logoutMutation.isPending}
+                  className="inline-flex items-center gap-1 transition-colors hover:text-foreground disabled:opacity-60"
+                >
+                  <LogOut className="h-3 w-3" aria-hidden="true" />
+                  {logoutMutation.isPending ? 'Logout…' : 'Logout'}
+                </button>
               )}
             </nav>
           )}
