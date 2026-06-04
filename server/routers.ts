@@ -7,6 +7,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import * as db from './db';
 import { nanoid } from 'nanoid';
+import { storageDelete } from './storage';
 import {
   contactSubmissions,
   harassenlaufRegistrations,
@@ -194,6 +195,95 @@ export const appRouter = router({
         return { token };
       },
     ),
+    approve: requirePermission('manage_slideshow')
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        const photo = await db.getSlideshowPhotoById(input.id);
+        if (!photo)
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Photo not found' });
+        await db.approveSlideshowPhoto(input.id, ctx.user.id);
+        await db.bumpPhotoVersion();
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_approve',
+          details: `Approved photo ${input.id}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      }),
+    approveAll: requirePermission('manage_slideshow').mutation(
+      async ({ ctx }) => {
+        await db.approveAllPendingSlideshowPhotos(ctx.user.id);
+        await db.bumpPhotoVersion();
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_approve_all',
+          details: 'Approved all pending photos',
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      },
+    ),
+    // Ablehnen (pending) — Files + Row hart löschen, KEIN Version-Bump (nicht sichtbar).
+    reject: requirePermission('manage_slideshow')
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        const keys = await db.deleteSlideshowPhoto(input.id);
+        if (keys) {
+          await storageDelete(keys.displayKey);
+          await storageDelete(keys.thumbnailKey);
+        }
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_reject',
+          details: `Rejected photo ${input.id}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      }),
+    // Aus Album löschen (approved) — Files + Row löschen + Version-Bump.
+    deletePhoto: requirePermission('manage_slideshow')
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        const keys = await db.deleteSlideshowPhoto(input.id);
+        if (keys) {
+          await storageDelete(keys.displayKey);
+          await storageDelete(keys.thumbnailKey);
+        }
+        await db.bumpPhotoVersion();
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_delete',
+          details: `Deleted photo ${input.id}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      }),
+    clearAll: requirePermission('manage_slideshow').mutation(async ({ ctx }) => {
+      const keys = await db.clearAllSlideshowPhotos();
+      for (const k of keys) {
+        await storageDelete(k.displayKey);
+        await storageDelete(k.thumbnailKey);
+      }
+      await db.bumpPhotoVersion();
+      await db.createActivityLog({
+        userId: ctx.user.id,
+        userName: ctx.user.name || 'Unknown',
+        action: 'slideshow_clear_all',
+        details: `Deleted ${keys.length} photos`,
+        ipAddress: null,
+        userAgent: null,
+      });
+      return { success: true, deleted: keys.length };
+    }),
   }),
 
   auth: router({

@@ -87,3 +87,30 @@ describe('slideshow maintainer access', () => {
     expect(token).not.toBe(before);
   });
 });
+
+describe('slideshow moderation', () => {
+  it('approve bumps photoVersion', async () => {
+    const admin = appRouter.createCaller(ctx('admin'));
+    const before = (await admin.slideshow.getSettings()).photoVersion;
+    const id = await db.createSlideshowPhoto({
+      status: 'pending',
+      displayUrl: 'https://example.com/d.jpg',
+      displayKey: 'slideshow/display/test.jpg',
+      thumbnailUrl: 'https://example.com/t.jpg',
+      thumbnailKey: 'slideshow/thumb/test.jpg',
+      width: 1000,
+      height: 1500,
+      bytes: 12345,
+      uploaderIp: null,
+    });
+    await admin.slideshow.approve({ id });
+    const after = (await admin.slideshow.getSettings()).photoVersion;
+    expect(after).toBe(before + 1);
+    await admin.slideshow.deletePhoto({ id });
+  });
+
+  it('editor cannot approve', async () => {
+    const editor = appRouter.createCaller(ctx('editor'));
+    await expect(editor.slideshow.approve({ id: 999999 })).rejects.toThrow();
+  });
+});
