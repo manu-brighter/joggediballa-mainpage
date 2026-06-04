@@ -105,10 +105,11 @@ export const appRouter = router({
             slideDurationMs: 6000,
             transition: 'kenburns' as 'fade' | 'kenburns',
             photoVersion: 0,
-            approvedCount: 0,
           };
         }
-        const stats = await db.getSlideshowStats();
+        // Only the cheap settings row is needed here — no full-table stats
+        // scan on this 3s-per-beamer poll (approvedCount is unused by the
+        // public pages; the control panel gets counts from getSettings).
         return {
           valid: true as const,
           isVisible: s.isVisible,
@@ -119,7 +120,6 @@ export const appRouter = router({
           slideDurationMs: s.slideDurationMs,
           transition: s.transition,
           photoVersion: s.photoVersion,
-          approvedCount: stats.approved,
         };
       }),
     listApproved: publicProcedure
@@ -148,11 +148,31 @@ export const appRouter = router({
         totalBytes: stats.totalBytes,
       };
     }),
+    // Project to the fields the control panel renders — strip uploaderIp (PII)
+    // and the internal storage keys, mirroring the public listApproved.
     listPending: requirePermission('manage_slideshow').query(async () => {
-      return db.listPendingSlideshowPhotos();
+      const rows = await db.listPendingSlideshowPhotos();
+      return rows.map(p => ({
+        id: p.id,
+        status: p.status,
+        displayUrl: p.displayUrl,
+        thumbnailUrl: p.thumbnailUrl,
+        width: p.width,
+        height: p.height,
+        createdAt: p.createdAt,
+      }));
     }),
     listAll: requirePermission('manage_slideshow').query(async () => {
-      return db.listAllSlideshowPhotos();
+      const rows = await db.listAllSlideshowPhotos();
+      return rows.map(p => ({
+        id: p.id,
+        status: p.status,
+        displayUrl: p.displayUrl,
+        thumbnailUrl: p.thumbnailUrl,
+        width: p.width,
+        height: p.height,
+        createdAt: p.createdAt,
+      }));
     }),
     updateSettings: requirePermission('manage_slideshow')
       .input(
@@ -269,7 +289,10 @@ export const appRouter = router({
       }),
     clearAll: requirePermission('manage_slideshow').mutation(async ({ ctx }) => {
       const keys = await db.clearAllSlideshowPhotos();
-      // TODO: parallelize storageDelete (Promise.all) if maxPhotos grows large
+      // DB rows are deleted first (consistent DB > consistent disk): a crash
+      // mid-loop orphans files on disk unrecoverably — acceptable for this
+      // admin "reset between events" action. TODO: parallelize storageDelete
+      // (Promise.all) if maxPhotos grows large.
       for (const k of keys) {
         await storageDelete(k.displayKey);
         await storageDelete(k.thumbnailKey);

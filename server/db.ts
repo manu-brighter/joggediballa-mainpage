@@ -1230,17 +1230,22 @@ export async function sdkDeleteSessionGameLog(sessionId: number) {
 export async function getSlideshowSettings(): Promise<SlideshowSettings> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
-  const rows = await db
+  const existing = await db
     .select()
     .from(slideshowSettings)
-    .orderBy(slideshowSettings.id)
+    .where(eq(slideshowSettings.id, 1))
     .limit(1);
-  if (rows.length > 0) return rows[0];
-  await db.insert(slideshowSettings).values({ uploadToken: nanoid(16) });
+  if (existing.length > 0) return existing[0];
+  // Single-row table (id=1). Idempotent create — concurrent first-hits collide
+  // on the primary key instead of inserting duplicate settings rows.
+  await db
+    .insert(slideshowSettings)
+    .values({ id: 1, uploadToken: nanoid(16) })
+    .onDuplicateKeyUpdate({ set: { id: 1 } });
   const created = await db
     .select()
     .from(slideshowSettings)
-    .orderBy(slideshowSettings.id)
+    .where(eq(slideshowSettings.id, 1))
     .limit(1);
   return created[0];
 }
