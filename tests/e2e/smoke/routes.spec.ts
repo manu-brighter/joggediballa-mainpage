@@ -31,7 +31,8 @@ for (const path of STATIC_ROUTES) {
 
 test('404 page is rendered for unknown routes', async ({ page }) => {
   await page.goto('/definitely-not-a-real-route');
-  // Wouter renders the NotFound component without changing the HTTP status,
-  // so we assert on the visible German copy from the rewrite.
-  await expect(page.getByText(/Seite nicht gefunden/i)).toBeVisible();
+  // Unknown routes fall through to Wouter's catch-all <Route component={NotFound} />,
+  // which renders client-side without changing the HTTP status. Assert on the
+  // visible NotFound copy to confirm React mounted and matched the fallback route.
+  await expect(page.getByText(/Diese Seite gibt.s nicht/i)).toBeVisible();
 });
