@@ -129,7 +129,18 @@ async function startServer() {
                 "'unsafe-eval'",
                 'https://www.googletagmanager.com',
               ]
-            : ["'self'", 'https://www.googletagmanager.com'],
+            : [
+                "'self'",
+                // SHA-256 of the inline anti-FOUC theme <script> in
+                // client/index.html (its exact text content). Without this the
+                // strict prod CSP blocks it, so the pre-paint theme class never
+                // applies and the first paint flashes the wrong mode. Dev uses
+                // 'unsafe-inline' above so the hash isn't needed there.
+                // Regenerate if that inline script changes (whitespace counts):
+                //   node -e "const c=require('fs').readFileSync('client/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];console.log('sha256-'+require('crypto').createHash('sha256').update(c).digest('base64'))"
+                "'sha256-UanIoWyb2dXLZpX3XVDrdZLEmef4iNrjZncOwS1HKSE='",
+                'https://www.googletagmanager.com',
+              ],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: [
             "'self'",
