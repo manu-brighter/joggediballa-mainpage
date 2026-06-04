@@ -111,6 +111,10 @@
       correct mode. Without this, a light-mode default :root paints first
       and React's ThemeContext effect flips to .dark a moment later (FOUC).
       Logic mirrors client/src/contexts/ThemeContext.tsx but runs synchronously.
+
+      NOTE: the production CSP (server/_core/index.ts, scriptSrc) pins the
+      sha256 of this script's exact text. If you edit anything below — even
+      whitespace — regenerate that hash or the script is blocked in prod.
     -->
     <script>
       (function () {
