@@ -233,10 +233,10 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
         const keys = await db.deleteSlideshowPhoto(input.id);
-        if (keys) {
-          await storageDelete(keys.displayKey);
-          await storageDelete(keys.thumbnailKey);
-        }
+        if (!keys)
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Photo not found' });
+        await storageDelete(keys.displayKey);
+        await storageDelete(keys.thumbnailKey);
         await db.createActivityLog({
           userId: ctx.user.id,
           userName: ctx.user.name || 'Unknown',
@@ -252,10 +252,10 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input, ctx }) => {
         const keys = await db.deleteSlideshowPhoto(input.id);
-        if (keys) {
-          await storageDelete(keys.displayKey);
-          await storageDelete(keys.thumbnailKey);
-        }
+        if (!keys)
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Photo not found' });
+        await storageDelete(keys.displayKey);
+        await storageDelete(keys.thumbnailKey);
         await db.bumpPhotoVersion();
         await db.createActivityLog({
           userId: ctx.user.id,
@@ -269,6 +269,7 @@ export const appRouter = router({
       }),
     clearAll: requirePermission('manage_slideshow').mutation(async ({ ctx }) => {
       const keys = await db.clearAllSlideshowPhotos();
+      // TODO: parallelize storageDelete (Promise.all) if maxPhotos grows large
       for (const k of keys) {
         await storageDelete(k.displayKey);
         await storageDelete(k.thumbnailKey);
