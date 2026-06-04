@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowRight, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { getLoginUrl } from '@/const';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
@@ -87,7 +87,7 @@ export function Footer() {
               loading="lazy"
             />
             <div className="text-sm leading-tight">
-              <p className="font-semibold">Brislach laut, seit 2022.</p>
+              <p className="font-semibold">Gemeinsam feiern seit 2022</p>
               <p className="text-xs text-muted-foreground">
                 Event- und Kulturverein
               </p>
@@ -117,16 +117,6 @@ export function Footer() {
             </nav>
           ) : (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-              >
-                Schreib uns
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-              <span aria-hidden="true" className="text-muted-foreground/40">
-                ·
-              </span>
               <a
                 href="https://instagram.com/joggediballa"
                 target="_blank"

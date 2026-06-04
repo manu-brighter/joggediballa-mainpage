@@ -649,7 +649,9 @@ export default function Goennermitglieder() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center md:text-left"
         >
-          <h1 className="text-4xl md:text-5xl font-black">Gönnermitglieder</h1>
+          <h1 className="text-4xl md:text-5xl font-black">
+            <span className="gradient-text">Gönnermitglieder</span>
+          </h1>
           <p className="text-muted-foreground mt-2 text-lg">
             Verwaltung der Gönnermitgliedschaften
           </p>
@@ -1065,7 +1067,7 @@ export default function Goennermitglieder() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="bg-primary/5 border-primary/20">
+        <Card className="bg-gradient-to-br from-primary/10 to-success/10 border-primary/20">
           <CardContent>
             <div className="flex items-center justify-between">
               <div>

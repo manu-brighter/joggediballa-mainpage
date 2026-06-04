@@ -25,7 +25,7 @@ type ExternalLinkItem = {
   label: string;
 };
 
-type Accent = 'primary' | 'coral' | 'neutral';
+type Accent = 'primary' | 'coral' | 'neutral' | 'gold';
 
 const accentStyles: Record<Accent, { icon: string; border: string }> = {
   primary: {
@@ -39,6 +39,10 @@ const accentStyles: Record<Accent, { icon: string; border: string }> = {
   neutral: {
     icon: 'bg-muted text-foreground',
     border: 'hover:border-foreground/30',
+  },
+  gold: {
+    icon: 'bg-gold/15 text-gold',
+    border: 'hover:border-gold/40',
   },
 };
 
@@ -188,7 +192,7 @@ export default function Dienstleistungen() {
         },
       ],
       image: '/images/fotografie.JPEG',
-      accent: 'neutral',
+      accent: 'gold',
     },
   ];
 
