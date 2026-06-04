@@ -158,7 +158,7 @@ export default function DiashowControl() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 items-end">
             <div className="space-y-2">
               <Label>Slide-Dauer (Sek.)</Label>
               <Input
@@ -195,7 +195,7 @@ export default function DiashowControl() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 items-end">
             <div className="space-y-2">
               <Label>Max. Fotos</Label>
               <Input
