@@ -169,7 +169,9 @@ export const photos = mysqlTable(
   'photos',
   {
     id: int('id').autoincrement().primaryKey(),
-    eventId: int('eventId').references(() => events.id, { onDelete: 'cascade' }),
+    eventId: int('eventId').references(() => events.id, {
+      onDelete: 'cascade',
+    }),
     title: varchar('title', { length: 255 }),
     description: text('description'),
     imageUrl: text('imageUrl').notNull(), // S3 URL - Original high-res image
@@ -235,6 +237,8 @@ export const contactSubmissions = mysqlTable('contact_submissions', {
   id: int('id').autoincrement().primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 320 }).notNull(),
+  // ALTER TABLE contact_submissions ADD COLUMN phone VARCHAR(30) NULL AFTER email;
+  phone: varchar('phone', { length: 30 }),
   subject: varchar('subject', { length: 255 }),
   message: text('message').notNull(),
   honeypot: varchar('honeypot', { length: 255 }), // Spam-Schutz
@@ -331,7 +335,10 @@ export const rolePermissions = mysqlTable(
   },
   table => ({
     // Unique constraint: each permission-role combination can only exist once
-    uniquePermissionRole: unique('uniquePermissionRole').on(table.permissionKey, table.role),
+    uniquePermissionRole: unique('uniquePermissionRole').on(
+      table.permissionKey,
+      table.role,
+    ),
   }),
 );
 
@@ -411,7 +418,10 @@ export const attendanceRecords = mysqlTable(
     sessionIdx: index('idx_session').on(table.sessionId),
     memberIdx: index('idx_member').on(table.memberId),
     statusIdx: index('idx_status').on(table.status),
-    uniqueSessionMember: unique('unique_session_member').on(table.sessionId, table.memberId),
+    uniqueSessionMember: unique('unique_session_member').on(
+      table.sessionId,
+      table.memberId,
+    ),
   }),
 );
 
@@ -423,7 +433,9 @@ export type InsertAttendanceRecord = typeof attendanceRecords.$inferInsert;
  */
 export const attendanceSettings = mysqlTable('attendance_settings', {
   id: int('id').autoincrement().primaryKey(),
-  settingKey: varchar('settingKey', { length: 100 }).notNull().unique('settingKey'),
+  settingKey: varchar('settingKey', { length: 100 })
+    .notNull()
+    .unique('settingKey'),
   settingValue: text('settingValue').notNull(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),

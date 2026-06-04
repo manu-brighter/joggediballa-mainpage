@@ -459,7 +459,7 @@ export default function Shotcounter() {
                         'flex-shrink-0 rounded-full flex items-center justify-center font-black',
                         getRankSize(),
                         index === 0
-                          ? 'bg-yellow-500/30 text-yellow-500'
+                          ? 'bg-gold/30 text-gold'
                           : 'bg-muted text-muted-foreground',
                       )}
                     >
@@ -567,10 +567,10 @@ export default function Shotcounter() {
                     { value: timeToNewYear.seconds, label: 'Sek' },
                   ].map(item => (
                     <div key={item.label} className="text-center">
-                      <div className="text-2xl md:text-4xl font-black tabular-nums text-primary">
+                      <div className="text-4xl md:text-5xl font-black tabular-nums text-primary">
                         {item.value.toString().padStart(2, '0')}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs md:text-sm text-muted-foreground">
                         {item.label}
                       </div>
                     </div>
@@ -678,7 +678,7 @@ export default function Shotcounter() {
                       className={cn(
                         'flex-shrink-0 w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center font-black text-sm md:text-lg',
                         index === 0
-                          ? 'bg-yellow-500/20 text-yellow-500'
+                          ? 'bg-gold/20 text-gold'
                           : 'bg-muted text-muted-foreground',
                       )}
                     >
@@ -778,7 +778,7 @@ export default function Shotcounter() {
             </DialogTitle>
           </DialogHeader>
           <div className="text-center py-8">
-            <Crown className="h-16 w-16 mx-auto text-yellow-500 mb-4" />
+            <Crown className="h-16 w-16 mx-auto text-gold mb-4" />
             <h2 className="text-3xl font-black gradient-text mb-2">
               {winner?.name}
             </h2>

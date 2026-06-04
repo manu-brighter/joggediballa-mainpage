@@ -19,6 +19,7 @@ import {
   Gift,
   Twitch,
   Zap,
+  MapPin,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -90,12 +91,7 @@ export default function Home() {
             backgroundSize: '1129px 610px',
           }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.55_0.14_195_/_0.15),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,oklch(0.68_0.18_18_/_0.1),transparent_50%)]" />
-
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-coral/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute inset-0 hero-radials" />
 
         <div className="container relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
@@ -128,7 +124,7 @@ export default function Home() {
                   <div className="flex justify-center lg:justify-start">
                     <Button
                       size="lg"
-                      className="btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-coral to-orange-500 hover:from-coral/90 hover:to-orange-500/90 text-white shadow-lg shadow-coral/30 hover:shadow-coral/50 border-0 animate-pulse hover:animate-none"
+                      className="btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-coral to-pending hover:from-coral/90 hover:to-pending/90 text-white shadow-lg shadow-coral/30 hover:shadow-coral/50 border-0 animate-pulse hover:animate-none"
                       onClick={() => navigate(TEMP_BUTTON_URL)}
                     >
                       <Zap className="h-5 w-5 mr-2" />
@@ -153,9 +149,7 @@ export default function Home() {
                       variant="outline"
                       size="lg"
                       className="btn-animate text-base h-12 px-8 bg-background/50 backdrop-blur-sm flex-1 sm:flex-none"
-                      onClick={() =>
-                        navigate(nextEvent ? `/events` : '/events')
-                      }
+                      onClick={() => navigate('/events')}
                     >
                       <Calendar className="h-5 w-5 mr-2" />
                       {nextEvent ? 'Nächstes Event' : 'Unsere Events'}
@@ -168,7 +162,10 @@ export default function Home() {
             <MotionDiv
               initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: shouldReduceMotion ? 0 : 0.6, delay: shouldReduceMotion ? 0 : 0.2 }}
+              transition={{
+                duration: shouldReduceMotion ? 0 : 0.6,
+                delay: shouldReduceMotion ? 0 : 0.2,
+              }}
               className="flex justify-center lg:justify-end"
             >
               <div className="relative">
@@ -204,76 +201,128 @@ export default function Home() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Was uns ausmacht
+              Was bei uns abgeht
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Entdecke, was Jogge di Balla so besonders macht
+              Kein langer Pitch. Das wichtigste auf einen Blick.
             </p>
           </MotionDiv>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Trophy,
-                title: 'Shotcounter',
-                description:
-                  'Welches Team trinkt die meisten Jogge di Balla Shots? Live Wettbewerb!',
-                href: '/shotcounter',
-                delay: 0,
-              },
-              {
-                icon: Calendar,
-                title: 'Events & Fotos',
-                description:
-                  'Erlebe unsere unvergesslichen Events und entdecke die besten Momente.',
-                href: '/events',
-                delay: 0.1,
-              },
-              {
-                icon: Users,
-                title: 'Unser Team',
-                description:
-                  'Lerne das stattliche und äusserst attraktive Team hinter Jogge di Balla kennen!',
-                href: '/team',
-                delay: 0.2,
-              },
-            ]
-              .filter(feature => {
-                // Filter out features that are not visible
-                if (feature.href === '/events') return isEventsVisible;
-                // Add more filters here if needed
-                return true;
-              })
-              .map(feature => (
-                <MotionDiv
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: feature.delay }}
+          <div
+            className={`grid gap-6 ${
+              isEventsVisible
+                ? 'md:grid-cols-3 md:auto-rows-fr'
+                : 'md:grid-cols-2'
+            }`}
+          >
+            {/* Hero feature: Events & Fotos — big image card (when visible) */}
+            {isEventsVisible && (
+              <MotionDiv
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="group md:col-span-2 md:row-span-2"
+              >
+                <Link
+                  href="/events"
+                  className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
-                  <Card
-                    className="h-full card-hover border-2 hover:border-primary/50 bg-card/50 backdrop-blur-sm cursor-pointer"
-                    onClick={() => navigate(feature.href)}
-                  >
-                    <CardHeader>
-                      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                        <feature.icon className="h-7 w-7 text-primary" />
+                  <Card className="relative h-full min-h-[22rem] card-hover border-2 group-hover:border-primary/50 bg-card overflow-hidden">
+                    {/* Event photo fills the card; gradient keeps the copy legible */}
+                    <img
+                      src="/images/fotografie.JPEG"
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />
+                    <div className="relative z-10 flex h-full flex-col justify-end p-6 md:p-8">
+                      <div className="w-14 h-14 rounded-2xl bg-primary/15 backdrop-blur-sm flex items-center justify-center mb-4">
+                        <Calendar className="h-7 w-7 text-primary" />
                       </div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
-                      <CardDescription className="text-base">
-                        {feature.description}
+                      <CardTitle className="text-3xl md:text-4xl font-black tracking-tight">
+                        Events & Fotos
+                      </CardTitle>
+                      <CardDescription className="text-lg max-w-md mt-2">
+                        Was wir veranstaltet haben. Mit Bildern, falls du nicht
+                        dabei warst.
                       </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <span className="flex items-center gap-2 font-semibold text-primary group">
-                        Mehr erfahren
-                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      <span className="mt-5 flex items-center gap-2 font-semibold text-primary text-base">
+                        Zu den Events
+                        <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                       </span>
-                    </CardContent>
+                    </div>
                   </Card>
-                </MotionDiv>
-              ))}
+                </Link>
+              </MotionDiv>
+            )}
+
+            {/* Secondary: Shotcounter (the hero already carries the big CTA) */}
+            <MotionDiv
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="group"
+            >
+              <Link
+                href="/shotcounter"
+                className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <Card className="h-full card-hover border-2 group-hover:border-primary/50 bg-card">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                      <Trophy className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-xl">Shotcounter</CardTitle>
+                    <CardDescription>
+                      Welches Team wird der Shotmeister? Live-Ranking, kein
+                      Pardon.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <span className="flex items-center gap-2 font-semibold text-primary text-sm">
+                      Zu den Shots
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            </MotionDiv>
+
+            {/* Secondary: Team */}
+            <MotionDiv
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="group"
+            >
+              <Link
+                href="/team"
+                className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <Card className="h-full card-hover border-2 group-hover:border-primary/50 bg-card">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                      <Users className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-xl">Unser Team</CardTitle>
+                    <CardDescription>
+                      Das stattliche und äusserst attraktive Team hinter dem
+                      Verein.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <span className="flex items-center gap-2 font-semibold text-primary text-sm">
+                      Zum Team
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            </MotionDiv>
           </div>
         </div>
       </section>
@@ -290,15 +339,15 @@ export default function Home() {
               className="max-w-3xl mx-auto"
             >
               <div className="text-center mb-8">
-                <span className="inline-block px-4 py-1.5 rounded-full bg-coral/10 text-coral text-sm font-semibold mb-4">
+                <span className="inline-block px-4 py-1.5 rounded-full bg-coral/20 text-coral text-sm font-semibold mb-4">
                   Kommendes Event
                 </span>
                 <h2 className="text-3xl md:text-4xl font-bold">
-                  Nächstes Event
+                  Bald ist's wieder soweit
                 </h2>
               </div>
 
-              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-coral/5 overflow-hidden">
+              <Card className="border-2 border-primary/30 bg-card overflow-hidden">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-2xl md:text-3xl">
                     {nextEvent.title}
@@ -320,7 +369,8 @@ export default function Home() {
                   )}
                   {nextEvent.location && (
                     <p className="text-muted-foreground flex items-center gap-2">
-                      <span className="text-xl">📍</span> {nextEvent.location}
+                      <MapPin className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      {nextEvent.location}
                     </p>
                   )}
                   <Button
@@ -328,7 +378,7 @@ export default function Home() {
                     className="btn-animate mt-4"
                     onClick={() => navigate('/events#event-cards')}
                   >
-                    Mehr erfahren
+                    Zum Event
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </CardContent>
@@ -351,14 +401,12 @@ export default function Home() {
             <div className="w-20 h-20 rounded-full bg-coral/10 flex items-center justify-center mx-auto">
               <Heart className="h-10 w-10 text-coral" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold">Über uns</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Wer wir sind</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Jogge di Balla ist mehr als nur ein Verein! Jedes Jahr
-              organisieren wir besondere Events, die durch ihre einzigartige
-              Atmosphäre, interessante Locations und unvergessliche Erlebnisse
-              begeistern. Unsere Veranstaltungen sind kreativ und
-              abwechslungsreich und bieten immer wieder neue Highlights für
-              alle, die etwas Aussergewöhnliches suchen.
+              Event- und Kulturverein aus Brislach. Unsere Anlässe leben von
+              kuriosen, lustigen und kreativen Ideen, von ungewöhnlichen Orten
+              und von Leuten, die du sonst nie getroffen hättest. Das gibt's bei
+              keinem anderen Verein.
             </p>
             <Button
               variant="outline"
@@ -366,7 +414,7 @@ export default function Home() {
               className="btn-animate"
               onClick={() => navigate('/contact')}
             >
-              Kontakt aufnehmen
+              Schreib uns
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </MotionDiv>
@@ -374,7 +422,7 @@ export default function Home() {
       </section>
 
       {/* Gönnermitgliedschaft Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/5 to-coral/5">
+      <section className="py-20 bg-coral/5">
         <div className="container">
           <MotionDiv
             initial={{ opacity: 0, y: 20 }}
@@ -392,8 +440,7 @@ export default function Home() {
                   Werde Gönnermitglied!
                 </CardTitle>
                 <CardDescription className="text-lg">
-                  Unterstütze Jogge di Balla und profitiere von exklusiven
-                  Vorteilen
+                  20 Stutz pro Jahr. Wenig Aufwand, viel Wirkung.
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center space-y-6">
@@ -403,26 +450,35 @@ export default function Home() {
                   </span>
                   <span className="text-muted-foreground ml-2">pro Jahr</span>
                 </div>
-                <div className="grid sm:grid-cols-3 gap-4 text-sm">
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <Gift className="h-6 w-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium">Exklusive Giveaways</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <Trophy className="h-6 w-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium">Reduzierte Preise</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <Heart className="h-6 w-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium">Verein unterstützen</p>
-                  </div>
-                </div>
+                <ul className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium">
+                  <li className="flex items-center gap-2">
+                    <Gift
+                      className="h-5 w-5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    />
+                    Giveaways nur für Gönner
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Trophy
+                      className="h-5 w-5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    />
+                    Reduzierte Preise
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Heart
+                      className="h-5 w-5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    />
+                    Du machst's möglich
+                  </li>
+                </ul>
                 <Button
                   size="lg"
                   className="btn-animate"
                   onClick={() => navigate('/contact')}
                 >
-                  Jetzt Gönner werden, schreib uns!
+                  Ich bin dabei
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </CardContent>
@@ -432,9 +488,8 @@ export default function Home() {
       </section>
 
       {/* Social Media Section */}
-      <section className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-coral/10 via-background to-primary/10" />
-        <div className="container relative z-10">
+      <section className="py-20 bg-muted/30">
+        <div className="container">
           <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -442,9 +497,9 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="text-center space-y-6"
           >
-            <h2 className="text-3xl md:text-4xl font-bold">Folge uns</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Social Media</h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Bleib auf dem Laufenden und verpasse keine Updates!
+              Falls du nichts verpassen willst. Falls doch, auch okay.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               {/* Instagram */}
@@ -453,10 +508,7 @@ export default function Home() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button
-                  size="lg"
-                  className="btn-animate bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
-                >
+                <Button size="lg" className="btn-animate social-instagram">
                   <Instagram className="h-5 w-5 mr-2" />
                   @joggediballa
                 </Button>

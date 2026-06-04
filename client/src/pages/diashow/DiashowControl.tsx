@@ -27,7 +27,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Check, X, Trash2, Copy, RefreshCw, ExternalLink } from 'lucide-react';
+import {
+  Check,
+  X,
+  Trash2,
+  Copy,
+  RefreshCw,
+  ExternalLink,
+  Loader2,
+} from 'lucide-react';
 
 function formatBytes(n: number): string {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
@@ -43,10 +51,13 @@ export default function DiashowControl() {
     enabled: canManage,
     refetchInterval: 5000,
   });
-  const { data: pending = [] } = trpc.slideshow.listPending.useQuery(undefined, {
-    enabled: canManage,
-    refetchInterval: 3000,
-  });
+  const { data: pending = [] } = trpc.slideshow.listPending.useQuery(
+    undefined,
+    {
+      enabled: canManage,
+      refetchInterval: 3000,
+    },
+  );
   const { data: all = [] } = trpc.slideshow.listAll.useQuery(undefined, {
     enabled: canManage,
     refetchInterval: 15000,
@@ -64,7 +75,9 @@ export default function DiashowControl() {
   });
   const approve = trpc.slideshow.approve.useMutation({ onSuccess: invalidate });
   const reject = trpc.slideshow.reject.useMutation({ onSuccess: invalidate });
-  const approveAll = trpc.slideshow.approveAll.useMutation({ onSuccess: invalidate });
+  const approveAll = trpc.slideshow.approveAll.useMutation({
+    onSuccess: invalidate,
+  });
   const del = trpc.slideshow.deletePhoto.useMutation({ onSuccess: invalidate });
   const rotate = trpc.slideshow.rotateToken.useMutation({
     onSuccess: () => {
@@ -99,7 +112,7 @@ export default function DiashowControl() {
   if (!settings) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        Lädt…
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -109,7 +122,9 @@ export default function DiashowControl() {
   const liveUrl = `${origin}/diashow/${settings.uploadToken}`;
   const title = titleDraft ?? settings.eventTitle ?? '';
 
-  const toggles: Array<[ 'isVisible' | 'uploadsOpen' | 'moderationEnabled' | 'showQr', string ]> = [
+  const toggles: Array<
+    ['isVisible' | 'uploadsOpen' | 'moderationEnabled' | 'showQr', string]
+  > = [
     ['isVisible', 'Diashow sichtbar'],
     ['uploadsOpen', 'Uploads offen'],
     ['moderationEnabled', 'Moderation (Freigabe nötig)'],
@@ -119,7 +134,7 @@ export default function DiashowControl() {
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
       <SEO title="Diashow-Steuerung" noIndex />
-      <h1 className="text-2xl font-bold">Live-Diashow — Steuerung</h1>
+      <h1 className="text-3xl font-bold">Live-Diashow — Steuerung</h1>
 
       {/* Status & Toggles */}
       <Card>
@@ -188,7 +203,9 @@ export default function DiashowControl() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="kenburns">Ken-Burns (verspielt)</SelectItem>
+                  <SelectItem value="kenburns">
+                    Ken-Burns (verspielt)
+                  </SelectItem>
                   <SelectItem value="fade">Fade (ruhig)</SelectItem>
                 </SelectContent>
               </Select>
@@ -203,7 +220,9 @@ export default function DiashowControl() {
                 min={1}
                 defaultValue={settings.maxPhotos}
                 onBlur={e =>
-                  update.mutate({ maxPhotos: Math.max(1, Number(e.target.value)) })
+                  update.mutate({
+                    maxPhotos: Math.max(1, Number(e.target.value)),
+                  })
                 }
               />
             </div>
@@ -227,16 +246,16 @@ export default function DiashowControl() {
             {formatBytes(settings.totalBytes)} belegt
           </div>
           <div className="flex gap-3">
-            <a href={liveUrl} target="_blank" rel="noreferrer">
-              <Button variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm">
+              <a href={liveUrl} target="_blank" rel="noreferrer">
                 <ExternalLink className="mr-1 size-4" /> Diashow
-              </Button>
-            </a>
-            <a href={uploadUrl} target="_blank" rel="noreferrer">
-              <Button variant="outline" size="sm">
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <a href={uploadUrl} target="_blank" rel="noreferrer">
                 <ExternalLink className="mr-1 size-4" /> Upload
-              </Button>
-            </a>
+              </a>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -247,7 +266,7 @@ export default function DiashowControl() {
           <CardTitle>QR-Code & Link</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-6 items-center">
-          <div className="bg-white p-3 rounded-xl">
+          <div className="bg-card p-3 rounded-xl">
             <StyledQr value={uploadUrl} size={160} />
           </div>
           <div className="flex-1 space-y-3 w-full">
@@ -388,7 +407,9 @@ export default function DiashowControl() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Wirklich ALLE Fotos löschen?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  Wirklich ALLE Fotos löschen?
+                </AlertDialogTitle>
                 <AlertDialogDescription>
                   Löscht alle {settings.approvedCount + settings.pendingCount}{' '}
                   Fotos unwiderruflich von Disk und DB. Für das nächste Event.

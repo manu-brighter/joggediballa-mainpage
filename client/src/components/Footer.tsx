@@ -1,172 +1,211 @@
-import { Link } from 'wouter';
-import { Instagram, Heart } from 'lucide-react';
+import { useId } from 'react';
+import { Link, useLocation } from 'wouter';
+import { LogOut } from 'lucide-react';
 import { getLoginUrl } from '@/const';
 import { useAuth } from '@/_core/hooks/useAuth';
+import { trpc } from '@/lib/trpc';
+
+// Inline copy of the lucide Instagram icon with a gradient stroke instead
+// of currentColor — needed because bg-clip:text breaks SVG icons that
+// inherit text-color. useId() so multiple instances on one page don't
+// collide on the <defs> gradient id.
+function InstagramGradientIcon({ className }: { className?: string }) {
+  const gradientId = `insta-gradient-${useId()}`;
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="oklch(0.61 0.24 305)" />
+          <stop offset="1" stopColor="oklch(0.65 0.23 6)" />
+        </linearGradient>
+      </defs>
+      <rect
+        x="2"
+        y="2"
+        width="20"
+        height="20"
+        rx="5"
+        stroke={`url(#${gradientId})`}
+      />
+      <path
+        d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"
+        stroke={`url(#${gradientId})`}
+      />
+      <line
+        x1="17.5"
+        y1="6.5"
+        x2="17.51"
+        y2="6.5"
+        stroke={`url(#${gradientId})`}
+      />
+    </svg>
+  );
+}
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const { isAuthenticated } = useAuth();
+  const [location, setLocation] = useLocation();
+  const utils = trpc.useUtils();
+  const logoutMutation = trpc.auth.logout.useMutation();
 
-  const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/shotcounter', label: 'Shotcounter' },
-    { href: '/team', label: 'Team' },
-    { href: '/events', label: 'Events' },
-    { href: '/sponsors', label: 'Sponsoren' },
-    { href: '/contact', label: 'Kontakt' },
-  ];
+  // Mirrors Navigation.tsx — SPA-style logout, clear auth cache, route home.
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+    } finally {
+      utils.auth.me.setData(undefined, null);
+      await utils.auth.me.invalidate();
+      setLocation('/');
+    }
+  };
 
-  const legalLinks = [
-    { href: '/impressum', label: 'Impressum' },
-    { href: '/datenschutz', label: 'Datenschutz' },
-  ];
+  // On Home, Insta + Schreib-uns CTAs are already in the page itself
+  // (Social section + Gönner-CTA). Swap them out of the footer-top and
+  // put Impressum/Datenschutz there instead, leaving the bottom row to
+  // just the copyright (+ optional Mitglieder-Login).
+  const isHome = location === '/';
 
   return (
-    <footer className="border-t bg-muted/30 mt-auto">
-      <div className="container py-8 md:py-12">
-        {/* Desktop Layout */}
-        <div className="hidden md:grid md:grid-cols-4 gap-8">
-          {/* Logo & About */}
-          <div className="space-y-4">
+    <footer className="mt-auto border-t bg-muted/30">
+      <div className="container py-8 space-y-6">
+        {/* Top: brand-marker on the left, contextual links on the right */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
             <img
               src="/JoggediBalla-Logo.PNG"
               alt="Jogge di Balla Logo"
-              className="h-14 w-auto"
+              className="h-10 w-auto"
               loading="lazy"
             />
-            <p className="text-sm text-muted-foreground">
-              Gemeinsam feiern seit 2022
-            </p>
+            <div className="text-sm leading-tight">
+              <p className="font-medium text-muted-foreground">
+                Gemeinsam feiern seit 2022
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                Event- und Kulturverein
+              </p>
+            </div>
+          </div>
+
+          {isHome ? (
+            <nav
+              aria-label="Rechtliches"
+              className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm"
+            >
+              <Link
+                href="/impressum"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Impressum
+              </Link>
+              <span aria-hidden="true" className="text-muted-foreground/40">
+                ·
+              </span>
+              <Link
+                href="/datenschutz"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Datenschutz
+              </Link>
+            </nav>
+          ) : (
             <a
               href="https://instagram.com/joggediballa"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              aria-label="Instagram @joggediballa"
+              className="inline-flex items-center gap-2 self-start rounded-full border bg-background px-3 py-1.5 text-sm shadow-xs transition-colors hover:bg-accent md:self-auto"
             >
-              <Instagram className="h-4 w-4" />
-              @joggediballa
+              <InstagramGradientIcon className="h-4 w-4 shrink-0" />
+              <span className="gradient-text-instagram font-medium">
+                @joggediballa
+              </span>
             </a>
-          </div>
-
-          {/* Navigation */}
-          <div>
-            <h3 className="font-semibold mb-4 text-sm">Navigation</h3>
-            <ul className="space-y-2.5 text-sm">
-              {navLinks.map(link => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h3 className="font-semibold mb-4 text-sm">Rechtliches</h3>
-            <ul className="space-y-2.5 text-sm">
-              {legalLinks.map(link => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="font-semibold mb-4 text-sm">Kontakt</h3>
-            <p className="text-sm text-muted-foreground">
-              Fragen oder Anregungen?
-            </p>
-            <Link
-              href="/contact"
-              className="inline-block mt-2 text-sm text-primary hover:underline"
-            >
-              Schreib uns →
-            </Link>
-          </div>
+          )}
         </div>
 
-        {/* Mobile Layout - Compact & Centered */}
-        <div className="md:hidden text-center space-y-6">
-          {/* Logo */}
-          <div className="flex justify-center">
-            <img
-              src="/JoggediBalla-Logo.PNG"
-              alt="Jogge di Balla Logo"
-              className="h-12 w-auto"
-              loading="lazy"
-            />
-          </div>
-
-          {/* Navigation Links - Horizontal */}
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
-            {navLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Legal Links */}
-          <div className="flex justify-center gap-4 text-sm">
-            {legalLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Instagram */}
-          <a
-            href="https://instagram.com/joggediballa"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            <Instagram className="h-4 w-4" />
-            @joggediballa
-          </a>
-        </div>
-
-        {/* Copyright - Both layouts */}
-        <div className="mt-8 pt-6 border-t text-center">
-          <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-            © {currentYear} Jogge di Balla. Made with{' '}
-            <Heart className="h-3 w-3 text-coral fill-coral" /> in
-            Switzerland
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground/70">
-            Fotos © Manuel Heller
-          </p>
-          {!isAuthenticated && (
-            <p className="mt-3 text-xs">
+        {/* Bottom: legal (off-Home) + copyright */}
+        <div className="flex flex-col gap-2 border-t pt-4 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
+          {isHome ? (
+            // Legal links already shown above on Home; the bottom-left
+            // stays useful: login when out, logout when in.
+            !isAuthenticated ? (
               <a
                 href={getLoginUrl()}
-                className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                className="transition-colors hover:text-foreground"
               >
                 Mitglieder-Login
               </a>
-            </p>
+            ) : (
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={logoutMutation.isPending}
+                className="inline-flex items-center gap-1 transition-colors hover:text-foreground disabled:opacity-60"
+              >
+                <LogOut className="h-3 w-3" aria-hidden="true" />
+                {logoutMutation.isPending ? 'Logout…' : 'Logout'}
+              </button>
+            )
+          ) : (
+            <nav
+              aria-label="Footer"
+              className="flex flex-wrap items-center gap-x-3 gap-y-1"
+            >
+              <Link
+                href="/impressum"
+                className="transition-colors hover:text-foreground"
+              >
+                Impressum
+              </Link>
+              <span aria-hidden="true" className="opacity-50">
+                ·
+              </span>
+              <Link
+                href="/datenschutz"
+                className="transition-colors hover:text-foreground"
+              >
+                Datenschutz
+              </Link>
+              <span aria-hidden="true" className="opacity-50">
+                ·
+              </span>
+              {!isAuthenticated ? (
+                <a
+                  href={getLoginUrl()}
+                  className="transition-colors hover:text-foreground"
+                >
+                  Mitglieder-Login
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={logoutMutation.isPending}
+                  className="inline-flex items-center gap-1 transition-colors hover:text-foreground disabled:opacity-60"
+                >
+                  <LogOut className="h-3 w-3" aria-hidden="true" />
+                  {logoutMutation.isPending ? 'Logout…' : 'Logout'}
+                </button>
+              )}
+            </nav>
           )}
+          <p>
+            © {currentYear} Jogge di Balla
+            <span aria-hidden="true" className="mx-2 opacity-50">
+              ·
+            </span>
+            <span className="opacity-70">Fotos © Manuel Heller</span>
+          </p>
         </div>
       </div>
     </footer>

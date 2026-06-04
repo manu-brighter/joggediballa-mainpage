@@ -28,6 +28,11 @@ export const contactFormSchema = z.object({
     .email('Ungültige E-Mail-Adresse')
     .max(320, 'E-Mail darf maximal 320 Zeichen lang sein')
     .refine(noCrlf, noCrlfMessage),
+  phone: z
+    .string()
+    .max(30, 'Telefonnummer darf maximal 30 Zeichen lang sein')
+    .refine(noCrlf, noCrlfMessage)
+    .optional(),
   subject: z
     .string()
     .min(1, 'Betreff ist erforderlich')

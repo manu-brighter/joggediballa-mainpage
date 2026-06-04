@@ -28,6 +28,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -161,6 +166,31 @@ export default function AttendanceStatistics() {
     if (!absenceData.length) return 10;
     return Math.max(...absenceData.map(d => d.weighted));
   }, [absenceData]);
+
+  // All members tied with the best / worst member on the SAME key the server
+  // ranks by — weightedAbsences (attendance_db.ts sorts memberStats by it and
+  // picks best/worst from the ends). bestMember/worstMember are themselves
+  // entries of memberStats, so `===` compares same-source values (safe).
+  const bestMembers = useMemo(() => {
+    if (!stats?.bestMember) return [];
+    const target = stats.bestMember.weightedAbsences;
+    return stats.memberStats.filter(m => m.weightedAbsences === target);
+  }, [stats]);
+
+  const worstMembers = useMemo(() => {
+    if (!stats?.worstMember) return [];
+    const target = stats.worstMember.weightedAbsences;
+    return stats.memberStats.filter(m => m.weightedAbsences === target);
+  }, [stats]);
+
+  // Only surface a "+N tied" badge when the tie is a real subset — if every
+  // member shares the value there is no meaningful best/worst to single out
+  // (and both cards would otherwise list the whole roster).
+  const memberCount = stats?.memberStats.length ?? 0;
+  const showBestTie =
+    bestMembers.length > 1 && bestMembers.length < memberCount;
+  const showWorstTie =
+    worstMembers.length > 1 && worstMembers.length < memberCount;
 
   const sessionTypeData = useMemo(() => {
     if (!stats) return [];
@@ -338,8 +368,22 @@ export default function AttendanceStatistics() {
             <Trophy className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.bestMember?.memberName || '-'}
+            <div className="flex items-baseline gap-1.5 text-2xl font-bold">
+              <span className="min-w-0 truncate">
+                {stats.bestMember?.memberName || '-'}
+              </span>
+              {showBestTie && (
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <span className="shrink-0 cursor-help text-sm font-semibold text-muted-foreground">
+                      +{bestMembers.length - 1}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {bestMembers.map(m => m.memberName).join(', ')}
+                  </TooltipContent>
+                </UITooltip>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               {stats.bestMember
@@ -357,8 +401,22 @@ export default function AttendanceStatistics() {
             <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.worstMember?.memberName || '-'}
+            <div className="flex items-baseline gap-1.5 text-2xl font-bold">
+              <span className="min-w-0 truncate">
+                {stats.worstMember?.memberName || '-'}
+              </span>
+              {showWorstTie && (
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <span className="shrink-0 cursor-help text-sm font-semibold text-muted-foreground">
+                      +{worstMembers.length - 1}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {worstMembers.map(m => m.memberName).join(', ')}
+                  </TooltipContent>
+                </UITooltip>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               {stats.worstMember
@@ -490,23 +548,25 @@ export default function AttendanceStatistics() {
                       midAngle,
                       innerRadius,
                       outerRadius,
-                      name,
                       value,
                     } = props;
                     const RADIAN = Math.PI / 180;
-                    const radius = outerRadius + 25;
+                    // Place the value INSIDE the slice so nothing clips off the
+                    // edge on narrow (mobile) viewports; names move to the legend.
+                    const radius = (innerRadius + outerRadius) / 2;
                     const x = cx + radius * Math.cos(-midAngle * RADIAN);
                     const y = cy + radius * Math.sin(-midAngle * RADIAN);
                     return (
                       <text
                         x={x}
                         y={y}
-                        fill={isDarkMode ? '#f3f4f6' : '#000000'}
-                        textAnchor={x > cx ? 'start' : 'end'}
+                        fill="#ffffff"
+                        textAnchor="middle"
                         dominantBaseline="central"
                         fontSize="14"
+                        fontWeight="600"
                       >
-                        {`${name}: ${value}`}
+                        {value}
                       </text>
                     );
                   }}
@@ -531,6 +591,9 @@ export default function AttendanceStatistics() {
                     color: isDarkMode ? '#f3f4f6' : '#000000',
                   }}
                 />
+                <Legend
+                  wrapperStyle={{ color: isDarkMode ? '#f3f4f6' : '#000000' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -546,7 +609,10 @@ export default function AttendanceStatistics() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyActivity}>
+              <LineChart
+                data={monthlyActivity}
+                margin={{ top: 5, right: 12, left: -20, bottom: 0 }}
+              >
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke={isDarkMode ? '#374151' : '#e5e7eb'}

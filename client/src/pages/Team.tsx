@@ -54,6 +54,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
+import { SEO } from '@/components/SEO';
 
 const MotionDiv = motion.div;
 
@@ -408,6 +409,12 @@ export default function Team() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <SEO
+        title="Jogge di Balla - Unser Team"
+        description="Das stattliche und äusserst attraktive Team hinter Jogge di Balla. Wer eigentlich den Laden schmeisst."
+        keywords="Jogge di Balla, Team, Vorstand, Brislach, Mitglieder"
+        ogUrl="https://joggediballa.ch/team"
+      />
       <div className="container py-12 space-y-8">
         {/* Header */}
         <motion.div
@@ -668,8 +675,8 @@ export default function Team() {
                         </div>
                       )}
                       {!member.photoUrl && (
-                        <div className="aspect-square bg-gradient-to-br from-primary/30 to-coral/30 flex items-center justify-center">
-                          <span className="text-6xl font-bold text-foreground/80 select-none">
+                        <div className="aspect-square bg-primary/15 flex items-center justify-center">
+                          <span className="text-6xl font-bold text-primary/80 select-none">
                             {member.name
                               .split(/\s+/)
                               .map(part => part[0])
