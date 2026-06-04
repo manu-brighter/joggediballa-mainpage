@@ -39,9 +39,9 @@ const MaintenancePage = lazy(() => import('./pages/Maintenance'));
 const Harassenlauf = lazy(() => import('./pages/Harassenlauf'));
 const SdkOverlay = lazy(() => import('./pages/overlay/SdkOverlay'));
 const SdkControl = lazy(() => import('./pages/overlay/SdkControl'));
-
-// Overlay routes — rendered without Navigation/Footer/background
-const OVERLAY_ROUTES = ['/overlay/sdk'];
+const Diashow = lazy(() => import('./pages/diashow/Diashow'));
+const DiashowUpload = lazy(() => import('./pages/diashow/DiashowUpload'));
+const DiashowControl = lazy(() => import('./pages/diashow/DiashowControl'));
 
 // Beamer Mode Context
 interface BeamerModeContextType {
@@ -55,6 +55,17 @@ const BeamerModeContext = createContext<BeamerModeContextType>({
 });
 
 export const useBeamerMode = () => useContext(BeamerModeContext);
+
+type LayoutMode = 'overlay-transparent' | 'bare-black' | 'normal';
+
+function getLayoutMode(location: string): LayoutMode {
+  if (location === '/overlay/sdk') return 'overlay-transparent';
+  // /diashow/<token> und /diashow/<token>/upload sind bare; /diashow/control normal.
+  if (location.startsWith('/diashow/') && location !== '/diashow/control') {
+    return 'bare-black';
+  }
+  return 'normal';
+}
 
 function RouteFallback() {
   return (
@@ -88,6 +99,10 @@ function Router() {
         {/* SDK Overlay routes — not linked, not indexed */}
         <Route path="/overlay/sdk" component={SdkOverlay} />
         <Route path="/overlay/sdk/control" component={SdkControl} />
+        {/* Live-Diashow — nicht verlinkt, nicht indexiert */}
+        <Route path="/diashow/control" component={DiashowControl} />
+        <Route path="/diashow/:token/upload" component={DiashowUpload} />
+        <Route path="/diashow/:token" component={Diashow} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
@@ -113,8 +128,7 @@ function AppContent() {
     }
   }, [consent.analytics, isLoaded]);
 
-  // Overlay mode: no nav, no footer, transparent bg
-  const isOverlayRoute = OVERLAY_ROUTES.some(r => location === r);
+  const layoutMode = getLayoutMode(location);
 
   // C-P1-11: Derive maintenance mode from the cached `features.list` query
   // (which Navigation already fetches) via `select`, instead of issuing a
@@ -159,10 +173,19 @@ function AppContent() {
     );
   }
 
-  // Overlay route: render completely bare with transparent background
-  if (isOverlayRoute) {
+  // Transparent overlay (OBS) — unverändert.
+  if (layoutMode === 'overlay-transparent') {
     return (
       <div style={{ background: 'transparent' }}>
+        <Router />
+      </div>
+    );
+  }
+
+  // Bare routes (Diashow + Upload): kein Nav/Footer; die Seite setzt ihren eigenen Hintergrund.
+  if (layoutMode === 'bare-black') {
+    return (
+      <div className="min-h-screen">
         <Router />
       </div>
     );

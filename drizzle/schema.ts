@@ -514,3 +514,62 @@ export const sdkGameLog = mysqlTable('sdk_game_log', {
 });
 export type SdkGameLog = typeof sdkGameLog.$inferSelect;
 export type InsertSdkGameLog = typeof sdkGameLog.$inferInsert;
+
+/**
+ * Live-Diashow — hochgeladene Gäste-Fotos (eigenes Konzept, NICHT `photos`).
+ * Nur komprimierte Varianten (kein Original). Ablehnen = Files + Row hart löschen.
+ */
+export const slideshowPhotos = mysqlTable(
+  'slideshow_photos',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    status: mysqlEnum('status', ['pending', 'approved'])
+      .default('pending')
+      .notNull(),
+    displayUrl: text('displayUrl').notNull(), // 2560px-Variante (Bühne)
+    displayKey: text('displayKey').notNull(),
+    thumbnailUrl: text('thumbnailUrl').notNull(), // 480px-Variante (Grids)
+    thumbnailKey: text('thumbnailKey').notNull(),
+    width: int('width').notNull(), // Display-Dimensionen (Layout-Engine)
+    height: int('height').notNull(),
+    bytes: int('bytes').notNull(), // Dateigröße Display-Variant (Speicher-Tracking)
+    moderatedBy: int('moderatedBy').references(() => users.id),
+    moderatedAt: timestamp('moderatedAt'),
+    uploaderIp: varchar('uploaderIp', { length: 45 }),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+  },
+  table => ({
+    statusCreatedIdx: index('idx_slideshow_photos_status_createdAt').on(
+      table.status,
+      table.createdAt,
+    ),
+  }),
+);
+
+export type SlideshowPhoto = typeof slideshowPhotos.$inferSelect;
+export type InsertSlideshowPhoto = typeof slideshowPhotos.$inferInsert;
+
+/**
+ * Live-Diashow — Single-Row Settings/State (id=1, Pattern wie sdkSession).
+ */
+export const slideshowSettings = mysqlTable('slideshow_settings', {
+  id: int('id').autoincrement().primaryKey(),
+  eventTitle: varchar('eventTitle', { length: 255 }),
+  isVisible: boolean('isVisible').default(false).notNull(), // Master-Schalter Anzeige
+  uploadsOpen: boolean('uploadsOpen').default(true).notNull(),
+  moderationEnabled: boolean('moderationEnabled').default(true).notNull(),
+  showQr: boolean('showQr').default(true).notNull(),
+  uploadToken: varchar('uploadToken', { length: 64 }).notNull(), // Geheim-Token
+  slideDurationMs: int('slideDurationMs').default(6000).notNull(),
+  transition: mysqlEnum('transition', ['fade', 'kenburns'])
+    .default('kenburns')
+    .notNull(),
+  photoVersion: int('photoVersion').default(0).notNull(), // Bump → Client-Refetch
+  maxPhotos: int('maxPhotos').default(3000).notNull(), // Disk-Schutz
+  uploadRateLimit: int('uploadRateLimit').default(80).notNull(), // Uploads/IP/10min
+  updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
+  updatedBy: int('updatedBy').references(() => users.id),
+});
+
+export type SlideshowSettings = typeof slideshowSettings.$inferSelect;
+export type InsertSlideshowSettings = typeof slideshowSettings.$inferInsert;

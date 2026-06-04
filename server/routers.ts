@@ -6,6 +6,8 @@ import { publicProcedure, protectedProcedure, router } from './_core/trpc';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import * as db from './db';
+import { nanoid } from 'nanoid';
+import { storageDelete } from './storage';
 import {
   contactSubmissions,
   harassenlaufRegistrations,
@@ -82,6 +84,245 @@ const requirePermission = (permissionKey: string) => {
 export const appRouter = router({
   system: systemRouter,
   attendance: attendanceRouter,
+
+  // ============================================
+  // LIVE-DIASHOW (SLIDESHOW)
+  // ============================================
+  slideshow: router({
+    // ---- Public (Token-validiert) ----
+    publicState: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const s = await db.getSlideshowSettings();
+        if (input.token !== s.uploadToken) {
+          return {
+            valid: false as const,
+            isVisible: false,
+            showQr: false,
+            moderationEnabled: true,
+            uploadsOpen: false,
+            eventTitle: null as string | null,
+            slideDurationMs: 6000,
+            transition: 'kenburns' as 'fade' | 'kenburns',
+            photoVersion: 0,
+          };
+        }
+        // Only the cheap settings row is needed here — no full-table stats
+        // scan on this 3s-per-beamer poll (approvedCount is unused by the
+        // public pages; the control panel gets counts from getSettings).
+        return {
+          valid: true as const,
+          isVisible: s.isVisible,
+          showQr: s.showQr,
+          moderationEnabled: s.moderationEnabled,
+          uploadsOpen: s.uploadsOpen,
+          eventTitle: s.eventTitle,
+          slideDurationMs: s.slideDurationMs,
+          transition: s.transition,
+          photoVersion: s.photoVersion,
+        };
+      }),
+    listApproved: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const s = await db.getSlideshowSettings();
+        if (input.token !== s.uploadToken) return [];
+        const photos = await db.listApprovedSlideshowPhotos();
+        return photos.map(p => ({
+          id: p.id,
+          displayUrl: p.displayUrl,
+          width: p.width,
+          height: p.height,
+          createdAt: p.createdAt,
+        }));
+      }),
+    // Live moderation status for a guest's own uploads (by id). Ids missing
+    // from the result were rejected/deleted. Token-gated, capped list.
+    photoStatuses: publicProcedure
+      .input(
+        z.object({
+          token: z.string(),
+          ids: z.array(z.number().int().positive()).max(60),
+        }),
+      )
+      .query(async ({ input }) => {
+        const s = await db.getSlideshowSettings();
+        if (input.token !== s.uploadToken || input.ids.length === 0) return [];
+        return db.getSlideshowPhotoStatuses(input.ids);
+      }),
+
+    // ---- Maintainer+ (requirePermission) ----
+    getSettings: requirePermission('manage_slideshow').query(async () => {
+      const s = await db.getSlideshowSettings();
+      const stats = await db.getSlideshowStats();
+      return {
+        ...s,
+        pendingCount: stats.pending,
+        approvedCount: stats.approved,
+        totalBytes: stats.totalBytes,
+      };
+    }),
+    // Project to the fields the control panel renders — strip uploaderIp (PII)
+    // and the internal storage keys, mirroring the public listApproved.
+    listPending: requirePermission('manage_slideshow').query(async () => {
+      const rows = await db.listPendingSlideshowPhotos();
+      return rows.map(p => ({
+        id: p.id,
+        status: p.status,
+        displayUrl: p.displayUrl,
+        thumbnailUrl: p.thumbnailUrl,
+        width: p.width,
+        height: p.height,
+        createdAt: p.createdAt,
+      }));
+    }),
+    listAll: requirePermission('manage_slideshow').query(async () => {
+      const rows = await db.listAllSlideshowPhotos();
+      return rows.map(p => ({
+        id: p.id,
+        status: p.status,
+        displayUrl: p.displayUrl,
+        thumbnailUrl: p.thumbnailUrl,
+        width: p.width,
+        height: p.height,
+        createdAt: p.createdAt,
+      }));
+    }),
+    updateSettings: requirePermission('manage_slideshow')
+      .input(
+        z.object({
+          isVisible: z.boolean().optional(),
+          uploadsOpen: z.boolean().optional(),
+          moderationEnabled: z.boolean().optional(),
+          showQr: z.boolean().optional(),
+          eventTitle: z.string().max(255).nullable().optional(),
+          slideDurationMs: z.number().int().min(2000).max(60000).optional(),
+          transition: z.enum(['fade', 'kenburns']).optional(),
+          maxPhotos: z.number().int().min(1).max(100000).optional(),
+          uploadRateLimit: z.number().int().min(1).max(100000).optional(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.updateSlideshowSettings(input, ctx.user.id);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_settings',
+          details: `Updated: ${Object.keys(input).join(', ')}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      }),
+    rotateToken: requirePermission('manage_slideshow').mutation(
+      async ({ ctx }) => {
+        const token = nanoid(16);
+        await db.updateSlideshowSettings({ uploadToken: token }, ctx.user.id);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_rotate_token',
+          details: 'Rotated upload token',
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { token };
+      },
+    ),
+    approve: requirePermission('manage_slideshow')
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        const photo = await db.getSlideshowPhotoById(input.id);
+        if (!photo)
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Photo not found' });
+        await db.approveSlideshowPhoto(input.id, ctx.user.id);
+        await db.bumpPhotoVersion();
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_approve',
+          details: `Approved photo ${input.id}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      }),
+    approveAll: requirePermission('manage_slideshow').mutation(
+      async ({ ctx }) => {
+        await db.approveAllPendingSlideshowPhotos(ctx.user.id);
+        await db.bumpPhotoVersion();
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_approve_all',
+          details: 'Approved all pending photos',
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      },
+    ),
+    // Ablehnen (pending) — Files + Row hart löschen, KEIN Version-Bump (nicht sichtbar).
+    reject: requirePermission('manage_slideshow')
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        const keys = await db.deleteSlideshowPhoto(input.id);
+        if (!keys)
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Photo not found' });
+        await storageDelete(keys.displayKey);
+        await storageDelete(keys.thumbnailKey);
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_reject',
+          details: `Rejected photo ${input.id}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      }),
+    // Aus Album löschen (approved) — Files + Row löschen + Version-Bump.
+    deletePhoto: requirePermission('manage_slideshow')
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        const keys = await db.deleteSlideshowPhoto(input.id);
+        if (!keys)
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Photo not found' });
+        await storageDelete(keys.displayKey);
+        await storageDelete(keys.thumbnailKey);
+        await db.bumpPhotoVersion();
+        await db.createActivityLog({
+          userId: ctx.user.id,
+          userName: ctx.user.name || 'Unknown',
+          action: 'slideshow_delete',
+          details: `Deleted photo ${input.id}`,
+          ipAddress: null,
+          userAgent: null,
+        });
+        return { success: true };
+      }),
+    clearAll: requirePermission('manage_slideshow').mutation(async ({ ctx }) => {
+      const keys = await db.clearAllSlideshowPhotos();
+      // DB rows are deleted first (consistent DB > consistent disk): a crash
+      // mid-loop orphans files on disk unrecoverably — acceptable for this
+      // admin "reset between events" action. TODO: parallelize storageDelete
+      // (Promise.all) if maxPhotos grows large.
+      for (const k of keys) {
+        await storageDelete(k.displayKey);
+        await storageDelete(k.thumbnailKey);
+      }
+      await db.bumpPhotoVersion();
+      await db.createActivityLog({
+        userId: ctx.user.id,
+        userName: ctx.user.name || 'Unknown',
+        action: 'slideshow_clear_all',
+        details: `Deleted ${keys.length} photos`,
+        ipAddress: null,
+        userAgent: null,
+      });
+      return { success: true, deleted: keys.length };
+    }),
+  }),
 
   auth: router({
     me: publicProcedure.query(opts =>

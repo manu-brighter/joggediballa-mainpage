@@ -15,6 +15,7 @@ export const PERMISSION_KEYS = [
   'reset_shotcounter',
   'edit_team',
   'manage_attendance',
+  'manage_slideshow',
 ] as const;
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
 
