@@ -3,6 +3,11 @@ import { appRouter } from './routers';
 import type { TrpcContext } from './_core/context';
 import * as db from './db';
 
+// Integration tests hit the real DB via createCaller; skipped in CI (no infra),
+// run locally against the dev DB. Matches the project convention (shotcounter/
+// contact tests). Run locally with DATABASE_URL set (e.g. dotenv).
+const skipIntegration = !!process.env.CI;
+
 function ctx(role: 'admin' | 'maintainer' | 'editor' | 'visitor' | null): TrpcContext {
   const user =
     role === null
@@ -30,13 +35,13 @@ function ctx(role: 'admin' | 'maintainer' | 'editor' | 'visitor' | null): TrpcCo
 }
 
 describe('slideshow.publicState', () => {
-  it('returns valid:false for a wrong token', async () => {
+  it.skipIf(skipIntegration)('returns valid:false for a wrong token', async () => {
     const caller = appRouter.createCaller(ctx(null));
     const state = await caller.slideshow.publicState({ token: 'definitely-wrong' });
     expect(state.valid).toBe(false);
   });
 
-  it('returns valid:true for the correct token', async () => {
+  it.skipIf(skipIntegration)('returns valid:true for the correct token', async () => {
     const settings = await db.getSlideshowSettings();
     const caller = appRouter.createCaller(ctx(null));
     const state = await caller.slideshow.publicState({ token: settings.uploadToken });
@@ -44,13 +49,13 @@ describe('slideshow.publicState', () => {
     expect(typeof state.photoVersion).toBe('number');
   });
 
-  it('listApproved returns [] for a wrong token', async () => {
+  it.skipIf(skipIntegration)('listApproved returns [] for a wrong token', async () => {
     const caller = appRouter.createCaller(ctx(null));
     const list = await caller.slideshow.listApproved({ token: 'nope' });
     expect(list).toEqual([]);
   });
 
-  it('listApproved returns an array (no internal keys leaked) for the correct token', async () => {
+  it.skipIf(skipIntegration)('listApproved returns an array (no internal keys leaked) for the correct token', async () => {
     const settings = await db.getSlideshowSettings();
     const caller = appRouter.createCaller(ctx(null));
     const list = await caller.slideshow.listApproved({ token: settings.uploadToken });
@@ -63,24 +68,24 @@ describe('slideshow.publicState', () => {
 });
 
 describe('slideshow maintainer access', () => {
-  it('getSettings is forbidden for editor', async () => {
+  it.skipIf(skipIntegration)('getSettings is forbidden for editor', async () => {
     const caller = appRouter.createCaller(ctx('editor'));
     await expect(caller.slideshow.getSettings()).rejects.toThrow();
   });
 
-  it('getSettings is forbidden for visitor/anonymous', async () => {
+  it.skipIf(skipIntegration)('getSettings is forbidden for visitor/anonymous', async () => {
     const caller = appRouter.createCaller(ctx(null));
     await expect(caller.slideshow.getSettings()).rejects.toThrow();
   });
 
-  it('updateSettings persists eventTitle for maintainer', async () => {
+  it.skipIf(skipIntegration)('updateSettings persists eventTitle for maintainer', async () => {
     const caller = appRouter.createCaller(ctx('maintainer'));
     await caller.slideshow.updateSettings({ eventTitle: 'Jogge di Balla 2026' });
     const s = await caller.slideshow.getSettings();
     expect(s.eventTitle).toBe('Jogge di Balla 2026');
   });
 
-  it('rotateToken changes the token', async () => {
+  it.skipIf(skipIntegration)('rotateToken changes the token', async () => {
     const caller = appRouter.createCaller(ctx('admin'));
     const before = (await caller.slideshow.getSettings()).uploadToken;
     const { token } = await caller.slideshow.rotateToken();
@@ -89,7 +94,7 @@ describe('slideshow maintainer access', () => {
 });
 
 describe('slideshow moderation', () => {
-  it('approve bumps photoVersion', async () => {
+  it.skipIf(skipIntegration)('approve bumps photoVersion', async () => {
     const admin = appRouter.createCaller(ctx('admin'));
     const before = (await admin.slideshow.getSettings()).photoVersion;
     const id = await db.createSlideshowPhoto({
@@ -109,12 +114,12 @@ describe('slideshow moderation', () => {
     await admin.slideshow.deletePhoto({ id });
   });
 
-  it('editor cannot approve', async () => {
+  it.skipIf(skipIntegration)('editor cannot approve', async () => {
     const editor = appRouter.createCaller(ctx('editor'));
     await expect(editor.slideshow.approve({ id: 999999 })).rejects.toThrow();
   });
 
-  it('reject does NOT bump photoVersion', async () => {
+  it.skipIf(skipIntegration)('reject does NOT bump photoVersion', async () => {
     const admin = appRouter.createCaller(ctx('admin'));
     const id = await db.createSlideshowPhoto({
       status: 'pending',
