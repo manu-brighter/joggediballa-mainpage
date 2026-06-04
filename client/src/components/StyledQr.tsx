@@ -11,6 +11,9 @@ type StyledQrProps = {
   size: number;
   fgColor?: string;
   bgColor?: string;
+  /** Accessible label — the QR encodes a functional URL, so it is announced
+   *  to screen readers rather than hidden. */
+  label?: string;
 };
 
 /**
@@ -38,6 +41,7 @@ export function StyledQr({
   size,
   fgColor = QR_FG,
   bgColor = QR_BG,
+  label = 'QR-Code zum Hochladen',
 }: StyledQrProps) {
   const container = useRef<HTMLDivElement>(null);
   const qr = useRef<QRCodeStyling | null>(null);
@@ -61,7 +65,8 @@ export function StyledQr({
   return (
     <div
       ref={container}
-      aria-hidden
+      role="img"
+      aria-label={label}
       style={{ width: size, height: size, lineHeight: 0 }}
     />
   );

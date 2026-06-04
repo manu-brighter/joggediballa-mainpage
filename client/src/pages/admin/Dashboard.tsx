@@ -62,7 +62,7 @@ import {
   EyeOff,
   Zap,
   Projector,
-  ExternalLink,
+  ChevronRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -841,7 +841,10 @@ export default function AdminDashboard() {
                   <Projector className="h-4 w-4 text-muted-foreground" />
                   Live-Diashow — Steuerung
                 </span>
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight
+                  className="h-4 w-4 text-muted-foreground"
+                  aria-hidden
+                />
               </a>
               <a
                 href="/overlay/sdk/control"
@@ -851,7 +854,10 @@ export default function AdminDashboard() {
                   <Wine className="h-4 w-4 text-muted-foreground" />
                   Schlag den Kassier — Overlay-Steuerung
                 </span>
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight
+                  className="h-4 w-4 text-muted-foreground"
+                  aria-hidden
+                />
               </a>
             </div>
           </CardContent>

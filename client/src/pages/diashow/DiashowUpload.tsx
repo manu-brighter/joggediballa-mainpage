@@ -70,7 +70,8 @@ export default function DiashowUpload() {
         if (it.state !== 'pending' || it.photoId == null) return it;
         const found = statuses.find(s => s.id === it.photoId);
         if (!found) return { ...it, state: 'rejected' as const };
-        if (found.status === 'approved') return { ...it, state: 'live' as const };
+        if (found.status === 'approved')
+          return { ...it, state: 'live' as const };
         return it;
       }),
     );
@@ -84,7 +85,10 @@ export default function DiashowUpload() {
         performance.now(),
       )}`;
       const previewUrl = URL.createObjectURL(file);
-      setItems(prev => [...prev, { localId, previewUrl, state: 'compressing' }]);
+      setItems(prev => [
+        ...prev,
+        { localId, previewUrl, state: 'compressing' },
+      ]);
       try {
         const compressed = await imageCompression(file, COMPRESSION);
         patch(localId, { state: 'uploading' });
@@ -95,7 +99,9 @@ export default function DiashowUpload() {
           { method: 'POST', body: form, credentials: 'include' },
         );
         if (!res.ok) {
-          const body = await res.json().catch(() => ({})) as { error?: string };
+          const body = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
           patch(localId, {
             state: 'error',
             error: body.error || 'Upload fehlgeschlagen',
@@ -124,7 +130,7 @@ export default function DiashowUpload() {
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center px-4 py-8">
       <SEO title="Foto hochladen" noIndex />
 
-      <h1 className="text-2xl font-bold text-center">
+      <h1 className="text-3xl font-bold text-center">
         {state?.valid && state.eventTitle ? state.eventTitle : 'Live-Diashow'}
       </h1>
       <p className="text-muted-foreground text-center mt-1 mb-6 max-w-sm">
@@ -133,11 +139,12 @@ export default function DiashowUpload() {
 
       {invalid ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center max-w-sm">
-          Dieser Link ist ungültig oder abgelaufen.
+          Dieser Link ist abgelaufen — oder war nie echt. Frag am Event kurz
+          beim Team nach.
         </div>
       ) : uploadsClosed ? (
         <div className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-center max-w-sm">
-          Uploads sind aktuell geschlossen.
+          Grad Pause — die Diashow nimmt momentan keine neuen Fotos. Bis gleich!
         </div>
       ) : (
         <>
@@ -206,7 +213,9 @@ export default function DiashowUpload() {
                       Wird geprüft…
                     </span>
                   )}
-                  {it.state === 'live' && <Check className="size-6 text-success" />}
+                  {it.state === 'live' && (
+                    <Check className="size-6 text-success" />
+                  )}
                   {it.state === 'rejected' && (
                     <span className="text-[10px] text-white/70 text-center px-1">
                       nicht übernommen
