@@ -312,8 +312,9 @@ router.post(
 // ---------------------------------------------------------------------------
 // Public guest upload for the live slideshow. NO auth — gated by token +
 // rate limit. Same-origin POST passes csrfGuard (Origin === appOrigin / same
-// host in dev). All-in-one: validate -> sharp -> store -> DB insert (atomic,
-// no orphans on the 40GB disk). Limit is DB-configurable (slideshowSettings).
+// host in dev). All-in-one: validate -> sharp -> store -> DB insert. Low orphan
+// risk — stored files may be left if the DB insert fails (acceptable here).
+// Limit is DB-configurable (slideshowSettings.uploadRateLimit).
 // ---------------------------------------------------------------------------
 
 const slideshowUploadLimiter = rateLimit({
@@ -366,14 +367,15 @@ router.post(
 
       const id = nanoid();
       // .rotate() ohne Args = EXIF-Auto-Orientierung, dann EXIF/GPS gestrippt.
-      const displayBuf = await sharp(sniffed.buffer, {
+      // resolveWithObject liefert die finalen Dimensionen aus der Encode-
+      // Pipeline — kein zweiter Decode des Display-Buffers nötig.
+      const { data: displayBuf, info: displayInfo } = await sharp(sniffed.buffer, {
         limitInputPixels: MAX_PIXELS,
       })
         .rotate()
         .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
         .jpeg({ quality: 72, mozjpeg: true })
-        .toBuffer();
-      const displayMeta = await sharp(displayBuf).metadata();
+        .toBuffer({ resolveWithObject: true });
       const thumbBuf = await sharp(sniffed.buffer, {
         limitInputPixels: MAX_PIXELS,
       })
@@ -402,8 +404,8 @@ router.post(
         displayKey: display.key,
         thumbnailUrl: thumb.url,
         thumbnailKey: thumb.key,
-        width: displayMeta.width ?? sniffed.width,
-        height: displayMeta.height ?? sniffed.height,
+        width: displayInfo.width,
+        height: displayInfo.height,
         bytes: displayBuf.length,
         uploaderIp: req.ip ?? null,
       });
