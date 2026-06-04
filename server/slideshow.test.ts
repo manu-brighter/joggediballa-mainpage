@@ -49,4 +49,41 @@ describe('slideshow.publicState', () => {
     const list = await caller.slideshow.listApproved({ token: 'nope' });
     expect(list).toEqual([]);
   });
+
+  it('listApproved returns an array (no internal keys leaked) for the correct token', async () => {
+    const settings = await db.getSlideshowSettings();
+    const caller = appRouter.createCaller(ctx(null));
+    const list = await caller.slideshow.listApproved({ token: settings.uploadToken });
+    expect(Array.isArray(list)).toBe(true);
+    if (list.length > 0) {
+      expect(typeof list[0].id).toBe('number');
+      expect('thumbnailKey' in list[0]).toBe(false);
+    }
+  });
+});
+
+describe('slideshow maintainer access', () => {
+  it('getSettings is forbidden for editor', async () => {
+    const caller = appRouter.createCaller(ctx('editor'));
+    await expect(caller.slideshow.getSettings()).rejects.toThrow();
+  });
+
+  it('getSettings is forbidden for visitor/anonymous', async () => {
+    const caller = appRouter.createCaller(ctx(null));
+    await expect(caller.slideshow.getSettings()).rejects.toThrow();
+  });
+
+  it('updateSettings persists eventTitle for maintainer', async () => {
+    const caller = appRouter.createCaller(ctx('maintainer'));
+    await caller.slideshow.updateSettings({ eventTitle: 'Jogge di Balla 2026' });
+    const s = await caller.slideshow.getSettings();
+    expect(s.eventTitle).toBe('Jogge di Balla 2026');
+  });
+
+  it('rotateToken changes the token', async () => {
+    const caller = appRouter.createCaller(ctx('admin'));
+    const before = (await caller.slideshow.getSettings()).uploadToken;
+    const { token } = await caller.slideshow.rotateToken();
+    expect(token).not.toBe(before);
+  });
 });
