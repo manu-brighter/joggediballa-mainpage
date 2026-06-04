@@ -73,7 +73,7 @@ export default function Home() {
     <div className="space-y-0">
       <SEO
         title="Jogge di Balla - Event- und Kulturverein seit 2022"
-        description="Event- und Kulturverein aus Brislach. Wir veranstalten was. Du kommst, lachst, und bleibst zu lang. Mit Shotcounter, Events, Gönnermitgliedern und DJ- und Fotografie-Services."
+        description="Event- und Kulturverein aus Brislach. Wir bringen Menschen zusammen für unvergessliche Momente, grossartige Events und jede Menge Spass! Shotcounter, Gönnermitglieder, DJ & Fotografie Services."
         keywords="Jogge di Balla, Verein, Events, Brislach, Baselland, Laufental, Shotcounter, Party, Community, DJ, Fotografie, Vermietung, Beerpong"
         ogUrl="https://joggediballa.ch/"
         ogImage="https://joggediballa.ch/JoggediBalla-Logo.PNG"
@@ -103,7 +103,7 @@ export default function Home() {
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 <Sparkles className="h-4 w-4" />
-                Seit 2022 zu laut für die Nachbarn
+                Since 2022
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black leading-[1.1] tracking-tight">
@@ -114,7 +114,8 @@ export default function Home() {
               </h1>
 
               <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0">
-                Wir veranstalten was. Du kommst, lachst, und bleibst zu lang.
+                Event- und Kulturverein. Wir bringen Menschen zusammen für
+                unvergessliche Momente, grossartige Events und jede Menge Spass!
               </p>
 
               <div className="flex flex-col gap-3 justify-center lg:justify-start">
@@ -161,7 +162,10 @@ export default function Home() {
             <MotionDiv
               initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: shouldReduceMotion ? 0 : 0.6, delay: shouldReduceMotion ? 0 : 0.2 }}
+              transition={{
+                duration: shouldReduceMotion ? 0 : 0.6,
+                delay: shouldReduceMotion ? 0 : 0.2,
+              }}
               className="flex justify-center lg:justify-end"
             >
               <div className="relative">
@@ -200,7 +204,7 @@ export default function Home() {
               Was bei uns abgeht
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Kein langer Pitch. Drei Sachen, dann scrollst du weiter.
+              Kein langer Pitch. Das wichtigste auf einen Blick.
             </p>
           </MotionDiv>
 
@@ -233,7 +237,8 @@ export default function Home() {
                       Shotcounter
                     </CardTitle>
                     <CardDescription className="text-lg max-w-md">
-                      Welches Team trinkt am meisten? Live-Ranking, kein Pardon.
+                      Welches Team wird der Shotmeister? Live-Ranking, kein
+                      Pardon.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="relative z-10 mt-auto">
@@ -330,10 +335,10 @@ export default function Home() {
             >
               <div className="text-center mb-8">
                 <span className="inline-block px-4 py-1.5 rounded-full bg-coral/20 text-coral text-sm font-semibold mb-4">
-                  Bald ist's wieder soweit
+                  Kommendes Event
                 </span>
                 <h2 className="text-3xl md:text-4xl font-bold">
-                  Was als nächstes ansteht
+                  Bald ist's wieder soweit
                 </h2>
               </div>
 
@@ -393,9 +398,10 @@ export default function Home() {
             </div>
             <h2 className="text-3xl md:text-4xl font-bold">Wer wir sind</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Event- und Kulturverein aus Brislach. Wir veranstalten Anlässe an
-              Orten, die du sonst nicht gesehen hättest, mit Leuten, die du
-              sonst nicht getroffen hättest. Klingt nach viel. Ist es auch.
+              Event- und Kulturverein aus Brislach. Unsere Anlässe leben von
+              kuriosen, lustigen und kreativen Ideen, von ungewöhnlichen Orten
+              und von Leuten, die du sonst nie getroffen hättest. Das gibt's bei
+              keinem anderen Verein.
             </p>
             <Button
               variant="outline"
@@ -426,7 +432,7 @@ export default function Home() {
                   <Gift className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-2xl md:text-3xl">
-                  Werde Gönner
+                  Werde Gönnermitglied!
                 </CardTitle>
                 <CardDescription className="text-lg">
                   20 Stutz pro Jahr. Wenig Aufwand, viel Wirkung.
@@ -441,15 +447,24 @@ export default function Home() {
                 </div>
                 <ul className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium">
                   <li className="flex items-center gap-2">
-                    <Gift className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                    <Gift
+                      className="h-5 w-5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    />
                     Giveaways nur für Gönner
                   </li>
                   <li className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                    Reduzierter Eintritt
+                    <Trophy
+                      className="h-5 w-5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    />
+                    Reduzierte Preise
                   </li>
                   <li className="flex items-center gap-2">
-                    <Heart className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                    <Heart
+                      className="h-5 w-5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    />
                     Du machst's möglich
                   </li>
                 </ul>
@@ -477,7 +492,7 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="text-center space-y-6"
           >
-            <h2 className="text-3xl md:text-4xl font-bold">Wir sind auch online</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Social Media</h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
               Falls du nichts verpassen willst. Falls doch, auch okay.
             </p>

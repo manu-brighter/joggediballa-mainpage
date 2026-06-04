@@ -139,12 +139,12 @@ export default function DiashowUpload() {
 
       {invalid ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center max-w-sm">
-          Dieser Link ist abgelaufen — oder war nie echt. Frag am Event kurz
-          beim Team nach.
+          Dieser Link ist abgelaufen, oder war nie echt. Frag am Event kurz beim
+          Team nach.
         </div>
       ) : uploadsClosed ? (
         <div className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-center max-w-sm">
-          Grad Pause — die Diashow nimmt momentan keine neuen Fotos. Bis gleich!
+          Grad Pause. Die Diashow nimmt momentan keine neuen Fotos. Bis gleich!
         </div>
       ) : (
         <>
