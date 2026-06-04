@@ -223,8 +223,8 @@ export default function Sponsors() {
           <span className="gradient-text">Unsere Sponsoren</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Diese Firmen machen es möglich. Ohne sie keine Events, keine laute
-          Truppe. Wir sagen Danke und zeigen sie hier.
+          Ein grosses Dankeschön an alle, die uns unterstützen und unsere Events
+          möglich machen!
         </p>
       </MotionDiv>
 
@@ -493,8 +493,7 @@ export default function Sponsors() {
                   Auch Sponsor werden?
                 </h2>
                 <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-                  Zwei Pakete, klare Sichtbarkeit. Du unterstützt, wir geben
-                  zurück.
+                  Klare Werbevorteile. Du unterstützt, wir geben zurück.
                 </p>
               </div>
 
@@ -591,7 +590,7 @@ export default function Sponsors() {
               <Gift className="h-8 w-8 text-primary" />
             </div>
             <CardTitle className="text-2xl md:text-3xl">
-              Werde Gönner
+              Werde Gönnermitglied!
             </CardTitle>
             <CardDescription className="text-lg">
               20 Stutz pro Jahr. Wenig Aufwand, viel Wirkung.
@@ -604,15 +603,24 @@ export default function Sponsors() {
             </div>
             <ul className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium">
               <li className="flex items-center gap-2">
-                <Gift className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                <Gift
+                  className="h-5 w-5 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
                 Giveaways nur für Gönner
               </li>
               <li className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                Reduzierter Eintritt
+                <Trophy
+                  className="h-5 w-5 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
+                Reduzierte Preise
               </li>
               <li className="flex items-center gap-2">
-                <Heart className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                <Heart
+                  className="h-5 w-5 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
                 Du machst's möglich
               </li>
             </ul>
@@ -621,7 +629,7 @@ export default function Sponsors() {
               className="btn-animate"
               onClick={() => navigate('/contact')}
             >
-              Ich bin dabei
+              Jetzt Gönner werden, schreib uns!
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </CardContent>

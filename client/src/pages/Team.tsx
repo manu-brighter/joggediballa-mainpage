@@ -411,7 +411,7 @@ export default function Team() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <SEO
         title="Jogge di Balla - Unser Team"
-        description="Das stattliche und äusserst attraktive Team hinter Jogge di Balla. Wer den Laden schmeisst und für welche Anlässe sie laut werden."
+        description="Das stattliche und äusserst attraktive Team hinter Jogge di Balla. Wer eigentlich den Laden schmeisst."
         keywords="Jogge di Balla, Team, Vorstand, Brislach, Mitglieder"
         ogUrl="https://joggediballa.ch/team"
       />

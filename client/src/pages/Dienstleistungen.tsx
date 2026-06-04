@@ -74,7 +74,9 @@ function ServiceCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
     >
-      <Card className={`h-full overflow-hidden group transition-all duration-300 ${styles.border}`}>
+      <Card
+        className={`h-full overflow-hidden group transition-all duration-300 ${styles.border}`}
+      >
         {image && (
           <div className="aspect-video overflow-hidden bg-muted">
             <img
@@ -86,9 +88,7 @@ function ServiceCard({
         )}
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
-            <div className={`p-2 rounded-lg ${styles.icon}`}>
-              {icon}
-            </div>
+            <div className={`p-2 rounded-lg ${styles.icon}`}>{icon}</div>
             <CardTitle className="text-xl">{title}</CardTitle>
           </div>
           <CardDescription className="text-base whitespace-pre-line">
@@ -158,7 +158,7 @@ export default function Dienstleistungen() {
       icon: <Music className="h-6 w-6" />,
       title: 'DJ',
       description:
-        'Unser Revisor Jan legt an unseren Events Musik auf, bis die Bude bebt.\n\nAusserhalb des Vereins selbstständig nebenbei als DJ tätig und offen für Anfragen.',
+        'Professionelle DJ-Services für jeden Anlass. Unser Revisor Jan legt an unseren Events Musik auf, bis die Bude bebt.\n\nAusserhalb des Vereins selbstständig nebenbei als DJ tätig und offen für Anfragen.',
       person: {
         role: 'DJ & Revisor',
         name: 'Jan',
@@ -175,7 +175,7 @@ export default function Dienstleistungen() {
       icon: <Camera className="h-6 w-6" />,
       title: 'Fotografie',
       description:
-        "Event-Fotografie, die deine besonderen Momente festhält. Schau im 'Events & Fotos'-Tab oder im Portfolio rein.\n\nAusserhalb des Vereins selbstständig nebenbei als Fotograf tätig und offen für Anfragen.",
+        "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Schau im 'Events & Fotos'-Tab oder in mein Portfolio rein.\n\nAusserhalb des Vereins selbstständig nebenbei als Fotograf tätig und offen für Anfragen.",
       person: {
         role: 'Social Media & Vize',
         name: 'Manu',
@@ -208,7 +208,7 @@ export default function Dienstleistungen() {
       >
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
           <Package className="h-4 w-4" />
-          Drei Dinge die wir auch ausserhalb des Vereins tun
+          Unsere Services
         </div>
         <h1 className="text-4xl md:text-5xl font-black">
           <span className="gradient-text">Dienstleistungen</span>
@@ -232,11 +232,11 @@ export default function Dienstleistungen() {
         <Card className="bg-coral/5 border-coral/20">
           <CardContent className="py-12 space-y-6">
             <h2 className="text-2xl md:text-3xl font-bold">
-              Was im Kopf? Schreib uns.
+              Interesse geweckt? Schreib uns.
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Unverbindliche Anfrage, keine Verpflichtung. Wir antworten in
-              der Regel innert ein paar Tagen.
+              Unverbindliche Anfrage, keine Verpflichtung. Wir freuen uns auf
+              deine Anfrage!
             </p>
             <Button asChild size="lg" className="btn-animate gap-2">
               <Link href="/contact">

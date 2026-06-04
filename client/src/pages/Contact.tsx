@@ -73,7 +73,7 @@ export default function Contact() {
           <CheckCircle className="h-24 w-24 text-success mx-auto" />
           <h1 className="text-4xl font-bold">Ist angekommen.</h1>
           <p className="text-lg text-muted-foreground">
-            Wir melden uns, sobald wir können. Versprechen halten wir gut.
+            Vielen Dank für deine Nachricht. Wir melden uns, sobald wir können.
           </p>
           <Button onClick={() => setSubmitted(false)} variant="outline">
             Noch eine Nachricht
@@ -87,7 +87,7 @@ export default function Contact() {
     <div className="container py-12 space-y-8">
       <SEO
         title="Jogge di Balla - Kontakt"
-        description="Schreib uns. Fragen, Anregungen, Anliegen für DJ-, Foto- oder Vermietungs-Services — wir lesen jede Nachricht."
+        description="Schreib uns. Fragen, Anregungen, Anliegen für DJ-, Foto- oder Vermietungs-Services, wir lesen jede Nachricht."
         keywords="Jogge di Balla, Kontakt, Brislach, Verein"
         ogUrl="https://joggediballa.ch/contact"
       />
@@ -95,15 +95,15 @@ export default function Contact() {
         <Mail className="h-16 w-16 text-primary mx-auto" />
         <h1 className="text-4xl md:text-5xl font-bold">Schreib uns</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Was geht? Frage, Anliegen oder Auftrag für DJ, Foto, Vermietung —
-          wir lesen jede Nachricht.
+          Hast du Fragen, Anregungen oder möchtest auf eines unserer Angebote
+          eingehen? Schreib uns eine Nachricht!
         </p>
       </div>
 
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle>Sag Hallo</CardTitle>
+            <CardTitle>Kontaktformular</CardTitle>
             <CardDescription>
               Füll das Formular aus, drück senden, fertig.
             </CardDescription>

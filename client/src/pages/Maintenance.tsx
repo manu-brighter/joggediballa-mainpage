@@ -15,7 +15,6 @@ const MotionDiv = motion.div;
 export default function MaintenancePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 p-4">
-
       <MotionDiv
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -36,9 +35,9 @@ export default function MaintenancePage() {
             <div className="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
               <Wrench className="h-8 w-8 text-warning" />
             </div>
-            <CardTitle className="text-2xl">Kurz pausiert</CardTitle>
+            <CardTitle className="text-2xl">Wartungsmodus</CardTitle>
             <CardDescription className="text-base">
-              Wir schrauben an der Seite.
+              Wir arbeiten gerade an Verbesserungen für euch!
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
