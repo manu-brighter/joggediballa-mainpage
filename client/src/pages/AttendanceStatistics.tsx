@@ -69,6 +69,31 @@ const COLORS = {
   event: '#14b8a6',
 };
 
+// "+N tied" badge listing members sharing the same rank value. Controlled so a
+// tap toggles on mobile; hover/focus still opens it on desktop.
+function TieBadge({ names }: { names: string[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <UITooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger
+        type="button"
+        aria-label={`${names.length - 1} weitere mit gleichem Wert anzeigen`}
+        // Suppress Radix's built-in close-on-pointerdown / close-on-click so a
+        // tap toggles instead of immediately re-closing (mobile).
+        onPointerDown={e => e.preventDefault()}
+        onClick={e => {
+          e.preventDefault();
+          setOpen(o => !o);
+        }}
+        className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-sm font-semibold text-muted-foreground"
+      >
+        +{names.length - 1}
+      </TooltipTrigger>
+      <TooltipContent>{names.join(', ')}</TooltipContent>
+    </UITooltip>
+  );
+}
+
 export default function AttendanceStatistics() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
@@ -373,16 +398,7 @@ export default function AttendanceStatistics() {
                 {stats.bestMember?.memberName || '-'}
               </span>
               {showBestTie && (
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <span className="shrink-0 cursor-help text-sm font-semibold text-muted-foreground">
-                      +{bestMembers.length - 1}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {bestMembers.map(m => m.memberName).join(', ')}
-                  </TooltipContent>
-                </UITooltip>
+                <TieBadge names={bestMembers.map(m => m.memberName)} />
               )}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -406,16 +422,7 @@ export default function AttendanceStatistics() {
                 {stats.worstMember?.memberName || '-'}
               </span>
               {showWorstTie && (
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <span className="shrink-0 cursor-help text-sm font-semibold text-muted-foreground">
-                      +{worstMembers.length - 1}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {worstMembers.map(m => m.memberName).join(', ')}
-                  </TooltipContent>
-                </UITooltip>
+                <TieBadge names={worstMembers.map(m => m.memberName)} />
               )}
             </div>
             <p className="text-xs text-muted-foreground">
