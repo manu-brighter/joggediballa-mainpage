@@ -204,9 +204,13 @@ export default function DiashowControl() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="kenburns">
-                    Ken-Burns (verspielt)
+                    Ken-Burns
+                    <span className="hidden sm:inline">(verspielt)</span>
                   </SelectItem>
-                  <SelectItem value="fade">Fade (ruhig)</SelectItem>
+                  <SelectItem value="fade">
+                    Fade
+                    <span className="hidden sm:inline">(ruhig)</span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -380,13 +384,33 @@ export default function DiashowControl() {
                     alt=""
                     className="w-full h-full object-cover"
                   />
-                  <button
-                    onClick={() => del.mutate({ id: p.id })}
-                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                    aria-label="Löschen"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition"
+                        aria-label="Löschen"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Foto löschen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Dieses Foto wird endgültig aus dem Album entfernt.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => del.mutate({ id: p.id })}
+                          className="bg-destructive text-destructive-foreground"
+                        >
+                          Löschen
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               ))}
           </div>
