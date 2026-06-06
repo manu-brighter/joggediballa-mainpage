@@ -115,6 +115,21 @@ export default function Datenschutz() {
                 der Aufnahmen verlangen. Wenden Sie sich hierzu bitte an die
                 oben angegebene Kontaktadresse.
               </p>
+              <p className="text-muted-foreground mt-2">
+                <span className="font-semibold text-foreground">
+                  Live-Diashow (Foto-Uploads durch Gäste):
+                </span>{' '}
+                An einzelnen Veranstaltungen können Gäste über einen QR-Code
+                eigene Fotos hochladen, die anschliessend öffentlich auf der
+                Event-Leinwand angezeigt werden. Mit dem Hochladen bestätigt die
+                hochladende Person, dass sie zur Veröffentlichung der Bilder
+                berechtigt ist. Zur Verhinderung von Missbrauch wird beim Upload
+                die IP-Adresse der hochladenden Person gespeichert. Die
+                Live-Diashow wird nach der Veranstaltung beendet; die
+                hochgeladenen Fotos bewahren wir als Andenken auf und können
+                jederzeit auf Anfrage über die oben angegebene Kontaktadresse
+                entfernt werden.
+              </p>
             </div>
 
             <div>
