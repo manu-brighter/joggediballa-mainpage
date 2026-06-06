@@ -60,6 +60,16 @@ export default function Home() {
   const TEMP_BUTTON_URL = '/harassenlauf';
   const TEMP_BUTTON_TEXT = 'Harassenlauf Anmeldung';
 
+  // Feature toggle for the live-diashow button. The live URL needs the current
+  // upload token, fetched only while the button is actually enabled.
+  const diashowButtonEnabled =
+    featureToggles.find(f => f.featureName === 'diashow_button')?.isEnabled ??
+    false;
+  const { data: diashowLink } = trpc.slideshow.liveLink.useQuery(undefined, {
+    enabled: diashowButtonEnabled,
+    staleTime: 30000,
+  });
+
   // Determine which logo to show based on theme
   const isDark =
     resolvedTheme === 'dark' ||
@@ -129,6 +139,29 @@ export default function Home() {
                     >
                       <Zap className="h-5 w-5 mr-2" />
                       {TEMP_BUTTON_TEXT}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                )}
+                {/* Live-Diashow Button — only shown when feature toggle is
+                    enabled (i.e. during a fest), on its own row between the
+                    temp button and the Shotcounter/Events row. */}
+                {diashowButtonEnabled && diashowLink?.token && (
+                  <div className="flex justify-center lg:justify-start">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="btn-animate text-base h-12 px-8 w-full sm:w-auto border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/60"
+                      onClick={() => navigate(`/diashow/${diashowLink.token}`)}
+                    >
+                      <span
+                        className="relative mr-2.5 flex size-2.5"
+                        aria-hidden="true"
+                      >
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+                        <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
+                      </span>
+                      Zur Live-Diashow
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>

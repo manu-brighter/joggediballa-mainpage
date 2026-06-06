@@ -151,6 +151,15 @@ export const appRouter = router({
         if (input.token !== s.uploadToken || input.ids.length === 0) return [];
         return db.getSlideshowPhotoStatuses(input.ids);
       }),
+    // Public live link — exposes ONLY the current token so the homepage can
+    // deep-link to the running show. The token already gates everything and is
+    // broadcast via the QR at the event; no photos or settings leak here. The
+    // homepage button's visibility is controlled solely by the diashow_button
+    // feature toggle.
+    liveLink: publicProcedure.query(async () => {
+      const s = await db.getSlideshowSettings();
+      return { token: s.uploadToken };
+    }),
 
     // ---- Maintainer+ (requirePermission) ----
     getSettings: requirePermission('manage_slideshow').query(async () => {

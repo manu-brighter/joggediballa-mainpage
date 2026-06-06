@@ -721,6 +721,43 @@ export default function AdminDashboard() {
                     }
                   />
                 </div>
+
+                {/* Diashow Button Toggle */}
+                <div className="flex items-center justify-between p-4 border rounded-xl hover:border-primary/30 transition-colors col-span-full">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Projector className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <Label
+                        htmlFor="diashow-button-toggle"
+                        className="font-medium cursor-pointer block"
+                      >
+                        Live-Diashow Button (Homepage)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Zeigt auf der Homepage einen Button zur aktuellen
+                        Live-Diashow (
+                        <span className="font-mono text-primary">
+                          /diashow/&lt;token&gt;
+                        </span>
+                        ). Für ein Fest aktivieren.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="diashow-button-toggle"
+                    checked={
+                      getFeatureToggle('diashow_button')?.isEnabled ?? false
+                    }
+                    onCheckedChange={checked =>
+                      toggleFeatureMutation.mutate({
+                        featureName: 'diashow_button',
+                        isEnabled: checked,
+                      })
+                    }
+                  />
+                </div>
               </div>
             )}
           </CardContent>
