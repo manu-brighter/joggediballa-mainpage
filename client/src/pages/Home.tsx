@@ -20,6 +20,7 @@ import {
   Twitch,
   Zap,
   MapPin,
+  Projector,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -149,18 +150,11 @@ export default function Home() {
                 {diashowButtonEnabled && diashowLink?.token && (
                   <div className="flex justify-center lg:justify-start">
                     <Button
-                      variant="outline"
                       size="lg"
-                      className="btn-animate text-base h-12 px-8 w-full sm:w-auto border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/60"
+                      className="btn-animate text-base h-12 px-8 w-full sm:w-auto bg-coral text-white hover:bg-coral/90"
                       onClick={() => navigate(`/diashow/${diashowLink.token}`)}
                     >
-                      <span
-                        className="relative mr-2.5 flex size-2.5"
-                        aria-hidden="true"
-                      >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
-                        <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
-                      </span>
+                      <Projector className="h-5 w-5 mr-2" />
                       Zur Live-Diashow
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
