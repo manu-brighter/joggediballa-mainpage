@@ -687,7 +687,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Temp Button Toggle */}
-                <div className="flex items-center justify-between p-4 border rounded-xl hover:border-coral/30 transition-colors col-span-full">
+                <div className="flex items-center justify-between p-4 border rounded-xl hover:border-coral/30 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-lg bg-coral/10 flex items-center justify-center shrink-0">
                       <Zap className="h-5 w-5 text-coral" />
@@ -723,7 +723,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Diashow Button Toggle */}
-                <div className="flex items-center justify-between p-4 border rounded-xl hover:border-primary/30 transition-colors col-span-full">
+                <div className="flex items-center justify-between p-4 border rounded-xl hover:border-primary/30 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       <Projector className="h-5 w-5 text-primary" />
