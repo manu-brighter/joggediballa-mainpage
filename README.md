@@ -1,296 +1,157 @@
-# Jogge di Balla - Vereinswebsite
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,40:1B2A2B,70:1B9BA8,100:FF5A6B&height=200&section=header&text=Jogge%20di%20Balla&fontSize=48&fontColor=ffffff&fontAlignY=38&desc=Event-%20und%20Kulturverein%20seit%202022%20%C2%B7%20Basel%2C%20Schweiz&descAlignY=58&descColor=b2f0f4&animation=fadeIn" width="100%" />
 
-Eine moderne, full-featured Website für den Verein "Jogge di Balla" mit umfassenden Features für Mitgliederverwaltung, Events, Shotcounter und mehr.
+<div align="center">
 
-## 🎯 Projekt-Übersicht
+[![Live](https://img.shields.io/badge/live-joggediballa.ch-FF5A6B?style=for-the-badge&logo=vercel&logoColor=white&labelColor=0d1117)](https://joggediballa.ch)&nbsp;
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white&labelColor=0d1117)&nbsp;
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0d1117&labelColor=0d1117)&nbsp;
+![tRPC](https://img.shields.io/badge/tRPC-11-2596BE?style=for-the-badge&logo=trpc&logoColor=white&labelColor=0d1117)
 
-Diese Website bietet:
+</div>
 
-- **Shotcounter** mit Jahrespersistenz, Beamer-Modus, Inline-Editing und animierten Rankings
-- **Admin-Dashboard** mit Rollenverwaltung (Admin/Maintainer/Editor/User)
-- **Gönnermitgliederverwaltung** mit Ablaufdatum-Tracking
-- **Events & Fotos** mit Galerie und Lightbox
-- **Team-Seite** mit Mitgliederverwaltung
-- **Sponsoren-Verwaltung** mit Logo-Upload
-- **Kontaktformular** mit Honeypot-Schutz
-- **Dark/Light Mode** mit System-Erkennung
-- **Google OAuth** für Self-Hosting
-- **Mobile-First** responsive Design
+<br>
 
-## 🛠️ Tech Stack
+> Full-stack club management platform for the swiss social club **Jogge di Balla** — events, members, shot counter, sponsors, and a Beam Mode for the Wamserfest. Self-hosted on a Linux root server.
 
-- **Frontend:** React 19 + Vite + TailwindCSS 4 + Wouter (Routing)
-- **Backend:** Node.js + Express + tRPC 11
-- **Database:** MySQL mit Drizzle ORM
-- **Auth:** Google OAuth 2.0 mit JWT
-- **Deployment:** Self-Hosted auf Root Server mit Nginx + PM2
+**[→ joggediballa.ch](https://joggediballa.ch)**
 
-## 📋 Voraussetzungen
+<br>
 
-- Node.js 18+ (empfohlen: 22.x)
-- pnpm 8+
-- MySQL 8+
-- Google Cloud Console Account (für OAuth)
+---
 
-## 🚀 Lokale Einrichtung
+## ✦ Features
 
-### 1. Repository klonen
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**🎯 Shotcounter**
+The core feature. Persistent yearly tracking, animated rankings, inline editing, and a **Beam Mode** — a fullscreen projector display for live shot counts at events.
+
+**👥 Member Management**
+Role-based access (Admin / Maintainer / Editor / User). Sponsor members with expiry tracking. Google OAuth login — no passwords, no friction.
+
+**📅 Events & Gallery**
+Event creation and management with photo galleries and lightbox. Collapsible photo sections per event.
+
+</td>
+<td width="50%" valign="top">
+
+**🏢 Admin Dashboard**
+Full CRUD for members, events, sponsors, and content. Role assignment UI. Protected behind authentication — public visitors see only the club-facing pages.
+
+**🌗 Dark / Light Mode**
+System-aware with manual toggle. Full theme coverage across all UI components.
+
+**🔒 Security**
+Google OAuth 2.0 + JWT (HTTP-only cookies). Honeypot on contact form. Rate limiting via `express-rate-limit`. Helmet headers. `trust proxy` for reverse-proxy deployment.
+
+</td>
+</tr>
+</table>
+
+<br>
+
+---
+
+## ✦ Stack
+
+<div align="center">
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 19 · Vite · TailwindCSS 4 · Wouter · Framer Motion |
+| **UI Components** | Radix UI primitives · shadcn/ui · Lucide icons |
+| **Backend** | Node.js · Express · tRPC 11 · SuperJSON |
+| **Database** | MySQL 8 · Drizzle ORM |
+| **Auth** | Google OAuth 2.0 · JWT · cookie-session |
+| **File Storage** | AWS S3 (sponsor logos, profile photos, event gallery) |
+| **Testing** | Playwright E2E · Vitest (server) · Biome |
+| **Deploy** | Self-hosted · Nginx · PM2 · GitHub Actions |
+
+</div>
+
+<br>
+
+---
+
+## ✦ Architecture
+
+```
+joggediballa-mainpage/
+├── client/               React + Vite frontend
+│   └── src/
+│       ├── components/   Shared UI components (Radix + shadcn wrappers)
+│       ├── pages/        Route-level page components
+│       ├── contexts/     Auth, Theme
+│       └── hooks/        Custom React hooks
+├── server/               Node.js + Express backend
+│   ├── routers.ts        All tRPC procedures
+│   ├── db.ts             Drizzle queries
+│   ├── _core/            Framework plumbing (Express, tRPC context, auth routes)
+│   └── auth/             Google OAuth flow
+├── drizzle/
+│   └── schema.ts         Database schema — 16+ tables, single source of truth
+└── shared/               Types and constants shared between client and server
+```
+
+<br>
+
+---
+
+## ✦ Roles & Permissions
+
+| Role | Shotcounter | Events | Members | Sponsors | Admin Panel |
+|---|:---:|:---:|:---:|:---:|:---:|
+| **Admin** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Maintainer** | ✅ | ✅ | ✅ | ✅ | — |
+| **Editor** | ✅ | edit | — | — | — |
+| **User** | ✅ | — | own profile | — | — |
+| **Public** | view | view | — | — | — |
+
+<br>
+
+---
+
+## ✦ Development
+
+**Prerequisites:** Node.js 22+, pnpm 8+, MySQL 8+
 
 ```bash
 git clone https://github.com/manu-brighter/joggediballa-mainpage.git
 cd joggediballa-mainpage
-```
-
-### 1.5. SSH Tunnel einrichten (falls nötig)
-
-```
-ssh -L 3307:127.0.0.1:3306 root@[server-ip] -N
-```
-
-### 2. Dependencies installieren
-
-```bash
 pnpm install
+
+cp .env.example .env    # fill in DATABASE_URL, Google OAuth, JWT_SECRET, ADMIN_EMAIL
+
+pnpm db:push            # push schema to MySQL
+pnpm dev                # → http://localhost:3000
 ```
-
-### 3. Umgebungsvariablen einrichten
-
-Erstelle eine `.env` Datei im Root-Verzeichnis:
-
-```env
-# Database
-DATABASE_URL="mysql://user:password@localhost:3306/joggediballa"
-
-# Google OAuth (siehe GOOGLE_OAUTH_SETUP.md)
-GOOGLE_CLIENT_ID="deine-client-id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="dein-client-secret"
-GOOGLE_CALLBACK_URL="http://localhost:3000/api/auth/google/callback"
-
-# JWT Secret (generiere einen zufälligen String)
-JWT_SECRET="dein-sicherer-jwt-secret"
-
-# Admin Email (wird automatisch als Admin gesetzt)
-ADMIN_EMAIL="deine@email.com"
-
-# Session Secret (generiere einen zufälligen String)
-SESSION_SECRET="dein-sicherer-session-secret"
-
-# Optional: SMTP für Kontaktformular
-SMTP_HOST="smtp.example.com"
-SMTP_PORT="587"
-SMTP_USER="dein-smtp-user"
-SMTP_PASS="dein-smtp-passwort"
-SMTP_FROM="noreply@joggediballa.ch"
-CONTACT_EMAIL="kontakt@joggediballa.ch"
-```
-
-### 4. Datenbank einrichten
 
 ```bash
-# Datenbank erstellen
-mysql -u root -p -e "CREATE DATABASE joggediballa CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# Schema pushen
-pnpm db:push
+pnpm build              # production build (Vite client + esbuild server)
+pnpm test               # Vitest server tests
+pnpm check              # TypeScript typecheck
+pnpm format             # Prettier
 ```
 
-### 5. Google OAuth einrichten
+> Google OAuth setup: `GOOGLE_OAUTH_SETUP.md` · Server deployment: `DEPLOYMENT.md`
 
-Folge der Anleitung in `GOOGLE_OAUTH_SETUP.md` um:
+<br>
 
-1. Google Cloud Projekt zu erstellen
-2. OAuth 2.0 Credentials zu generieren
-3. Authorized redirect URIs zu konfigurieren
+---
 
-### 6. Development Server starten
+## ✦ Deployment
 
-```bash
-pnpm dev
-```
-
-Die Website ist nun unter `http://localhost:3000` erreichbar.
-
-## 📦 Deployment auf Root Server
-
-Detaillierte Anleitung siehe `DEPLOYMENT.md`. Kurzfassung:
-
-### 1. Server vorbereiten
+Self-hosted on a Linux root server behind Nginx + PM2. Automated via GitHub Actions on push to `main`.
 
 ```bash
-# Node.js, pnpm, MySQL, Nginx, PM2 installieren
-# SSL-Zertifikat mit Let's Encrypt einrichten
-```
-
-### 2. Code deployen
-
-```bash
-cd /var/www/joggediballa-mainpage
 git pull origin main
 pnpm install --prod
 pnpm build
+pm2 restart joggediballa
 ```
 
-### 3. PM2 starten
+<br>
 
-```bash
-pm2 start ecosystem.config.js
-pm2 save
-```
-
-### 4. Nginx konfigurieren
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name joggediballa.ch;
-
-    ssl_certificate /etc/letsencrypt/live/joggediballa.ch/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/joggediballa.ch/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-## 🗂️ Projekt-Struktur
-
-```
-joggediballa-mainpage/
-├── client/                 # Frontend (React + Vite)
-│   ├── src/
-│   │   ├── components/    # Wiederverwendbare UI-Komponenten
-│   │   ├── contexts/      # React Contexts (Auth, Theme)
-│   │   ├── hooks/         # Custom Hooks
-│   │   ├── lib/           # Utilities (tRPC, SDK)
-│   │   ├── pages/         # Seiten-Komponenten
-│   │   ├── App.tsx        # Haupt-App mit Routing
-│   │   └── main.tsx       # Entry Point
-│   └── public/            # Statische Assets
-├── server/                # Backend (Node.js + Express)
-│   ├── auth/              # OAuth-Implementierung
-│   ├── _core/             # Framework-Code (nicht editieren)
-│   ├── db.ts              # Datenbank-Queries
-│   └── routers.ts         # tRPC-Procedures
-├── drizzle/               # Datenbank-Schema
-│   └── schema.ts          # Tabellen-Definitionen
-├── shared/                # Geteilte Types & Constants
-├── .env                   # Umgebungsvariablen (nicht committen!)
-├── DEPLOYMENT.md          # Deployment-Anleitung
-├── GOOGLE_OAUTH_SETUP.md  # Google OAuth Setup
-└── todo.md                # Feature-Tracking
-```
-
-## 👥 Rollen & Berechtigungen
-
-- **Admin:** Voller Zugriff auf alle Features
-- **Maintainer:** Kann Inhalte verwalten (Events, Team, Sponsoren)
-- **Editor:** Kann Inhalte bearbeiten, aber nicht löschen
-- **User:** Kann Shotcounter nutzen und eigenes Profil bearbeiten
-- **Public:** Kann öffentliche Seiten sehen
-
-## 🔑 Wichtige Hinweise
-
-### Trust Proxy
-
-Der Server muss hinter einem Reverse Proxy (Nginx) laufen. Die `trust proxy` Einstellung in `server/index.ts` ist bereits konfiguriert.
-
-### Cookie-Einstellungen
-
-Für HTTPS (Production):
-
-- `secure: true`
-- `sameSite: 'none'`
-
-Für HTTP (Development):
-
-- `secure: false`
-- `sameSite: 'lax'`
-
-### Admin-Zugriff
-
-Der erste User, der sich mit der in `ADMIN_EMAIL` angegebenen E-Mail anmeldet, wird automatisch als Admin gesetzt.
-
-### Datenbank-Migrationen
-
-Nach Schema-Änderungen in `drizzle/schema.ts`:
-
-```bash
-pnpm db:push
-```
-
-### Tests
-
-```bash
-pnpm test
-```
-
-## 🎨 Design-System
-
-- **Primärfarben:** Coral Red (#FF5A6B), Teal Blue (#1B9BA8)
-- **Dark Mode:** Automatische System-Erkennung + manueller Toggle
-- **Schriftart:** Inter Variable (self-hosted via `@fontsource-variable/inter`)
-- **Animationen:** Framer Motion für smooth Transitions
-
-## 📝 Entwicklungs-Workflow
-
-1. **Feature hinzufügen:** Task in `todo.md` als `[ ]` eintragen
-2. **Schema aktualisieren:** `drizzle/schema.ts` editieren, `pnpm db:push`
-3. **Backend:** Procedure in `server/routers.ts` hinzufügen
-4. **Frontend:** UI in `client/src/pages/` implementieren
-5. **Testen:** Vitest-Tests in `server/*.test.ts` schreiben
-6. **Fertigstellen:** Task in `todo.md` als `[x]` markieren
-7. **Committen:** Code zu GitHub pushen
-
-## 🐛 Troubleshooting
-
-### Login funktioniert nicht
-
-1. Cookies im Browser löschen
-2. `.env` Variablen überprüfen
-3. Google OAuth Redirect URI überprüfen
-4. Server-Logs checken: `pm2 logs joggediballa`
-
-### Datenbank-Verbindung fehlgeschlagen
-
-1. MySQL-Service läuft: `systemctl status mysql`
-2. `DATABASE_URL` in `.env` korrekt
-3. User hat Zugriffsrechte auf Datenbank
-
-### Build-Fehler
-
-```bash
-# Cache löschen und neu bauen
-rm -rf node_modules .next dist
-pnpm install
-pnpm build
-```
-
-## 📚 Weitere Dokumentation
-
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Vollständige Deployment-Anleitung
-- [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md) - Google OAuth Setup
-- [todo.md](./todo.md) - Feature-Tracking & Roadmap
-
-## 🤝 Contributing
-
-1. Branch erstellen: `git checkout -b feature/neue-funktion`
-2. Änderungen committen: `git commit -m "feat: neue Funktion"`
-3. Pushen: `git push origin feature/neue-funktion`
-4. Pull Request erstellen
-
-## 📄 Lizenz
-
-Dieses Projekt ist privat und nur für den Verein "Jogge di Balla" bestimmt.
-
-## 📧 Kontakt
-
-Bei Fragen oder Problemen: kontakt@joggediballa.ch
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:FF5A6B,50:1B9BA8,100:0d1117&height=100&section=footer" width="100%" />
