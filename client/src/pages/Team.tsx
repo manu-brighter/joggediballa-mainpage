@@ -50,7 +50,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
@@ -118,6 +118,7 @@ function createImage(url: string): Promise<HTMLImageElement> {
 export default function Team() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
+  const shouldReduceMotion = useReducedMotion();
 
   // Fetch team members
   const { data: members = [], isLoading } = trpc.team.list.useQuery();
@@ -633,8 +634,28 @@ export default function Team() {
                   layout
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.9,
+                    transition: { duration: 0.15 },
+                  }}
+                  transition={{
+                    // Stagger only the entrance; reorder (layout) and exit
+                    // stay snappy for the admin controls.
+                    layout: { duration: 0.25 },
+                    opacity: {
+                      duration: 0.25,
+                      delay: shouldReduceMotion
+                        ? 0
+                        : Math.min(index * 0.05, 0.35),
+                    },
+                    scale: {
+                      duration: 0.25,
+                      delay: shouldReduceMotion
+                        ? 0
+                        : Math.min(index * 0.05, 0.35),
+                    },
+                  }}
                 >
                   <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
                     <CardHeader className="relative p-0">
