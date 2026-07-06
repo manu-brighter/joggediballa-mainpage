@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SEO } from '@/components/SEO';
+import { PageHeader } from '@/components/PageHeader';
 
 const MotionDiv = motion.div;
 
@@ -205,19 +206,12 @@ export default function Dienstleistungen() {
         ogUrl="https://joggediballa.ch/dienstleistungen"
       />
       {/* Header */}
-      <MotionDiv
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
-      >
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-          <Package className="h-4 w-4" />
-          Unsere Services
-        </div>
-        <h1 className="text-4xl md:text-5xl font-black">
-          <span className="gradient-text">Dienstleistungen</span>
-        </h1>
-      </MotionDiv>
+      <PageHeader
+        kicker="Vermietung · DJ · Fotografie"
+        kickerIcon={Package}
+        title="Dienstleistungen"
+        lead="Was du bei uns buchen oder mieten kannst. Anfragen laufen direkt über den Verein."
+      />
 
       {/* Services Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

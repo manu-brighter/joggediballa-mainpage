@@ -63,6 +63,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SEO } from '@/components/SEO';
+import { PageHeader } from '@/components/PageHeader';
 
 const MotionDiv = motion.div;
 
@@ -303,7 +304,9 @@ export default function Events() {
     onSuccess: (_, vars) => {
       utils.events.list.invalidate();
       toast.success(
-        vars.isPublished ? 'Event veröffentlicht!' : 'Event als Entwurf gespeichert.',
+        vars.isPublished
+          ? 'Event veröffentlicht!'
+          : 'Event als Entwurf gespeichert.',
       );
     },
     onError: error => toast.error(parseErrorMessage(error)),
@@ -598,21 +601,16 @@ export default function Events() {
         ogUrl="https://joggediballa.ch/events"
       />
       {/* Header */}
-      <MotionDiv
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
-      >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/15 mb-4">
-          <Calendar className="h-10 w-10 text-primary" />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-black">
-          <span className="gradient-text">Events & Fotos</span>
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Was wir veranstaltet haben. Mit Bildern, falls du nicht dabei warst.
-        </p>
-      </MotionDiv>
+      <PageHeader
+        kicker="Rückblick"
+        kickerIcon={Calendar}
+        title={
+          <>
+            Events & <span className="text-primary">Fotos</span>
+          </>
+        }
+        lead="Was wir veranstaltet haben. Mit Bildern, falls du nicht dabei warst."
+      />
 
       {/* Datenschutz-Hinweis — collapsible */}
       <MotionDiv
@@ -636,7 +634,7 @@ export default function Events() {
                 Fotografie an Veranstaltungen
               </p>
               <p className="text-xs text-muted-foreground">
-                Wie wir Bilder verwenden — kurz erklärt
+                Wie wir Bilder verwenden, kurz erklärt
               </p>
             </div>
           </div>
@@ -662,10 +660,10 @@ export default function Events() {
                   welche für unsere Website, Social Media sowie
                   Vereinskommunikation verwendet werden. Die Veröffentlichung
                   erfolgt auf Grundlage unseres berechtigten Interesses an der
-                  Öffentlichkeitsarbeit. Personen, die nicht fotografiert
-                  werden möchten oder mit einer Veröffentlichung nicht
-                  einverstanden sind, können dies jederzeit unserem Team
-                  mitteilen oder eine nachträgliche Entfernung verlangen.
+                  Öffentlichkeitsarbeit. Personen, die nicht fotografiert werden
+                  möchten oder mit einer Veröffentlichung nicht einverstanden
+                  sind, können dies jederzeit unserem Team mitteilen oder eine
+                  nachträgliche Entfernung verlangen.
                 </p>
                 <Link href="/contact">
                   <Button

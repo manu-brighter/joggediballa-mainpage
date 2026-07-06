@@ -4,6 +4,7 @@ import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { usePermission } from '@/hooks/usePermissions';
 import { SEO } from '@/components/SEO';
+import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -211,163 +212,158 @@ export default function Sponsors() {
         ogImage="https://joggediballa.ch/JoggediBalla-Logo.PNG"
       />
       {/* Header */}
-      <MotionDiv
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
-      >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-coral/15 mb-4">
-          <Heart className="h-10 w-10 text-coral" />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-black">
-          <span className="gradient-text">Unsere Sponsoren</span>
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Ein grosses Dankeschön an alle, die uns unterstützen und unsere Events
-          möglich machen!
-        </p>
-      </MotionDiv>
+      <PageHeader
+        kicker="Unsere Partner"
+        kickerIcon={Heart}
+        voice="coral"
+        title={
+          <>
+            Unsere <span className="text-coral">Sponsoren</span>
+          </>
+        }
+        lead="Ein grosses Dankeschön an alle, die uns unterstützen und unsere Events möglich machen!"
+        actions={
+          canManageSponsors && (
+            <Dialog
+              open={createDialogOpen}
+              onOpenChange={open => {
+                setCreateDialogOpen(open);
+                if (!open) resetForm();
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button size="lg" className="btn-animate gap-2">
+                  <Plus className="h-5 w-5" />
+                  Sponsor hinzufügen
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Neuen Sponsor hinzufügen</DialogTitle>
+                  <DialogDescription>
+                    Füge einen neuen Sponsor mit optionalem Logo und
+                    Website-Link hinzu.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
+                  {/* Name Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="name">
+                      Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder="Sponsor-Name"
+                    />
+                  </div>
 
-      {/* Add Sponsor Button */}
-      {canManageSponsors && (
-        <div className="flex justify-center">
-          <Dialog
-            open={createDialogOpen}
-            onOpenChange={open => {
-              setCreateDialogOpen(open);
-              if (!open) resetForm();
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button size="lg" className="btn-animate gap-2">
-                <Plus className="h-5 w-5" />
-                Sponsor hinzufügen
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Neuen Sponsor hinzufügen</DialogTitle>
-                <DialogDescription>
-                  Füge einen neuen Sponsor mit optionalem Logo und Website-Link
-                  hinzu.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-6 py-4">
-                {/* Name Input */}
-                <div className="space-y-2">
-                  <Label htmlFor="name">
-                    Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Sponsor-Name"
-                  />
-                </div>
+                  {/* Website Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      type="url"
+                      value={websiteUrl}
+                      onChange={e => setWebsiteUrl(e.target.value)}
+                      placeholder="https://example.com"
+                    />
+                  </div>
 
-                {/* Website Input */}
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    type="url"
-                    value={websiteUrl}
-                    onChange={e => setWebsiteUrl(e.target.value)}
-                    placeholder="https://example.com"
-                  />
-                </div>
+                  {/* Logo Upload */}
+                  <div className="space-y-2">
+                    <Label>Logo</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      PNG mit transparentem Hintergrund empfohlen. Max. 5MB.
+                    </p>
 
-                {/* Logo Upload */}
-                <div className="space-y-2">
-                  <Label>Logo</Label>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    PNG mit transparentem Hintergrund empfohlen. Max. 5MB.
-                  </p>
-
-                  {logoPreview ? (
-                    <div className="relative">
-                      <div className="border-2 border-dashed border-border rounded-xl p-4 bg-muted/30">
-                        <div className="flex items-center justify-center">
-                          <div className="relative w-32 h-32 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImNoZWNrZXJib2FyZCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cmVjdCB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlZWUiLz48cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsbD0iI2VlZSIvPjxyZWN0IHg9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmZmYiLz48cmVjdCB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZmZmIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2NoZWNrZXJib2FyZCkiLz48L3N2Zz4=')] rounded-lg flex items-center justify-center">
-                            <img
-                              src={logoPreview}
-                              alt="Logo Vorschau"
-                              className="max-w-full max-h-full object-contain"
-                            />
+                    {logoPreview ? (
+                      <div className="relative">
+                        <div className="border-2 border-dashed border-border rounded-xl p-4 bg-muted/30">
+                          <div className="flex items-center justify-center">
+                            <div className="relative w-32 h-32 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImNoZWNrZXJib2FyZCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cmVjdCB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlZWUiLz48cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsbD0iI2VlZSIvPjxyZWN0IHg9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmZmYiLz48cmVjdCB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZmZmIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2NoZWNrZXJib2FyZCkiLz48L3N2Zz4=')] rounded-lg flex items-center justify-center">
+                              <img
+                                src={logoPreview}
+                                alt="Logo Vorschau"
+                                className="max-w-full max-h-full object-contain"
+                              />
+                            </div>
                           </div>
+                          <p className="text-center text-sm text-muted-foreground mt-2">
+                            {logoFile?.name}
+                          </p>
                         </div>
-                        <p className="text-center text-sm text-muted-foreground mt-2">
-                          {logoFile?.name}
-                        </p>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-8 w-8 rounded-full"
+                          onClick={clearLogo}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
+                    ) : (
+                      <button
                         type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-8 w-8 rounded-full"
-                        onClick={clearLogo}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full border-2 border-dashed border-border rounded-xl p-8 hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
                       >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full border-2 border-dashed border-border rounded-xl p-8 hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
-                    >
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <div className="p-3 rounded-full bg-muted">
-                          <Upload className="h-6 w-6" />
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <div className="p-3 rounded-full bg-muted">
+                            <Upload className="h-6 w-6" />
+                          </div>
+                          <span className="text-sm font-medium">
+                            Klicken zum Hochladen
+                          </span>
+                          <span className="text-xs">
+                            PNG, JPG, SVG (max. 5MB)
+                          </span>
                         </div>
-                        <span className="text-sm font-medium">
-                          Klicken zum Hochladen
-                        </span>
-                        <span className="text-xs">
-                          PNG, JPG, SVG (max. 5MB)
-                        </span>
-                      </div>
-                    </button>
-                  )}
+                      </button>
+                    )}
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </div>
                 </div>
-              </div>
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button
-                  variant="outline"
-                  onClick={() => setCreateDialogOpen(false)}
-                >
-                  Abbrechen
-                </Button>
-                <Button
-                  onClick={handleCreateSponsor}
-                  disabled={
-                    uploading || createSponsorMutation.isPending || !name.trim()
-                  }
-                  className="gap-2"
-                >
-                  {uploading || createSponsorMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Lädt...
-                    </>
-                  ) : (
-                    'Hinzufügen'
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      )}
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCreateDialogOpen(false)}
+                  >
+                    Abbrechen
+                  </Button>
+                  <Button
+                    onClick={handleCreateSponsor}
+                    disabled={
+                      uploading ||
+                      createSponsorMutation.isPending ||
+                      !name.trim()
+                    }
+                    className="gap-2"
+                  >
+                    {uploading || createSponsorMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Lädt...
+                      </>
+                    ) : (
+                      'Hinzufügen'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )
+        }
+      />
 
       {/* Sponsors Grid */}
       {isLoading ? (
