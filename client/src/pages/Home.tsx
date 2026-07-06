@@ -135,12 +135,12 @@ export default function Home() {
                   <div className="flex justify-center lg:justify-start">
                     <Button
                       size="lg"
-                      className="btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-coral to-pending hover:from-coral/90 hover:to-pending/90 text-white shadow-lg shadow-coral/30 hover:shadow-coral/50 border-0 animate-pulse hover:animate-none"
+                      className="group btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-coral to-pending hover:from-coral/90 hover:to-pending/90 text-white shadow-lg shadow-coral/30 hover:shadow-coral/50 border-0 animate-pulse hover:animate-none"
                       onClick={() => navigate(TEMP_BUTTON_URL)}
                     >
                       <Zap className="h-5 w-5 mr-2" />
                       {TEMP_BUTTON_TEXT}
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                      <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </div>
                 )}
@@ -151,12 +151,12 @@ export default function Home() {
                   <div className="flex justify-center lg:justify-start">
                     <Button
                       size="lg"
-                      className="btn-animate text-base h-12 px-8 w-full sm:w-auto bg-coral text-white hover:bg-coral/90"
+                      className="group btn-animate text-base h-12 px-8 w-full sm:w-auto bg-coral text-white hover:bg-coral/90"
                       onClick={() => navigate(`/diashow/${diashowLink.token}`)}
                     >
                       <Projector className="h-5 w-5 mr-2" />
                       Zur Live-Diashow
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                      <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </div>
                 )}
@@ -164,12 +164,12 @@ export default function Home() {
                 <div className="flex flex-row gap-3 justify-center lg:justify-start flex-wrap">
                   <Button
                     size="lg"
-                    className="btn-animate text-base h-12 px-8 flex-1 sm:flex-none"
+                    className="group btn-animate text-base h-12 px-8 flex-1 sm:flex-none"
                     onClick={() => navigate('/shotcounter')}
                   >
                     <Trophy className="h-5 w-5 mr-2" />
                     Zum Shotcounter
-                    <ArrowRight className="h-4 w-4 ml-2" />
+                    <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                   </Button>
                   {isEventsVisible && (
                     <Button
@@ -195,7 +195,7 @@ export default function Home() {
               }}
               className="flex justify-center lg:justify-end"
             >
-              <div className="relative">
+              <div className="relative float-gentle">
                 {/* Glow effect behind logo */}
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl scale-75" />
                 <img
@@ -402,11 +402,11 @@ export default function Home() {
                   )}
                   <Button
                     size="lg"
-                    className="btn-animate mt-4"
+                    className="group btn-animate mt-4"
                     onClick={() => navigate('/events#event-cards')}
                   >
                     Zum Event
-                    <ArrowRight className="h-4 w-4 ml-2" />
+                    <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </CardContent>
               </Card>
@@ -438,11 +438,11 @@ export default function Home() {
             <Button
               variant="outline"
               size="lg"
-              className="btn-animate"
+              className="group btn-animate"
               onClick={() => navigate('/contact')}
             >
               Schreib uns
-              <ArrowRight className="h-4 w-4 ml-2" />
+              <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
             </Button>
           </MotionDiv>
         </div>
@@ -502,11 +502,11 @@ export default function Home() {
                 </ul>
                 <Button
                   size="lg"
-                  className="btn-animate"
+                  className="group btn-animate"
                   onClick={() => navigate('/contact')}
                 >
                   Ich bin dabei
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                 </Button>
               </CardContent>
             </Card>

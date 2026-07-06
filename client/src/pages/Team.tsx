@@ -50,11 +50,12 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { SEO } from '@/components/SEO';
+import { PageHeader } from '@/components/PageHeader';
 
 const MotionDiv = motion.div;
 
@@ -117,6 +118,7 @@ function createImage(url: string): Promise<HTMLImageElement> {
 export default function Team() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
+  const shouldReduceMotion = useReducedMotion();
 
   // Fetch team members
   const { data: members = [], isLoading } = trpc.team.list.useQuery();
@@ -417,184 +419,180 @@ export default function Team() {
       />
       <div className="container py-12 space-y-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-        >
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
-              <Users className="h-10 w-10 text-primary" />
-              Unser Team
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Wer schmeisst den Laden eigentlich?
-            </p>
-          </div>
-
-          {canManageTeam && (
-            <Dialog
-              open={addDialogOpen}
-              onOpenChange={open => {
-                setAddDialogOpen(open);
-                if (!open) resetForm();
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button size="lg" className="gap-2">
-                  <Plus className="h-5 w-5" />
-                  Neues Mitglied
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Neues Mitglied hinzufügen</DialogTitle>
-                  <DialogDescription>
-                    Füge ein neues Team-Mitglied hinzu
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  {/* Photo Upload */}
-                  <div className="space-y-2">
-                    <Label>Foto</Label>
-                    <div className="flex items-center gap-4">
-                      {croppedImageUrl ? (
-                        <div className="relative">
-                          <img
-                            src={croppedImageUrl}
-                            alt="Preview"
-                            className="w-24 h-24 rounded-lg object-cover"
+        <PageHeader
+          kicker="Der Verein"
+          kickerIcon={Users}
+          title={
+            <>
+              Unser <span className="text-primary">Team</span>
+            </>
+          }
+          lead="Wer schmeisst den Laden eigentlich?"
+          actions={
+            canManageTeam && (
+              <Dialog
+                open={addDialogOpen}
+                onOpenChange={open => {
+                  setAddDialogOpen(open);
+                  if (!open) resetForm();
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button size="lg" className="gap-2">
+                    <Plus className="h-5 w-5" />
+                    Neues Mitglied
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Neues Mitglied hinzufügen</DialogTitle>
+                    <DialogDescription>
+                      Füge ein neues Team-Mitglied hinzu
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    {/* Photo Upload */}
+                    <div className="space-y-2">
+                      <Label>Foto</Label>
+                      <div className="flex items-center gap-4">
+                        {croppedImageUrl ? (
+                          <div className="relative">
+                            <img
+                              src={croppedImageUrl}
+                              alt="Preview"
+                              className="w-24 h-24 rounded-lg object-cover"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                              onClick={() => {
+                                setCroppedImageUrl('');
+                                setPhotoFile(null);
+                                setPhotoPreview('');
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                            <Upload className="h-8 w-8 text-muted-foreground/50" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <input
+                            ref={photoInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handlePhotoSelect}
                           />
                           <Button
-                            variant="destructive"
-                            size="icon"
-                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                            onClick={() => {
-                              setCroppedImageUrl('');
-                              setPhotoFile(null);
-                              setPhotoPreview('');
-                            }}
+                            variant="outline"
+                            onClick={() => photoInputRef.current?.click()}
+                            disabled={uploadingPhoto}
+                            className="w-full"
                           >
-                            <X className="h-3 w-3" />
+                            {uploadingPhoto ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Hochladen...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-4 w-4 mr-2" />
+                                Foto auswählen
+                              </>
+                            )}
                           </Button>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Max. 25MB, JPG/PNG
+                          </p>
                         </div>
-                      ) : (
-                        <div className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                          <Upload className="h-8 w-8 text-muted-foreground/50" />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <input
-                          ref={photoInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handlePhotoSelect}
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={() => photoInputRef.current?.click()}
-                          disabled={uploadingPhoto}
-                          className="w-full"
-                        >
-                          {uploadingPhoto ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Hochladen...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="h-4 w-4 mr-2" />
-                              Foto auswählen
-                            </>
-                          )}
-                        </Button>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Max. 25MB, JPG/PNG
-                        </p>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="name">
-                      Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={e =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      placeholder="z.B. Max Mustermann"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">
+                        Name <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={e =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                        placeholder="z.B. Max Mustermann"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="nickname">Spitzname</Label>
-                    <Input
-                      id="nickname"
-                      value={formData.nickname}
-                      onChange={e =>
-                        setFormData({ ...formData, nickname: e.target.value })
-                      }
-                      placeholder="z.B. Maxi"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="nickname">Spitzname</Label>
+                      <Input
+                        id="nickname"
+                        value={formData.nickname}
+                        onChange={e =>
+                          setFormData({ ...formData, nickname: e.target.value })
+                        }
+                        placeholder="z.B. Maxi"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Rolle</Label>
-                    <Input
-                      id="role"
-                      value={formData.role}
-                      onChange={e =>
-                        setFormData({ ...formData, role: e.target.value })
-                      }
-                      placeholder="z.B. Präsident, Kassier, DJ"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Rolle</Label>
+                      <Input
+                        id="role"
+                        value={formData.role}
+                        onChange={e =>
+                          setFormData({ ...formData, role: e.target.value })
+                        }
+                        placeholder="z.B. Präsident, Kassier, DJ"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Beschreibung</Label>
-                    <Textarea
-                      id="bio"
-                      value={formData.bio}
-                      onChange={e =>
-                        setFormData({ ...formData, bio: e.target.value })
-                      }
-                      placeholder="Kurze Beschreibung..."
-                      rows={4}
-                    />
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Beschreibung</Label>
+                      <Textarea
+                        id="bio"
+                        value={formData.bio}
+                        onChange={e =>
+                          setFormData({ ...formData, bio: e.target.value })
+                        }
+                        placeholder="Kurze Beschreibung..."
+                        rows={4}
+                      />
+                    </div>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setAddDialogOpen(false);
-                      resetForm();
-                    }}
-                  >
-                    Abbrechen
-                  </Button>
-                  <Button
-                    onClick={() => handleSubmit(false)}
-                    disabled={createMutation.isPending || uploadingPhoto}
-                  >
-                    {createMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Wird hinzugefügt...
-                      </>
-                    ) : (
-                      'Hinzufügen'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-        </motion.div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setAddDialogOpen(false);
+                        resetForm();
+                      }}
+                    >
+                      Abbrechen
+                    </Button>
+                    <Button
+                      onClick={() => handleSubmit(false)}
+                      disabled={createMutation.isPending || uploadingPhoto}
+                    >
+                      {createMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Wird hinzugefügt...
+                        </>
+                      ) : (
+                        'Hinzufügen'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )
+          }
+        />
 
         {/* Team Members Grid */}
         {isLoading ? (
@@ -634,10 +632,32 @@ export default function Team() {
                 <MotionDiv
                   key={member.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={
+                    shouldReduceMotion ? false : { opacity: 0, scale: 0.9 }
+                  }
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.9,
+                    transition: { duration: 0.15 },
+                  }}
+                  transition={{
+                    // Stagger only the entrance; reorder (layout) and exit
+                    // stay snappy for the admin controls.
+                    layout: { duration: 0.25 },
+                    opacity: {
+                      duration: 0.25,
+                      delay: shouldReduceMotion
+                        ? 0
+                        : Math.min(index * 0.05, 0.35),
+                    },
+                    scale: {
+                      duration: 0.25,
+                      delay: shouldReduceMotion
+                        ? 0
+                        : Math.min(index * 0.05, 0.35),
+                    },
+                  }}
                 >
                   <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
                     <CardHeader className="relative p-0">
