@@ -1,8 +1,14 @@
 import { PageHeader } from '@/components/PageHeader';
+import { SEO } from '@/components/SEO';
 
 export default function Impressum() {
   return (
     <div className="container py-12 space-y-10">
+      <SEO
+        title="Jogge di Balla - Impressum"
+        description="Impressum des Vereins Jogge di Balla: Verantwortliche, Adresse, Kontakt und rechtliche Hinweise."
+        ogUrl="https://joggediballa.ch/impressum"
+      />
       <PageHeader
         className="mx-auto w-full max-w-3xl"
         kicker="Rechtliches"
