@@ -54,13 +54,14 @@ import {
   Mail,
 } from 'lucide-react';
 import { Link } from 'wouter';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 const MotionDiv = motion.div;
 
 export default function Sponsors() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const shouldReduceMotion = useReducedMotion();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSponsor, setSelectedSponsor] = useState<{
@@ -400,8 +401,15 @@ export default function Sponsors() {
                 key={sponsor.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.05 }}
+                exit={{
+                  opacity: 0,
+                  scale: 0.9,
+                  transition: { duration: 0.15 },
+                }}
+                transition={{
+                  duration: 0.25,
+                  delay: shouldReduceMotion ? 0 : Math.min(index * 0.05, 0.4),
+                }}
               >
                 <Card className="group relative overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300">
                   <CardHeader className="p-4">

@@ -57,7 +57,6 @@ import {
   Link2,
   Eye,
   EyeOff,
-  ChevronUp,
   ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -638,11 +637,12 @@ export default function Events() {
               </p>
             </div>
           </div>
-          {photoNoticeOpen ? (
-            <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
-          ) : (
-            <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
-          )}
+          <ChevronDown
+            className={cn(
+              'h-5 w-5 text-muted-foreground shrink-0 transition-transform duration-300',
+              photoNoticeOpen && 'rotate-180',
+            )}
+          />
         </button>
 
         <AnimatePresence>
