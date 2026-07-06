@@ -747,14 +747,14 @@ export default function Harassenlauf() {
                 </p>
                 <div className="rounded-xl overflow-hidden border">
                   <img
-                    src="/HarassenlaufFlyer2026.png"
+                    src="/HarassenlaufFlyer2026-preview.webp"
                     alt="Harassenlauf 2026 Flyer"
                     className="w-full h-auto object-contain"
                   />
                 </div>
                 <a
-                  href="/HarassenlaufFlyer2026.png"
-                  download="HarassenlaufFlyer2026.png"
+                  href="/HarassenlaufFlyer2026.pdf"
+                  download="Harassenlauf-Flyer-2026.pdf"
                   className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-sm transition-colors"
                 >
                   <Download className="h-4 w-4" />
