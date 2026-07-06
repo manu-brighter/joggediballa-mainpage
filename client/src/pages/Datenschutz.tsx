@@ -1,8 +1,14 @@
 import { PageHeader } from '@/components/PageHeader';
+import { SEO } from '@/components/SEO';
 
 export default function Datenschutz() {
   return (
     <div className="container py-12 space-y-10">
+      <SEO
+        title="Jogge di Balla - Datenschutzerklärung"
+        description="Datenschutzerklärung von joggediballa.ch: wie wir personenbezogene Daten bearbeiten, Fotografie an Veranstaltungen und Ihre Rechte."
+        ogUrl="https://joggediballa.ch/datenschutz"
+      />
       <PageHeader
         className="mx-auto w-full max-w-3xl"
         kicker="Rechtliches"
