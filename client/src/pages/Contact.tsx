@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { parseErrorMessage } from '@/lib/errorMessages';
 import { Mail, Send, CheckCircle } from 'lucide-react';
 import { SEO } from '@/components/SEO';
+import { PageHeader } from '@/components/PageHeader';
 import {
   contactFormSchema,
   type ContactFormValues,
@@ -92,14 +93,13 @@ export default function Contact() {
         keywords="Jogge di Balla, Kontakt, Brislach, Verein"
         ogUrl="https://joggediballa.ch/contact"
       />
-      <div className="text-center space-y-4">
-        <Mail className="h-16 w-16 text-primary mx-auto" />
-        <h1 className="text-4xl md:text-5xl font-bold">Schreib uns</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Hast du Fragen, Anregungen oder möchtest auf eines unserer Angebote
-          eingehen? Schreib uns eine Nachricht!
-        </p>
-      </div>
+      <PageHeader
+        className="mx-auto w-full max-w-2xl"
+        kicker="Kontakt"
+        kickerIcon={Mail}
+        title="Schreib uns"
+        lead="Hast du Fragen, Anregungen oder möchtest auf eines unserer Angebote eingehen? Schreib uns eine Nachricht!"
+      />
 
       <div className="max-w-2xl mx-auto">
         <Card>

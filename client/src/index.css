@@ -35,48 +35,48 @@
  * --------------------------------------------------------------------------- */
 :root {
   /* Brand — teal (primary) */
-  --teal-50:  oklch(0.98 0.015 195);
-  --teal-100: oklch(0.95 0.030 195);
-  --teal-200: oklch(0.90 0.060 195);
-  --teal-300: oklch(0.82 0.090 195);
-  --teal-400: oklch(0.70 0.120 195);
-  --teal-500: oklch(0.55 0.140 195); /* primary baseline */
-  --teal-600: oklch(0.48 0.130 195);
-  --teal-700: oklch(0.40 0.110 195);
-  --teal-800: oklch(0.32 0.090 195);
-  --teal-900: oklch(0.24 0.060 195);
+  --teal-50: oklch(0.98 0.015 195);
+  --teal-100: oklch(0.95 0.03 195);
+  --teal-200: oklch(0.9 0.06 195);
+  --teal-300: oklch(0.82 0.09 195);
+  --teal-400: oklch(0.7 0.12 195);
+  --teal-500: oklch(0.55 0.14 195); /* primary baseline */
+  --teal-600: oklch(0.48 0.13 195);
+  --teal-700: oklch(0.4 0.11 195);
+  --teal-800: oklch(0.32 0.09 195);
+  --teal-900: oklch(0.24 0.06 195);
 
   /* Brand — coral (secondary accent) */
-  --coral-50:  oklch(0.97 0.020 18);
-  --coral-100: oklch(0.94 0.040 18);
-  --coral-200: oklch(0.88 0.080 18);
-  --coral-300: oklch(0.80 0.120 18);
-  --coral-400: oklch(0.74 0.160 18);
-  --coral-500: oklch(0.68 0.180 18); /* coral baseline */
-  --coral-600: oklch(0.60 0.180 18);
-  --coral-700: oklch(0.50 0.160 18);
-  --coral-800: oklch(0.40 0.130 18);
-  --coral-900: oklch(0.30 0.100 18);
+  --coral-50: oklch(0.97 0.02 18);
+  --coral-100: oklch(0.94 0.04 18);
+  --coral-200: oklch(0.88 0.08 18);
+  --coral-300: oklch(0.8 0.12 18);
+  --coral-400: oklch(0.74 0.16 18);
+  --coral-500: oklch(0.68 0.18 18); /* coral baseline */
+  --coral-600: oklch(0.6 0.18 18);
+  --coral-700: oklch(0.5 0.16 18);
+  --coral-800: oklch(0.4 0.13 18);
+  --coral-900: oklch(0.3 0.1 18);
 
   /* Neutral — slightly cool, blue-grey.
    * 200 and 500 chosen to keep light-mode borders and helper text legible:
    * higher lightness values made the page feel washed out / airy. */
-  --neutral-0:    oklch(1.00 0.000 0);
-  --neutral-50:   oklch(0.99 0.002 250);
-  --neutral-100:  oklch(0.96 0.005 250);
-  --neutral-200:  oklch(0.90 0.010 250);
-  --neutral-300:  oklch(0.85 0.010 250);
-  --neutral-400:  oklch(0.70 0.015 260);
-  --neutral-500:  oklch(0.50 0.020 260);
-  --neutral-600:  oklch(0.42 0.020 260);
-  --neutral-700:  oklch(0.32 0.015 260);
-  --neutral-800:  oklch(0.22 0.015 260);
-  --neutral-900:  oklch(0.16 0.015 260);
-  --neutral-950:  oklch(0.13 0.015 260);
+  --neutral-0: oklch(1 0 0);
+  --neutral-50: oklch(0.99 0.002 250);
+  --neutral-100: oklch(0.96 0.005 250);
+  --neutral-200: oklch(0.9 0.01 250);
+  --neutral-300: oklch(0.85 0.01 250);
+  --neutral-400: oklch(0.7 0.015 260);
+  --neutral-500: oklch(0.5 0.02 260);
+  --neutral-600: oklch(0.42 0.02 260);
+  --neutral-700: oklch(0.32 0.015 260);
+  --neutral-800: oklch(0.22 0.015 260);
+  --neutral-900: oklch(0.16 0.015 260);
+  --neutral-950: oklch(0.13 0.015 260);
 
   /* External-brand exact (Twitch logo color must match Twitch spec) */
   --twitch-light: #9146ff;
-  --twitch-dark:  #a970ff;
+  --twitch-dark: #a970ff;
 }
 
 /* ---------------------------------------------------------------------------
@@ -192,9 +192,9 @@
    */
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: var(--neutral-0);
-  --warning: oklch(0.80 0.15 85);
+  --warning: oklch(0.8 0.15 85);
   --warning-foreground: oklch(0.25 0.05 85);
-  --pending: oklch(0.70 0.17 50);
+  --pending: oklch(0.7 0.17 50);
   --pending-foreground: oklch(0.25 0.05 50);
   --success: oklch(0.65 0.15 145);
   --success-foreground: var(--neutral-0);
@@ -253,13 +253,13 @@
   --accent: var(--neutral-800);
   --accent-foreground: var(--neutral-50);
 
-  --destructive: oklch(0.60 0.20 25);
+  --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: var(--neutral-0);
   --warning: oklch(0.75 0.12 85);
   --warning-foreground: oklch(0.15 0.05 85);
   --pending: oklch(0.72 0.16 50);
   --pending-foreground: oklch(0.15 0.05 50);
-  --success: oklch(0.70 0.14 145);
+  --success: oklch(0.7 0.14 145);
   --success-foreground: var(--neutral-950);
 
   --teal: var(--teal-400);
@@ -282,9 +282,9 @@
 
   --chart-1: var(--teal-400);
   --chart-2: var(--coral-400);
-  --chart-3: oklch(0.70 0.12 200);
+  --chart-3: oklch(0.7 0.12 200);
   --chart-4: oklch(0.55 0.12 200);
-  --chart-5: oklch(0.80 0.14 20);
+  --chart-5: oklch(0.8 0.14 20);
 
   /* Chart tooltip — keeps the recharts default tooltip readable on dark */
   --tooltip-bg: var(--neutral-900);
@@ -515,6 +515,21 @@
     to {
       opacity: 1;
       transform: scale(1);
+    }
+  }
+
+  /* Gentle idle float — hero logo. Applied to the wrapper (not the img)
+     so the img's own hover scale-transform keeps working. */
+  .float-gentle {
+    animation: floatGentle 6s ease-in-out infinite;
+  }
+  @keyframes floatGentle {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
     }
   }
 

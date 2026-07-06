@@ -331,8 +331,8 @@ export default function AdminDashboard() {
           <Shield className="h-8 w-8 text-primary" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-3xl md:text-4xl font-black truncate">
-            <span className="gradient-text">Admin Dashboard</span>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight truncate">
+            Admin Dashboard
           </h1>
           <p className="text-muted-foreground text-sm md:text-base">
             Verwaltung und Konfiguration
