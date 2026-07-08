@@ -121,7 +121,12 @@ type SniffedImage = {
   height: number;
 };
 
-const MAX_PIXELS = 25_000_000;
+// Decompression-bomb ceiling. Anything above this is rejected outright (a
+// legit photo never approaches it — 120 MP covers pro medium-format bodies).
+// Doubles as sharp's `limitInputPixels` so a crafted image can't blow up memory
+// during decode. Legit-but-large photos (e.g. 31 MP Sony) pass here and are
+// downscaled by the resize variants below.
+const MAX_PIXELS = 120_000_000;
 
 async function sniffImage(buf: Buffer): Promise<SniffedImage | null> {
   try {
@@ -189,11 +194,15 @@ function makeUploadHandler(spec: RouteSpec) {
 
         if (v.spec.resize) {
           buffer = await sharp(sniffed.buffer, { limitInputPixels: MAX_PIXELS })
+            // .rotate() with no args = bake in EXIF orientation, then sharp
+            // drops metadata (incl. GPS) on encode. Without it, portrait
+            // phone/camera shots would be stored sideways.
+            .rotate()
             .resize(v.spec.resize.w, v.spec.resize.h, {
               fit: 'inside',
               withoutEnlargement: true,
             })
-            .jpeg({ quality: v.spec.resize.quality })
+            .jpeg({ quality: v.spec.resize.quality, mozjpeg: true })
             .toBuffer();
           mime = 'image/jpeg';
           ext = 'jpg';
@@ -272,7 +281,17 @@ router.post(
   upload.single('file'),
   makeUploadHandler({
     variants: [
-      { name: 'original', spec: { prefix: 'events/original' } },
+      {
+        // "original" is the HD image the lightbox loads on demand. We cap it at
+        // 4096 px longest edge (> 4K) at high quality instead of storing the
+        // raw camera file — keeps it razor-sharp while turning a 31 MP / 20 MB
+        // upload into ~11 MP / ~4 MB. Bump this constant if you want more res.
+        name: 'original',
+        spec: {
+          prefix: 'events/original',
+          resize: { w: 4096, h: 4096, quality: 90 },
+        },
+      },
       {
         name: 'compressed',
         spec: {

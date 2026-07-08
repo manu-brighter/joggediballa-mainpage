@@ -484,7 +484,10 @@ export default function Events() {
       description: eventForm.description.trim() || undefined,
       eventDate: new Date(dateStr),
       location: eventForm.location.trim() || undefined,
-      eventLinks: validLinks.length > 0 ? validLinks : undefined,
+      // Always send the array (even when empty) so removing the last link
+      // persists. Sending `undefined` makes db.updateEvent skip the field,
+      // leaving stale links in the DB.
+      eventLinks: validLinks,
     });
   };
 
@@ -526,58 +529,84 @@ export default function Events() {
   ) => {
     if (!files || files.length === 0) return;
 
+    // Keep in sync with server ENV.uploadMaxBytes (40 MB).
+    const MAX_UPLOAD_BYTES = 40 * 1024 * 1024;
+
     setUploadingPhotos(true);
     setUploadEventId(targetEventId);
 
+    // Upload every file independently — one bad photo must not abort the whole
+    // batch. Collect per-file failures with the reason so the user can see
+    // exactly which image (and why) failed instead of a blanket error.
+    const fileList = Array.from(files);
+    const failures: string[] = [];
+
     try {
-      for (const file of Array.from(files)) {
+      for (const file of fileList) {
         if (!file.type.startsWith('image/')) {
-          toast.error(`${file.name} ist keine Bilddatei`);
+          failures.push(`${file.name}: keine Bilddatei`);
           continue;
         }
 
-        if (file.size > 25 * 1024 * 1024) {
-          toast.error(`${file.name} ist zu gross (max. 25MB)`);
+        if (file.size > MAX_UPLOAD_BYTES) {
+          failures.push(`${file.name}: zu gross (max. 40 MB)`);
           continue;
         }
 
-        const formData = new FormData();
-        formData.append('file', file);
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
 
-        const response = await fetch('/api/upload/event-photo', {
-          method: 'POST',
-          body: formData,
-        });
+          const response = await fetch('/api/upload/event-photo', {
+            method: 'POST',
+            body: formData,
+          });
 
-        if (!response.ok) {
-          throw new Error(`Upload fehlgeschlagen für ${file.name}`);
+          if (!response.ok) {
+            const body = await response.json().catch(() => null);
+            failures.push(
+              `${file.name}: ${body?.error ?? `Serverfehler ${response.status}`}`,
+            );
+            continue;
+          }
+
+          const {
+            url,
+            key,
+            compressedUrl,
+            compressedKey,
+            thumbnailUrl,
+            thumbnailKey,
+          } = await response.json();
+
+          await createPhotoMutation.mutateAsync({
+            eventId: targetEventId,
+            imageUrl: url,
+            imageKey: key,
+            compressedUrl,
+            compressedKey,
+            thumbnailUrl,
+            thumbnailKey,
+            title: file.name.replace(/\.[^/.]+$/, ''),
+          });
+        } catch (error) {
+          failures.push(
+            `${file.name}: ${error instanceof Error ? error.message : 'Fehler'}`,
+          );
         }
-
-        const {
-          url,
-          key,
-          compressedUrl,
-          compressedKey,
-          thumbnailUrl,
-          thumbnailKey,
-        } = await response.json();
-
-        await createPhotoMutation.mutateAsync({
-          eventId: targetEventId,
-          imageUrl: url,
-          imageKey: key,
-          compressedUrl,
-          compressedKey,
-          thumbnailUrl,
-          thumbnailKey,
-          title: file.name.replace(/\.[^/.]+$/, ''),
-        });
       }
 
-      toast.success('Fotos erfolgreich hochgeladen!');
-    } catch (error) {
-      console.error('Photo upload error:', error);
-      toast.error('Fehler beim Hochladen der Fotos');
+      const succeeded = fileList.length - failures.length;
+      if (succeeded > 0) {
+        toast.success(`${succeeded} von ${fileList.length} Fotos hochgeladen`);
+      }
+      if (failures.length > 0) {
+        console.error('Photo upload failures:', failures);
+        toast.error(
+          `${failures.length} fehlgeschlagen — ${failures.join(' · ')}`,
+          { duration: 10000 },
+        );
+      }
     } finally {
       setUploadingPhotos(false);
       setUploadEventId(null);
