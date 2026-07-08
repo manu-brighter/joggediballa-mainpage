@@ -47,9 +47,13 @@ export const ENV = {
   contactEmailTo: process.env.CONTACT_EMAIL_TO ?? '',
   contactEmailFrom: process.env.CONTACT_EMAIL_FROM ?? '',
 
-  // Upload limits (15 MB default; can be lowered for slow links)
+  // Upload limits — cap on the *raw* upload before server-side downscaling.
+  // 40 MB default so high-res camera JPEGs (30+ MP Sony/Nikon, up to 61 MP)
+  // aren't rejected before we get a chance to resize them. Can be lowered for
+  // slow links. NOTE: a reverse proxy (nginx `client_max_body_size`) must allow
+  // at least this much or it 413s before the request reaches Node.
   uploadMaxBytes: parseInt(
-    process.env.UPLOAD_MAX_BYTES ?? String(15 * 1024 * 1024),
+    process.env.UPLOAD_MAX_BYTES ?? String(40 * 1024 * 1024),
     10,
   ),
 };
