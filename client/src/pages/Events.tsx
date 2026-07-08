@@ -327,7 +327,8 @@ export default function Events() {
       utils.events.list.invalidate();
       utils.photos.listAll.invalidate();
     },
-    onError: error => toast.error(parseErrorMessage(error)),
+    // No onError toast: handlePhotoUpload catches rejections and reports them
+    // per-file in its batch summary, so an onError here would double-toast.
   });
 
   const deletePhotoMutation = trpc.photos.delete.useMutation({
@@ -465,7 +466,8 @@ export default function Events() {
       description: eventForm.description.trim() || undefined,
       eventDate: new Date(dateStr),
       location: eventForm.location.trim() || undefined,
-      eventLinks: validLinks.length > 0 ? validLinks : undefined,
+      // Send the array (symmetric with handleUpdateEvent); empty is stored as []
+      eventLinks: validLinks,
     });
   };
 
@@ -603,7 +605,7 @@ export default function Events() {
       if (failures.length > 0) {
         console.error('Photo upload failures:', failures);
         toast.error(
-          `${failures.length} fehlgeschlagen — ${failures.join(' · ')}`,
+          `${failures.length} fehlgeschlagen: ${failures.join(' · ')}`,
           { duration: 10000 },
         );
       }
