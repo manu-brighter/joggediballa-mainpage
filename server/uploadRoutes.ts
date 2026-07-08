@@ -121,15 +121,28 @@ type SniffedImage = {
   height: number;
 };
 
-const MAX_PIXELS = 25_000_000;
+// Decompression-bomb ceiling — doubles as sharp's `limitInputPixels` (blocks a
+// crafted image from blowing up memory during decode) and as an explicit
+// pixel-count reject in sniffImage. A crafted PNG has no shrink-on-load, so
+// N megapixels ≈ 4·N MB of RAM on decode.
+//
+// Editor-gated routes get a generous ceiling (120 MP covers 61 MP cameras with
+// headroom; legit-but-large photos pass here and are downscaled below). The
+// UNAUTHENTICATED slideshow route keeps the original tight ceiling so anonymous
+// callers can't drive up decode memory.
+const MAX_PIXELS_AUTHED = 120_000_000;
+const MAX_PIXELS_PUBLIC = 25_000_000;
 
-async function sniffImage(buf: Buffer): Promise<SniffedImage | null> {
+async function sniffImage(
+  buf: Buffer,
+  maxPixels: number = MAX_PIXELS_AUTHED,
+): Promise<SniffedImage | null> {
   try {
-    const meta = await sharp(buf, { limitInputPixels: MAX_PIXELS }).metadata();
+    const meta = await sharp(buf, { limitInputPixels: maxPixels }).metadata();
     const w = meta.width ?? 0;
     const h = meta.height ?? 0;
     if (!w || !h) return null;
-    if (w * h > MAX_PIXELS) return null;
+    if (w * h > maxPixels) return null;
 
     switch (meta.format) {
       case 'jpeg':
@@ -188,12 +201,18 @@ function makeUploadHandler(spec: RouteSpec) {
         let ext: string = sniffed.ext;
 
         if (v.spec.resize) {
-          buffer = await sharp(sniffed.buffer, { limitInputPixels: MAX_PIXELS })
+          buffer = await sharp(sniffed.buffer, {
+            limitInputPixels: MAX_PIXELS_AUTHED,
+          })
+            // .rotate() with no args = bake in EXIF orientation, then sharp
+            // drops metadata (incl. GPS) on encode. Without it, portrait
+            // phone/camera shots would be stored sideways.
+            .rotate()
             .resize(v.spec.resize.w, v.spec.resize.h, {
               fit: 'inside',
               withoutEnlargement: true,
             })
-            .jpeg({ quality: v.spec.resize.quality })
+            .jpeg({ quality: v.spec.resize.quality, mozjpeg: true })
             .toBuffer();
           mime = 'image/jpeg';
           ext = 'jpg';
@@ -272,7 +291,17 @@ router.post(
   upload.single('file'),
   makeUploadHandler({
     variants: [
-      { name: 'original', spec: { prefix: 'events/original' } },
+      {
+        // "original" is the HD image the lightbox loads on demand. We cap it at
+        // 4096 px longest edge (> 4K) at high quality instead of storing the
+        // raw camera file — keeps it razor-sharp while turning a 31 MP / 20 MB
+        // upload into ~11 MP / ~4 MB. Bump this constant if you want more res.
+        name: 'original',
+        spec: {
+          prefix: 'events/original',
+          resize: { w: 4096, h: 4096, quality: 90 },
+        },
+      },
       {
         name: 'compressed',
         spec: {
@@ -359,7 +388,8 @@ router.post(
         res.status(400).json({ error: 'No file provided (field name: "file")' });
         return;
       }
-      const sniffed = await sniffImage(req.file.buffer);
+      // Unauthenticated route: tight pixel ceiling (see MAX_PIXELS_PUBLIC).
+      const sniffed = await sniffImage(req.file.buffer, MAX_PIXELS_PUBLIC);
       if (!sniffed) {
         res.status(415).json({ error: 'Ungültiges Bild (nur JPEG/PNG/WebP)' });
         return;
@@ -370,14 +400,14 @@ router.post(
       // resolveWithObject liefert die finalen Dimensionen aus der Encode-
       // Pipeline — kein zweiter Decode des Display-Buffers nötig.
       const { data: displayBuf, info: displayInfo } = await sharp(sniffed.buffer, {
-        limitInputPixels: MAX_PIXELS,
+        limitInputPixels: MAX_PIXELS_PUBLIC,
       })
         .rotate()
         .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
         .jpeg({ quality: 72, mozjpeg: true })
         .toBuffer({ resolveWithObject: true });
       const thumbBuf = await sharp(sniffed.buffer, {
-        limitInputPixels: MAX_PIXELS,
+        limitInputPixels: MAX_PIXELS_PUBLIC,
       })
         .rotate()
         .resize(480, 480, { fit: 'inside', withoutEnlargement: true })
