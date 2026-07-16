@@ -124,8 +124,8 @@ export default function Home() {
 
               <div className="flex flex-col gap-3 justify-center lg:justify-start">
                 {/* Live-Diashow Button — only shown when feature toggle is
-                    enabled (i.e. during a fest), on its own row between the
-                    temp button and the Shotcounter/Events row. */}
+                    enabled (i.e. during a fest), on its own row above the
+                    Shotcounter/Events row. */}
                 {diashowButtonEnabled && diashowLink?.token && (
                   <div className="flex justify-center lg:justify-start">
                     <Button
