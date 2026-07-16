@@ -805,7 +805,18 @@ export const appRouter = router({
       .input(
         z.object({
           featureName: z.string(),
-          linkUrl: z.string().max(500).nullable(),
+          // Only allow internal routes ("/…", but not protocol-relative "//…")
+          // or http(s) URLs. This blocks javascript:/data:/mailto: and relative
+          // values from ever being stored, since the target renders in a public
+          // anchor on the homepage and nav.
+          linkUrl: z
+            .string()
+            .max(500)
+            .regex(
+              /^(\/(?!\/)|https?:\/\/)/i,
+              'Ziel muss eine interne Route (/…) oder eine http(s)://-URL sein',
+            )
+            .nullable(),
           linkText: z.string().max(200).nullable(),
         }),
       )
