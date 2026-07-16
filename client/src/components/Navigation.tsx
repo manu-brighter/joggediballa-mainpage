@@ -29,6 +29,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 
+type NavLink = { href: string; label: string; external?: boolean };
+
 // Map nav items to their feature toggle names
 const NAV_FEATURE_MAP: Record<string, string> = {
   '/shotcounter': 'nav_shotcounter',
@@ -82,8 +84,28 @@ export function Navigation() {
     }
   };
 
-  const allNavLinks = [
+  // Temp button — a configurable promo link (URL + text set in the admin
+  // dashboard). Shown in the nav only when enabled and both are set. URL may be
+  // an internal route ("/foo") or an external link ("https://…").
+  const tempButtonToggle = featureToggles.find(
+    f => f.featureName === 'temp_button',
+  );
+  const showTempButton =
+    (tempButtonToggle?.isEnabled ?? false) &&
+    !!tempButtonToggle?.linkUrl &&
+    !!tempButtonToggle?.linkText;
+
+  const allNavLinks: NavLink[] = [
     { href: '/', label: 'Home' },
+    ...(showTempButton
+      ? [
+          {
+            href: tempButtonToggle!.linkUrl!,
+            label: tempButtonToggle!.linkText!,
+            external: /^https?:\/\//i.test(tempButtonToggle!.linkUrl!),
+          },
+        ]
+      : []),
     { href: '/shotcounter', label: 'Shotcounter' },
     { href: '/team', label: 'Team' },
     { href: '/events', label: 'Events & Fotos' },
@@ -102,8 +124,8 @@ export function Navigation() {
 
   // Split nav links into visible and hidden
   const { visibleLinks, hiddenLinks } = useMemo(() => {
-    const visible: typeof allNavLinks = [];
-    const hidden: typeof allNavLinks = [];
+    const visible: NavLink[] = [];
+    const hidden: NavLink[] = [];
 
     allNavLinks.forEach(link => {
       // Always visible items are always shown
@@ -155,20 +177,29 @@ export function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-1">
             {/* Visible nav links */}
-            {visibleLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  'px-3 py-2 text-sm font-medium rounded-md transition-all duration-200',
-                  location === link.href
-                    ? 'text-primary bg-primary/10'
-                    : 'text-foreground/70 hover:text-foreground hover:bg-muted',
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {visibleLinks.map(link => {
+              const className = cn(
+                'px-3 py-2 text-sm font-medium rounded-md transition-all duration-200',
+                location === link.href
+                  ? 'text-primary bg-primary/10'
+                  : 'text-foreground/70 hover:text-foreground hover:bg-muted',
+              );
+              return link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link key={link.href} href={link.href} className={className}>
+                  {link.label}
+                </Link>
+              );
+            })}
 
             {/* Hidden links (only for logged in users) */}
             {isAuthenticated && hiddenLinks.length > 0 && (
@@ -408,21 +439,35 @@ export function Navigation() {
           <div className="md:hidden border-t bg-background/95 backdrop-blur-lg">
             <div className="container py-4 space-y-1">
               {/* Visible links */}
-              {visibleLinks.map(link => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'block px-4 py-3 text-sm font-medium rounded-lg transition-colors',
-                    location === link.href
-                      ? 'text-primary bg-primary/10'
-                      : 'text-foreground/70 hover:text-foreground hover:bg-muted',
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {visibleLinks.map(link => {
+                const className = cn(
+                  'block px-4 py-3 text-sm font-medium rounded-lg transition-colors',
+                  location === link.href
+                    ? 'text-primary bg-primary/10'
+                    : 'text-foreground/70 hover:text-foreground hover:bg-muted',
+                );
+                return link.external ? (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={className}
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={className}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
 
               {/* Hidden links for logged in users */}
               {isAuthenticated && hiddenLinks.length > 0 && (

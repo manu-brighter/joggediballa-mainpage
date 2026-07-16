@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/lib/errorMessages';
 import { useEffect, useState } from 'react';
@@ -60,6 +61,7 @@ import {
   Menu,
   Eye,
   EyeOff,
+  Zap,
   Projector,
   ChevronRight,
 } from 'lucide-react';
@@ -148,6 +150,8 @@ export default function AdminDashboard() {
   const utils = trpc.useUtils();
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetType, setResetType] = useState<ResetType>(null);
+  const [tempLinkUrl, setTempLinkUrl] = useState('');
+  const [tempLinkText, setTempLinkText] = useState('');
 
   const { data: users = [], isLoading: usersLoading } =
     trpc.users.list.useQuery(undefined, {
@@ -239,6 +243,17 @@ export default function AdminDashboard() {
     },
   });
 
+  const setLinkMutation = trpc.features.setLink.useMutation({
+    onSuccess: () => {
+      utils.features.list.invalidate();
+      utils.features.get.invalidate();
+      toast.success('Temp-Button aktualisiert!');
+    },
+    onError: error => {
+      toast.error(`Fehler: ${error.message}`);
+    },
+  });
+
   const resetYearMutation = trpc.shotcounter.resetYear.useMutation({
     onSuccess: () => {
       utils.shotcounter.getTeams.invalidate();
@@ -278,6 +293,13 @@ export default function AdminDashboard() {
       });
     }
   }, [featureToggles, featuresLoading]);
+
+  // Seed the temp-button link inputs from the stored toggle
+  useEffect(() => {
+    const t = featureToggles.find(f => f.featureName === 'temp_button');
+    setTempLinkUrl(t?.linkUrl ?? '');
+    setTempLinkText(t?.linkText ?? '');
+  }, [featureToggles]);
 
   useEffect(() => {
     if (!loading && (!isAuthenticated || user?.role !== 'admin')) {
@@ -422,10 +444,7 @@ export default function AdminDashboard() {
                           updateRoleMutation.mutate({
                             userId: u.id,
                             role: value as
-                              | 'admin'
-                              | 'maintainer'
-                              | 'editor'
-                              | 'user',
+                              'admin' | 'maintainer' | 'editor' | 'user',
                           })
                         }
                         disabled={u.id === user.id}
@@ -683,6 +702,96 @@ export default function AdminDashboard() {
                       })
                     }
                   />
+                </div>
+
+                {/* Temp Button Toggle + Config */}
+                <div className="sm:col-span-2 p-4 border rounded-xl hover:border-coral/30 transition-colors space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-coral/10 flex items-center justify-center shrink-0">
+                        <Zap className="h-5 w-5 text-coral" />
+                      </div>
+                      <div className="min-w-0">
+                        <Label
+                          htmlFor="temp-button-toggle"
+                          className="font-medium cursor-pointer block"
+                        >
+                          Temporärer Button (Homepage + Navigation)
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Zeigt einen konfigurierbaren Aktions-Button an. Ziel &
+                          Text unten einstellbar.
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="temp-button-toggle"
+                      checked={
+                        getFeatureToggle('temp_button')?.isEnabled ?? false
+                      }
+                      onCheckedChange={checked =>
+                        toggleFeatureMutation.mutate({
+                          featureName: 'temp_button',
+                          isEnabled: checked,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="temp-button-url"
+                        className="text-xs font-semibold"
+                      >
+                        Ziel (Route oder URL)
+                      </Label>
+                      <Input
+                        id="temp-button-url"
+                        value={tempLinkUrl}
+                        onChange={e => setTempLinkUrl(e.target.value)}
+                        placeholder="/harassenlauf oder https://..."
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="temp-button-text"
+                        className="text-xs font-semibold"
+                      >
+                        Button-Text
+                      </Label>
+                      <Input
+                        id="temp-button-text"
+                        value={tempLinkText}
+                        onChange={e => setTempLinkText(e.target.value)}
+                        placeholder="z.B. Jetzt anmelden"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-muted-foreground max-w-md">
+                      Interne Routen (z.B.{' '}
+                      <span className="font-mono text-primary">
+                        /harassenlauf
+                      </span>
+                      ) öffnen intern, externe Links (https://…) in einem neuen
+                      Tab.
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        setLinkMutation.mutate({
+                          featureName: 'temp_button',
+                          linkUrl: tempLinkUrl.trim() || null,
+                          linkText: tempLinkText.trim() || null,
+                        })
+                      }
+                      disabled={setLinkMutation.isPending}
+                    >
+                      Speichern
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Diashow Button Toggle */}
