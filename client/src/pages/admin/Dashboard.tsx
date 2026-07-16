@@ -294,12 +294,18 @@ export default function AdminDashboard() {
     }
   }, [featureToggles, featuresLoading]);
 
-  // Seed the temp-button link inputs from the stored toggle
+  // Seed the temp-button link inputs from the stored toggle. Key on the stored
+  // primitive values (not the array reference) so a background refetch or
+  // cache invalidation doesn't clobber what the admin is currently typing.
+  const storedTempButton = featureToggles.find(
+    f => f.featureName === 'temp_button',
+  );
+  const storedTempLinkUrl = storedTempButton?.linkUrl ?? '';
+  const storedTempLinkText = storedTempButton?.linkText ?? '';
   useEffect(() => {
-    const t = featureToggles.find(f => f.featureName === 'temp_button');
-    setTempLinkUrl(t?.linkUrl ?? '');
-    setTempLinkText(t?.linkText ?? '');
-  }, [featureToggles]);
+    setTempLinkUrl(storedTempLinkUrl);
+    setTempLinkText(storedTempLinkText);
+  }, [storedTempLinkUrl, storedTempLinkText]);
 
   useEffect(() => {
     if (!loading && (!isAuthenticated || user?.role !== 'admin')) {
@@ -780,13 +786,20 @@ export default function AdminDashboard() {
                     </p>
                     <Button
                       size="sm"
-                      onClick={() =>
+                      onClick={() => {
+                        const url = tempLinkUrl.trim();
+                        if (url && !/^(\/(?!\/)|https?:\/\/)/i.test(url)) {
+                          toast.error(
+                            'Ziel muss eine interne Route (/…) oder eine http(s)://-URL sein',
+                          );
+                          return;
+                        }
                         setLinkMutation.mutate({
                           featureName: 'temp_button',
-                          linkUrl: tempLinkUrl.trim() || null,
+                          linkUrl: url || null,
                           linkText: tempLinkText.trim() || null,
-                        })
-                      }
+                        });
+                      }}
                       disabled={setLinkMutation.isPending}
                     >
                       Speichern
