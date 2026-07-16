@@ -711,7 +711,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Temp Button Toggle + Config */}
-                <div className="sm:col-span-2 p-4 border rounded-xl hover:border-coral/30 transition-colors space-y-4">
+                <div className="p-4 border rounded-xl hover:border-coral/30 transition-colors space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-lg bg-coral/10 flex items-center justify-center shrink-0">
@@ -720,13 +720,12 @@ export default function AdminDashboard() {
                       <div className="min-w-0">
                         <Label
                           htmlFor="temp-button-toggle"
-                          className="font-medium cursor-pointer block"
+                          className="font-medium cursor-pointer block truncate"
                         >
-                          Temporärer Button (Homepage + Navigation)
+                          Temporärer Button
                         </Label>
-                        <p className="text-xs text-muted-foreground">
-                          Zeigt einen konfigurierbaren Aktions-Button an. Ziel &
-                          Text unten einstellbar.
+                        <p className="text-xs text-muted-foreground truncate">
+                          Homepage + Navigation
                         </p>
                       </div>
                     </div>
@@ -744,46 +743,24 @@ export default function AdminDashboard() {
                     />
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="temp-button-url"
-                        className="text-xs font-semibold"
-                      >
-                        Ziel (Route oder URL)
-                      </Label>
-                      <Input
-                        id="temp-button-url"
-                        value={tempLinkUrl}
-                        onChange={e => setTempLinkUrl(e.target.value)}
-                        placeholder="/harassenlauf oder https://..."
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="temp-button-text"
-                        className="text-xs font-semibold"
-                      >
-                        Button-Text
-                      </Label>
-                      <Input
-                        id="temp-button-text"
-                        value={tempLinkText}
-                        onChange={e => setTempLinkText(e.target.value)}
-                        placeholder="z.B. Jetzt anmelden"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Input
+                      id="temp-button-url"
+                      value={tempLinkUrl}
+                      onChange={e => setTempLinkUrl(e.target.value)}
+                      placeholder="Ziel: /route oder https://..."
+                      aria-label="Ziel (Route oder URL)"
+                    />
+                    <Input
+                      id="temp-button-text"
+                      value={tempLinkText}
+                      onChange={e => setTempLinkText(e.target.value)}
+                      placeholder="Button-Text"
+                      aria-label="Button-Text"
+                    />
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs text-muted-foreground max-w-md">
-                      Interne Routen (z.B.{' '}
-                      <span className="font-mono text-primary">
-                        /harassenlauf
-                      </span>
-                      ) öffnen intern, externe Links (https://…) in einem neuen
-                      Tab.
-                    </p>
+                  <div className="flex justify-end">
                     <Button
                       size="sm"
                       onClick={() => {
