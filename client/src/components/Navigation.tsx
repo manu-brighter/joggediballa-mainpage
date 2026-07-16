@@ -82,15 +82,8 @@ export function Navigation() {
     }
   };
 
-  const tempButtonEnabled =
-    featureToggles.find(f => f.featureName === 'temp_button')?.isEnabled ??
-    false;
-
   const allNavLinks = [
     { href: '/', label: 'Home' },
-    ...(tempButtonEnabled
-      ? [{ href: '/harassenlauf', label: 'Harassenlauf' }]
-      : []),
     { href: '/shotcounter', label: 'Shotcounter' },
     { href: '/team', label: 'Team' },
     { href: '/events', label: 'Events & Fotos' },
