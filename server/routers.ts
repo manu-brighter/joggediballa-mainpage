@@ -798,6 +798,37 @@ export const appRouter = router({
         );
         return { success: true };
       }),
+
+    // Configure the link target of a toggle rendered as a button/link
+    // (e.g. temp_button). Supports internal routes and external URLs.
+    setLink: adminProcedure
+      .input(
+        z.object({
+          featureName: z.string(),
+          // Only allow internal routes ("/…", but not protocol-relative "//…")
+          // or http(s) URLs. This blocks javascript:/data:/mailto: and relative
+          // values from ever being stored, since the target renders in a public
+          // anchor on the homepage and nav.
+          linkUrl: z
+            .string()
+            .max(500)
+            .regex(
+              /^(\/(?!\/)|https?:\/\/)/i,
+              'Ziel muss eine interne Route (/…) oder eine http(s)://-URL sein',
+            )
+            .nullable(),
+          linkText: z.string().max(200).nullable(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        await db.setFeatureToggleLink(
+          input.featureName,
+          input.linkUrl,
+          input.linkText,
+          ctx.user.id,
+        );
+        return { success: true };
+      }),
   }),
 
   // ============================================

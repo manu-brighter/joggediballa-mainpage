@@ -706,6 +706,32 @@ export async function setFeatureToggle(
   }
 }
 
+export async function setFeatureToggleLink(
+  featureName: string,
+  linkUrl: string | null,
+  linkText: string | null,
+  updatedBy?: number,
+) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  const existing = await getFeatureToggle(featureName);
+  if (existing) {
+    await db
+      .update(featureToggles)
+      .set({ linkUrl, linkText, updatedBy, updatedAt: new Date() })
+      .where(eq(featureToggles.featureName, featureName));
+  } else {
+    await db.insert(featureToggles).values({
+      featureName,
+      isEnabled: false,
+      linkUrl,
+      linkText,
+      updatedBy,
+    });
+  }
+}
+
 // ============================================
 // CONTACT SUBMISSIONS
 // ============================================
@@ -1123,7 +1149,8 @@ export async function sdkAwardPoint(sessionId: number, winnerId: 1 | 2) {
   const session = await sdkGetSession(sessionId);
   if (!session) throw new Error('Session not found');
   if (!session.isActive) throw new Error('Session is not active');
-  if (session.winnerId !== null) throw new Error('Sieger ist bereits festgestellt');
+  if (session.winnerId !== null)
+    throw new Error('Sieger ist bereits festgestellt');
 
   const gameNumber = session.currentGame;
   const points = gameNumber; // game N awards N points
