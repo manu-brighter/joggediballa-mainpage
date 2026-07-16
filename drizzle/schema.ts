@@ -223,6 +223,12 @@ export const featureToggles = mysqlTable('feature_toggles', {
   featureName: varchar('featureName', { length: 100 }).notNull().unique(),
   isEnabled: boolean('isEnabled').default(false).notNull(),
   description: text('description'),
+  // Optional link target for toggles that render a configurable button/link
+  // (e.g. the temp_button on the homepage + navbar). Supports internal routes
+  // ("/foo") and external URLs ("https://…"). Null when the toggle is not a link.
+  // ALTER TABLE feature_toggles ADD COLUMN linkUrl VARCHAR(500) NULL, ADD COLUMN linkText VARCHAR(200) NULL;
+  linkUrl: varchar('linkUrl', { length: 500 }),
+  linkText: varchar('linkText', { length: 200 }),
   updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
   updatedBy: int('updatedBy').references(() => users.id),
 });

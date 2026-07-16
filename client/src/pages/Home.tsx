@@ -18,6 +18,7 @@ import {
   Sparkles,
   Gift,
   Twitch,
+  Zap,
   MapPin,
   Projector,
 } from 'lucide-react';
@@ -53,6 +54,20 @@ export default function Home() {
   const { data: featureToggles = [] } = trpc.features.list.useQuery(undefined, {
     staleTime: 30000,
   });
+
+  // Temp button — a configurable promo CTA. URL + text are set in the admin
+  // dashboard; only shown when enabled and both are set. URL may be an internal
+  // route ("/foo") or an external link ("https://…").
+  const tempButtonToggle = featureToggles.find(
+    f => f.featureName === 'temp_button',
+  );
+  const tempButtonUrl = tempButtonToggle?.linkUrl ?? '';
+  const tempButtonText = tempButtonToggle?.linkText ?? '';
+  const showTempButton =
+    (tempButtonToggle?.isEnabled ?? false) &&
+    !!tempButtonUrl &&
+    !!tempButtonText;
+  const tempButtonIsExternal = /^https?:\/\//i.test(tempButtonUrl);
 
   // Feature toggle for the live-diashow button. The live URL needs the current
   // upload token, fetched only while the button is actually enabled.
@@ -123,6 +138,35 @@ export default function Home() {
               </p>
 
               <div className="flex flex-col gap-3 justify-center lg:justify-start">
+                {/* Temp Button — configurable promo CTA (URL + text set in the
+                    admin dashboard), only shown when enabled, on its own row. */}
+                {showTempButton && (
+                  <div className="flex justify-center lg:justify-start">
+                    <Button
+                      asChild
+                      size="lg"
+                      className="group btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-coral to-pending hover:from-coral/90 hover:to-pending/90 text-white shadow-lg shadow-coral/30 hover:shadow-coral/50 border-0 animate-pulse hover:animate-none"
+                    >
+                      {tempButtonIsExternal ? (
+                        <a
+                          href={tempButtonUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Zap className="h-5 w-5 mr-2" />
+                          {tempButtonText}
+                          <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                        </a>
+                      ) : (
+                        <Link href={tempButtonUrl}>
+                          <Zap className="h-5 w-5 mr-2" />
+                          {tempButtonText}
+                          <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                        </Link>
+                      )}
+                    </Button>
+                  </div>
+                )}
                 {/* Live-Diashow Button — only shown when feature toggle is
                     enabled (i.e. during a fest), on its own row above the
                     Shotcounter/Events row. */}
