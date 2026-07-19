@@ -189,7 +189,11 @@ export default function Dienstleistungen() {
       externalLinks: [
         {
           href: 'https://manuelheller.myportfolio.com',
-          label: 'Portfolio ansehen',
+          label: 'Fotografie-Portfolio',
+        },
+        {
+          href: 'https://manuelheller.dev',
+          label: 'Web-Portfolio',
         },
       ],
       image: '/images/fotografie.JPEG',
