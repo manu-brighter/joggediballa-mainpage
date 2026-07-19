@@ -314,6 +314,35 @@
 
   html {
     scroll-behavior: smooth;
+    /* Reserve the gutter even when no scrollbar is shown, so content
+       doesn't shift horizontally when navigating between short and
+       long pages. */
+    scrollbar-gutter: stable;
+  }
+
+  /* Page scrollbar — same look as the custom dialog scrollbars
+     (thin, transparent track, rounded border-colored thumb). */
+  html::-webkit-scrollbar {
+    width: 8px;
+  }
+  html::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  html::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+  }
+  html::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--muted-foreground) 50%, transparent);
+  }
+
+  /* react-remove-scroll (Radix dialogs) compensates the disappearing page
+     scrollbar with a body margin. With scrollbar-gutter: stable the gutter
+     never collapses, so that compensation would shift the page by the
+     scrollbar width on every dialog open. Doubled attribute selector to win
+     over the library's runtime-injected !important rule. */
+  body[data-scroll-locked][data-scroll-locked] {
+    margin-right: 0 !important;
   }
 
   ::selection {
