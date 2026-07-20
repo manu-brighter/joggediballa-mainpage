@@ -297,11 +297,16 @@ export async function getAttendanceStatistics(year?: number) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  // Get event weight multiplier
+  // Get event weight multiplier. settingValue is a free-form text column and
+  // schema changes here are often applied straight to MySQL, so the row can
+  // hold something updateEventWeight would never write. Every rate below runs
+  // through this factor — a NaN or 0 would silently render the whole page at
+  // 0%, so fall back instead. Number() rather than parseFloat() on purpose:
+  // parseFloat('2,5') returns 2 and would quietly apply the wrong weight.
   const weightSetting = await getAttendanceSetting('event_weight_multiplier');
-  const eventWeight = weightSetting
-    ? parseFloat(weightSetting.settingValue)
-    : 2.0;
+  const parsedWeight = weightSetting ? Number(weightSetting.settingValue) : NaN;
+  const eventWeight =
+    Number.isFinite(parsedWeight) && parsedWeight > 0 ? parsedWeight : 2.0;
 
   // Get all sessions
   const sessions = await listAttendanceSessions(year);
@@ -318,6 +323,14 @@ export async function getAttendanceStatistics(year?: number) {
         ? sql`${attendanceRecords.sessionId} IN (SELECT id FROM attendance_sessions WHERE YEAR(date) = ${year})`
         : sql`1=1`,
     );
+
+  // Total session weight — identical for every member (each is evaluated
+  // against every session), so it doubles as the denominator of the weighted
+  // attendance rate below.
+  const weightedTotalSessions = sessions.reduce(
+    (sum, session) => sum + (session.type === 'event' ? eventWeight : 1.0),
+    0,
+  );
 
   // Calculate statistics per member
   const memberStats = members.map(member => {
@@ -352,9 +365,13 @@ export async function getAttendanceStatistics(year?: number) {
       }
     });
 
-    const attendanceRate =
-      totalSessions > 0
-        ? ((presentCount + partialCount * 0.5) / totalSessions) * 100
+    // Weighted attendance rate — the counterpart of weightedAbsences, so the
+    // number shown to users and the ranking below agree by construction. An
+    // event absence costs eventWeight times what a meeting absence costs.
+    const weightedAttendanceRate =
+      weightedTotalSessions > 0
+        ? ((weightedTotalSessions - weightedAbsences) / weightedTotalSessions) *
+          100
         : 0;
 
     return {
@@ -364,7 +381,7 @@ export async function getAttendanceStatistics(year?: number) {
       presentCount,
       partialCount,
       absentCount,
-      attendanceRate,
+      weightedAttendanceRate,
       weightedAbsences,
     };
   });
@@ -376,24 +393,40 @@ export async function getAttendanceStatistics(year?: number) {
   const meetingCount = sessions.filter(s => s.type === 'meeting').length;
   const eventCount = sessions.filter(s => s.type === 'event').length;
 
-  // Average attendance rate
-  const avgAttendanceRate =
+  // Average weighted attendance rate
+  const avgWeightedAttendanceRate =
     memberStats.length > 0
-      ? memberStats.reduce((sum, m) => sum + m.attendanceRate, 0) /
+      ? memberStats.reduce((sum, m) => sum + m.weightedAttendanceRate, 0) /
         memberStats.length
       : 0;
 
-  // Best and worst attendance
+  // Each card derives from its own metric rather than from the two ends of one
+  // sort: "Beste Anwesenheit" ranks on the attendance rate, "Meiste Fehlzeiten"
+  // on weighted absences. Each card currently lands on the same member it would
+  // have under the old shared sort — the total session weight is identical for
+  // everyone, so the two metrics are strictly anti-correlated — but that stops
+  // holding the moment members are scored over
+  // different session sets (e.g. a join date), and then each card still answers
+  // the question its title asks.
   const bestMember =
-    memberStats.length > 0 ? memberStats[memberStats.length - 1] : null;
-  const worstMember = memberStats.length > 0 ? memberStats[0] : null;
+    memberStats.length > 0
+      ? memberStats.reduce((best, m) =>
+          m.weightedAttendanceRate > best.weightedAttendanceRate ? m : best,
+        )
+      : null;
+  const worstMember =
+    memberStats.length > 0
+      ? memberStats.reduce((worst, m) =>
+          m.weightedAbsences > worst.weightedAbsences ? m : worst,
+        )
+      : null;
 
   return {
     memberStats,
     totalSessions: sessions.length,
     meetingCount,
     eventCount,
-    avgAttendanceRate,
+    avgWeightedAttendanceRate,
     bestMember,
     worstMember,
     eventWeight,
