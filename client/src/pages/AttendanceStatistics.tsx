@@ -445,7 +445,8 @@ export default function AttendanceStatistics() {
           <CardHeader>
             <CardTitle>Anwesenheitsquote pro Mitglied</CardTitle>
             <CardDescription>
-              Events zählen {stats.eventWeight}x (Beste zuerst)
+              Gewichtete Anwesenheit · Events zählen {stats.eventWeight}x (Beste
+              zuerst)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -482,7 +483,7 @@ export default function AttendanceStatistics() {
                 <Bar
                   dataKey="rate"
                   fill={COLORS.present}
-                  name="Anwesenheit %"
+                  name="Gewichtete Anwesenheit %"
                 />
               </BarChart>
             </ResponsiveContainer>
