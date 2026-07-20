@@ -152,8 +152,10 @@ function LazyImage({
 
 // =============================================================================
 // SmartCoverImage — object-cover for landscape, object-contain for portrait
-// Note: crossOrigin="anonymous" is intentionally NOT used — S3 doesn't serve
-// CORS headers for all origins, which would silently prevent images from loading.
+// Note: crossOrigin="anonymous" is intentionally NOT used. It was originally
+// omitted because the old S3 backend didn't serve CORS headers for all origins;
+// uploads are same-origin now, so the attribute would simply buy nothing while
+// still risking silent load failures if the upload host ever moves.
 // Portrait images use a neutral dark background instead of edge-sampled color.
 // =============================================================================
 function SmartCoverImage({

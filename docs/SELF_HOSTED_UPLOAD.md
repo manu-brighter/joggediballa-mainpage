@@ -22,8 +22,9 @@ Das Basisverzeichnis muss existieren und für den Node-Prozess beschreibbar sein
 # Erstelle das Upload-Verzeichnis
 sudo mkdir -p /var/www/joggediballa-mainpage/uploads
 
-# Setze die richtigen Berechtigungen
-sudo chown -R www-data:www-data /var/www/joggediballa-mainpage/uploads
+# Setze die richtigen Berechtigungen — der Node-Prozess schreibt als root,
+# www-data braucht nur Leserechte zum Ausliefern (identisch zu DEPLOYMENT.md 4.4)
+sudo chown -R root:www-data /var/www/joggediballa-mainpage/uploads
 sudo chmod -R 755 /var/www/joggediballa-mainpage/uploads
 ```
 
