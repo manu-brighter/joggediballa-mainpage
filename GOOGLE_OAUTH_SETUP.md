@@ -89,7 +89,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 **WICHTIG:** Ersetze in den Google Cloud Console Einstellungen:
 
-- `deine-domain.de` mit deiner echten Domain (z.B. `joggediballa.de`)
+- `deine-domain.de` mit deiner echten Domain (produktiv: `joggediballa.ch`)
 - Stelle sicher, dass deine Domain mit HTTPS läuft (SSL-Zertifikat erforderlich)
 
 ### Für Entwicklung (localhost)
@@ -98,13 +98,16 @@ Während der Entwicklung kannst du `http://localhost:3000` verwenden.
 
 ### Für Produktion (Root Server)
 
-Verwende deine echte Domain mit HTTPS: `https://joggediballa.de`
+Verwende deine echte Domain mit HTTPS: `https://joggediballa.ch`
 
 ## Schritt 4: Deployment auf Root Server
 
+> Dieser Abschnitt ist die Kurzfassung. Die vollständige Server-Einrichtung (MariaDB, Firewall, Uploads, automatischer Deploy) steht in `DEPLOYMENT.md`.
+
 ### 4.1 Voraussetzungen
 
-- Node.js 18+ installiert
+- Node.js 22 installiert (`engines` verlangt `>=22.11.0`)
+- pnpm 10+ installiert
 - MySQL/MariaDB installiert
 - Nginx als Reverse Proxy
 - SSL-Zertifikat (Let's Encrypt empfohlen)
@@ -114,8 +117,8 @@ Verwende deine echte Domain mit HTTPS: `https://joggediballa.de`
 ```bash
 # Auf deinem Server
 cd /var/www
-git clone https://github.com/manu-brighter/joggediballa-mainpage.git joggediballa
-cd joggediballa
+git clone https://github.com/manu-brighter/joggediballa-mainpage.git joggediballa-mainpage
+cd joggediballa-mainpage
 
 # Dependencies installieren
 npm install -g pnpm
@@ -131,9 +134,9 @@ pnpm db:push
 # Build für Produktion
 pnpm build
 
-# Mit PM2 starten (empfohlen)
+# Mit PM2 starten (ecosystem.config.cjs ist die kanonische Konfiguration)
 npm install -g pm2
-pm2 start dist/index.js --name joggediballa
+pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup
 ```
@@ -213,8 +216,9 @@ Der erste Benutzer, der sich mit der in `ADMIN_EMAIL` angegebenen E-Mail-Adresse
 
 ### Port 3000 bereits belegt
 
-- Ändere den Port in `server/_core/index.ts` oder verwende eine andere Port-Nummer
+- Setze `PORT` in der `.env` auf einen freien Port (nicht im Code ändern)
 - Passe die Nginx-Konfiguration entsprechend an
+- Achtung: Ist der Port belegt, weicht der Server automatisch auf den nächsten freien aus (3000–3019) und loggt das beim Start — nginx zeigt dann ins Leere
 
 ## Weitere Hilfe
 

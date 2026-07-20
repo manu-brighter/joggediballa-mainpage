@@ -166,7 +166,7 @@ async function sniffImage(
 // ---------------------------------------------------------------------------
 
 type Variant = {
-  prefix: string; // S3 key prefix, e.g. 'events/compressed'
+  prefix: string; // storage key prefix, e.g. 'events/compressed'
   resize?: { w: number; h: number; quality: number }; // omitted = original
   forceJpeg?: boolean; // resize variants are always JPEG
 };

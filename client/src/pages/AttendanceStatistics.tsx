@@ -249,12 +249,12 @@ export default function AttendanceStatistics() {
       .map(([month, data]) => ({
         month: new Date(month + '-01').toLocaleDateString('de-CH', {
           month: 'short',
-          year: '2-digit',
+          year: selectedYear === 'all' ? '2-digit' : undefined,
         }),
         meetings: data.meetings,
         events: data.events,
       }));
-  }, [sessions]);
+  }, [sessions, selectedYear]);
 
   const handleUpdateWeight = () => {
     const weight = parseFloat(eventWeight);

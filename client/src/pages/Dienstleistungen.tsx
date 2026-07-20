@@ -180,7 +180,7 @@ export default function Dienstleistungen() {
       icon: <Camera className="h-6 w-6" />,
       title: 'Fotografie',
       description:
-        "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Schau im 'Events & Fotos'-Tab oder in mein Portfolio rein.\n\nAusserhalb des Vereins selbstständig nebenbei als Fotograf tätig und offen für Anfragen.",
+        "Professionelle Event-Fotografie, die deine besonderen Momente festhält. Schau im 'Events & Fotos'-Tab oder in meinen Portfolios rein.\n\nAusserhalb des Vereins selbstständig nebenbei als Fotograf und Webentwickler tätig und offen für Anfragen.",
       person: {
         role: 'Social Media & Vize',
         name: 'Manu',
@@ -189,7 +189,11 @@ export default function Dienstleistungen() {
       externalLinks: [
         {
           href: 'https://manuelheller.myportfolio.com',
-          label: 'Portfolio ansehen',
+          label: 'Fotografie-Portfolio',
+        },
+        {
+          href: 'https://manuelheller.dev',
+          label: 'Web-Portfolio',
         },
       ],
       image: '/images/fotografie.JPEG',

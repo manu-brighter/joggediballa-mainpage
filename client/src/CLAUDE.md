@@ -107,8 +107,9 @@ All color tokens live in `index.css`:
   | `bg-card`, `bg-popover` | Container surfaces. |
   | `bg-destructive` | Errors, failed states, delete buttons. (red) |
   | `bg-warning` | Future-caution states: drafts, expiring memberships, cancellation policies. (yellow) |
-  | `bg-pending` | Either (a) in-progress / awaiting-action — provisional members, unpaid invoices — or (b) design-intent attention/emphasis on a non-critical advisory block (e.g. the Harassenlauf "Regeln" panel). The orange reads as "look at me" without escalating to a true caution. (orange) |
+  | `bg-pending` | Either (a) in-progress / awaiting-action — provisional Gönner members, unpaid invoices (see `Goennermitglieder.tsx`) — or (b) design-intent attention/emphasis on a non-critical advisory block. The orange reads as "look at me" without escalating to a true caution. (orange) |
   | `bg-success` | Confirmation states. (green) |
+  | `bg-gold`, `text-gold` | Achievement / winner marker — distinct from `warning` despite both being yellow-family. Used for SDK-overlay winners and the Dienstleistungen gold accent. |
   | `bg-brand`, `bg-twitch` | Brand aliases for niche cases (e.g. Twitch overlay). |
 
 - **Layer 3 (Tailwind theme)** — `@theme inline` block at the top of

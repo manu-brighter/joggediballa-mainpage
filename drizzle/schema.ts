@@ -32,8 +32,8 @@ export const users = mysqlTable('users', {
   role: mysqlEnum('role', ['admin', 'maintainer', 'editor', 'user', 'visitor'])
     .default('visitor')
     .notNull(),
-  profilePictureUrl: text('profilePictureUrl'), // S3 URL for profile picture
-  profilePictureKey: text('profilePictureKey'), // S3 Key for profile picture
+  profilePictureUrl: text('profilePictureUrl'), // Public URL for profile picture
+  profilePictureKey: text('profilePictureKey'), // Storage key for profile picture
   memberSince: timestamp('memberSince'), // Custom member since date (editable)
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
@@ -105,8 +105,8 @@ export const sponsors = mysqlTable(
   {
     id: int('id').autoincrement().primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
-    logoUrl: text('logoUrl'), // S3 URL (optional)
-    logoKey: text('logoKey'), // S3 Key (optional)
+    logoUrl: text('logoUrl'), // Public URL (optional)
+    logoKey: text('logoKey'), // Storage key (optional)
     websiteUrl: text('websiteUrl'),
     displayOrder: int('displayOrder').default(0).notNull(), // Sortierung
     isActive: boolean('isActive').default(true).notNull(),
@@ -174,10 +174,10 @@ export const photos = mysqlTable(
     }),
     title: varchar('title', { length: 255 }),
     description: text('description'),
-    imageUrl: text('imageUrl').notNull(), // S3 URL - Original high-res image
-    imageKey: text('imageKey').notNull(), // S3 Key - Original high-res image
-    compressedUrl: text('compressedUrl'), // S3 URL - Compressed version for gallery (~2MB)
-    compressedKey: text('compressedKey'), // S3 Key - Compressed version
+    imageUrl: text('imageUrl').notNull(), // Public URL - Original high-res image
+    imageKey: text('imageKey').notNull(), // Storage key - Original high-res image
+    compressedUrl: text('compressedUrl'), // Public URL - Compressed version for gallery (~2MB)
+    compressedKey: text('compressedKey'), // Storage key - Compressed version
     thumbnailUrl: text('thumbnailUrl'), // Optional: Event thumbnail (for event card)
     thumbnailKey: text('thumbnailKey'),
     displayOrder: int('displayOrder').default(0).notNull(),
@@ -202,10 +202,10 @@ export const teamMembers = mysqlTable('team_members', {
   nickname: varchar('nickname', { length: 100 }), // Spitzname
   role: varchar('role', { length: 100 }), // z.B. "Vorsitzender", "Kassenwart"
   bio: text('bio'),
-  photoUrl: text('photoUrl'), // S3 URL
-  photoKey: text('photoKey'), // S3 Key
-  compressedPhotoUrl: text('compressedPhotoUrl'), // S3 URL for compressed/thumbnail version
-  compressedPhotoKey: text('compressedPhotoKey'), // S3 Key for compressed version
+  photoUrl: text('photoUrl'), // Public URL
+  photoKey: text('photoKey'), // Storage key
+  compressedPhotoUrl: text('compressedPhotoUrl'), // Public URL for compressed/thumbnail version
+  compressedPhotoKey: text('compressedPhotoKey'), // Storage key for compressed version
   displayOrder: int('displayOrder').default(0).notNull(),
   isActive: boolean('isActive').default(true).notNull(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),

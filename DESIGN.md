@@ -7,16 +7,17 @@ colors:
   coral: "oklch(0.68 0.180 18)"
   coral-foreground: "oklch(1.00 0.000 0)"
   background: "oklch(0.99 0.002 250)"
-  foreground: "oklch(0.13 0.015 260)"
+  foreground: "oklch(0.18 0.012 260)"
   card: "oklch(1.00 0.000 0)"
   muted: "oklch(0.96 0.005 250)"
-  muted-foreground: "oklch(0.55 0.020 260)"
-  border: "oklch(0.93 0.008 250)"
+  muted-foreground: "oklch(0.50 0.020 260)"
+  border: "oklch(0.90 0.010 250)"
   ring: "oklch(0.55 0.140 195)"
   destructive: "oklch(0.55 0.22 25)"
   warning: "oklch(0.80 0.15 85)"
   pending: "oklch(0.70 0.17 50)"
   success: "oklch(0.65 0.15 145)"
+  gold: "oklch(0.78 0.16 86)"
   background-dark: "oklch(0.13 0.015 260)"
   foreground-dark: "oklch(0.99 0.002 250)"
   card-dark: "oklch(0.16 0.015 260)"
@@ -165,9 +166,15 @@ kein Schwarz, kein Weiß als Reinwert.
 - **Background** (`oklch(0.99 0.002 250)`, `--neutral-50`): Page-Background.
 - **Card** (`oklch(1.00 0.000 0)`, `--neutral-0`): Container-Surface (Light-Mode-Ausnahme:
   reines Weiß als Card auf cool-getöntem Background, um den Layer-Effekt zu setzen).
-- **Foreground** (`oklch(0.13 0.015 260)`, `--neutral-950`): Body-Text.
-- **Muted-Foreground** (`oklch(0.55 0.020 260)`): Captions, Helper-Text, Labels.
-- **Border** (`oklch(0.93 0.008 250)`): Divider, Card-Border, Input-Border.
+- **Foreground** (`oklch(0.18 0.012 260)`): Body-Text. Bewusst als expliziter Wert
+  gesetzt, nicht als `--neutral-950` — letzteres wirkte gegen den hellen
+  Background zu hart. Dark-Mode nutzt `--neutral-50`.
+- **Muted-Foreground** (`oklch(0.50 0.020 260)`, `--neutral-500`): Captions, Helper-Text, Labels.
+- **Border** (`oklch(0.90 0.010 250)`, `--neutral-200`): Divider, Card-Border, Input-Border.
+
+`--neutral-200` und `--neutral-500` sind bewusst dunkler gehalten als eine
+gleichmässige Skala ergäbe: hellere Werte liessen Borders und Helper-Text im
+Light-Mode ausgewaschen wirken.
 
 Die Hue-Verschiebung der Neutrals von 250 (sehr helle Werte) zu 260 (mittlere
 und dunkle) ist Absicht: hellere Tones bleiben fast neutral, dunklere kippen
@@ -177,9 +184,14 @@ leicht ins Blau-Graue für mehr Kühle.
 
 - **Destructive** (`oklch(0.55 0.22 25)`): Errors, Delete, fehlgeschlagene Aktionen.
 - **Warning** (`oklch(0.80 0.15 85)`): Zukünftige Vorsicht (Mitgliedschaft läuft ab).
-- **Pending** (`oklch(0.70 0.17 50)`): In Arbeit / wartet auf Aktion ODER bewusste
-  Aufmerksamkeit-Beachten-Optik (z.B. Harassenlauf "Regeln"-Panel).
+- **Pending** (`oklch(0.70 0.17 50)`): In Arbeit / wartet auf Aktion (z.B.
+  provisorische Gönnermitglieder) ODER bewusste Aufmerksamkeit-Beachten-Optik
+  auf einem nicht-kritischen Hinweis-Block.
 - **Success** (`oklch(0.65 0.15 145)`): Bestätigungen.
+- **Gold** (`oklch(0.78 0.16 86)`): Achievement- / Winner-Marker. Bewusst getrennt
+  von `Warning`, obwohl beide Gelb-Familie — die Semantik ist feierlich, nicht
+  vorsichtig. Verwendet für SDK-Overlay-Gewinner und den Gold-Akzent auf
+  Dienstleistungen.
 
 ### Named Rules
 
@@ -193,7 +205,8 @@ Grau warm wirkt, ist es falsch konfiguriert. Hue ≥ 250, Chroma ≤ 0.020.
 
 **The Pending-As-Attention Rule.** Orange-Pending darf für bewusste
 Aufmerksamkeitslenkung verwendet werden (nicht nur strikt "wartet auf Aktion").
-Das ist Absicht; siehe Harassenlauf-Regeln-Panel als Referenz.
+Das ist Absicht; siehe die Status-Pills und Hinweis-Blöcke auf
+`Goennermitglieder` als Referenz.
 
 ## 3. Typography
 
@@ -211,7 +224,7 @@ SaaS-Schrift mehr.
 ### Hierarchy
 
 - **Display** (800, `clamp(2.25rem, 5vw, 3.75rem)`, line-height 1.05, letter-spacing -0.02em):
-  Hero-Headlines auf Brand-Surfaces (Home-Hero, Harassenlauf-Hero, Section-Opener).
+  Hero-Headlines auf Brand-Surfaces (Home-Hero, Section-Opener).
 - **Headline** (700, `clamp(1.5rem, 3vw, 2.25rem)`, line-height 1.15): Page-Titel,
   Section-Header zweiter Ordnung.
 - **Title** (600, `1.125rem`, line-height 1.3): Card-Titel, List-Item-Header,
@@ -336,7 +349,7 @@ regulären Shotcounter-Layout — größere Typo, mehr Whitespace.
 
 - **Do** OKLCH durchgängig verwenden. Wenn du eine Farbe brauchst, die nicht
   als Token existiert: erst Layer-2-Token erweitern, nicht Hex inlinen.
-- **Do** Brand-Surfaces (Home, Team, Events, Harassenlauf, Sponsoren, Kontakt)
+- **Do** Brand-Surfaces (Home, Team, Events, Dienstleistungen, Sponsoren, Kontakt)
   **mobile-first** entwerfen und nach oben skalieren.
 - **Do** Product-Surfaces (Admin-Dashboard, Gönnermitgliederverwaltung,
   Anwesenheits-Tracking) **desktop-first** entwerfen — Tabellen, Bulk-Aktionen,

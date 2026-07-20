@@ -11,7 +11,7 @@ import { defineConfig, devices } from '@playwright/test';
  * - **visual**: full-page screenshot regression against a known-good
  *   baseline. Always runs against the local dev server (otherwise live
  *   content drift turns every test red). Baselines committed to git under
- *   `tests/e2e/visual/__screenshots__/`.
+ *   `tests/e2e/visual/<spec>.spec.ts-snapshots/`.
  *
  * Usage:
  *   pnpm test:e2e                     # both projects against local dev
