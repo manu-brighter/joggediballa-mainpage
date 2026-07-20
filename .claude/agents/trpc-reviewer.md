@@ -15,7 +15,9 @@ You review tRPC procedure additions or changes in `server/routers.ts` against th
 | Admin role only                             | `adminProcedure`           |
 | Any content mutation (create/update/delete) | `requirePermission("key")` |
 
-**Never use `editorProcedure` or `maintainerProcedure` for new code** — those are legacy stubs kept only for backwards compatibility with older procedures.
+**`editorProcedure` and `maintainerProcedure` no longer exist** — both helpers were removed once they had zero call sites. Flag any reference to them as a hard error, not a style issue.
+
+`adminProcedure` is defined locally in `routers.ts` (and re-implemented inline in `attendance_router.ts` to avoid a circular import). It is reserved for admin infrastructure — `users.*`, `features.*`, `activityLog.*`, `permissions.list/toggle`, `sdk.*`, `shotcounter.getAuditLog`. Everything else that gates by role belongs behind `requirePermission()` so admins can flip it at runtime from the dashboard.
 
 Valid permission keys (initialised in `initializeDefaultPermissions()` in `server/db.ts`):
 
@@ -25,6 +27,8 @@ Valid permission keys (initialised in `initializeDefaultPermissions()` in `serve
 - `edit_shotcounter`
 - `reset_shotcounter`
 - `edit_team`
+- `manage_attendance`
+- `manage_slideshow`
 
 If a new procedure needs a permission that isn't in this list, flag it — a new key must be added to `initializeDefaultPermissions()` too, otherwise no role will ever have it.
 
@@ -45,10 +49,10 @@ If a new procedure needs a permission that isn't in this list, flag it — a new
 | Hard delete of any entity  | `createActivityLog()` with `action: "admin_action"`           |
 | Soft delete                | Optional but preferred                                        |
 
-## Known bugs — flag if repeated in new code
+## Invariants to preserve — flag anything that breaks them
 
-- `events.list` currently returns **all events including unpublished** to unauthenticated users (the `isPublished` filter is only applied to photos, not events). Do not copy this pattern. New list procedures should filter by `isPublished` unless the intent is explicitly to expose drafts publicly.
-- `team.update` converts empty strings to `null` before writing to DB — any update procedure for nullable string fields needs this pattern: `data.field === "" ? null : data.field`.
+- **Draft lockdown:** `events.list` and `events.getById` hide unpublished events from anonymous callers and from the `user`/`visitor` roles; only editor-and-above see drafts. This is enforced deliberately and covered by `server/events.publishedFilter.test.ts`. Any new list/detail procedure over publishable content needs the same filter, and no change may weaken the existing one.
+- `team.update` converts empty strings to `null` before writing to DB — any update procedure for nullable string fields needs this pattern: `value === "" ? null : value`.
 
 ## Output format
 

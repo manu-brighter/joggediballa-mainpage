@@ -450,7 +450,10 @@ export default function AdminDashboard() {
                           updateRoleMutation.mutate({
                             userId: u.id,
                             role: value as
-                              'admin' | 'maintainer' | 'editor' | 'user',
+                              | 'admin'
+                              | 'maintainer'
+                              | 'editor'
+                              | 'user',
                           })
                         }
                         disabled={u.id === user.id}
@@ -647,7 +650,7 @@ export default function AdminDashboard() {
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4 items-start">
                 {/* Beamer Mode Toggle */}
                 <div className="flex items-center justify-between p-4 border rounded-xl hover:border-primary/30 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
@@ -679,7 +682,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Maintenance Mode Toggle */}
-                <div className="flex items-center justify-between p-4 border rounded-xl hover:border-primary/30 transition-colors">
+                <div className="flex items-center justify-between p-4 border rounded-xl hover:border-warning/30 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
                       <Shield className="h-5 w-5 text-warning" />
@@ -743,7 +746,7 @@ export default function AdminDashboard() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <Input
                       id="temp-button-url"
                       value={tempLinkUrl}

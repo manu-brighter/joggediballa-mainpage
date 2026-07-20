@@ -34,6 +34,9 @@ Role-based access (Admin / Maintainer / Editor / User). Sponsor members with exp
 **📅 Events & Gallery**
 Event creation and management with photo galleries and lightbox. Collapsible photo sections per event.
 
+**🎪 Event-Day Tools**
+Attendance tracking with statistics, a token-based **Live-Diashow** (guests upload photos, they appear on the projector), and a **"Schlag den Kassier"** Twitch overlay with its own control panel.
+
 </td>
 <td width="50%" valign="top">
 
@@ -65,7 +68,7 @@ Google OAuth 2.0 + JWT (HTTP-only cookies). Honeypot on contact form. Rate limit
 | **Backend** | Node.js · Express · tRPC 11 · SuperJSON |
 | **Database** | MySQL 8 · Drizzle ORM |
 | **Auth** | Google OAuth 2.0 · JWT · cookie-session |
-| **File Storage** | AWS S3 (sponsor logos, profile photos, event gallery) |
+| **File Storage** | Self-hosted on local disk · Nginx-served · multer + sharp |
 | **Testing** | Playwright E2E · Vitest (server) · Biome |
 | **Deploy** | Self-hosted · Nginx · PM2 · GitHub Actions |
 
@@ -88,10 +91,12 @@ joggediballa-mainpage/
 ├── server/               Node.js + Express backend
 │   ├── routers.ts        All tRPC procedures
 │   ├── db.ts             Drizzle queries
-│   ├── _core/            Framework plumbing (Express, tRPC context, auth routes)
-│   └── auth/             Google OAuth flow
+│   ├── _core/            Framework plumbing (Express, tRPC context, Google OAuth)
+│   ├── storage.ts        Self-hosted file storage (local disk)
+│   └── uploadRoutes.ts   Express upload endpoints (multer + sharp)
 ├── drizzle/
-│   └── schema.ts         Database schema — 16+ tables, single source of truth
+│   └── schema.ts         Database schema — 21 tables, single source of truth
+├── tests/e2e/            Playwright smoke + visual regression specs
 └── shared/               Types and constants shared between client and server
 ```
 
@@ -115,7 +120,7 @@ joggediballa-mainpage/
 
 ## ✦ Development
 
-**Prerequisites:** Node.js 22+, pnpm 8+, MySQL 8+
+**Prerequisites:** Node.js 22.11+, pnpm 10+, MySQL 8+
 
 ```bash
 git clone https://github.com/manu-brighter/joggediballa-mainpage.git
@@ -131,7 +136,9 @@ pnpm dev                # → http://localhost:3000
 ```bash
 pnpm build              # production build (Vite client + esbuild server)
 pnpm test               # Vitest server tests
+pnpm test:e2e           # Playwright E2E (smoke + visual)
 pnpm check              # TypeScript typecheck
+pnpm lint               # Biome
 pnpm format             # Prettier
 ```
 
@@ -147,10 +154,12 @@ Self-hosted on a Linux root server behind Nginx + PM2. Automated via GitHub Acti
 
 ```bash
 git pull origin main
-pnpm install --prod
+pnpm install --frozen-lockfile   # devDependencies needed — Vite/esbuild build the app
 pnpm build
-pm2 restart joggediballa
+pm2 reload joggediballa
 ```
+
+> Authoritative deploy steps live in `DEPLOYMENT.md`; PM2 config in `ecosystem.config.cjs`.
 
 <br>
 

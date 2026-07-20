@@ -16,19 +16,27 @@ PUBLIC_UPLOAD_URL=https://joggediballa.ch/uploads
 
 ### 2. Upload-Verzeichnis erstellen
 
+Das Basisverzeichnis muss existieren und für den Node-Prozess beschreibbar sein. Die Unterordner legt `server/storage.ts` beim ersten Upload selbst an (`fs.mkdir` mit `recursive: true`):
+
 ```bash
 # Erstelle das Upload-Verzeichnis
 sudo mkdir -p /var/www/joggediballa-mainpage/uploads
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/profile-pictures
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/sponsors
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/events
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/team-members
-sudo mkdir -p /var/www/joggediballa-mainpage/uploads/photos
 
-# Setze die richtigen Berechtigungen
-sudo chown -R www-data:www-data /var/www/joggediballa-mainpage/uploads
+# Setze die richtigen Berechtigungen — der Node-Prozess schreibt als root,
+# www-data braucht nur Leserechte zum Ausliefern (identisch zu DEPLOYMENT.md 4.4)
+sudo chown -R root:www-data /var/www/joggediballa-mainpage/uploads
 sudo chmod -R 755 /var/www/joggediballa-mainpage/uploads
 ```
+
+Folgende Unterordner entstehen dabei (Prefixes aus `server/uploadRoutes.ts`):
+
+| Pfad                                                           | Inhalt                               |
+| -------------------------------------------------------------- | ------------------------------------ |
+| `profile-pictures/`                                            | Profilbilder                         |
+| `sponsors/`                                                    | Sponsoren-Logos                      |
+| `events/original/`, `events/compressed/`, `events/thumbnails/` | Event-Fotos in drei Grössen          |
+| `team-members/original/`, `team-members/compressed/`           | Team-Mitglieder-Fotos                |
+| `slideshow/display/`, `slideshow/thumb/`                       | Gäste-Uploads für die Live-Slideshow |
 
 ### 3. Nginx Konfiguration
 
@@ -96,7 +104,7 @@ sudo systemctl reload nginx
 ### 5. Server neu starten
 
 ```bash
-cd /var/www/joggediballa
+cd /var/www/joggediballa-mainpage
 pm2 restart joggediballa
 ```
 
@@ -150,9 +158,10 @@ tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa-mainpage/u
 ## Sicherheitshinweise
 
 1. **Dateitypen einschränken:** Nur Bilder erlauben (bereits in Nginx konfiguriert)
-2. **Dateigrösse begrenzen:** `client_max_body_size` in Nginx
-3. **Validierung:** Die Upload-Endpunkte validieren den MIME-Type
-4. **Keine ausführbaren Dateien:** Nginx blockiert alle Nicht-Bild-Dateien
+2. **Dateigrösse begrenzen:** `client_max_body_size` in Nginx muss mindestens so gross sein wie `UPLOAD_MAX_BYTES`, sonst kommt vorher ein 413
+3. **Validierung:** Die Upload-Endpunkte vertrauen dem vom Client gemeldeten MIME-Type nicht. `sharp.metadata()` liest die echten Bytes; akzeptiert werden nur JPEG, PNG und WebP. Zusätzlich greift ein Pixel-Limit gegen Decompression-Bombs.
+4. **Dateinamen:** werden serverseitig per `nanoid()` erzeugt — der Client-Dateiname landet nie auf der Disk
+5. **Keine ausführbaren Dateien:** Nginx blockiert alle Nicht-Bild-Dateien
 
 ## Umgebungsvariablen Referenz
 
@@ -160,4 +169,4 @@ tar -czf /backup/uploads-$(date +%Y%m%d).tar.gz /var/www/joggediballa-mainpage/u
 | ------------------- | ------------------------------------- | ---------------------------------------- |
 | `UPLOAD_DIR`        | Absoluter Pfad zum Upload-Verzeichnis | `/var/www/joggediballa-mainpage/uploads` |
 | `PUBLIC_UPLOAD_URL` | Öffentliche URL für Uploads           | `https://joggediballa.ch/uploads`        |
-| `UPLOAD_MAX_BYTES`  | Optional. Max Dateigrösse in Bytes    | `15728640` (15 MB, Default)              |
+| `UPLOAD_MAX_BYTES`  | Optional. Max Dateigrösse in Bytes    | `41943040` (40 MB, Default)              |

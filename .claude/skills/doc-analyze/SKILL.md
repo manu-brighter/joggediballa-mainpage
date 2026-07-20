@@ -214,7 +214,7 @@ Claude owns the following — these are never delegated to agents:
 ```
 /doc-analyze auth system
 /doc-analyze tRPC router layer
-/doc-analyze S3 upload flow
+/doc-analyze file upload flow
 /doc-analyze
 ```
 

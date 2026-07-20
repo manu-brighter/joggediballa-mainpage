@@ -10,8 +10,10 @@ server/
   routers.ts      # All tRPC procedures (single file)
   db.ts           # All database queries (single file — no ORM relations layer)
   permissions.ts  # Role permission checks with in-memory cache (5-min TTL)
-  uploadRoutes.ts # S3 file uploads (Express routes, not tRPC)
+  storage.ts      # Self-hosted file storage on local disk (put/get/delete)
+  uploadRoutes.ts # File uploads (Express routes, not tRPC)
   attendance_router.ts  # Attendance feature (separate router, mounted in routers.ts)
+  attendance_db.ts      # Attendance queries
   sitemap.ts      # Sitemap Express route
 ```
 
@@ -63,17 +65,27 @@ const ctx: TrpcContext = {
 const caller = appRouter.createCaller(ctx);
 ```
 
-Tests that require a live DB, real S3, or SMTP are **expected to fail in CI** (no infra). Do not mock the DB in integration tests — we've been burned by mock/prod divergence before.
+Tests that require a live DB, a writable upload dir, or SMTP are **expected to fail in CI** (no infra). Do not mock the DB in integration tests — we've been burned by mock/prod divergence before.
 
-## S3 Upload Pattern
+## Upload Pattern
+
+Storage is **self-hosted on local disk** — S3/AWS was removed. `storage.ts` writes
+under `UPLOAD_DIR` (default `/var/www/joggediballa-mainpage/uploads`) and returns a
+public URL built from `PUBLIC_UPLOAD_URL`; nginx serves that path.
 
 Upload routes are Express (not tRPC) in `uploadRoutes.ts`. Each endpoint:
 
-1. Validates file MIME type with `fileMimeType.startsWith("image/")` (or `"application/pdf"` etc.)
-2. Uploads to S3 via `uploadToS3()`
-3. Stores both `xxxUrl` (public URL) and `xxxKey` (S3 key for deletion) in DB
+1. Parses the multipart body with `multer` (memory storage, strict size + file-count caps)
+2. Requires a logged-in user with role >= editor (JWT cookie verified at the Express layer)
+3. Validates the bytes via `sharp.metadata()` — this doubles as a magic-byte sniff;
+   only `image/jpeg`, `image/png`, `image/webp` are accepted. `limitInputPixels`
+   guards against decompression bombs
+4. Generates the filename server-side via `nanoid()` + sniffed extension — the
+   client-supplied name is never written to disk
+5. Writes via `storagePut()` and stores both `xxxUrl` (public URL) and `xxxKey`
+   (storage key for deletion) in the DB
 
-Always store the S3 key — deletion requires the key, not just the URL.
+Always store the key — deletion (`storageDelete()`) requires the key, not just the URL.
 
 ## Soft Delete Convention
 
