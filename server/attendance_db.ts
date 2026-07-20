@@ -319,6 +319,14 @@ export async function getAttendanceStatistics(year?: number) {
         : sql`1=1`,
     );
 
+  // Total session weight — identical for every member (each is evaluated
+  // against every session), so it doubles as the denominator of the weighted
+  // attendance rate below.
+  const weightedTotalSessions = sessions.reduce(
+    (sum, session) => sum + (session.type === 'event' ? eventWeight : 1.0),
+    0,
+  );
+
   // Calculate statistics per member
   const memberStats = members.map(member => {
     const memberRecords = allRecords.filter(r => r.memberId === member.id);
@@ -352,9 +360,13 @@ export async function getAttendanceStatistics(year?: number) {
       }
     });
 
-    const attendanceRate =
-      totalSessions > 0
-        ? ((presentCount + partialCount * 0.5) / totalSessions) * 100
+    // Weighted attendance rate — the counterpart of weightedAbsences, so the
+    // number shown to users and the ranking below agree by construction. An
+    // event absence costs eventWeight times what a meeting absence costs.
+    const weightedAttendanceRate =
+      weightedTotalSessions > 0
+        ? ((weightedTotalSessions - weightedAbsences) / weightedTotalSessions) *
+          100
         : 0;
 
     return {
@@ -364,7 +376,7 @@ export async function getAttendanceStatistics(year?: number) {
       presentCount,
       partialCount,
       absentCount,
-      attendanceRate,
+      weightedAttendanceRate,
       weightedAbsences,
     };
   });
@@ -376,24 +388,39 @@ export async function getAttendanceStatistics(year?: number) {
   const meetingCount = sessions.filter(s => s.type === 'meeting').length;
   const eventCount = sessions.filter(s => s.type === 'event').length;
 
-  // Average attendance rate
-  const avgAttendanceRate =
+  // Average weighted attendance rate
+  const avgWeightedAttendanceRate =
     memberStats.length > 0
-      ? memberStats.reduce((sum, m) => sum + m.attendanceRate, 0) /
+      ? memberStats.reduce((sum, m) => sum + m.weightedAttendanceRate, 0) /
         memberStats.length
       : 0;
 
-  // Best and worst attendance
+  // Each card derives from its own metric rather than from the two ends of one
+  // sort: "Beste Anwesenheit" ranks on the attendance rate, "Meiste Fehlzeiten"
+  // on weighted absences. Both currently pick the same member either way — the
+  // total session weight is identical for everyone, so the two are strictly
+  // anti-correlated — but that stops holding the moment members are scored over
+  // different session sets (e.g. a join date), and then each card still answers
+  // the question its title asks.
   const bestMember =
-    memberStats.length > 0 ? memberStats[memberStats.length - 1] : null;
-  const worstMember = memberStats.length > 0 ? memberStats[0] : null;
+    memberStats.length > 0
+      ? memberStats.reduce((best, m) =>
+          m.weightedAttendanceRate > best.weightedAttendanceRate ? m : best,
+        )
+      : null;
+  const worstMember =
+    memberStats.length > 0
+      ? memberStats.reduce((worst, m) =>
+          m.weightedAbsences > worst.weightedAbsences ? m : worst,
+        )
+      : null;
 
   return {
     memberStats,
     totalSessions: sessions.length,
     meetingCount,
     eventCount,
-    avgAttendanceRate,
+    avgWeightedAttendanceRate,
     bestMember,
     worstMember,
     eventWeight,

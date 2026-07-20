@@ -165,20 +165,15 @@ export default function AttendanceStatistics() {
   // Prepare chart data
   const attendanceRateData = useMemo(() => {
     if (!stats) return [];
-    // Sort by the rate this chart actually shows. memberStats arrives ordered
-    // by weightedAbsences, which counts event absences eventWeight times while
-    // attendanceRate counts every session equally — so reversing that order
-    // does not produce a descending rate whenever eventWeight != 1. Copy first,
-    // the server order is what absenceData and best/worstMembers rely on.
+    // Sort on the rate this chart actually shows rather than relying on the
+    // server order (weightedAbsences, worst first) — the two are equivalent
+    // today, but only because both are weighted. Copy first: the server order
+    // is what absenceData and best/worstMembers rely on.
     return [...stats.memberStats]
-      .sort(
-        (a, b) =>
-          b.attendanceRate - a.attendanceRate ||
-          a.weightedAbsences - b.weightedAbsences,
-      )
+      .sort((a, b) => b.weightedAttendanceRate - a.weightedAttendanceRate)
       .map(m => ({
         name: m.memberName,
-        rate: Math.round(m.attendanceRate * 10) / 10,
+        rate: Math.round(m.weightedAttendanceRate * 10) / 10,
         present: m.presentCount,
         partial: m.partialCount,
         absent: m.absentCount,
@@ -202,13 +197,13 @@ export default function AttendanceStatistics() {
   }, [absenceData]);
 
   // All members tied with the best / worst member on the SAME key the server
-  // ranks by — weightedAbsences (attendance_db.ts sorts memberStats by it and
-  // picks best/worst from the ends). bestMember/worstMember are themselves
-  // entries of memberStats, so `===` compares same-source values (safe).
+  // ranks each card by — the attendance rate for best, weighted absences for
+  // worst. bestMember/worstMember are themselves entries of memberStats, so
+  // `===` compares same-source values (safe).
   const bestMembers = useMemo(() => {
     if (!stats?.bestMember) return [];
-    const target = stats.bestMember.weightedAbsences;
-    return stats.memberStats.filter(m => m.weightedAbsences === target);
+    const target = stats.bestMember.weightedAttendanceRate;
+    return stats.memberStats.filter(m => m.weightedAttendanceRate === target);
   }, [stats]);
 
   const worstMembers = useMemo(() => {
@@ -386,10 +381,10 @@ export default function AttendanceStatistics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.round(stats.avgAttendanceRate)}%
+              {Math.round(stats.avgWeightedAttendanceRate)}%
             </div>
             <p className="text-xs text-muted-foreground">
-              Durchschnitt aller Mitglieder
+              Durchschnitt aller Mitglieder · Events zählen {stats.eventWeight}x
             </p>
           </CardContent>
         </Card>
@@ -412,7 +407,7 @@ export default function AttendanceStatistics() {
             </div>
             <p className="text-xs text-muted-foreground">
               {stats.bestMember
-                ? `${Math.round(stats.bestMember.attendanceRate)}%`
+                ? `${Math.round(stats.bestMember.weightedAttendanceRate)}%`
                 : ''}
             </p>
           </CardContent>
@@ -436,7 +431,7 @@ export default function AttendanceStatistics() {
             </div>
             <p className="text-xs text-muted-foreground">
               {stats.worstMember
-                ? `${Math.round(stats.worstMember.attendanceRate)}%`
+                ? `${Math.round(stats.worstMember.weightedAbsences * 10) / 10} gewichtete Fehlzeiten`
                 : ''}
             </p>
           </CardContent>
@@ -450,7 +445,7 @@ export default function AttendanceStatistics() {
           <CardHeader>
             <CardTitle>Anwesenheitsquote pro Mitglied</CardTitle>
             <CardDescription>
-              Prozentuale Anwesenheit (Beste zuerst)
+              Events zählen {stats.eventWeight}x (Beste zuerst)
             </CardDescription>
           </CardHeader>
           <CardContent>
