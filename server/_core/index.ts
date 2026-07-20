@@ -95,7 +95,7 @@ async function startServer() {
   //     @fontsource-variable/inter; no Google Fonts CDN allowed.
   //   - connect-src: 'self' + GA beacons (google-analytics.com,
   //     analytics.google.com). Dev adds ws/wss for the Vite HMR socket.
-  //   - img-src allows S3, Google avatars, GA pixel beacons, data:/blob:
+  //   - img-src allows Google avatars, GA pixel beacons, data:/blob:
   //     URLs for canvas previews, and the PUBLIC_UPLOAD_URL origin so
   //     locally-developed pages can load production-hosted user uploads
   //     (team-member photos, sponsor logos, event photos) since dev
@@ -146,7 +146,6 @@ async function startServer() {
             "'self'",
             'data:',
             'blob:',
-            'https://*.amazonaws.com',
             'https://lh3.googleusercontent.com',
             'https://www.google-analytics.com',
             'https://*.google-analytics.com',
