@@ -318,6 +318,9 @@
        doesn't shift horizontally when navigating between short and
        long pages. */
     scrollbar-gutter: stable;
+    /* Firefox equivalent of the ::-webkit-scrollbar rules below. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
 
   /* Page scrollbar — same look as the custom dialog scrollbars
@@ -339,8 +342,10 @@
   /* react-remove-scroll (Radix dialogs) compensates the disappearing page
      scrollbar with a body margin. With scrollbar-gutter: stable the gutter
      never collapses, so that compensation would shift the page by the
-     scrollbar width on every dialog open. Doubled attribute selector to win
-     over the library's runtime-injected !important rule. */
+     scrollbar width on every dialog open. This rule wins because important
+     declarations invert layer order: a layered !important outranks the
+     library's unlayered runtime-injected !important. The doubled attribute
+     selector is belt-and-braces in case the rule ever leaves @layer base. */
   body[data-scroll-locked][data-scroll-locked] {
     margin-right: 0 !important;
   }
@@ -569,8 +574,9 @@
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
+    /* Sized by the inset properties above, not 100vw/100vh — those include
+       the scrollbar gutter that the fixed containing block excludes, which
+       would push the right edge off-screen now that the gutter is stable. */
     z-index: 9999 !important;
     background: var(--background) !important;
     overflow: auto !important;

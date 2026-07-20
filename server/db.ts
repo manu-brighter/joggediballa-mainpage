@@ -322,9 +322,9 @@ export async function updateSponsor(
   if (!db) throw new Error('Database not available');
 
   // B-P0-05 / F-BE-001: snapshot the old logoKey *before* the update inside a
-  // tx, then do the DB write atomically. S3 cleanup happens after commit so a
+  // tx, then do the DB write atomically. File cleanup happens after commit so a
   // failed DB update doesn't orphan a deleted asset. Storage is fire-and-forget
-  // — if the DB commit succeeds but the S3 delete fails, we log and move on
+  // — if the DB commit succeeds but the file delete fails, we log and move on
   // rather than throwing (orphaned blobs are recoverable; failed mutations are
   // worse for the caller).
   const oldLogoKeyToDelete = await db.transaction(async tx => {
@@ -439,10 +439,10 @@ export async function deleteEvent(eventId: number) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  // B-P0-05 / F-BE-001: snapshot photo S3 keys, then delete the event row in
-  // a transaction (photos cascade-delete via FK). Only after commit do we
-  // touch S3 — that way a failed DB delete doesn't orphan deleted assets.
-  // S3 deletes are best-effort: orphaned blobs are recoverable, a failed
+  // B-P0-05 / F-BE-001: snapshot photo storage keys, then delete the event row
+  // in a transaction (photos cascade-delete via FK). Only after commit do we
+  // touch storage — that way a failed DB delete doesn't orphan deleted assets.
+  // File deletes are best-effort: orphaned blobs are recoverable, a failed
   // mutation that throws after partial cleanup is not.
   const keysToDelete = await db.transaction(async tx => {
     const eventPhotos = await tx
