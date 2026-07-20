@@ -6,6 +6,8 @@ Diese Anleitung beschreibt, wie du das Kontaktformular auf deinem selbst gehoste
 
 Das Kontaktformular speichert alle Nachrichten in der Datenbank. Um zusätzlich E-Mail-Benachrichtigungen zu erhalten, musst du einen SMTP-Server konfigurieren.
 
+Der Versand ist bereits implementiert (`server/_core/email.ts`, nodemailer). Es muss **kein Code geschrieben werden** — es reicht, die Umgebungsvariablen zu setzen.
+
 ## 1. Umgebungsvariablen einrichten
 
 Füge folgende Variablen zu deiner `.env` Datei hinzu:
@@ -23,149 +25,41 @@ CONTACT_EMAIL_TO=kontakt@joggediballa.ch
 CONTACT_EMAIL_FROM=noreply@joggediballa.ch
 ```
 
-## 2. Nodemailer installieren
+Alle Variablen werden in `server/_core/env.ts` eingelesen und über das `ENV`-Objekt verwendet:
 
-```bash
-pnpm add nodemailer
-pnpm add -D @types/nodemailer
-```
+| Variable             | Bedeutung                                                     |
+| -------------------- | ------------------------------------------------------------- |
+| `SMTP_HOST`          | SMTP-Server                                                   |
+| `SMTP_PORT`          | Port, Default `587`                                           |
+| `SMTP_SECURE`        | `true` für implizites TLS (Port 465), sonst `false`           |
+| `SMTP_USER`          | SMTP-Benutzer                                                 |
+| `SMTP_PASS`          | SMTP-Passwort                                                 |
+| `CONTACT_EMAIL_TO`   | Empfänger aller Benachrichtigungen                            |
+| `CONTACT_EMAIL_FROM` | Absender. Wenn leer, wird `SMTP_USER` als Absender verwendet. |
 
-## 3. E-Mail Service erstellen
+## 2. Was der Server damit macht
 
-Erstelle die Datei `server/emailService.ts`:
+Der E-Mail-Code liegt in `server/_core/email.ts` und exportiert drei Funktionen:
 
-```typescript
-import nodemailer from 'nodemailer';
+| Funktion                  | Verwendet von                                           |
+| ------------------------- | ------------------------------------------------------- |
+| `sendEmail()`             | Basis-Funktion, baut den nodemailer-Transport aus `ENV` |
+| `sendContactFormEmail()`  | `contact.send` in `server/routers.ts`                   |
+| `sendHarassenlaufEmail()` | `harassenlauf.register` in `server/routers.ts`          |
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+Zusätzlich verschickt `server/_core/googleAuth.ts` über `sendEmail()` eine Benachrichtigung, wenn sich ein neuer Benutzer registriert.
 
-export async function sendContactEmail(data: {
-  name: string;
-  email: string;
-  subject?: string;
-  message: string;
-}) {
-  const mailOptions = {
-    from: process.env.CONTACT_EMAIL_FROM,
-    to: process.env.CONTACT_EMAIL_TO,
-    replyTo: data.email,
-    subject: `[Kontaktformular] ${data.subject || 'Neue Nachricht'} von ${data.name}`,
-    text: `
-Neue Nachricht über das Kontaktformular:
+Ablauf beim Kontaktformular (`contact.send`):
 
-Name: ${data.name}
-E-Mail: ${data.email}
-Betreff: ${data.subject || 'Kein Betreff'}
+1. Nachricht wird in die Tabelle `contact_submissions` geschrieben (nur wenn eine DB verfügbar ist)
+2. `sendContactFormEmail()` verschickt die Mail an `CONTACT_EMAIL_TO`
+3. Schlägt der Versand fehl, wirft die Prozedur einen `INTERNAL_SERVER_ERROR` — der Benutzer sieht also einen Fehler, obwohl die Nachricht bereits gespeichert ist
 
-Nachricht:
-${data.message}
+Beim Harassenlauf-Formular ist es umgekehrt: ein fehlgeschlagener Mailversand wird nur geloggt und bricht die Anmeldung nicht ab.
 
----
-Diese E-Mail wurde automatisch vom Kontaktformular auf joggediballa.ch gesendet.
-    `,
-    html: `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-    .content { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; }
-    .field { margin-bottom: 15px; }
-    .label { font-weight: bold; color: #6b7280; font-size: 12px; text-transform: uppercase; }
-    .value { margin-top: 5px; }
-    .message { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #0d9488; }
-    .footer { text-align: center; padding: 15px; font-size: 12px; color: #9ca3af; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1 style="margin: 0;">Neue Kontaktanfrage</h1>
-    </div>
-    <div class="content">
-      <div class="field">
-        <div class="label">Name</div>
-        <div class="value">${data.name}</div>
-      </div>
-      <div class="field">
-        <div class="label">E-Mail</div>
-        <div class="value"><a href="mailto:${data.email}">${data.email}</a></div>
-      </div>
-      <div class="field">
-        <div class="label">Betreff</div>
-        <div class="value">${data.subject || 'Kein Betreff'}</div>
-      </div>
-      <div class="field">
-        <div class="label">Nachricht</div>
-        <div class="message">${data.message.replace(/\n/g, '<br>')}</div>
-      </div>
-    </div>
-    <div class="footer">
-      Diese E-Mail wurde automatisch vom Kontaktformular auf joggediballa.ch gesendet.
-    </div>
-  </div>
-</body>
-</html>
-    `,
-  };
+**Sicherheit:** Alle Werte aus dem Formular werden vor dem Einsetzen ins HTML mit `escapeHtml()` maskiert, und `replyTo` wird gegen eine strikte E-Mail-Regex geprüft, damit keine CR/LF-Zeichen in SMTP-Header gelangen.
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log('[Email] Contact form email sent successfully');
-    return true;
-  } catch (error) {
-    console.error('[Email] Failed to send contact form email:', error);
-    return false;
-  }
-}
-```
-
-## 4. Router aktualisieren
-
-In `server/routers.ts`, importiere den E-Mail Service und rufe ihn auf:
-
-```typescript
-import { sendContactEmail } from './emailService';
-
-// Im contact.submit mutation:
-.mutation(async ({ input, ctx }) => {
-  // Honeypot check
-  if (input.honeypot) {
-    return { success: true };
-  }
-
-  const submissionId = await db.createContactSubmission({
-    name: input.name,
-    email: input.email,
-    subject: input.subject,
-    message: input.message,
-    honeypot: input.honeypot,
-    ipAddress: ctx.req.ip || ctx.req.headers['x-forwarded-for'] as string || undefined
-  });
-
-  // E-Mail senden (async, blockiert nicht)
-  sendContactEmail({
-    name: input.name,
-    email: input.email,
-    subject: input.subject,
-    message: input.message,
-  }).catch(err => console.error('[Email] Error:', err));
-
-  return { success: true, submissionId };
-}),
-```
-
-## 5. SMTP-Anbieter Optionen
+## 3. SMTP-Anbieter Optionen
 
 ### Option A: Eigener Mailserver
 
@@ -193,7 +87,7 @@ SMTP_PASS=app-spezifisches-passwort
 
 ⚠️ Für Gmail musst du ein App-spezifisches Passwort erstellen.
 
-## 6. Testen
+## 4. Testen
 
 Nach der Konfiguration:
 
@@ -208,7 +102,7 @@ Nach der Konfiguration:
 
 - Prüfe die SMTP-Zugangsdaten
 - Überprüfe Firewall-Regeln (Port 587 oder 465)
-- Schaue in die Server-Logs
+- Schaue in die Server-Logs (`Email sending failed:` kommt aus `sendEmail()`)
 
 ### E-Mails landen im Spam
 
