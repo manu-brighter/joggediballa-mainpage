@@ -62,9 +62,6 @@ at `PUBLIC_UPLOAD_URL/<key>`. Upload endpoints are Express routes (not tRPC) in
 `server/uploadRoutes.ts`, using multer memory storage + `sharp` for validation and
 processing. The client posts the file directly — there are no pre-signed URLs.
 
-The `@aws-sdk/*` packages are still listed in `package.json` but are no longer
-imported anywhere; treat them as leftovers, not as the storage backend.
-
 ### Frontend Patterns
 
 - **Routing:** Wouter (not React Router). Routes defined in `client/src/App.tsx`, which also holds the Beamer mode context for the shotcounter.

@@ -71,8 +71,7 @@ Tests that require a live DB, a writable upload dir, or SMTP are **expected to f
 
 Storage is **self-hosted on local disk** — S3/AWS was removed. `storage.ts` writes
 under `UPLOAD_DIR` (default `/var/www/joggediballa-mainpage/uploads`) and returns a
-public URL built from `PUBLIC_UPLOAD_URL`; nginx serves that path. The `@aws-sdk/*`
-dependencies still sit in `package.json` but are not imported anywhere.
+public URL built from `PUBLIC_UPLOAD_URL`; nginx serves that path.
 
 Upload routes are Express (not tRPC) in `uploadRoutes.ts`. Each endpoint:
 
