@@ -54,7 +54,7 @@ in einer zweiten, glatteren Sprache.
    Text. Wenn ein Wort generisch ist, ist es ein Fehler im Design, nicht
    im Texten.
 2. **Surface bestimmt die Layout-Richtung.**
-   - Öffentliche Brand-Surfaces (Home, Team, Events, Harassenlauf,
+   - Öffentliche Brand-Surfaces (Home, Team, Events, Dienstleistungen,
      Sponsoren, Gönner-Übersicht, Kontakt) werden **mobile-first**
      entworfen und nach oben skaliert. Die meisten Besucher kommen mit
      dem Handy — oft kurz vor oder nach einem Anlass.

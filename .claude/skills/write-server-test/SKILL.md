@@ -14,39 +14,37 @@ Then read the target router's procedures in `server/routers.ts` to know what to 
 
 ## Context factory pattern
 
-Copy this exactly — the shape must match `TrpcContext` from `server/_core/context.ts`:
+Copy this exactly — the shape must match `TrpcContext` from `server/_core/context.ts` (`{ req, res, user }`). `role: null` means "not logged in"; `visitor` is a real role with a real user row, not a null user.
 
 ```typescript
 import { describe, it, expect, vi } from 'vitest';
 import { appRouter } from './routers';
 import type { TrpcContext } from './_core/context';
 
+type AuthenticatedUser = NonNullable<TrpcContext['user']>;
+
 function createContext(
-  role: 'admin' | 'maintainer' | 'editor' | 'user' | 'visitor' | null,
+  role: AuthenticatedUser['role'] | null,
 ): TrpcContext {
-  const user =
-    role === null || role === 'visitor'
+  const user: AuthenticatedUser | null =
+    role === null
       ? null
       : {
           id: 1,
           openId: 'test-open-id',
-          role,
-          name: 'Test User',
-          displayName: 'Test User',
           email: 'test@example.com',
-          loginMethod: 'google' as const,
-          profilePictureUrl: null,
-          profilePictureKey: null,
-          memberSince: null,
+          name: 'Test User',
+          loginMethod: 'google',
+          role,
           createdAt: new Date(),
           updatedAt: new Date(),
           lastSignedIn: new Date(),
-        };
+        } as AuthenticatedUser;
 
   return {
     user,
-    req: { protocol: 'https', headers: {}, ip: '127.0.0.1' } as any,
-    res: { clearCookie: vi.fn(), cookie: vi.fn() } as any,
+    req: { protocol: 'https', headers: {} } as TrpcContext['req'],
+    res: { clearCookie: vi.fn() } as unknown as TrpcContext['res'],
   };
 }
 ```
@@ -77,17 +75,32 @@ describe("<router>.<procedure>", () => {
 });
 ```
 
-**DB function mocking — mock at the module level:**
+**DB function mocking — spread `importActual`, then import the router dynamically:**
+
+`routers.ts` pulls dozens of functions out of `./db`, so a mock factory that returns only the two you care about breaks the import. Always spread the real module first, and import `appRouter` *after* the mock so it picks it up (see `server/events.publishedFilter.test.ts`):
 
 ```typescript
-vi.mock('./db', () => ({
-  createEntity: vi.fn().mockResolvedValue(1),
-  getEntityById: vi.fn().mockResolvedValue({ id: 1, name: 'Test' }),
-  deleteEntity: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock('./db', async () => {
+  const actual = await vi.importActual<typeof import('./db')>('./db');
+  return {
+    ...actual,
+    getDb: async () => null,
+    getEntityById: async (id: number) => ({ id, name: 'Test' }),
+  };
+});
+
+const { appRouter } = await import('./routers');
 ```
 
-Look at the existing test files for the exact mock structure — some tests use real DB calls (require a running MySQL) and some mock. Match whichever pattern the existing tests for that feature area use.
+**Integration tests against a live DB** — `server/CLAUDE.md` says not to mock the DB in integration tests. Those tests skip themselves in CI instead:
+
+```typescript
+const skipIntegration = !!process.env.CI;
+
+it.skipIf(skipIntegration)('allows maintainers to create teams', async () => { … });
+```
+
+Match whichever pattern the existing tests for that feature area use.
 
 ## What to test per procedure type
 
@@ -103,8 +116,12 @@ Look at the existing test files for the exact mock structure — some tests use 
 
 Place at: `server/<router-name>.test.ts`
 
+`vitest.config.ts` only picks up `server/**/*.test.ts` and `server/**/*.spec.ts` — a test file anywhere else is silently never run.
+
 Run after generation:
 
 ```bash
 pnpm test server/<router-name>.test.ts
 ```
+
+**Not this skill's job:** browser-level tests live in `tests/e2e/` and run on Playwright (`pnpm test:e2e`, config in `playwright.config.ts`). Never put a Playwright spec under `server/`, and never call tRPC procedures from an E2E test.

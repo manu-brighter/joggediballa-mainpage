@@ -7,13 +7,13 @@ Scaffold a new tRPC route. The user provides: router name, procedure name, opera
 
 ## Step 1 — DB helper in server/db.ts
 
-Always add a corresponding DB function first. The `if (!db) return` guard is **mandatory** — it's what lets the server start cleanly when no DB is configured (e.g. in tests or local dev without MySQL).
+Always add a corresponding DB function first. `getDb()` is **async** and returns `null` when `DATABASE_URL` is unset — the guard is **mandatory**, it's what lets the server start cleanly without MySQL (e.g. in tests or local dev). Reads fall back to an empty value; writes throw.
 
 **Query pattern:**
 
 ```typescript
 export async function get<Entity>(id: number) {
-  const db = getDb();
+  const db = await getDb();
   if (!db) return null;
   const results = await db
     .select()
@@ -23,28 +23,30 @@ export async function get<Entity>(id: number) {
 }
 ```
 
-**List pattern (with soft-delete filter):**
+**List pattern (with active filter):**
 
 ```typescript
-export async function getAll<Entities>(activeOnly = true) {
-  const db = getDb();
+export async function getAll<Entities>() {
+  const db = await getDb();
   if (!db) return [];
   return db
     .select()
     .from(<table>)
-    .where(activeOnly ? isNull(<table>.deletedAt) : undefined)
-    .orderBy(asc(<table>.createdAt));
+    .where(eq(<table>.isActive, true))
+    .orderBy(<table>.displayOrder);
 }
 ```
+
+Most tables mark inactive rows with an `isActive` boolean. Only `shotcounterTeams` uses a `deletedAt` timestamp — for that one filter with `isNull(shotcounterTeams.deletedAt)` instead. Ordering helpers (`desc`, `eq`, `isNull`, …) are imported from `drizzle-orm` at the top of `db.ts`; add to that import if you need one that isn't there yet.
 
 **Mutation pattern:**
 
 ```typescript
 export async function create<Entity>(data: NewEntity) {
-  const db = getDb();
-  if (!db) return null;
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
   const result = await db.insert(<table>).values(data);
-  return result[0].insertId;
+  return Number(result[0].insertId);
 }
 ```
 
@@ -65,8 +67,12 @@ Note: The actual DB schema might be ahead of `drizzle/schema.ts` if changes were
 | `permission:edit_shotcounter`         | `requirePermission("edit_shotcounter")`         |
 | `permission:reset_shotcounter`        | `requirePermission("reset_shotcounter")`        |
 | `permission:edit_team`                | `requirePermission("edit_team")`                |
+| `permission:manage_attendance`        | `requirePermission("manage_attendance")`        |
+| `permission:manage_slideshow`         | `requirePermission("manage_slideshow")`         |
 
-Use `requirePermission()` for all content mutations — never `editorProcedure`/`maintainerProcedure`.
+Use `requirePermission()` for all content mutations. `adminProcedure` is defined locally in `routers.ts` and reserved for admin infrastructure (`users.*`, `features.*`, `activityLog.*`, `permissions.*`, `sdk.*`). The old `editorProcedure` / `maintainerProcedure` helpers no longer exist — do not reintroduce them.
+
+A permission key only works if it is also listed in `initializeDefaultPermissions()` in `server/db.ts`; otherwise no role will ever hold it.
 
 **Query template:**
 

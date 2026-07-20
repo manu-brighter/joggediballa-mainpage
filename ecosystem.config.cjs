@@ -3,8 +3,9 @@ module.exports = {
     {
       // PM2 entrypoint for joggediballa.
       // Loaded via `pm2 start ecosystem.config.cjs` after a deploy if the
-      // process was deleted; the daily auto-deploy uses `pm2 reload` which
-      // doesn't re-read this file. After editing, run:
+      // process was deleted; the automated deploy (.github/workflows/deploy.yml
+      // -> forced command on the server) uses `pm2 reload`, which doesn't
+      // re-read this file. After editing, run:
       //   pm2 delete joggediballa && pm2 start ecosystem.config.cjs && pm2 save
       // so /root/.pm2/dump.pm2 picks up the new config for resurrect-on-boot.
       name: "joggediballa",
