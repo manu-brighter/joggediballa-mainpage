@@ -165,15 +165,24 @@ export default function AttendanceStatistics() {
   // Prepare chart data
   const attendanceRateData = useMemo(() => {
     if (!stats) return [];
-    return stats.memberStats
+    // Sort by the rate this chart actually shows. memberStats arrives ordered
+    // by weightedAbsences, which counts event absences eventWeight times while
+    // attendanceRate counts every session equally — so reversing that order
+    // does not produce a descending rate whenever eventWeight != 1. Copy first,
+    // the server order is what absenceData and best/worstMembers rely on.
+    return [...stats.memberStats]
+      .sort(
+        (a, b) =>
+          b.attendanceRate - a.attendanceRate ||
+          a.weightedAbsences - b.weightedAbsences,
+      )
       .map(m => ({
         name: m.memberName,
         rate: Math.round(m.attendanceRate * 10) / 10,
         present: m.presentCount,
         partial: m.partialCount,
         absent: m.absentCount,
-      }))
-      .reverse(); // Best first
+      }));
   }, [stats]);
 
   const absenceData = useMemo(() => {
