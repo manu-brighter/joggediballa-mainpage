@@ -145,13 +145,31 @@ async function sniffImage(
     if (w * h > maxPixels) return null;
 
     switch (meta.format) {
+      // sharp reports JPEG as 'jpeg' — there is no 'jpg' variant to match on.
       case 'jpeg':
-      case 'jpg':
-        return { buffer: buf, ext: 'jpg', mime: 'image/jpeg', width: w, height: h };
+        return {
+          buffer: buf,
+          ext: 'jpg',
+          mime: 'image/jpeg',
+          width: w,
+          height: h,
+        };
       case 'png':
-        return { buffer: buf, ext: 'png', mime: 'image/png', width: w, height: h };
+        return {
+          buffer: buf,
+          ext: 'png',
+          mime: 'image/png',
+          width: w,
+          height: h,
+        };
       case 'webp':
-        return { buffer: buf, ext: 'webp', mime: 'image/webp', width: w, height: h };
+        return {
+          buffer: buf,
+          ext: 'webp',
+          mime: 'image/webp',
+          width: w,
+          height: h,
+        };
       default:
         return null; // rejects svg, gif, avif, heic, tiff, …
     }
@@ -180,7 +198,9 @@ function makeUploadHandler(spec: RouteSpec) {
   return async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.file) {
-        res.status(400).json({ error: 'No file provided (field name: "file")' });
+        res
+          .status(400)
+          .json({ error: 'No file provided (field name: "file")' });
         return;
       }
 
@@ -385,7 +405,9 @@ router.post(
         return;
       }
       if (!req.file) {
-        res.status(400).json({ error: 'No file provided (field name: "file")' });
+        res
+          .status(400)
+          .json({ error: 'No file provided (field name: "file")' });
         return;
       }
       // Unauthenticated route: tight pixel ceiling (see MAX_PIXELS_PUBLIC).
@@ -399,9 +421,12 @@ router.post(
       // .rotate() ohne Args = EXIF-Auto-Orientierung, dann EXIF/GPS gestrippt.
       // resolveWithObject liefert die finalen Dimensionen aus der Encode-
       // Pipeline — kein zweiter Decode des Display-Buffers nötig.
-      const { data: displayBuf, info: displayInfo } = await sharp(sniffed.buffer, {
-        limitInputPixels: MAX_PIXELS_PUBLIC,
-      })
+      const { data: displayBuf, info: displayInfo } = await sharp(
+        sniffed.buffer,
+        {
+          limitInputPixels: MAX_PIXELS_PUBLIC,
+        },
+      )
         .rotate()
         .resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })
         .jpeg({ quality: 72, mozjpeg: true })
