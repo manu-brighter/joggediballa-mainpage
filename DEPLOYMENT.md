@@ -342,9 +342,49 @@ certbot renew --dry-run
 ```bash
 apt install -y ufw
 ufw allow OpenSSH
-ufw allow 'Nginx Full'
 ufw enable
 ufw status
+```
+
+### 6.2 HTTP/HTTPS auf Cloudflare beschränken
+
+`joggediballa.ch` zeigt per DNS auf Cloudflare, nicht auf die Origin. Ein
+blankes `ufw allow 'Nginx Full'` öffnet 80/443 aber für das ganze Internet —
+wer die Origin-IP kennt, umgeht Cloudflare dann vollständig (DDoS-Schutz, WAF,
+Rate Limiting). Zusätzlich lässt sich bei direktem Zugriff der
+`X-Forwarded-For`-Header fälschen, den das Per-IP-Rate-Limiting der App
+auswertet.
+
+Deshalb 80/443 ausschliesslich für Cloudflare-Ranges freigeben:
+
+```bash
+# Script aus dem Repo auf den Server kopieren
+install -m 755 scripts/ufw-cloudflare.sh /usr/local/bin/ufw-cloudflare.sh
+/usr/local/bin/ufw-cloudflare.sh
+```
+
+Cloudflare ändert seine Ranges gelegentlich — monatlich per Cron nachziehen:
+
+```bash
+echo '0 4 1 * * /usr/local/bin/ufw-cloudflare.sh >> /var/log/ufw-cloudflare.log 2>&1' | crontab -
+```
+
+> **Vor dem Ausloggen prüfen** (von einem anderen Rechner):
+> `curl -k --max-time 10 https://<ORIGIN-IP> -H "Host: joggediballa.ch"` muss
+> in einen Timeout laufen, `https://joggediballa.ch` muss weiter funktionieren.
+
+### 6.3 Echte Besucher-IP in nginx wiederherstellen
+
+Ohne `real_ip`-Konfiguration sieht nginx als `$remote_addr` die Cloudflare-IP.
+Die XFF-Kette geht mit `trust proxy 1` zwar noch auf, hängt aber an der
+Hop-Anzahl. Robuster ist, die IP direkt aus dem Cloudflare-Header zu nehmen —
+in den `server`-Block aufnehmen:
+
+```nginx
+# Cloudflare-Ranges (aktuelle Liste: https://www.cloudflare.com/ips/)
+# set_real_ip_from <cidr>;  je Range, oder per Include-Datei pflegen
+real_ip_header CF-Connecting-IP;
+real_ip_recursive on;
 ```
 
 ## Schritt 7: Google OAuth konfigurieren
