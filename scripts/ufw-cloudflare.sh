@@ -31,10 +31,20 @@ if [ -z "$v4" ] || ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$' <<<"$v4"
 fi
 
 echo "[*] Removing blanket HTTP/HTTPS rules…"
-# `ufw delete` is a no-op with a warning when the rule isn't there.
-ufw --force delete allow 'Nginx Full' 2>/dev/null || true
-ufw --force delete allow 80/tcp 2>/dev/null || true
-ufw --force delete allow 443/tcp 2>/dev/null || true
+# The blanket rule's name is host-specific — this server uses the 'WWW Full' app
+# profile, a stock nginx box uses 'Nginx Full', others a plain port rule. Each
+# also has separate v4 and v6 entries, so one delete per name is not enough.
+#
+# The retry is bounded and keys off ufw's own "could not delete" message rather
+# than looping on `ufw status | grep`: on a re-run the Cloudflare rules added
+# below render as "80,443/tcp", which contains "443/tcp" as a substring, so a
+# status-driven loop would never terminate — a hung monthly cron job.
+for rule in 'Nginx Full' 'WWW Full' 'WWW' 'WWW Secure' 80/tcp 443/tcp; do
+  for _ in 1 2 3 4; do
+    ufw --force delete allow "$rule" 2>&1 |
+      grep -qiE 'could not delete|non-existent' && break
+  done
+done
 
 echo "[*] Allowing 80/443 from Cloudflare only…"
 while read -r cidr; do
@@ -42,6 +52,21 @@ while read -r cidr; do
   ufw allow proto tcp from "$cidr" to any port 80,443 comment 'Cloudflare' >/dev/null
 done <<<"$v4
 $v6"
+
+# Catch the failure mode this script was written for: if a blanket rule survives
+# (an app profile under a name not covered above), the Cloudflare rules are
+# merely additive and the origin stays open to the world — silently. Fail loud.
+echo "[*] Verifying no blanket HTTP/HTTPS rule survived…"
+# Anchored, with \b, so an unrelated 8080 rule doesn't trip this.
+leftover=$(ufw status | grep -iE '(^|[[:space:]])(80\b|443\b|WWW|Nginx|Apache)' |
+  grep -E 'Anywhere' || true)
+if [ -n "$leftover" ]; then
+  echo "[!] A blanket HTTP/HTTPS rule is still present — the origin remains" >&2
+  echo "    reachable directly, bypassing Cloudflare:" >&2
+  echo "$leftover" >&2
+  echo "    Remove it by number with: ufw status numbered && ufw delete <n>" >&2
+  exit 1
+fi
 
 echo "[*] Done. Current rules:"
 ufw status numbered | grep -E 'Cloudflare|OpenSSH|22' || true
