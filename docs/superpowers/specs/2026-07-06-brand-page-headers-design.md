@@ -9,12 +9,12 @@
 Audit der öffentlichen Seiten gegen PRODUCT.md / DESIGN.md ergab vier
 konkurrierende Page-Header-Behandlungen, davon drei Template-Reflexe:
 
-| Muster | Seiten | Problem |
-| --- | --- | --- |
-| Zentriertes Gross-Icon über Titel | Contact, Impressum, Datenschutz, Events, Sponsors | "Icon-über-Heading"-Template-Optik, Icon ist reine Deko |
-| Icon im `h1` inline | Team | Vermischt Deko und Typo, bricht die Display-Hierarchie |
-| Ganzer Titel als `gradient-text` | Events, Sponsors, Dienstleistungen, Gönnermitglieder, Admin-Dashboard | Verstösst gegen DESIGN.md: gradient-text ist für Brand-Wörter reserviert, nicht für Seitentitel |
-| Pill-Badge + gradient-Titel | Dienstleistungen | Pill ist richtig (Brand-Vokabular), Gradient nicht |
+| Muster                            | Seiten                                                                | Problem                                                                                         |
+| --------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Zentriertes Gross-Icon über Titel | Contact, Impressum, Datenschutz, Events, Sponsors                     | "Icon-über-Heading"-Template-Optik, Icon ist reine Deko                                         |
+| Icon im `h1` inline               | Team                                                                  | Vermischt Deko und Typo, bricht die Display-Hierarchie                                          |
+| Ganzer Titel als `gradient-text`  | Events, Sponsors, Dienstleistungen, Gönnermitglieder, Admin-Dashboard | Verstösst gegen DESIGN.md: gradient-text ist für Brand-Wörter reserviert, nicht für Seitentitel |
+| Pill-Badge + gradient-Titel       | Dienstleistungen                                                      | Pill ist richtig (Brand-Vokabular), Gradient nicht                                              |
 
 Zusätzlich: Impressum/Datenschutz wiederholen den Seitentitel als
 `CardTitle` direkt unter dem `h1` (doppelte Überschrift) und verpacken
@@ -43,15 +43,15 @@ das das bestehende Brand-Vokabular wiederverwendet statt neues zu erfinden:
 
 ## Anwendung
 
-| Seite | Kicker (Stimme) | Titel | Weitere Änderungen |
-| --- | --- | --- | --- |
-| Team | "Der Verein" (primary, Users-Icon) | Unser **Team** | Admin-Dialog-Trigger in Actions-Slot |
-| Events | "Rückblick" (primary, Calendar-Icon) | Events & **Fotos** | Gross-Icon-Kreis entfernt, Gradient ersetzt |
-| Sponsors | "Unsere Partner" (coral, Heart-Icon) | Unsere **Sponsoren** | Admin-Button in Actions-Slot, Gradient ersetzt |
-| Contact | "Kontakt" (primary, Mail-Icon) | Schreib uns | Gross-Icon entfernt |
-| Dienstleistungen | "Vermietung · DJ · Fotografie" (primary, Package-Icon) | Dienstleistungen | Gradient ersetzt |
-| Impressum | "Rechtliches" (primary) | Impressum | Doppelte CardTitle entfernt, Card-Chrome durch typografische Spalte ersetzt |
-| Datenschutz | "Rechtliches" (primary) | Datenschutzerklärung | dito |
+| Seite            | Kicker (Stimme)                                        | Titel                | Weitere Änderungen                                                          |
+| ---------------- | ------------------------------------------------------ | -------------------- | --------------------------------------------------------------------------- |
+| Team             | "Der Verein" (primary, Users-Icon)                     | Unser **Team**       | Admin-Dialog-Trigger in Actions-Slot                                        |
+| Events           | "Rückblick" (primary, Calendar-Icon)                   | Events & **Fotos**   | Gross-Icon-Kreis entfernt, Gradient ersetzt                                 |
+| Sponsors         | "Unsere Partner" (coral, Heart-Icon)                   | Unsere **Sponsoren** | Admin-Button in Actions-Slot, Gradient ersetzt                              |
+| Contact          | "Kontakt" (primary, Mail-Icon)                         | Schreib uns          | Gross-Icon entfernt                                                         |
+| Dienstleistungen | "Vermietung · DJ · Fotografie" (primary, Package-Icon) | Dienstleistungen     | Gradient ersetzt                                                            |
+| Impressum        | "Rechtliches" (primary)                                | Impressum            | Doppelte CardTitle entfernt, Card-Chrome durch typografische Spalte ersetzt |
+| Datenschutz      | "Rechtliches" (primary)                                | Datenschutzerklärung | dito                                                                        |
 
 **Ein-Zeilen-Fixes (Product-Surfaces, keine PageHeader-Migration):**
 

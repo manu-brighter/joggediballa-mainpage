@@ -2,113 +2,113 @@
 name: Jogge di Balla
 description: Vereinswebsite — frech, energisch, selbstbewusst.
 colors:
-  primary: "oklch(0.55 0.140 195)"
-  primary-foreground: "oklch(1.00 0.000 0)"
-  coral: "oklch(0.68 0.180 18)"
-  coral-foreground: "oklch(1.00 0.000 0)"
-  background: "oklch(0.99 0.002 250)"
-  foreground: "oklch(0.18 0.012 260)"
-  card: "oklch(1.00 0.000 0)"
-  muted: "oklch(0.96 0.005 250)"
-  muted-foreground: "oklch(0.50 0.020 260)"
-  border: "oklch(0.90 0.010 250)"
-  ring: "oklch(0.55 0.140 195)"
-  destructive: "oklch(0.55 0.22 25)"
-  warning: "oklch(0.80 0.15 85)"
-  pending: "oklch(0.70 0.17 50)"
-  success: "oklch(0.65 0.15 145)"
-  gold: "oklch(0.78 0.16 86)"
-  background-dark: "oklch(0.13 0.015 260)"
-  foreground-dark: "oklch(0.99 0.002 250)"
-  card-dark: "oklch(0.16 0.015 260)"
-  primary-dark: "oklch(0.70 0.120 195)"
-  coral-dark: "oklch(0.74 0.160 18)"
+  primary: 'oklch(0.55 0.140 195)'
+  primary-foreground: 'oklch(1.00 0.000 0)'
+  coral: 'oklch(0.68 0.180 18)'
+  coral-foreground: 'oklch(1.00 0.000 0)'
+  background: 'oklch(0.99 0.002 250)'
+  foreground: 'oklch(0.18 0.012 260)'
+  card: 'oklch(1.00 0.000 0)'
+  muted: 'oklch(0.96 0.005 250)'
+  muted-foreground: 'oklch(0.50 0.020 260)'
+  border: 'oklch(0.90 0.010 250)'
+  ring: 'oklch(0.55 0.140 195)'
+  destructive: 'oklch(0.55 0.22 25)'
+  warning: 'oklch(0.80 0.15 85)'
+  pending: 'oklch(0.70 0.17 50)'
+  success: 'oklch(0.65 0.15 145)'
+  gold: 'oklch(0.78 0.16 86)'
+  background-dark: 'oklch(0.13 0.015 260)'
+  foreground-dark: 'oklch(0.99 0.002 250)'
+  card-dark: 'oklch(0.16 0.015 260)'
+  primary-dark: 'oklch(0.70 0.120 195)'
+  coral-dark: 'oklch(0.74 0.160 18)'
 typography:
   display:
-    fontFamily: "Inter Variable, system-ui, -apple-system, sans-serif"
-    fontSize: "clamp(2.25rem, 5vw, 3.75rem)"
+    fontFamily: 'Inter Variable, system-ui, -apple-system, sans-serif'
+    fontSize: 'clamp(2.25rem, 5vw, 3.75rem)'
     fontWeight: 800
     lineHeight: 1.05
-    letterSpacing: "-0.02em"
+    letterSpacing: '-0.02em'
     fontFeature: "'cv11', 'ss01', 'ss03'"
   headline:
-    fontFamily: "Inter Variable, system-ui, sans-serif"
-    fontSize: "clamp(1.5rem, 3vw, 2.25rem)"
+    fontFamily: 'Inter Variable, system-ui, sans-serif'
+    fontSize: 'clamp(1.5rem, 3vw, 2.25rem)'
     fontWeight: 700
     lineHeight: 1.15
-    letterSpacing: "-0.015em"
+    letterSpacing: '-0.015em'
   title:
-    fontFamily: "Inter Variable, system-ui, sans-serif"
-    fontSize: "1.125rem"
+    fontFamily: 'Inter Variable, system-ui, sans-serif'
+    fontSize: '1.125rem'
     fontWeight: 600
     lineHeight: 1.3
   body:
-    fontFamily: "Inter Variable, system-ui, sans-serif"
-    fontSize: "0.875rem"
+    fontFamily: 'Inter Variable, system-ui, sans-serif'
+    fontSize: '0.875rem'
     fontWeight: 400
     lineHeight: 1.55
   label:
-    fontFamily: "Inter Variable, system-ui, sans-serif"
-    fontSize: "0.75rem"
+    fontFamily: 'Inter Variable, system-ui, sans-serif'
+    fontSize: '0.75rem'
     fontWeight: 500
     lineHeight: 1.4
-    letterSpacing: "0.02em"
+    letterSpacing: '0.02em'
 rounded:
-  sm: "0.5rem"
-  md: "0.625rem"
-  lg: "0.75rem"
-  xl: "1rem"
+  sm: '0.5rem'
+  md: '0.625rem'
+  lg: '0.75rem'
+  xl: '1rem'
 spacing:
-  xs: "0.25rem"
-  sm: "0.5rem"
-  md: "1rem"
-  lg: "1.5rem"
-  xl: "2rem"
-  2xl: "3rem"
+  xs: '0.25rem'
+  sm: '0.5rem'
+  md: '1rem'
+  lg: '1.5rem'
+  xl: '2rem'
+  2xl: '3rem'
 components:
   button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.primary-foreground}"
-    rounded: "{rounded.md}"
-    padding: "0.5rem 1rem"
-    height: "2.25rem"
+    backgroundColor: '{colors.primary}'
+    textColor: '{colors.primary-foreground}'
+    rounded: '{rounded.md}'
+    padding: '0.5rem 1rem'
+    height: '2.25rem'
   button-primary-hover:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.primary-foreground}"
+    backgroundColor: '{colors.primary}'
+    textColor: '{colors.primary-foreground}'
   button-coral:
-    backgroundColor: "{colors.coral}"
-    textColor: "{colors.coral-foreground}"
-    rounded: "{rounded.md}"
-    padding: "0.5rem 1rem"
-    height: "2.25rem"
+    backgroundColor: '{colors.coral}'
+    textColor: '{colors.coral-foreground}'
+    rounded: '{rounded.md}'
+    padding: '0.5rem 1rem'
+    height: '2.25rem'
   button-outline:
-    backgroundColor: "transparent"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.md}"
-    padding: "0.5rem 1rem"
-    height: "2.25rem"
+    backgroundColor: 'transparent'
+    textColor: '{colors.foreground}'
+    rounded: '{rounded.md}'
+    padding: '0.5rem 1rem'
+    height: '2.25rem'
   button-ghost:
-    backgroundColor: "transparent"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.md}"
-    padding: "0.5rem 1rem"
-    height: "2.25rem"
+    backgroundColor: 'transparent'
+    textColor: '{colors.foreground}'
+    rounded: '{rounded.md}'
+    padding: '0.5rem 1rem'
+    height: '2.25rem'
   card:
-    backgroundColor: "{colors.card}"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.xl}"
-    padding: "1.5rem"
+    backgroundColor: '{colors.card}'
+    textColor: '{colors.foreground}'
+    rounded: '{rounded.xl}'
+    padding: '1.5rem'
   input:
-    backgroundColor: "transparent"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.md}"
-    padding: "0.25rem 0.75rem"
-    height: "2.25rem"
+    backgroundColor: 'transparent'
+    textColor: '{colors.foreground}'
+    rounded: '{rounded.md}'
+    padding: '0.25rem 0.75rem'
+    height: '2.25rem'
   badge:
-    backgroundColor: "{colors.muted}"
-    textColor: "{colors.foreground}"
-    rounded: "{rounded.md}"
-    padding: "0.125rem 0.5rem"
+    backgroundColor: '{colors.muted}'
+    textColor: '{colors.foreground}'
+    rounded: '{rounded.md}'
+    padding: '0.125rem 0.5rem'
 ---
 
 # Design System: Jogge di Balla
@@ -315,7 +315,7 @@ Eigene Brand-Tokens werden in die shadcn-Vocabulary eingebettet (`--coral`,
 - **Default Font-Size:** `text-base` (1rem) auf Mobile, `md:text-sm` ab Breakpoint.
 - **Focus:** `border-ring` + `ring-ring/50 ring-[3px]` (gleicher Style wie Button).
 - **Error:** `aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40
-  aria-invalid:border-destructive`.
+aria-invalid:border-destructive`.
 
 ### Navigation
 
@@ -339,9 +339,10 @@ Eigene Brand-Tokens werden in die shadcn-Vocabulary eingebettet (`--coral`,
 ### Beamer-Mode
 
 Fullscreen-Overlay auf dem Shotcounter (`.beamer-mode`). Versteckt Navigation
-+ Footer. Hintergrund: `var(--background)`. Auto-Exit auf Route-Change oder
-Escape. Scrollbar visuell entfernt (Inhalt bleibt scrollbar). Distinct vom
-regulären Shotcounter-Layout — größere Typo, mehr Whitespace.
+
+- Footer. Hintergrund: `var(--background)`. Auto-Exit auf Route-Change oder
+  Escape. Scrollbar visuell entfernt (Inhalt bleibt scrollbar). Distinct vom
+  regulären Shotcounter-Layout — größere Typo, mehr Whitespace.
 
 ## 6. Do's and Don'ts
 

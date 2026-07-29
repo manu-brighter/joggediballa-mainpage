@@ -101,7 +101,8 @@ export function AttendanceSessionCard({
           <Badge
             variant={session.type === 'event' ? 'default' : 'secondary'}
             className={cn(
-              session.type === 'event' && 'bg-primary text-primary-foreground hover:bg-primary/90',
+              session.type === 'event' &&
+                'bg-primary text-primary-foreground hover:bg-primary/90',
             )}
           >
             {session.type === 'event' ? 'Event' : 'Meeting'}

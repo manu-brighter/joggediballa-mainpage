@@ -81,52 +81,59 @@ describe('shotcounter', () => {
     expect(typeof result.teamId).toBe('number');
   });
 
-  it.skipIf(skipIntegration)('allows maintainers to update team scores', async () => {
-    const ctx = createMaintainerContext();
-    const caller = appRouter.createCaller(ctx);
+  it.skipIf(skipIntegration)(
+    'allows maintainers to update team scores',
+    async () => {
+      const ctx = createMaintainerContext();
+      const caller = appRouter.createCaller(ctx);
 
-    // First create a team
-    const createResult = await caller.shotcounter.createTeam({
-      name: 'Score Test Team',
-      year: 2026,
-    });
+      // First create a team
+      const createResult = await caller.shotcounter.createTeam({
+        name: 'Score Test Team',
+        year: 2026,
+      });
 
-    // Then update its score
-    const updateResult = await caller.shotcounter.updateScore({
-      teamId: Number(createResult.teamId),
-      amount: 5,
-    });
+      // Then update its score
+      const updateResult = await caller.shotcounter.updateScore({
+        teamId: Number(createResult.teamId),
+        amount: 5,
+      });
 
-    expect(updateResult.success).toBe(true);
-    expect(updateResult.newScore).toBe(5);
-  });
+      expect(updateResult.success).toBe(true);
+      expect(updateResult.newScore).toBe(5);
+    },
+  );
 
-  it.skipIf(skipIntegration)('creates audit log entries when scores are updated', async () => {
-    const ctx = createMaintainerContext();
-    const caller = appRouter.createCaller(ctx);
+  it.skipIf(skipIntegration)(
+    'creates audit log entries when scores are updated',
+    async () => {
+      const ctx = createMaintainerContext();
+      const caller = appRouter.createCaller(ctx);
 
-    // Create a team
-    const createResult = await caller.shotcounter.createTeam({
-      name: 'Audit Test Team',
-      year: 2026,
-    });
+      // Create a team
+      const createResult = await caller.shotcounter.createTeam({
+        name: 'Audit Test Team',
+        year: 2026,
+      });
 
-    // Update score
-    await caller.shotcounter.updateScore({
-      teamId: Number(createResult.teamId),
-      amount: 3,
-    });
+      // Update score
+      await caller.shotcounter.updateScore({
+        teamId: Number(createResult.teamId),
+        amount: 3,
+      });
 
-    // Check audit log - filter by the specific team we created and action type
-    const auditLogs = await caller.shotcounter.getAuditLog({ limit: 50 });
-    expect(auditLogs.length).toBeGreaterThan(0);
+      // Check audit log - filter by the specific team we created and action type
+      const auditLogs = await caller.shotcounter.getAuditLog({ limit: 50 });
+      expect(auditLogs.length).toBeGreaterThan(0);
 
-    // Find the audit log entry for our specific team's score update (not create_team)
-    const teamAuditLog = auditLogs.find(
-      log => log.teamId === Number(createResult.teamId) && log.action === 'add',
-    );
-    expect(teamAuditLog).toBeDefined();
-    expect(teamAuditLog!.action).toBe('add');
-    expect(teamAuditLog!.amount).toBe(3);
-  });
+      // Find the audit log entry for our specific team's score update (not create_team)
+      const teamAuditLog = auditLogs.find(
+        log =>
+          log.teamId === Number(createResult.teamId) && log.action === 'add',
+      );
+      expect(teamAuditLog).toBeDefined();
+      expect(teamAuditLog!.action).toBe('add');
+      expect(teamAuditLog!.amount).toBe(3);
+    },
+  );
 });

@@ -39,13 +39,16 @@ export function registerGoogleAuthRoutes(app: Express) {
   app.use((req, _res, next) => {
     const session = req.session as unknown as Record<string, unknown> | null;
     if (session) {
-      if (typeof (session as { regenerate?: unknown }).regenerate !== 'function') {
-        (session as { regenerate: (cb: (err?: unknown) => void) => void }).regenerate =
-          cb => cb();
+      if (
+        typeof (session as { regenerate?: unknown }).regenerate !== 'function'
+      ) {
+        (
+          session as { regenerate: (cb: (err?: unknown) => void) => void }
+        ).regenerate = cb => cb();
       }
       if (typeof (session as { save?: unknown }).save !== 'function') {
-        (session as { save: (cb: (err?: unknown) => void) => void }).save = cb =>
-          cb();
+        (session as { save: (cb: (err?: unknown) => void) => void }).save =
+          cb => cb();
       }
     }
     next();
@@ -65,13 +68,10 @@ export function registerGoogleAuthRoutes(app: Express) {
     '/api/auth/google',
     // passport-google-oauth20@2 types don't expose `state: true`, but the
     // underlying OAuth2 strategy honors it. Cast through unknown to opt in.
-    passport.authenticate(
-      'google',
-      {
-        scope: ['profile', 'email'],
-        state: true,
-      } as unknown as { scope: string[] },
-    ),
+    passport.authenticate('google', {
+      scope: ['profile', 'email'],
+      state: true,
+    } as unknown as { scope: string[] }),
   );
 
   /**

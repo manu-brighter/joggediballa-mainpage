@@ -389,7 +389,11 @@ export default function Profile() {
       case 'admin':
         return <Badge variant="destructive">Admin</Badge>;
       case 'maintainer':
-        return <Badge className="bg-primary text-primary-foreground">Maintainer</Badge>;
+        return (
+          <Badge className="bg-primary text-primary-foreground">
+            Maintainer
+          </Badge>
+        );
       case 'editor':
         return (
           <Badge className="bg-success text-success-foreground">Editor</Badge>

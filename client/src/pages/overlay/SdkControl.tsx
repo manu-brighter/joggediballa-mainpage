@@ -429,9 +429,7 @@ export default function SdkControl() {
           <Card
             className={cn(
               'border-2 transition-all duration-500',
-              hasWinner
-                ? 'border-gold/50 bg-gold/5'
-                : 'border-primary/30',
+              hasWinner ? 'border-gold/50 bg-gold/5' : 'border-primary/30',
             )}
           >
             <CardHeader className="pb-3">

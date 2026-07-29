@@ -135,7 +135,7 @@ export function CookieConsentBanner({
                     type="checkbox"
                     id="analytics"
                     checked={customAnalytics}
-                    onChange={(e) => setCustomAnalytics(e.target.checked)}
+                    onChange={e => setCustomAnalytics(e.target.checked)}
                     className="mt-1 cursor-pointer rounded accent-primary"
                   />
                   <div className="flex-1">
@@ -158,7 +158,7 @@ export function CookieConsentBanner({
                     type="checkbox"
                     id="marketing"
                     checked={customMarketing}
-                    onChange={(e) => setCustomMarketing(e.target.checked)}
+                    onChange={e => setCustomMarketing(e.target.checked)}
                     className="mt-1 cursor-pointer rounded accent-primary"
                   />
                   <div className="flex-1">

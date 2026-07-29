@@ -23,7 +23,10 @@ for (const path of STATIC_ROUTES) {
     page,
   }) => {
     const response = await page.goto(path);
-    expect(response?.status(), `${path} returned ${response?.status()}`).toBeLessThan(400);
+    expect(
+      response?.status(),
+      `${path} returned ${response?.status()}`,
+    ).toBeLessThan(400);
     // SPA shell — Vite injects #root or similar; the title gets set via React
     await expect(page.locator('#root')).toBeAttached();
   });

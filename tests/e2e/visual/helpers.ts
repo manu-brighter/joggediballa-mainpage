@@ -80,6 +80,7 @@ export async function forceInViewAnimations(page: Page): Promise<void> {
         this.__cb([entry], this as unknown as IntersectionObserver);
       }
     }
-    window.IntersectionObserver = ImmediateIO as unknown as typeof IntersectionObserver;
+    window.IntersectionObserver =
+      ImmediateIO as unknown as typeof IntersectionObserver;
   });
 }

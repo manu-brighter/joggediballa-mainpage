@@ -13,7 +13,10 @@ import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useCookieConsent } from '@/_core/hooks/useCookieConsent';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
-import { loadGoogleAnalyticsScript, disableGoogleAnalytics } from '@/_core/googleAnalytics';
+import {
+  loadGoogleAnalyticsScript,
+  disableGoogleAnalytics,
+} from '@/_core/googleAnalytics';
 
 // C-P0-01: Route-level code splitting. Every page below is lazy-loaded so the
 // initial bundle only carries the shell + Home (eagerly imported as the
@@ -114,7 +117,14 @@ function AppContent() {
   const [isBeamerMode, setBeamerMode] = useState(false);
   const [location] = useLocation();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { consent, showBanner, isLoaded, acceptAll, rejectAll, setCustomConsent } = useCookieConsent();
+  const {
+    consent,
+    showBanner,
+    isLoaded,
+    acceptAll,
+    rejectAll,
+    setCustomConsent,
+  } = useCookieConsent();
 
   // Load Google Analytics based on consent
   useEffect(() => {

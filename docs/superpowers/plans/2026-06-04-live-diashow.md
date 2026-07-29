@@ -17,6 +17,7 @@
 ## File Structure
 
 **Neu:**
+
 - `client/src/pages/diashow/Diashow.tsx` — Fullscreen-Slideshow.
 - `client/src/pages/diashow/DiashowUpload.tsx` — Mobile Gäste-Upload.
 - `client/src/pages/diashow/DiashowControl.tsx` — Maintainer-Control.
@@ -24,6 +25,7 @@
 - `server/slideshow.test.ts` — Vitest (createCaller).
 
 **Geändert:**
+
 - `drizzle/schema.ts` — Tabellen `slideshowPhotos`, `slideshowSettings`.
 - `server/db.ts` — Helper für beide Tabellen.
 - `server/permissions.ts` — Permission-Key `manage_slideshow`.
@@ -66,6 +68,7 @@ git commit -m "chore: add browser-image-compression + qrcode.react for live slid
 ### Task 1: Schema — `slideshowPhotos` + `slideshowSettings`
 
 **Files:**
+
 - Modify: `drizzle/schema.ts` (ans Ende anfügen, vor evtl. abschließenden Exports)
 
 - [ ] **Step 1: Tabellen + Typen ergänzen**
@@ -155,6 +158,7 @@ git commit -m "feat: add slideshow_photos + slideshow_settings schema"
 ### Task 2: DB-Helper in `server/db.ts`
 
 **Files:**
+
 - Modify: `server/db.ts` (Imports erweitern; Helper-Block am Ende anhängen)
 
 - [ ] **Step 1: Imports erweitern**
@@ -365,6 +369,7 @@ git commit -m "feat: add slideshow db helpers"
 ### Task 3: Permission-Key `manage_slideshow`
 
 **Files:**
+
 - Modify: `server/permissions.ts` (PERMISSION_KEYS)
 - Modify: `server/db.ts` (`initializeDefaultPermissions` defaultPermissions-Array)
 - Modify: `client/src/pages/admin/Dashboard.tsx` (PERMISSIONS-Array)
@@ -417,6 +422,7 @@ git commit -m "feat: add manage_slideshow permission key"
 ```
 
 > **Deploy-Hinweis (nicht Teil der Tasks):** Auf der bestehenden Prod-DB wird der Key NICHT automatisch geseedet (`initializeDefaultPermissions` läuft nur bei leerer Tabelle). Nach Deploy einmalig im Admin-Dashboard → Berechtigungen für `admin` + `maintainer` aktivieren. SQL-Alternative:
+>
 > ```sql
 > INSERT INTO role_permissions (permissionKey, role) VALUES
 >   ('manage_slideshow','admin'), ('manage_slideshow','maintainer');
@@ -431,6 +437,7 @@ git commit -m "feat: add manage_slideshow permission key"
 ### Task 4: Router-Skeleton + `publicState` + `listApproved` (TDD)
 
 **Files:**
+
 - Modify: `server/routers.ts` (Imports, neuer `slideshow`-Namespace in `appRouter`)
 - Test: `server/slideshow.test.ts`
 
@@ -444,7 +451,9 @@ import { appRouter } from './routers';
 import type { TrpcContext } from './_core/context';
 import * as db from './db';
 
-function ctx(role: 'admin' | 'maintainer' | 'editor' | 'visitor' | null): TrpcContext {
+function ctx(
+  role: 'admin' | 'maintainer' | 'editor' | 'visitor' | null,
+): TrpcContext {
   const user =
     role === null
       ? null
@@ -473,14 +482,18 @@ function ctx(role: 'admin' | 'maintainer' | 'editor' | 'visitor' | null): TrpcCo
 describe('slideshow.publicState', () => {
   it('returns valid:false for a wrong token', async () => {
     const caller = appRouter.createCaller(ctx(null));
-    const state = await caller.slideshow.publicState({ token: 'definitely-wrong' });
+    const state = await caller.slideshow.publicState({
+      token: 'definitely-wrong',
+    });
     expect(state.valid).toBe(false);
   });
 
   it('returns valid:true for the correct token', async () => {
     const settings = await db.getSlideshowSettings();
     const caller = appRouter.createCaller(ctx(null));
-    const state = await caller.slideshow.publicState({ token: settings.uploadToken });
+    const state = await caller.slideshow.publicState({
+      token: settings.uploadToken,
+    });
     expect(state.valid).toBe(true);
     expect(typeof state.photoVersion).toBe('number');
   });
@@ -578,6 +591,7 @@ git commit -m "feat: add slideshow public tRPC procedures (publicState, listAppr
 ### Task 5: Maintainer-Procedures — Settings + Listen (TDD)
 
 **Files:**
+
 - Modify: `server/routers.ts` (`slideshow`-Namespace erweitern)
 - Test: `server/slideshow.test.ts`
 
@@ -599,7 +613,9 @@ describe('slideshow maintainer access', () => {
 
   it('updateSettings persists eventTitle for maintainer', async () => {
     const caller = appRouter.createCaller(ctx('maintainer'));
-    await caller.slideshow.updateSettings({ eventTitle: 'Jogge di Balla 2026' });
+    await caller.slideshow.updateSettings({
+      eventTitle: 'Jogge di Balla 2026',
+    });
     const s = await caller.slideshow.getSettings();
     expect(s.eventTitle).toBe('Jogge di Balla 2026');
   });
@@ -702,6 +718,7 @@ git commit -m "feat: add slideshow settings/list tRPC procedures + rotateToken"
 ### Task 6: Moderation-Mutations — approve/reject/delete/clear (TDD)
 
 **Files:**
+
 - Modify: `server/routers.ts` (`slideshow`-Namespace erweitern)
 - Test: `server/slideshow.test.ts`
 
@@ -860,6 +877,7 @@ git commit -m "feat: add slideshow moderation mutations (approve/reject/delete/c
 ### Task 7: `POST /api/upload/slideshow-photo`
 
 **Files:**
+
 - Modify: `server/uploadRoutes.ts`
 
 - [ ] **Step 1: Imports erweitern**
@@ -933,14 +951,14 @@ router.post(
         return;
       }
       if (!req.file) {
-        res.status(400).json({ error: 'No file provided (field name: "file")' });
+        res
+          .status(400)
+          .json({ error: 'No file provided (field name: "file")' });
         return;
       }
       const sniffed = await sniffImage(req.file.buffer);
       if (!sniffed) {
-        res
-          .status(415)
-          .json({ error: 'Ungültiges Bild (nur JPEG/PNG/WebP)' });
+        res.status(415).json({ error: 'Ungültiges Bild (nur JPEG/PNG/WebP)' });
         return;
       }
 
@@ -1029,6 +1047,7 @@ git commit -m "feat: add public token-gated slideshow upload route"
 ### Task 8: `App.tsx` — Bare-Route-Refactor + Routen + lazy Pages
 
 **Files:**
+
 - Modify: `client/src/App.tsx`
 
 - [ ] **Step 1: Lazy-Imports ergänzen**
@@ -1061,7 +1080,7 @@ function getLayoutMode(location: string): LayoutMode {
 In `AppContent` die Zeile `const isOverlayRoute = OVERLAY_ROUTES.some(r => location === r);` ersetzen durch:
 
 ```typescript
-  const layoutMode = getLayoutMode(location);
+const layoutMode = getLayoutMode(location);
 ```
 
 Und den bestehenden `if (isOverlayRoute) { ... }`-Block ersetzen durch:
@@ -1102,6 +1121,7 @@ Im `Router()`-`<Switch>`, nach den SDK-Overlay-Routen und **vor** der `/404`-Rou
 Drei minimale Stub-Komponenten anlegen, damit `pnpm check` durchläuft (werden in Phase 5–7 ausgefüllt):
 
 `client/src/pages/diashow/Diashow.tsx`:
+
 ```tsx
 export default function Diashow() {
   return <div className="min-h-screen bg-black" />;
@@ -1109,6 +1129,7 @@ export default function Diashow() {
 ```
 
 `client/src/pages/diashow/DiashowUpload.tsx`:
+
 ```tsx
 export default function DiashowUpload() {
   return <div className="min-h-screen" />;
@@ -1116,6 +1137,7 @@ export default function DiashowUpload() {
 ```
 
 `client/src/pages/diashow/DiashowControl.tsx`:
+
 ```tsx
 export default function DiashowControl() {
   return <div className="min-h-screen" />;
@@ -1142,6 +1164,7 @@ git commit -m "feat: add /diashow routes + bare-route layout mode"
 ### Task 9: `DiashowUpload.tsx` (mobile-first)
 
 **Files:**
+
 - Modify: `client/src/pages/diashow/DiashowUpload.tsx`
 
 - [ ] **Step 1: Vollständige Implementierung**
@@ -1298,8 +1321,8 @@ export default function DiashowUpload() {
 
           {contributed > 0 && (
             <p className="text-sm font-medium mt-4">
-              Du hast {contributed}{' '}
-              {contributed === 1 ? 'Foto' : 'Fotos'} beigesteuert 🎉
+              Du hast {contributed} {contributed === 1 ? 'Foto' : 'Fotos'}{' '}
+              beigesteuert 🎉
             </p>
           )}
 
@@ -1365,6 +1388,7 @@ git commit -m "feat: add mobile guest upload page for live slideshow"
 ### Task 10: `DiashowControl.tsx` (maintainer+)
 
 **Files:**
+
 - Modify: `client/src/pages/diashow/DiashowControl.tsx`
 
 - [ ] **Step 1: Vollständige Implementierung**
@@ -1417,10 +1441,13 @@ export default function DiashowControl() {
     enabled: canManage,
     refetchInterval: 5000,
   });
-  const { data: pending = [] } = trpc.slideshow.listPending.useQuery(undefined, {
-    enabled: canManage,
-    refetchInterval: 3000,
-  });
+  const { data: pending = [] } = trpc.slideshow.listPending.useQuery(
+    undefined,
+    {
+      enabled: canManage,
+      refetchInterval: 3000,
+    },
+  );
   const { data: all = [] } = trpc.slideshow.listAll.useQuery(undefined, {
     enabled: canManage,
     refetchInterval: 15000,
@@ -1564,7 +1591,9 @@ export default function DiashowControl() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="kenburns">Ken-Burns (verspielt)</SelectItem>
+                  <SelectItem value="kenburns">
+                    Ken-Burns (verspielt)
+                  </SelectItem>
                   <SelectItem value="fade">Fade (ruhig)</SelectItem>
                 </SelectContent>
               </Select>
@@ -1579,7 +1608,9 @@ export default function DiashowControl() {
                 min={1}
                 defaultValue={settings.maxPhotos}
                 onBlur={e =>
-                  update.mutate({ maxPhotos: Math.max(1, Number(e.target.value)) })
+                  update.mutate({
+                    maxPhotos: Math.max(1, Number(e.target.value)),
+                  })
                 }
               />
             </div>
@@ -1719,7 +1750,9 @@ export default function DiashowControl() {
       {/* Album */}
       <Card>
         <CardHeader>
-          <CardTitle>Album ({all.filter(p => p.status === 'approved').length})</CardTitle>
+          <CardTitle>
+            Album ({all.filter(p => p.status === 'approved').length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -1813,6 +1846,7 @@ git commit -m "feat: add maintainer slideshow control panel"
 ### Task 11: Layout-Engine `slideshow-layout.ts` (reine Funktion)
 
 **Files:**
+
 - Create: `client/src/lib/slideshow-layout.ts`
 
 - [ ] **Step 1: Reine Layout-Funktion**
@@ -1894,6 +1928,7 @@ git commit -m "feat: add slideshow layout engine (buildSlides)"
 ### Task 12: `Diashow.tsx` — Fullscreen-Bühne
 
 **Files:**
+
 - Modify: `client/src/pages/diashow/Diashow.tsx`
 
 - [ ] **Step 1: Vollständige Implementierung**
@@ -1969,7 +2004,11 @@ export default function Diashow() {
 
   const { data: state } = trpc.slideshow.publicState.useQuery(
     { token: token ?? '' },
-    { refetchInterval: 3000, refetchIntervalInBackground: true, enabled: !!token },
+    {
+      refetchInterval: 3000,
+      refetchIntervalInBackground: true,
+      enabled: !!token,
+    },
   );
 
   const utils = trpc.useUtils();
@@ -2121,6 +2160,7 @@ Expected: PASS.
 - [ ] **Step 3: Manuelle Verifikation (Kernstück — live iterieren)**
 
 Dev-Server. Mehrere Fotos hochladen + freigeben (Control). `/diashow/<TOKEN>` öffnen:
+
 - Querformat solo mit unscharfem Backdrop + Ken-Burns; mehrere Hochformate nebeneinander.
 - Neues freigegebenes Foto erscheint in ~1–3s mit „✨ Gerade hochgeladen".
 - `isVisible=false` oder 0 Fotos → Idle-Screen mit großem QR.
@@ -2151,6 +2191,7 @@ pnpm check
 pnpm format
 pnpm test server/slideshow.test.ts
 ```
+
 Expected: `check` PASS, `format` schreibt ggf. Formatierung, Tests grün (dev-DB läuft).
 
 - [ ] **Step 2: End-to-End-Durchlauf (manuell)**

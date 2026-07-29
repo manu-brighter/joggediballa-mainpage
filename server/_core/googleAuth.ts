@@ -68,7 +68,8 @@ passport.use(
           // F-SEC-016: only auto-promote to admin if Google reports the email
           // is verified. Otherwise an attacker could spoof the admin email by
           // claiming it on an unverified Google account.
-          const emailVerified = (profile as any)?._json?.email_verified === true;
+          const emailVerified =
+            (profile as any)?._json?.email_verified === true;
           if (
             email &&
             emailVerified &&

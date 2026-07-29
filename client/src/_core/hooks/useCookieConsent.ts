@@ -1,9 +1,9 @@
 /**
  * Cookie Consent Hook
- * 
+ *
  * Manages cookie consent state for revDSG compliance (Switzerland, April 2026).
  * Implements Opt-in model for Google Analytics and other tracking cookies.
- * 
+ *
  * Best Practices:
  * - Consent is stored in localStorage with explicit user choice
  * - Google Analytics only loads after explicit opt-in
@@ -36,7 +36,7 @@ export function useCookieConsent() {
   // Load consent from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
-    
+
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -54,7 +54,7 @@ export function useCookieConsent() {
       // First visit: show banner
       setShowBanner(true);
     }
-    
+
     setIsLoaded(true);
   }, []);
 
@@ -67,7 +67,7 @@ export function useCookieConsent() {
         version: CONSENT_VERSION,
         consent: newConsent,
         timestamp: new Date().toISOString(),
-      })
+      }),
     );
     setShowBanner(false);
   };

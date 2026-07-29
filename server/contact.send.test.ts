@@ -7,25 +7,28 @@ import type { TrpcContext } from './_core/context';
 const skipIntegration = !!process.env.CI;
 
 describe('contact.send', () => {
-  it.skipIf(skipIntegration)('should send contact form email successfully', async () => {
-    const mockContext: TrpcContext = {
-      user: null,
-      req: {} as any,
-      res: {} as any,
-    };
+  it.skipIf(skipIntegration)(
+    'should send contact form email successfully',
+    async () => {
+      const mockContext: TrpcContext = {
+        user: null,
+        req: {} as any,
+        res: {} as any,
+      };
 
-    const caller = appRouter.createCaller(mockContext);
+      const caller = appRouter.createCaller(mockContext);
 
-    const result = await caller.contact.send({
-      name: 'Test User',
-      email: 'test@example.com',
-      subject: 'Test Subject',
-      message:
-        'This is a test message from vitest to verify email functionality.',
-    });
+      const result = await caller.contact.send({
+        name: 'Test User',
+        email: 'test@example.com',
+        subject: 'Test Subject',
+        message:
+          'This is a test message from vitest to verify email functionality.',
+      });
 
-    expect(result).toEqual({ success: true });
-  });
+      expect(result).toEqual({ success: true });
+    },
+  );
 
   it('should fail with invalid email', async () => {
     const mockContext: TrpcContext = {

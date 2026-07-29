@@ -23,7 +23,9 @@ vi.mock('./db', async () => {
 const { appRouter } = await import('./routers');
 import type { TrpcContext } from './_core/context';
 
-function ctxWith(role: 'admin' | 'editor' | 'user' | 'visitor' | null): TrpcContext {
+function ctxWith(
+  role: 'admin' | 'editor' | 'user' | 'visitor' | null,
+): TrpcContext {
   return {
     user:
       role === null
@@ -70,9 +72,9 @@ describe('events draft lockdown (A-P0-06)', () => {
 
   it('returns NOT_FOUND for a draft event accessed anonymously by id', async () => {
     const caller = appRouter.createCaller(ctxWith(null));
-    await expect(
-      caller.events.getById({ eventId: 2 }),
-    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(caller.events.getById({ eventId: 2 })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
   });
 
   it('returns the draft event to an editor by id', async () => {

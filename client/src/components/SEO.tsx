@@ -28,9 +28,7 @@ export function SEO({
       {description && <meta name="description" content={description} />}
       {keywords && <meta name="keywords" content={keywords} />}
       {title && <meta property="og:title" content={title} />}
-      {description && (
-        <meta property="og:description" content={description} />
-      )}
+      {description && <meta property="og:description" content={description} />}
       {ogImage && <meta property="og:image" content={ogImage} />}
       {ogUrl && <meta property="og:url" content={ogUrl} />}
       {title && <meta property="twitter:title" content={title} />}

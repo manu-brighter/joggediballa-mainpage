@@ -188,8 +188,8 @@ export default function DiashowUpload() {
 
           {/* Subtiler Datenschutz-/Einwilligungshinweis am Upload-Punkt. */}
           <p className="text-[11px] leading-relaxed text-muted-foreground/70 mt-4 text-center max-w-xs">
-            Hochgeladene Fotos erscheinen öffentlich auf der Leinwand — bitte nur
-            Bilder, die du zeigen darfst.{' '}
+            Hochgeladene Fotos erscheinen öffentlich auf der Leinwand — bitte
+            nur Bilder, die du zeigen darfst.{' '}
             <a
               href="/datenschutz"
               target="_blank"

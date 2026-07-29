@@ -66,7 +66,11 @@ export default function Diashow() {
 
   const { data: state } = trpc.slideshow.publicState.useQuery(
     { token: token ?? '' },
-    { refetchInterval: 3000, refetchIntervalInBackground: true, enabled: !!token },
+    {
+      refetchInterval: 3000,
+      refetchIntervalInBackground: true,
+      enabled: !!token,
+    },
   );
 
   const utils = trpc.useUtils();
@@ -210,7 +214,11 @@ export default function Diashow() {
                     '0 0 18px oklch(0.55 0.14 195 / 0.25)',
                   ],
                 }}
-                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
                 className="max-w-4xl text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-7xl"
               >
                 {state?.valid && state.eventTitle

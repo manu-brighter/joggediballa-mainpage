@@ -66,9 +66,23 @@ function AbstractBg({ hasWinner }: { hasWinner: boolean }) {
           stroke={RED}
           strokeWidth="28"
         />
-        <line x1="30" y1="130" x2="230" y2="-10" stroke={RED} strokeWidth="14" />
+        <line
+          x1="30"
+          y1="130"
+          x2="230"
+          y2="-10"
+          stroke={RED}
+          strokeWidth="14"
+        />
         <line x1="80" y1="130" x2="280" y2="-10" stroke={RED} strokeWidth="8" />
-        <line x1="120" y1="130" x2="320" y2="-10" stroke={RED} strokeWidth="4" />
+        <line
+          x1="120"
+          y1="130"
+          x2="320"
+          y2="-10"
+          stroke={RED}
+          strokeWidth="4"
+        />
       </g>
 
       {/* ── Right side speed lines (blue tint) ── */}
@@ -644,11 +658,12 @@ export default function SdkOverlay() {
                   fontWeight: 800,
                   letterSpacing: '3px',
                   textTransform: 'uppercase',
-                  color: p1Matchpoint && p2Matchpoint
-                    ? '#f97316'
-                    : p1Matchpoint
-                      ? RED
-                      : BLUE,
+                  color:
+                    p1Matchpoint && p2Matchpoint
+                      ? '#f97316'
+                      : p1Matchpoint
+                        ? RED
+                        : BLUE,
                   lineHeight: 1,
                   textShadow: '0 0 10px rgba(249,115,22,0.65)',
                   animation: 'sdk-matchpoint-pulse 1.4s ease-in-out infinite',

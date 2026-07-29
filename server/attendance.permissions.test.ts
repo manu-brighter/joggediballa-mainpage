@@ -24,7 +24,9 @@ const { appRouter } = await import('./routers');
 const { clearPermissionCache } = await import('./permissions');
 import type { TrpcContext } from './_core/context';
 
-function makeCtx(role: 'admin' | 'maintainer' | 'editor' | 'user' | 'visitor'): TrpcContext {
+function makeCtx(
+  role: 'admin' | 'maintainer' | 'editor' | 'user' | 'visitor',
+): TrpcContext {
   return {
     user: {
       id: 1,

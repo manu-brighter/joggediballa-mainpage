@@ -1,6 +1,6 @@
 /**
  * Google Analytics Consent-Aware Wrapper
- * 
+ *
  * Loads Google Analytics script only after user has given explicit consent.
  * Implements revDSG-compliant Opt-in model for Switzerland (April 2026).
  */
@@ -55,7 +55,7 @@ export function disableGoogleAnalytics() {
 
   // Disable Google Analytics tracking
   window['ga-disable-G-W5PQHY4GNN'] = true;
-  
+
   // Clear dataLayer
   window.dataLayer = [];
 }

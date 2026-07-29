@@ -8,7 +8,9 @@ import * as db from './db';
 // contact tests). Run locally with DATABASE_URL set (e.g. dotenv).
 const skipIntegration = !!process.env.CI;
 
-function ctx(role: 'admin' | 'maintainer' | 'editor' | 'visitor' | null): TrpcContext {
+function ctx(
+  role: 'admin' | 'maintainer' | 'editor' | 'visitor' | null,
+): TrpcContext {
   const user =
     role === null
       ? null
@@ -35,55 +37,84 @@ function ctx(role: 'admin' | 'maintainer' | 'editor' | 'visitor' | null): TrpcCo
 }
 
 describe('slideshow.publicState', () => {
-  it.skipIf(skipIntegration)('returns valid:false for a wrong token', async () => {
-    const caller = appRouter.createCaller(ctx(null));
-    const state = await caller.slideshow.publicState({ token: 'definitely-wrong' });
-    expect(state.valid).toBe(false);
-  });
+  it.skipIf(skipIntegration)(
+    'returns valid:false for a wrong token',
+    async () => {
+      const caller = appRouter.createCaller(ctx(null));
+      const state = await caller.slideshow.publicState({
+        token: 'definitely-wrong',
+      });
+      expect(state.valid).toBe(false);
+    },
+  );
 
-  it.skipIf(skipIntegration)('returns valid:true for the correct token', async () => {
-    const settings = await db.getSlideshowSettings();
-    const caller = appRouter.createCaller(ctx(null));
-    const state = await caller.slideshow.publicState({ token: settings.uploadToken });
-    expect(state.valid).toBe(true);
-    expect(typeof state.photoVersion).toBe('number');
-  });
+  it.skipIf(skipIntegration)(
+    'returns valid:true for the correct token',
+    async () => {
+      const settings = await db.getSlideshowSettings();
+      const caller = appRouter.createCaller(ctx(null));
+      const state = await caller.slideshow.publicState({
+        token: settings.uploadToken,
+      });
+      expect(state.valid).toBe(true);
+      expect(typeof state.photoVersion).toBe('number');
+    },
+  );
 
-  it.skipIf(skipIntegration)('listApproved returns [] for a wrong token', async () => {
-    const caller = appRouter.createCaller(ctx(null));
-    const list = await caller.slideshow.listApproved({ token: 'nope' });
-    expect(list).toEqual([]);
-  });
+  it.skipIf(skipIntegration)(
+    'listApproved returns [] for a wrong token',
+    async () => {
+      const caller = appRouter.createCaller(ctx(null));
+      const list = await caller.slideshow.listApproved({ token: 'nope' });
+      expect(list).toEqual([]);
+    },
+  );
 
-  it.skipIf(skipIntegration)('listApproved returns an array (no internal keys leaked) for the correct token', async () => {
-    const settings = await db.getSlideshowSettings();
-    const caller = appRouter.createCaller(ctx(null));
-    const list = await caller.slideshow.listApproved({ token: settings.uploadToken });
-    expect(Array.isArray(list)).toBe(true);
-    if (list.length > 0) {
-      expect(typeof list[0].id).toBe('number');
-      expect('thumbnailKey' in list[0]).toBe(false);
-    }
-  });
+  it.skipIf(skipIntegration)(
+    'listApproved returns an array (no internal keys leaked) for the correct token',
+    async () => {
+      const settings = await db.getSlideshowSettings();
+      const caller = appRouter.createCaller(ctx(null));
+      const list = await caller.slideshow.listApproved({
+        token: settings.uploadToken,
+      });
+      expect(Array.isArray(list)).toBe(true);
+      if (list.length > 0) {
+        expect(typeof list[0].id).toBe('number');
+        expect('thumbnailKey' in list[0]).toBe(false);
+      }
+    },
+  );
 });
 
 describe('slideshow maintainer access', () => {
-  it.skipIf(skipIntegration)('getSettings is forbidden for editor', async () => {
-    const caller = appRouter.createCaller(ctx('editor'));
-    await expect(caller.slideshow.getSettings()).rejects.toThrow();
-  });
+  it.skipIf(skipIntegration)(
+    'getSettings is forbidden for editor',
+    async () => {
+      const caller = appRouter.createCaller(ctx('editor'));
+      await expect(caller.slideshow.getSettings()).rejects.toThrow();
+    },
+  );
 
-  it.skipIf(skipIntegration)('getSettings is forbidden for visitor/anonymous', async () => {
-    const caller = appRouter.createCaller(ctx(null));
-    await expect(caller.slideshow.getSettings()).rejects.toThrow();
-  });
+  it.skipIf(skipIntegration)(
+    'getSettings is forbidden for visitor/anonymous',
+    async () => {
+      const caller = appRouter.createCaller(ctx(null));
+      await expect(caller.slideshow.getSettings()).rejects.toThrow();
+    },
+  );
 
-  it.skipIf(skipIntegration)('updateSettings persists eventTitle for maintainer', async () => {
-    const caller = appRouter.createCaller(ctx('maintainer'));
-    await caller.slideshow.updateSettings({ eventTitle: 'Jogge di Balla 2026' });
-    const s = await caller.slideshow.getSettings();
-    expect(s.eventTitle).toBe('Jogge di Balla 2026');
-  });
+  it.skipIf(skipIntegration)(
+    'updateSettings persists eventTitle for maintainer',
+    async () => {
+      const caller = appRouter.createCaller(ctx('maintainer'));
+      await caller.slideshow.updateSettings({
+        eventTitle: 'Jogge di Balla 2026',
+      });
+      const s = await caller.slideshow.getSettings();
+      expect(s.eventTitle).toBe('Jogge di Balla 2026');
+    },
+  );
 
   it.skipIf(skipIntegration)('rotateToken changes the token', async () => {
     const caller = appRouter.createCaller(ctx('admin'));
@@ -138,35 +169,38 @@ describe('slideshow moderation', () => {
     expect(after).toBe(before);
   });
 
-  it.skipIf(skipIntegration)('photoStatuses: token-gated + reflects approval', async () => {
-    const anon = appRouter.createCaller(ctx(null));
-    const admin = appRouter.createCaller(ctx('admin'));
-    const settings = await admin.slideshow.getSettings();
-    const id = await db.createSlideshowPhoto({
-      status: 'pending',
-      displayUrl: 'https://example.com/d.jpg',
-      displayKey: 'slideshow/display/status-test.jpg',
-      thumbnailUrl: 'https://example.com/t.jpg',
-      thumbnailKey: 'slideshow/thumb/status-test.jpg',
-      width: 1000,
-      height: 1500,
-      bytes: 12345,
-      uploaderIp: null,
-    });
-    expect(
-      await anon.slideshow.photoStatuses({ token: 'nope', ids: [id] }),
-    ).toEqual([]);
-    const pending = await anon.slideshow.photoStatuses({
-      token: settings.uploadToken,
-      ids: [id],
-    });
-    expect(pending.find(s => s.id === id)?.status).toBe('pending');
-    await admin.slideshow.approve({ id });
-    const approved = await anon.slideshow.photoStatuses({
-      token: settings.uploadToken,
-      ids: [id],
-    });
-    expect(approved.find(s => s.id === id)?.status).toBe('approved');
-    await admin.slideshow.deletePhoto({ id });
-  });
+  it.skipIf(skipIntegration)(
+    'photoStatuses: token-gated + reflects approval',
+    async () => {
+      const anon = appRouter.createCaller(ctx(null));
+      const admin = appRouter.createCaller(ctx('admin'));
+      const settings = await admin.slideshow.getSettings();
+      const id = await db.createSlideshowPhoto({
+        status: 'pending',
+        displayUrl: 'https://example.com/d.jpg',
+        displayKey: 'slideshow/display/status-test.jpg',
+        thumbnailUrl: 'https://example.com/t.jpg',
+        thumbnailKey: 'slideshow/thumb/status-test.jpg',
+        width: 1000,
+        height: 1500,
+        bytes: 12345,
+        uploaderIp: null,
+      });
+      expect(
+        await anon.slideshow.photoStatuses({ token: 'nope', ids: [id] }),
+      ).toEqual([]);
+      const pending = await anon.slideshow.photoStatuses({
+        token: settings.uploadToken,
+        ids: [id],
+      });
+      expect(pending.find(s => s.id === id)?.status).toBe('pending');
+      await admin.slideshow.approve({ id });
+      const approved = await anon.slideshow.photoStatuses({
+        token: settings.uploadToken,
+        ids: [id],
+      });
+      expect(approved.find(s => s.id === id)?.status).toBe('approved');
+      await admin.slideshow.deletePhoto({ id });
+    },
+  );
 });

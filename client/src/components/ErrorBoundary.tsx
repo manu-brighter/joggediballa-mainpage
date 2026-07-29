@@ -41,7 +41,9 @@ class ErrorBoundary extends Component<Props, State> {
               className="text-destructive mb-6 flex-shrink-0"
             />
 
-            <h2 className="text-xl mb-2">Ein unerwarteter Fehler ist aufgetreten.</h2>
+            <h2 className="text-xl mb-2">
+              Ein unerwarteter Fehler ist aufgetreten.
+            </h2>
             <p className="text-sm text-muted-foreground mb-6 text-center">
               Bitte lade die Seite neu. Wenn das Problem weiterhin besteht,
               melde dich bei uns.

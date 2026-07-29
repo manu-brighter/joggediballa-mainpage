@@ -97,20 +97,20 @@ All color tokens live in `index.css`:
 - **Layer 2 (semantic)** — shadcn-style intent names mapped to Layer 1.
   Use these in code:
 
-  | Token | When to use |
-  | --- | --- |
-  | `bg-primary`, `text-primary` | Main brand color (teal). Default CTAs. |
-  | `bg-coral`, `text-coral` | Secondary brand accent. Hearts, highlight pills, brand-tinted blobs. |
-  | `bg-secondary`, `text-secondary` | **Muted neutral** (shadcn semantic). Secondary buttons, badges. |
-  | `bg-accent`, `text-accent` | Subtle hover/highlight backdrop. Used by dropdown / menu / command hover states. |
-  | `bg-muted`, `text-muted-foreground` | De-emphasised surfaces, captions, helper text. |
-  | `bg-card`, `bg-popover` | Container surfaces. |
-  | `bg-destructive` | Errors, failed states, delete buttons. (red) |
-  | `bg-warning` | Future-caution states: drafts, expiring memberships, cancellation policies. (yellow) |
-  | `bg-pending` | Either (a) in-progress / awaiting-action — provisional Gönner members, unpaid invoices (see `Goennermitglieder.tsx`) — or (b) design-intent attention/emphasis on a non-critical advisory block. The orange reads as "look at me" without escalating to a true caution. (orange) |
-  | `bg-success` | Confirmation states. (green) |
-  | `bg-gold`, `text-gold` | Achievement / winner marker — distinct from `warning` despite both being yellow-family. Used for SDK-overlay winners and the Dienstleistungen gold accent. |
-  | `bg-brand`, `bg-twitch` | Brand aliases for niche cases (e.g. Twitch overlay). |
+  | Token                               | When to use                                                                                                                                                                                                                                                                      |
+  | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `bg-primary`, `text-primary`        | Main brand color (teal). Default CTAs.                                                                                                                                                                                                                                           |
+  | `bg-coral`, `text-coral`            | Secondary brand accent. Hearts, highlight pills, brand-tinted blobs.                                                                                                                                                                                                             |
+  | `bg-secondary`, `text-secondary`    | **Muted neutral** (shadcn semantic). Secondary buttons, badges.                                                                                                                                                                                                                  |
+  | `bg-accent`, `text-accent`          | Subtle hover/highlight backdrop. Used by dropdown / menu / command hover states.                                                                                                                                                                                                 |
+  | `bg-muted`, `text-muted-foreground` | De-emphasised surfaces, captions, helper text.                                                                                                                                                                                                                                   |
+  | `bg-card`, `bg-popover`             | Container surfaces.                                                                                                                                                                                                                                                              |
+  | `bg-destructive`                    | Errors, failed states, delete buttons. (red)                                                                                                                                                                                                                                     |
+  | `bg-warning`                        | Future-caution states: drafts, expiring memberships, cancellation policies. (yellow)                                                                                                                                                                                             |
+  | `bg-pending`                        | Either (a) in-progress / awaiting-action — provisional Gönner members, unpaid invoices (see `Goennermitglieder.tsx`) — or (b) design-intent attention/emphasis on a non-critical advisory block. The orange reads as "look at me" without escalating to a true caution. (orange) |
+  | `bg-success`                        | Confirmation states. (green)                                                                                                                                                                                                                                                     |
+  | `bg-gold`, `text-gold`              | Achievement / winner marker — distinct from `warning` despite both being yellow-family. Used for SDK-overlay winners and the Dienstleistungen gold accent.                                                                                                                       |
+  | `bg-brand`, `bg-twitch`             | Brand aliases for niche cases (e.g. Twitch overlay).                                                                                                                                                                                                                             |
 
 - **Layer 3 (Tailwind theme)** — `@theme inline` block at the top of
   `index.css` exposes Layer 2 as Tailwind utility classes (`text-primary`,

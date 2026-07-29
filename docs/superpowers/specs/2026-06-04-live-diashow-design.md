@@ -12,24 +12,25 @@ Gäste laden per QR-Code Fotos hoch, ein Maintainer moderiert sie, und sie
 erscheinen live auf einer bildschirmfüllenden Diashow (Beamer/Leinwand).
 
 Drei Oberflächen:
+
 1. **Diashow** — öffentlich (Token), Fullscreen, schwarz, dynamisch.
 2. **Upload** — öffentlich (Token), mobile-first, QR-Code-Ziel.
 3. **Control** — nur maintainer+, Moderation + Album + Toggles.
 
 ## 2. Getroffene Entscheidungen (Decision Log)
 
-| # | Entscheidung | Wahl |
-|---|---|---|
-| 1 | Scope | **Ein aktives Event** (globaler Pool, „archivieren & leeren" zwischen Events) |
-| 2 | Originale | **Nur komprimiert** — keine Originale gespeichert |
-| 3 | Moderation Default | **AN** (neue Bilder = `pending` bis Freigabe) |
-| 4 | Medientyp | **Nur Fotos** |
-| 5 | URLs | `/diashow/:token`, `/diashow/:token/upload`, `/diashow/control` |
-| 6 | Sicherheit | **Geheim-Token im Pfad**, im Control-Panel rotierbar |
-| 7 | Diashow-Stil | **Dynamisch & verspielt** (Ken-Burns, Multi-Hochformat-Layout, Neu-Highlight) |
-| A | Realtime | **Polling mit `photoVersion`-Counter** (konsistent mit Projekt, kein WebSocket) |
-| B | Upload-Flow | **All-in-One Public Express-Route** (atomar, kein Orphan-Risiko) |
-| C | ZIP-Download | **Weggelassen** (YAGNI; Files werden bei Bedarf manuell vom Server geholt) |
+| #   | Entscheidung       | Wahl                                                                            |
+| --- | ------------------ | ------------------------------------------------------------------------------- |
+| 1   | Scope              | **Ein aktives Event** (globaler Pool, „archivieren & leeren" zwischen Events)   |
+| 2   | Originale          | **Nur komprimiert** — keine Originale gespeichert                               |
+| 3   | Moderation Default | **AN** (neue Bilder = `pending` bis Freigabe)                                   |
+| 4   | Medientyp          | **Nur Fotos**                                                                   |
+| 5   | URLs               | `/diashow/:token`, `/diashow/:token/upload`, `/diashow/control`                 |
+| 6   | Sicherheit         | **Geheim-Token im Pfad**, im Control-Panel rotierbar                            |
+| 7   | Diashow-Stil       | **Dynamisch & verspielt** (Ken-Burns, Multi-Hochformat-Layout, Neu-Highlight)   |
+| A   | Realtime           | **Polling mit `photoVersion`-Counter** (konsistent mit Projekt, kein WebSocket) |
+| B   | Upload-Flow        | **All-in-One Public Express-Route** (atomar, kein Orphan-Risiko)                |
+| C   | ZIP-Download       | **Weggelassen** (YAGNI; Files werden bei Bedarf manuell vom Server geholt)      |
 
 ## 3. Nicht-Ziele (Out of Scope)
 
@@ -39,11 +40,11 @@ Drei Oberflächen:
 
 ## 4. Routen & Sichtbarkeit
 
-| Pfad | Wer | Layout |
-|---|---|---|
-| `/diashow/:token` | alle mit gültigem Token | Bare, pure `#000`, Fullscreen-Bühne |
-| `/diashow/:token/upload` | alle mit gültigem Token | Bare, mobile-first, eigenes Branding |
-| `/diashow/control` | maintainer+ (auth-gated) | Normal (mit Nav/Footer, wie `SdkControl`) |
+| Pfad                     | Wer                      | Layout                                    |
+| ------------------------ | ------------------------ | ----------------------------------------- |
+| `/diashow/:token`        | alle mit gültigem Token  | Bare, pure `#000`, Fullscreen-Bühne       |
+| `/diashow/:token/upload` | alle mit gültigem Token  | Bare, mobile-first, eigenes Branding      |
+| `/diashow/control`       | maintainer+ (auth-gated) | Normal (mit Nav/Footer, wie `SdkControl`) |
 
 - Reihenfolge im `<Switch>`: `/diashow/control` **vor** `/diashow/:token`
   (literal vor Wildcard, sonst wird „control" als Token interpretiert).
@@ -60,6 +61,7 @@ Status, Dual-Column `xxxUrl`+`xxxKey`, `$inferSelect`/`$inferInsert`-Exporte,
 keine Drizzle-Relations-API.
 
 ### `slideshowPhotos` (eigene Tabelle — NICHT die bestehende `photos`)
+
 - `id` — PK
 - `status` — `mysqlEnum('pending','approved')`, default `pending`, notNull
 - `displayUrl` / `displayKey` — text, notNull (2560px-Variante)
@@ -77,6 +79,7 @@ keine Drizzle-Relations-API.
 `approved`.
 
 ### `slideshowSettings` (Single-Row, id=1 — Pattern wie `sdkSession`)
+
 - `id` — PK
 - `eventTitle` — varchar(255), nullable
 - `isVisible` — boolean, default **false**, notNull (Master-Schalter Diashow-Anzeige)
@@ -98,10 +101,12 @@ an, falls sie fehlt (Create-if-missing, analog zur Permission-Seed-Logik).
 ## 6. Kompression & Speicher
 
 **Client** (`browser-image-compression`):
+
 - max Kante 2560px, Ziel ~1–1.2 MB, `initialQuality ≈ 0.8`, Web-Worker,
   EXIF-Auto-Rotation (Hochformat korrekt).
 
 **Server** (`sharp`, in der Upload-Route):
+
 - `display`: `.rotate()` (Rest-EXIF), `.resize(2560, 2560, { fit: 'inside', withoutEnlargement: true })`, `.jpeg({ quality: 72, mozjpeg: true })` — **EXIF/GPS wird gestrippt** (sharp dropt Metadaten by default → Privacy).
 - `thumbnail`: `.resize(480, 480, { fit: 'inside' })`, `.jpeg({ quality: 55 })`.
 - `width`/`height`/`bytes` aus dem Display-Variant.
@@ -117,6 +122,7 @@ strippt Metadaten und erzeugt das Thumbnail.
 ### tRPC-Namespace `slideshow` (in `server/routers.ts`)
 
 **Public (Token-validiert):**
+
 - `publicState({ token })` — query. Validiert Token; gibt Anzeige-relevanten
   State zurück: `isVisible`, `showQr`, `moderationEnabled`, `uploadsOpen`,
   `eventTitle`, `slideDurationMs`, `transition`, `photoVersion`, `approvedCount`.
@@ -125,6 +131,7 @@ strippt Metadaten und erzeugt das Thumbnail.
   nur `approved`, geordnet.
 
 **`requirePermission('manage_slideshow')`:**
+
 - `getSettings` — volle Settings inkl. `uploadToken`, Counts (pending/approved), Speicher-Bytes.
 - `listPending`, `listAll`.
 - `approve({ id })` — setzt `approved`, `moderatedBy/At`, bumpt `photoVersion`.
@@ -141,7 +148,9 @@ Jede Mutation schreibt einen Activity-Log-Eintrag (`db.createActivityLog`) und
 bumpt `photoVersion` wo Bild-Bestand betroffen ist.
 
 ### Express-Route (public): `POST /api/upload/slideshow-photo`
+
 In `server/uploadRoutes.ts`. Token via Query/Body. Ablauf:
+
 1. `express-rate-limit` mit **dynamischem `limit`** (Funktion liest `slideshowSettings.uploadRateLimit`, default 80 / 10-min-Fenster pro IP). Großzügig wegen geteilter Event-WLAN-IPs; im Control anpassbar falls es Probleme macht.
 2. Token gegen `slideshowSettings.uploadToken` prüfen → sonst 403.
 3. `uploadsOpen`-Check → sonst 423/409 mit Klartext.
@@ -157,11 +166,13 @@ können keine `protectedProcedure` aufrufen; All-in-One ist atomar (kein Orphan
 auf der 40-GB-Disk) und ein Roundtrip.
 
 ### `server/permissions.ts`
+
 - `'manage_slideshow'` zu `PERMISSION_KEYS` hinzufügen.
 - In `initializeDefaultPermissions()` für **admin UND maintainer** seeden
   (`hasPermission` behandelt admin NICHT speziell — verifiziert).
 
 ### `server/db.ts` (Helper, alle mit `getDb()`-Guard)
+
 `getSlideshowSettings` (create-if-missing), `updateSlideshowSettings`,
 `bumpPhotoVersion`, `createSlideshowPhoto`, `listApprovedSlideshowPhotos`,
 `listPendingSlideshowPhotos`, `listAllSlideshowPhotos`, `getSlideshowPhotoById`,
@@ -209,7 +220,7 @@ pollt/liest `publicState` (Token-Validität, `uploadsOpen`, `moderationEnabled`,
 `eventTitle`).
 
 - Großer „Foto hochladen"-Button: `<input type="file" accept="image/*" multiple>`
-  + Kamera-Affordance (`capture`). Mehrfachauswahl.
+  - Kamera-Affordance (`capture`). Mehrfachauswahl.
 - Pro Datei: clientseitig komprimieren (Progress) → POST an Upload-Route →
   Tile-Status: „✓ Wird vom Team geprüft" (Moderation an) bzw. „✓ Ist live! 🎉"
   (aus) / Fehler.
@@ -225,6 +236,7 @@ Maintainer+, mobile-tauglich (Staff moderiert am Event vom Handy). Guard:
 echte Durchsetzung serverseitig via `requirePermission`.
 
 Sektionen:
+
 1. **Status**: Switches `isVisible`/`uploadsOpen`/`moderationEnabled`/`showQr`,
    Event-Titel-Input, Slide-Dauer + Transition-Select, Upload-Rate-Limit-Input
    (default 80/10min), Speicher-/Anzahl-Anzeige,
@@ -242,6 +254,7 @@ Sektionen:
 
 Overlay-Erkennung von Exact-Match (`OVERLAY_ROUTES.some(r => location === r)`) auf
 einen Mode-Helper umbauen, der drei Zustände liefert:
+
 - `'overlay-transparent'` — `/overlay/sdk` (unverändert, transparenter Wrapper).
 - `'bare-black'` — `/diashow/:token` und `/diashow/:token/upload` (kein Nav/Footer;
   die Seite setzt ihren eigenen Hintergrund).
@@ -268,6 +281,7 @@ Drei lazy-geladene Page-Komponenten + Routen im `<Switch>` (Reihenfolge s. §4).
 ## 15. Tests
 
 `server/slideshow.test.ts` im bestehenden `createCaller`-Pattern:
+
 - Token-Validierung (falscher Token → keine Daten / definierte invalid-Antwort).
 - Permission: maintainer erlaubt, editor + visitor verweigert.
 - `approve` bumpt `photoVersion`; `clearAll` leert; `updateSettings` persistiert
