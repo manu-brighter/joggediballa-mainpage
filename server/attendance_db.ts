@@ -1,4 +1,4 @@
-import { eq, desc, and, sql, gte, lte } from 'drizzle-orm';
+import { eq, desc, and, sql, gte, lte, inArray } from 'drizzle-orm';
 import { getDb } from './db';
 import {
   attendanceSessions,
@@ -314,15 +314,19 @@ export async function getAttendanceStatistics(year?: number) {
   // Get all members
   const members = await listAttendanceMembers(true);
 
-  // Get all records
-  const allRecords = await db
-    .select()
-    .from(attendanceRecords)
-    .where(
-      year
-        ? sql`${attendanceRecords.sessionId} IN (SELECT id FROM attendance_sessions WHERE YEAR(date) = ${year})`
-        : sql`1=1`,
-    );
+  // Get all records. `sessions` is already the year-filtered list, so its ids
+  // replace the former raw `IN (SELECT ...)` subquery (A-P2-01). A year with no
+  // sessions has no records either — skip the query rather than emit `IN ()`.
+  const sessionIds = sessions.map(session => session.id);
+  const allRecords =
+    year && sessionIds.length === 0
+      ? []
+      : await db
+          .select()
+          .from(attendanceRecords)
+          .where(
+            year ? inArray(attendanceRecords.sessionId, sessionIds) : undefined,
+          );
 
   // Total session weight — identical for every member (each is evaluated
   // against every session), so it doubles as the denominator of the weighted

@@ -61,16 +61,16 @@ Google OAuth 2.0 + JWT (HTTP-only cookies). Honeypot on contact form. Rate limit
 
 <div align="center">
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 19 · Vite · TailwindCSS 4 · Wouter · Framer Motion |
-| **UI Components** | Radix UI primitives · shadcn/ui · Lucide icons |
-| **Backend** | Node.js · Express · tRPC 11 · SuperJSON |
-| **Database** | MySQL 8 · Drizzle ORM |
-| **Auth** | Google OAuth 2.0 · JWT · cookie-session |
-| **File Storage** | Self-hosted on local disk · Nginx-served · multer + sharp |
-| **Testing** | Playwright E2E · Vitest (server) · Biome |
-| **Deploy** | Self-hosted · Nginx · PM2 · GitHub Actions |
+| Layer             | Technology                                                |
+| ----------------- | --------------------------------------------------------- |
+| **Frontend**      | React 19 · Vite · TailwindCSS 4 · Wouter · Framer Motion  |
+| **UI Components** | Radix UI primitives · shadcn/ui · Lucide icons            |
+| **Backend**       | Node.js · Express · tRPC 11 · SuperJSON                   |
+| **Database**      | MySQL 8 · Drizzle ORM                                     |
+| **Auth**          | Google OAuth 2.0 · JWT · cookie-session                   |
+| **File Storage**  | Self-hosted on local disk · Nginx-served · multer + sharp |
+| **Testing**       | Playwright E2E · Vitest (server) · Biome                  |
+| **Deploy**        | Self-hosted · Nginx · PM2 · GitHub Actions                |
 
 </div>
 
@@ -106,13 +106,13 @@ joggediballa-mainpage/
 
 ## ✦ Roles & Permissions
 
-| Role | Shotcounter | Events | Members | Sponsors | Admin Panel |
-|---|:---:|:---:|:---:|:---:|:---:|
-| **Admin** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Maintainer** | ✅ | ✅ | ✅ | ✅ | — |
-| **Editor** | ✅ | edit | — | — | — |
-| **User** | ✅ | — | own profile | — | — |
-| **Public** | view | view | — | — | — |
+| Role           | Shotcounter | Events |   Members   | Sponsors | Admin Panel |
+| -------------- | :---------: | :----: | :---------: | :------: | :---------: |
+| **Admin**      |     ✅      |   ✅   |     ✅      |    ✅    |     ✅      |
+| **Maintainer** |     ✅      |   ✅   |     ✅      |    ✅    |      —      |
+| **Editor**     |     ✅      |  edit  |      —      |    —     |      —      |
+| **User**       |     ✅      |   —    | own profile |    —     |      —      |
+| **Public**     |    view     |  view  |      —      |    —     |      —      |
 
 <br>
 
@@ -160,6 +160,19 @@ pm2 reload joggediballa
 ```
 
 > Authoritative deploy steps live in `DEPLOYMENT.md`; PM2 config in `ecosystem.config.cjs`.
+
+<br>
+
+---
+
+## ✦ License & Security
+
+Licensed under the [GNU AGPL-3.0](LICENSE). In short: you may use, study, modify
+and redistribute this code, but if you run a modified version as a network
+service, you must publish your source under the same license.
+
+Found a security issue? Please follow [SECURITY.md](SECURITY.md) rather than
+opening a public issue.
 
 <br>
 
