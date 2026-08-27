@@ -211,9 +211,11 @@ async function startServer() {
   // The kasse (POS) pages are the one flow that legitimately fires many
   // mutations from a single IP: at an event every phone and the kitchen tablet
   // sit behind the same NAT, and each order costs 3 mutations (create → ready →
-  // delivered). They get their own, much wider window instead of tripping the
-  // general 60/15min limit. `req.path` here is relative to the /api/trpc mount
-  // and holds the (possibly batched, comma-separated) procedure names.
+  // delivered), which would exhaust the 60/15min window within minutes. Their
+  // budget is therefore granted per procedure in tRPC middleware instead (see
+  // server/kasse_ratelimit.ts) — this skip only stops the blanket limiter from
+  // rejecting them first. `req.path` is relative to the /api/trpc mount and
+  // holds the (possibly batched, comma-separated) procedure names.
   const isKasseOnly = (req: Request): boolean => {
     const procedures = req.path.replace(/^\//, '').split(',');
     return (
@@ -230,17 +232,6 @@ async function startServer() {
       skipInNonProd() || req.method.toUpperCase() === 'GET' || isKasseOnly(req),
   });
 
-  const kasseMutationLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 1000, // ~330 Bestellungen / 15 min / IP — deckt jeden Event-Peak ab
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-    skip: req =>
-      skipInNonProd() ||
-      req.method.toUpperCase() === 'GET' ||
-      !isKasseOnly(req),
-  });
-
   // Body parsing — file uploads use multipart (not JSON), so 1 MB is sufficient here
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ limit: '1mb', extended: true }));
@@ -249,7 +240,7 @@ async function startServer() {
   registerGoogleAuthRoutes(app);
 
   // CSRF guard runs before any tRPC mutation or /api/upload write.
-  app.use('/api/trpc', csrfGuard, trpcMutationLimiter, kasseMutationLimiter);
+  app.use('/api/trpc', csrfGuard, trpcMutationLimiter);
   app.use('/api/upload', csrfGuard);
 
   // tRPC API

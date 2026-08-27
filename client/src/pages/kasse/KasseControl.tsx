@@ -108,7 +108,16 @@ export default function KasseControl() {
     onError,
   });
   const closeSession = trpc.kasse.closeSession.useMutation({
-    onSuccess: invalidateSettings,
+    onSuccess: r => {
+      invalidateSettings();
+      if (r.cancelled > 0) {
+        toast.warning(
+          `Kasse geschlossen — ${r.cancelled} offene Bestellung(en) storniert.`,
+        );
+      } else {
+        toast.success('Kasse geschlossen.');
+      }
+    },
     onError,
   });
   const reopenSession = trpc.kasse.reopenSession.useMutation({
@@ -254,15 +263,36 @@ export default function KasseControl() {
                   {new Date(runningSession.openedAt).toLocaleString('de-CH')}
                 </p>
               </div>
-              <Button
-                variant="outline"
-                disabled={closeSession.isPending}
-                onClick={() =>
-                  closeSession.mutate({ sessionId: runningSession.id })
-                }
-              >
-                Kasse schliessen
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" disabled={closeSession.isPending}>
+                    Kasse schliessen
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Kasse schliessen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {settings.openOrderCount > 0
+                        ? `Es sind noch ${settings.openOrderCount} Bestellung(en) offen. Beim Schliessen werden sie storniert — sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.`
+                        : 'Service und Küche können danach keine Bestellungen mehr aufnehmen. Die Auswertung bleibt erhalten.'}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() =>
+                        closeSession.mutate({
+                          sessionId: runningSession.id,
+                          force: true,
+                        })
+                      }
+                    >
+                      Schliessen
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">

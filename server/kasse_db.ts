@@ -104,20 +104,18 @@ export async function createKasseSession(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  await closeOpenKasseSessions();
+  // B-P0-05: Schliessen und Anlegen in einer Transaktion, sonst kann ein
+  // Fehler dazwischen die Invariante „höchstens eine offene Session" brechen
+  // (gleiche Begründung wie bei sdkCreateSession).
+  return db.transaction(async tx => {
+    await tx
+      .update(kasseSessions)
+      .set({ status: 'closed', closedAt: new Date() })
+      .where(eq(kasseSessions.status, 'open'));
 
-  const result = await db.insert(kasseSessions).values({ name, createdBy });
-  return Number(result[0].insertId);
-}
-
-/** Nur intern: eine offene Session wird beim Öffnen/Wiederöffnen geschlossen. */
-async function closeOpenKasseSessions(): Promise<void> {
-  const db = await getDb();
-  if (!db) throw new Error('Database not available');
-  await db
-    .update(kasseSessions)
-    .set({ status: 'closed', closedAt: new Date() })
-    .where(eq(kasseSessions.status, 'open'));
+    const result = await tx.insert(kasseSessions).values({ name, createdBy });
+    return Number(result[0].insertId);
+  });
 }
 
 export async function closeKasseSession(sessionId: number): Promise<void> {
@@ -132,11 +130,19 @@ export async function closeKasseSession(sessionId: number): Promise<void> {
 export async function reopenKasseSession(sessionId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
-  await closeOpenKasseSessions();
-  await db
-    .update(kasseSessions)
-    .set({ status: 'open', closedAt: null })
-    .where(eq(kasseSessions.id, sessionId));
+
+  // B-P0-05: siehe createKasseSession — schliessen und öffnen atomar.
+  await db.transaction(async tx => {
+    await tx
+      .update(kasseSessions)
+      .set({ status: 'closed', closedAt: new Date() })
+      .where(eq(kasseSessions.status, 'open'));
+
+    await tx
+      .update(kasseSessions)
+      .set({ status: 'open', closedAt: null })
+      .where(eq(kasseSessions.id, sessionId));
+  });
 }
 
 export async function deleteKasseSession(sessionId: number): Promise<void> {
@@ -363,22 +369,27 @@ export async function createKasseOrder(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  const result = await db.insert(kasseOrders).values(order);
-  const orderId = Number(result[0].insertId);
+  // B-P0-05: Kopf und Positionen in einer Transaktion — sonst kann eine
+  // Bestellung mit Betrag, aber ohne Positionen zurückbleiben: die Küche sieht
+  // eine leere Bestellung und die Auswertung zählt Umsatz ohne Produkte.
+  return db.transaction(async tx => {
+    const result = await tx.insert(kasseOrders).values(order);
+    const orderId = Number(result[0].insertId);
 
-  const rows: InsertKasseOrderItem[] = items.map(item => ({
-    orderId,
-    productId: item.productId,
-    productName: item.productName,
-    optionId: item.optionId,
-    optionName: item.optionName,
-    quantity: item.quantity,
-    unitPriceRappen: item.unitPriceRappen,
-    lineTotalRappen: item.lineTotalRappen,
-  }));
-  await db.insert(kasseOrderItems).values(rows);
+    const rows: InsertKasseOrderItem[] = items.map(item => ({
+      orderId,
+      productId: item.productId,
+      productName: item.productName,
+      optionId: item.optionId,
+      optionName: item.optionName,
+      quantity: item.quantity,
+      unitPriceRappen: item.unitPriceRappen,
+      lineTotalRappen: item.lineTotalRappen,
+    }));
+    await tx.insert(kasseOrderItems).values(rows);
 
-  return orderId;
+    return orderId;
+  });
 }
 
 export async function getKasseOrder(orderId: number) {
@@ -441,6 +452,46 @@ export async function listKasseOrders(
     ...order,
     items: byOrder.get(order.id) ?? [],
   }));
+}
+
+/** Wie viele Bestellungen einer Session noch offen sind (pending + ready). */
+export async function countOpenKasseOrders(sessionId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const rows = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(kasseOrders)
+    .where(
+      and(
+        eq(kasseOrders.sessionId, sessionId),
+        inArray(kasseOrders.status, ['pending', 'ready']),
+      ),
+    );
+  return Number(rows[0]?.count ?? 0);
+}
+
+/**
+ * Storniert alle noch offenen Bestellungen einer Session. Wird beim Schliessen
+ * einer Kasse mit Restbestellungen gebraucht: sonst verschwinden sie
+ * kommentarlos aus Küche und Service und zählen weiter zum Umsatz.
+ */
+export async function cancelOpenKasseOrders(
+  sessionId: number,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const open = await countOpenKasseOrders(sessionId);
+  if (open === 0) return 0;
+  await db
+    .update(kasseOrders)
+    .set({ status: 'cancelled', cancelledAt: new Date() })
+    .where(
+      and(
+        eq(kasseOrders.sessionId, sessionId),
+        inArray(kasseOrders.status, ['pending', 'ready']),
+      ),
+    );
+  return open;
 }
 
 export async function setKasseOrderStatus(

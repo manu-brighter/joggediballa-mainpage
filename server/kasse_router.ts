@@ -5,7 +5,9 @@ import { router, publicProcedure, protectedProcedure } from './_core/trpc';
 import { hasPermission } from './permissions';
 import { createActivityLog } from './db';
 import {
+  cancelOpenKasseOrders,
   closeKasseSession,
+  countOpenKasseOrders,
   createKasseOrder,
   createKasseProduct,
   createKasseProductOption,
@@ -34,6 +36,12 @@ import {
   updateKasseTable,
 } from './kasse_db';
 import { buildOrderItems, orderTotalRappen } from './kasse_pricing';
+import { assertTransition } from './kasse_status';
+import {
+  consume,
+  CREATE_ORDER_LIMIT,
+  SET_STATUS_LIMIT,
+} from './kasse_ratelimit';
 
 /**
  * Local copy of the requirePermission middleware factory — same reasoning as
@@ -74,6 +82,51 @@ async function requireOpenSession() {
     });
   }
   return session;
+}
+
+/**
+ * Per-Procedure-Rate-Limit als tRPC-Middleware. `server/CLAUDE.md`: „Per-procedure
+ * rate limiting must be implemented as tRPC middleware, not Express middleware."
+ * — tRPC-Batch-URLs laufen an Express-Route-Matchern vorbei.
+ *
+ * Wie bei den Express-Limitern sind die Limits ausserhalb von Produktion aus,
+ * damit HMR-Reloads und Playwright-Läufe nicht in 429er laufen.
+ */
+const rateLimited = (bucket: string, limit: number) =>
+  publicProcedure.use(({ ctx, next }) => {
+    if (process.env.NODE_ENV === 'production') {
+      const ip = ctx.req.ip ?? 'unknown';
+      if (!consume(`${bucket}:${ip}`, limit)) {
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Zu viele Anfragen. Bitte kurz warten.',
+        });
+      }
+    }
+    return next({ ctx });
+  });
+
+/**
+ * Beim Schliessen einer Kasse dürfen keine Bestellungen offen bleiben: sie
+ * würden aus Küche und Service verschwinden (beide Listen hängen an der
+ * offenen Session), aber weiter zum Umsatz zählen. Ohne `force` bricht das
+ * Schliessen darum ab; mit `force` werden die Reste storniert und gemeldet.
+ */
+async function settleOpenOrders(
+  sessionId: number,
+  force: boolean | undefined,
+): Promise<number> {
+  const open = await countOpenKasseOrders(sessionId);
+  if (open === 0) return 0;
+
+  if (!force) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: `Es sind noch ${open} Bestellung(en) offen. Zuerst abschliessen — oder das Schliessen bestätigen, dann werden sie storniert.`,
+    });
+  }
+
+  return cancelOpenKasseOrders(sessionId);
 }
 
 const orderItemInput = z.object({
@@ -156,7 +209,7 @@ export const kasseRouter = router({
    * Bestellung aufnehmen. Preise kommen ausschliesslich aus der DB — der Client
    * schickt nur Produkt-, Options- und Mengenangaben.
    */
-  createOrder: publicProcedure
+  createOrder: rateLimited('createOrder', CREATE_ORDER_LIMIT)
     .input(
       z.object({
         token: z.string(),
@@ -209,8 +262,15 @@ export const kasseRouter = router({
       return { orderId, totalRappen };
     }),
 
-  /** Küche: fertig. Service: abgeschlossen. Storno nur solange pending. */
-  setOrderStatus: publicProcedure
+  /**
+   * Küche: fertig. Service: abgeschlossen. Storno nur solange pending.
+   *
+   * Der Statusfluss ist vorwärts-only (siehe kasse_status.ts) und die
+   * Bestellung muss zur laufenden Session gehören — ein Gerät mit veralteter
+   * Ansicht darf weder eine servierte Bestellung zurückholen noch die History
+   * einer bereits geschlossenen Kasse nachträglich verändern.
+   */
+  setOrderStatus: rateLimited('setOrderStatus', SET_STATUS_LIMIT)
     .input(
       z.object({
         token: z.string(),
@@ -228,19 +288,17 @@ export const kasseRouter = router({
           message: 'Bestellung nicht gefunden',
         });
       }
-      if (order.status === input.status) return { success: true };
-      if (order.status === 'cancelled') {
+
+      const session = await requireOpenSession();
+      if (order.sessionId !== session.id) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
-          message: 'Stornierte Bestellungen lassen sich nicht mehr ändern.',
+          message: 'Diese Bestellung gehört zu einer abgeschlossenen Kasse.',
         });
       }
-      if (input.status === 'cancelled' && order.status !== 'pending') {
-        throw new TRPCError({
-          code: 'PRECONDITION_FAILED',
-          message: 'Nur offene Bestellungen können storniert werden.',
-        });
-      }
+
+      const { changed } = assertTransition(order.status, input.status);
+      if (!changed) return { success: true };
 
       await setKasseOrderStatus(input.orderId, input.status);
       return { success: true };
@@ -261,6 +319,9 @@ export const kasseRouter = router({
       ordersOpen: settings.ordersOpen,
       openSession: session,
       sessions,
+      // Damit das Schliessen der Kasse warnen kann, statt Restbestellungen
+      // kommentarlos aus Küche und Service verschwinden zu lassen.
+      openOrderCount: session ? await countOpenKasseOrders(session.id) : 0,
     };
   }),
 
@@ -296,8 +357,30 @@ export const kasseRouter = router({
   // ---- Sessions ----
 
   openSession: manageKasse
-    .input(z.object({ name: z.string().trim().min(1).max(150) }))
+    .input(
+      z.object({
+        name: z.string().trim().min(1).max(150),
+        force: z.boolean().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
+      // Eine neue Kasse schliesst die laufende. Hat die noch offene
+      // Bestellungen, gilt dieselbe Regel wie beim Schliessen von Hand.
+      const running = await getOpenKasseSession();
+      if (running) {
+        const cancelled = await settleOpenOrders(running.id, input.force);
+        if (cancelled > 0) {
+          await createActivityLog({
+            userId: ctx.user.id,
+            userName: ctx.user.name || 'Unknown',
+            action: 'kasse_orders_cancelled',
+            details: `Cancelled ${cancelled} open order(s) when leaving session #${running.id}`,
+            ipAddress: null,
+            userAgent: null,
+          });
+        }
+      }
+
       const id = await createKasseSession(input.name, ctx.user.id);
       await createActivityLog({
         userId: ctx.user.id,
@@ -311,7 +394,12 @@ export const kasseRouter = router({
     }),
 
   closeSession: manageKasse
-    .input(z.object({ sessionId: z.number().int().positive() }))
+    .input(
+      z.object({
+        sessionId: z.number().int().positive(),
+        force: z.boolean().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const session = await getKasseSession(input.sessionId);
       if (!session) {
@@ -320,16 +408,21 @@ export const kasseRouter = router({
           message: 'Session not found',
         });
       }
+
+      const cancelled = await settleOpenOrders(input.sessionId, input.force);
+
       await closeKasseSession(input.sessionId);
       await createActivityLog({
         userId: ctx.user.id,
         userName: ctx.user.name || 'Unknown',
         action: 'kasse_session_close',
-        details: `Closed session "${session.name}" (#${session.id})`,
+        details:
+          `Closed session "${session.name}" (#${session.id})` +
+          (cancelled > 0 ? `, cancelled ${cancelled} open order(s)` : ''),
         ipAddress: null,
         userAgent: null,
       });
-      return { success: true };
+      return { success: true, cancelled };
     }),
 
   reopenSession: manageKasse
