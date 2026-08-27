@@ -45,6 +45,9 @@ const SdkControl = lazy(() => import('./pages/overlay/SdkControl'));
 const Diashow = lazy(() => import('./pages/diashow/Diashow'));
 const DiashowUpload = lazy(() => import('./pages/diashow/DiashowUpload'));
 const DiashowControl = lazy(() => import('./pages/diashow/DiashowControl'));
+const KasseControl = lazy(() => import('./pages/kasse/KasseControl'));
+const KasseService = lazy(() => import('./pages/kasse/KasseService'));
+const KasseKueche = lazy(() => import('./pages/kasse/KasseKueche'));
 
 // Beamer Mode Context
 interface BeamerModeContextType {
@@ -59,13 +62,18 @@ const BeamerModeContext = createContext<BeamerModeContextType>({
 
 export const useBeamerMode = () => useContext(BeamerModeContext);
 
-type LayoutMode = 'overlay-transparent' | 'bare-black' | 'normal';
+type LayoutMode = 'overlay-transparent' | 'bare-black' | 'bare-app' | 'normal';
 
 function getLayoutMode(location: string): LayoutMode {
   if (location === '/overlay/sdk') return 'overlay-transparent';
   // /diashow/<token> und /diashow/<token>/upload sind bare; /diashow/control normal.
   if (location.startsWith('/diashow/') && location !== '/diashow/control') {
     return 'bare-black';
+  }
+  // Kassensystem: Service (Handy) und Küche (Tablet) laufen ohne Nav/Footer —
+  // sie brauchen die volle Höhe. /kasse/control bleibt eine normale Seite.
+  if (location.startsWith('/kasse/') && location !== '/kasse/control') {
+    return 'bare-app';
   }
   return 'normal';
 }
@@ -106,6 +114,10 @@ function Router() {
         <Route path="/diashow/control" component={DiashowControl} />
         <Route path="/diashow/:token/upload" component={DiashowUpload} />
         <Route path="/diashow/:token" component={Diashow} />
+        {/* Kassensystem — nicht verlinkt, nicht indexiert */}
+        <Route path="/kasse/control" component={KasseControl} />
+        <Route path="/kasse/service/:token" component={KasseService} />
+        <Route path="/kasse/kueche/:token" component={KasseKueche} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
@@ -197,6 +209,17 @@ function AppContent() {
     return (
       <div className="min-h-screen">
         <Router />
+      </div>
+    );
+  }
+
+  // Kassen-Seiten: ebenfalls ohne Nav/Footer, aber mit Toaster — Service und
+  // Küche melden Fehler und Statuswechsel über Toasts.
+  if (layoutMode === 'bare-app') {
+    return (
+      <div className="min-h-screen">
+        <Router />
+        <Toaster richColors position="top-center" />
       </div>
     );
   }
