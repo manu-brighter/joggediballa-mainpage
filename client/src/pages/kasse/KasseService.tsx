@@ -56,9 +56,11 @@ export default function KasseService() {
     { token },
     { refetchInterval: 20000 },
   );
+  // Produkte/Tische ändern sich am Event selten, aber wenn der Admin etwas
+  // anpasst, sollen die Handys es ohne Reload mitbekommen.
   const menu = trpc.kasse.menu.useQuery(
     { token },
-    { enabled: state.data?.valid === true, staleTime: 60000 },
+    { enabled: state.data?.valid === true, refetchInterval: 60000 },
   );
   const openOrders = trpc.kasse.listOpenOrders.useQuery(
     { token },
@@ -454,7 +456,10 @@ export default function KasseService() {
                   )}
                   <Button
                     className="mt-3 h-12 w-full text-base"
-                    disabled={setStatus.isPending}
+                    disabled={
+                      setStatus.isPending &&
+                      setStatus.variables?.orderId === order.id
+                    }
                     onClick={() =>
                       setStatus.mutate({
                         token,
@@ -506,7 +511,10 @@ export default function KasseService() {
                     variant="ghost"
                     size="sm"
                     className="mt-2 text-destructive hover:text-destructive"
-                    disabled={setStatus.isPending}
+                    disabled={
+                      setStatus.isPending &&
+                      setStatus.variables?.orderId === order.id
+                    }
                     onClick={() =>
                       setStatus.mutate({
                         token,

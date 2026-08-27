@@ -110,7 +110,8 @@ export async function createKasseSession(
   return Number(result[0].insertId);
 }
 
-export async function closeOpenKasseSessions(): Promise<void> {
+/** Nur intern: eine offene Session wird beim Öffnen/Wiederöffnen geschlossen. */
+async function closeOpenKasseSessions(): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
   await db
@@ -180,17 +181,6 @@ export async function listKasseProductOptions(productIds?: number[]) {
           asc(kasseProductOptions.id),
         );
   return rows;
-}
-
-export async function getKasseProduct(productId: number) {
-  const db = await getDb();
-  if (!db) throw new Error('Database not available');
-  const rows = await db
-    .select()
-    .from(kasseProducts)
-    .where(eq(kasseProducts.id, productId))
-    .limit(1);
-  return rows[0] || null;
 }
 
 export async function createKasseProduct(

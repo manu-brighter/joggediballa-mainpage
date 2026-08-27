@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'wouter';
+import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ export default function KasseKueche() {
   const utils = trpc.useUtils();
   const setStatus = trpc.kasse.setOrderStatus.useMutation({
     onSuccess: () => utils.kasse.listOpenOrders.invalidate(),
+    onError: e => toast.error(e.message),
   });
 
   if (state.isLoading) {
@@ -159,7 +161,10 @@ export default function KasseKueche() {
 
                     <Button
                       className="h-20 w-full text-xl font-semibold"
-                      disabled={setStatus.isPending}
+                      disabled={
+                        setStatus.isPending &&
+                        setStatus.variables?.orderId === order.id
+                      }
                       onClick={() =>
                         setStatus.mutate({
                           token,

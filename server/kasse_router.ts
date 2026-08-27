@@ -152,22 +152,6 @@ export const kasseRouter = router({
       return listKasseOrders(session.id, ['pending', 'ready']);
     }),
 
-  /** Bereits ausgelieferte Bestellungen der laufenden Session (Kontrolle). */
-  listDeliveredOrders: publicProcedure
-    .input(
-      z.object({
-        token: z.string(),
-        limit: z.number().int().min(1).max(100).default(25),
-      }),
-    )
-    .query(async ({ input }) => {
-      await requireToken(input.token);
-      const session = await getOpenKasseSession();
-      if (!session) return [];
-      const orders = await listKasseOrders(session.id, ['delivered']);
-      return orders.slice(-input.limit).reverse();
-    }),
-
   /**
    * Bestellung aufnehmen. Preise kommen ausschliesslich aus der DB — der Client
    * schickt nur Produkt-, Options- und Mengenangaben.

@@ -6,8 +6,6 @@
  * die Anzeige.
  */
 
-export type KasseOrderStatus = 'pending' | 'ready' | 'delivered' | 'cancelled';
-
 export function formatChf(rappen: number): string {
   return `CHF ${(rappen / 100).toFixed(2)}`;
 }
@@ -18,13 +16,6 @@ export function parseChfToRappen(input: string): number | null {
   if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null;
   return Math.round(Number(normalized) * 100);
 }
-
-export const STATUS_LABEL: Record<KasseOrderStatus, string> = {
-  pending: 'In Arbeit',
-  ready: 'Bereit',
-  delivered: 'Serviert',
-  cancelled: 'Storniert',
-};
 
 /** Minuten seit Bestelleingang — Basis für die Farbeskalation in der Küche. */
 export function minutesSince(date: Date | string, now: number): number {
