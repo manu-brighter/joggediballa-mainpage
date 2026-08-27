@@ -208,12 +208,37 @@ async function startServer() {
   });
   app.use(generalLimiter);
 
+  // The kasse (POS) pages are the one flow that legitimately fires many
+  // mutations from a single IP: at an event every phone and the kitchen tablet
+  // sit behind the same NAT, and each order costs 3 mutations (create → ready →
+  // delivered). They get their own, much wider window instead of tripping the
+  // general 60/15min limit. `req.path` here is relative to the /api/trpc mount
+  // and holds the (possibly batched, comma-separated) procedure names.
+  const isKasseOnly = (req: Request): boolean => {
+    const procedures = req.path.replace(/^\//, '').split(',');
+    return (
+      procedures.length > 0 && procedures.every(p => p.startsWith('kasse.'))
+    );
+  };
+
   const trpcMutationLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 60, // 60 mutations / 15 min / IP — well above normal use
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: req => skipInNonProd() || req.method.toUpperCase() === 'GET',
+    skip: req =>
+      skipInNonProd() || req.method.toUpperCase() === 'GET' || isKasseOnly(req),
+  });
+
+  const kasseMutationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 1000, // ~330 Bestellungen / 15 min / IP — deckt jeden Event-Peak ab
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    skip: req =>
+      skipInNonProd() ||
+      req.method.toUpperCase() === 'GET' ||
+      !isKasseOnly(req),
   });
 
   // Body parsing — file uploads use multipart (not JSON), so 1 MB is sufficient here
@@ -224,7 +249,7 @@ async function startServer() {
   registerGoogleAuthRoutes(app);
 
   // CSRF guard runs before any tRPC mutation or /api/upload write.
-  app.use('/api/trpc', csrfGuard, trpcMutationLimiter);
+  app.use('/api/trpc', csrfGuard, trpcMutationLimiter, kasseMutationLimiter);
   app.use('/api/upload', csrfGuard);
 
   // tRPC API
