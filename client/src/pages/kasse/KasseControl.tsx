@@ -953,6 +953,54 @@ export default function KasseControl() {
                     )}
                   </div>
 
+                  {stats.waiters.length > 0 && (
+                    <div className="overflow-x-auto">
+                      <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                        Aufgenommen pro Service
+                      </p>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b text-left text-muted-foreground">
+                            <th className="py-2 font-medium">Name</th>
+                            <th className="py-2 text-right font-medium">
+                              Bestellungen
+                            </th>
+                            <th className="py-2 text-right font-medium">
+                              Umsatz
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stats.waiters.map(row => (
+                            <tr
+                              key={row.waiterName ?? 'ohne-name'}
+                              className="border-b last:border-0"
+                            >
+                              <td className="py-2">
+                                {row.waiterName ?? (
+                                  <span className="text-muted-foreground">
+                                    ohne Name
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2 text-right tabular-nums">
+                                {row.orderCount}
+                              </td>
+                              <td className="py-2 text-right tabular-nums">
+                                {formatChf(row.revenueRappen)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Der Name stammt vom Gerät des Service und wird dort
+                        einmal gesetzt. Stornierte Bestellungen zählen nicht
+                        mit.
+                      </p>
+                    </div>
+                  )}
+
                   {statsSessionId != null &&
                     settings.openSession?.id !== statsSessionId && (
                       <div className="flex gap-2">

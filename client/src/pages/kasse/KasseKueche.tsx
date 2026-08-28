@@ -31,6 +31,19 @@ export default function KasseKueche() {
 
   const [showClosed, setShowClosed] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
+  // Ausgeklappte Notizen. Standardmässig auf zwei Zeilen gekürzt, damit eine
+  // ausschweifende Notiz die Karte nicht sprengt und der Rest der Liste
+  // sichtbar bleibt. Antippen zeigt den vollen Text, denn in der Küche kann
+  // genau dort das Entscheidende stehen.
+  const [openNotes, setOpenNotes] = useState<Set<number>>(new Set());
+
+  const toggleNote = (orderId: number) =>
+    setOpenNotes(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
 
   const state = trpc.kasse.publicState.useQuery(
     { token },
@@ -189,9 +202,28 @@ export default function KasseKueche() {
                         ))}
                       </ul>
                       {order.note && (
-                        <p className="mt-2 break-words text-sm italic xl:text-base">
-                          {order.note}
-                        </p>
+                        <button
+                          type="button"
+                          onClick={() => toggleNote(order.id)}
+                          className="mt-2 block w-full text-left"
+                          title={order.note}
+                        >
+                          {/* `block` und `line-clamp-2` setzen beide display;
+                              nebeneinander gewinnt `block` und die Kürzung
+                              greift nicht. Darum sich ausschliessend. */}
+                          <span
+                            className={`break-words text-sm italic xl:text-base ${
+                              openNotes.has(order.id) ? 'block' : 'line-clamp-2'
+                            }`}
+                          >
+                            {order.note}
+                          </span>
+                          <span className="text-xs text-muted-foreground underline">
+                            {openNotes.has(order.id)
+                              ? 'Notiz einklappen'
+                              : 'Ganze Notiz'}
+                          </span>
+                        </button>
                       )}
                     </div>
 
@@ -269,6 +301,24 @@ export default function KasseKueche() {
                       </li>
                     ))}
                   </ul>
+                  {/* Holt der Service am Durchreichefenster ab, ohne sein Handy
+                      zu zücken, bleibt die Bestellung sonst in der Abholliste
+                      liegen. Derselbe Statuswechsel wie im Service. */}
+                  <Button
+                    variant="outline"
+                    className="mt-3 h-12 w-full border-success text-base font-semibold"
+                    disabled={busy(order.id)}
+                    onClick={() =>
+                      setStatus.mutate({
+                        token,
+                        orderId: order.id,
+                        status: 'delivered',
+                      })
+                    }
+                  >
+                    <Check className="mr-2 h-5 w-5" />
+                    Abgeholt
+                  </Button>
                 </div>
               ))}
             </div>

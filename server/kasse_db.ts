@@ -709,6 +709,12 @@ export type KasseSessionStats = {
     optionName: string;
     quantity: number;
   }>;
+  /** Aufgenommene Bestellungen pro Servicekraft. */
+  waiters: Array<{
+    waiterName: string | null;
+    orderCount: number;
+    revenueRappen: number;
+  }>;
 };
 
 /**
@@ -783,6 +789,26 @@ export async function getKasseSessionStats(
     .groupBy(kasseOrderItemOptions.optionName)
     .orderBy(desc(sql`SUM(${kasseOrderItems.quantity})`));
 
+  // Wer wie viel aufgenommen hat. Der Name kommt vom Gerät des Service und ist
+  // nicht normalisiert; ohne Namen laufen die Bestellungen unter NULL und
+  // werden in der Anzeige zusammengefasst. Stornierte zählen nicht mit, sonst
+  // stünde eine zurückgezogene Bestellung als Leistung in der Liste.
+  const waiters = await db
+    .select({
+      waiterName: kasseOrders.waiterName,
+      orderCount: sql<number>`COUNT(*)`,
+      revenue: sql<number>`COALESCE(SUM(${kasseOrders.totalRappen}), 0)`,
+    })
+    .from(kasseOrders)
+    .where(
+      and(
+        eq(kasseOrders.sessionId, sessionId),
+        inArray(kasseOrders.status, ['pending', 'ready', 'delivered']),
+      ),
+    )
+    .groupBy(kasseOrders.waiterName)
+    .orderBy(desc(sql`COUNT(*)`));
+
   // Wartezeiten rechnet MySQL, aus demselben Grund wie in listKasseOrders:
   // beide Zeitstempel stammen aus der DB-Uhr, ein Vergleich mit der Node-Uhr
   // wäre bei abweichender Zeitzone falsch. Stornierte zählen nicht mit.
@@ -821,6 +847,11 @@ export async function getKasseSessionStats(
     options: options.map(o => ({
       optionName: o.optionName,
       quantity: Number(o.quantity),
+    })),
+    waiters: waiters.map(w => ({
+      waiterName: w.waiterName,
+      orderCount: Number(w.orderCount),
+      revenueRappen: Number(w.revenue),
     })),
   };
 }
