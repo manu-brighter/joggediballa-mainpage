@@ -18,6 +18,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatChf, formatWait, urgency, waitMinutes } from '@/lib/kasse';
 import { Check, History, Loader2, Trash2, Utensils } from 'lucide-react';
 
+/**
+ * Ab welcher Länge eine Notiz überhaupt gekürzt werden kann. Eine Messung von
+ * scrollHeight gegen clientHeight wäre exakt, bräuchte aber eine Ref und einen
+ * ResizeObserver je Karte; bei zwei Zeilen à rund 40 Zeichen liegt die Grenze
+ * praktisch hier. Kürzere Notizen zeigen den Aufklapp-Hinweis gar nicht erst.
+ */
+const NOTE_CLAMP_THRESHOLD = 80;
+
 /** Farbcodierung der Wartezeit, damit die Küche sofort sieht, was liegen bleibt. */
 const URGENCY_STYLES = {
   normal: 'border-pending/50 bg-pending/10',
@@ -31,6 +39,19 @@ export default function KasseKueche() {
 
   const [showClosed, setShowClosed] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
+  // Ausgeklappte Notizen. Standardmässig auf zwei Zeilen gekürzt, damit eine
+  // ausschweifende Notiz die Karte nicht sprengt und der Rest der Liste
+  // sichtbar bleibt. Antippen zeigt den vollen Text, denn in der Küche kann
+  // genau dort das Entscheidende stehen.
+  const [openNotes, setOpenNotes] = useState<Set<number>>(new Set());
+
+  const toggleNote = (orderId: number) =>
+    setOpenNotes(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
 
   const state = trpc.kasse.publicState.useQuery(
     { token },
@@ -188,11 +209,45 @@ export default function KasseKueche() {
                           </li>
                         ))}
                       </ul>
-                      {order.note && (
-                        <p className="mt-2 break-words text-sm italic xl:text-base">
-                          {order.note}
-                        </p>
-                      )}
+                      {order.note &&
+                        (() => {
+                          const clampable =
+                            order.note.length > NOTE_CLAMP_THRESHOLD;
+                          const open = openNotes.has(order.id);
+                          // Kurze Notizen sind ohnehin ganz zu sehen und
+                          // brauchen weder Knopf noch Hinweis.
+                          if (!clampable) {
+                            return (
+                              <p className="mt-2 break-words text-sm italic xl:text-base">
+                                {order.note}
+                              </p>
+                            );
+                          }
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => toggleNote(order.id)}
+                              className="mt-2 block w-full text-left"
+                              aria-expanded={open}
+                              title={order.note}
+                            >
+                              {/* `block` und `line-clamp-2` setzen beide
+                                  display; nebeneinander gewinnt `block` und
+                                  die Kürzung greift nicht. Darum sich
+                                  ausschliessend. */}
+                              <span
+                                className={`break-words text-sm italic xl:text-base ${
+                                  open ? 'block' : 'line-clamp-2'
+                                }`}
+                              >
+                                {order.note}
+                              </span>
+                              <span className="text-xs text-muted-foreground underline">
+                                {open ? 'Notiz einklappen' : 'Ganze Notiz'}
+                              </span>
+                            </button>
+                          );
+                        })()}
                     </div>
 
                     <div className="hidden text-center xl:block">
@@ -269,6 +324,25 @@ export default function KasseKueche() {
                       </li>
                     ))}
                   </ul>
+                  {/* Holt der Service am Durchreichefenster ab, ohne sein Handy
+                      zu zücken, bleibt die Bestellung sonst in der Abholliste
+                      liegen. Derselbe Statuswechsel wie im Service. */}
+                  <Button
+                    variant="outline"
+                    className="mt-3 h-12 w-full border-success text-base font-semibold"
+                    disabled={busy(order.id)}
+                    onClick={() =>
+                      setStatus.mutate({
+                        token,
+                        orderId: order.id,
+                        status: 'delivered',
+                      })
+                    }
+                  >
+                    <Check className="mr-2 h-5 w-5" />
+                    Abgeholt
+                    <span className="sr-only">, Tisch {order.tableName}</span>
+                  </Button>
                 </div>
               ))}
             </div>

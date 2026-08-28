@@ -709,6 +709,12 @@ export type KasseSessionStats = {
     optionName: string;
     quantity: number;
   }>;
+  /** Aufgenommene Bestellungen pro Servicekraft. */
+  waiters: Array<{
+    waiterName: string | null;
+    orderCount: number;
+    revenueRappen: number;
+  }>;
 };
 
 /**
@@ -721,7 +727,7 @@ export async function getKasseSessionStats(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  const totals = await db
+  const totalsQuery = db
     .select({
       status: kasseOrders.status,
       count: sql<number>`COUNT(*)`,
@@ -731,20 +737,7 @@ export async function getKasseSessionStats(
     .where(eq(kasseOrders.sessionId, sessionId))
     .groupBy(kasseOrders.status);
 
-  let orderCount = 0;
-  let cancelledCount = 0;
-  let revenueRappen = 0;
-  for (const row of totals) {
-    const count = Number(row.count);
-    if (row.status === 'cancelled') {
-      cancelledCount += count;
-      continue;
-    }
-    orderCount += count;
-    revenueRappen += Number(row.revenue);
-  }
-
-  const products = await db
+  const productsQuery = db
     .select({
       productName: kasseOrderItems.productName,
       quantity: sql<number>`SUM(${kasseOrderItems.quantity})`,
@@ -759,11 +752,14 @@ export async function getKasseSessionStats(
       ),
     )
     .groupBy(kasseOrderItems.productName)
-    .orderBy(desc(sql`SUM(${kasseOrderItems.quantity})`));
+    .orderBy(
+      desc(sql`SUM(${kasseOrderItems.quantity})`),
+      asc(kasseOrderItems.productName),
+    );
 
   // Zusätze separat: eine Position kann mehrere haben, und für den Einkauf
   // zählt „wie viel Mayo ist weg“, nicht die Kombination.
-  const options = await db
+  const optionsQuery = db
     .select({
       optionName: kasseOrderItemOptions.optionName,
       quantity: sql<number>`SUM(${kasseOrderItems.quantity})`,
@@ -781,12 +777,39 @@ export async function getKasseSessionStats(
       ),
     )
     .groupBy(kasseOrderItemOptions.optionName)
-    .orderBy(desc(sql`SUM(${kasseOrderItems.quantity})`));
+    .orderBy(
+      desc(sql`SUM(${kasseOrderItems.quantity})`),
+      asc(kasseOrderItemOptions.optionName),
+    );
+
+  // Wer wie viel aufgenommen hat. Der Name kommt vom Gerät des Service; ohne
+  // Namen laufen die Bestellungen unter NULL. Gruppiert wird unter der
+  // Standard-Collation utf8mb4_0900_ai_ci, „Anna" und „anna" landen also in
+  // derselben Zeile, was hier erwünscht ist. Welche Schreibweise MySQL dann
+  // als Namen zurückgibt, ist allerdings nicht festgelegt. Stornierte zählen
+  // nicht mit, sonst stünde eine zurückgezogene Bestellung als Leistung da.
+  const waitersQuery = db
+    .select({
+      waiterName: kasseOrders.waiterName,
+      orderCount: sql<number>`COUNT(*)`,
+      revenue: sql<number>`COALESCE(SUM(${kasseOrders.totalRappen}), 0)`,
+    })
+    .from(kasseOrders)
+    .where(
+      and(
+        eq(kasseOrders.sessionId, sessionId),
+        inArray(kasseOrders.status, ['pending', 'ready', 'delivered']),
+      ),
+    )
+    .groupBy(kasseOrders.waiterName)
+    // Ohne zweites Kriterium darf MySQL bei Gleichstand jede Reihenfolge
+    // liefern, und die Tabelle mischt sich zwischen zwei Aufrufen neu.
+    .orderBy(desc(sql`COUNT(*)`), asc(kasseOrders.waiterName));
 
   // Wartezeiten rechnet MySQL, aus demselben Grund wie in listKasseOrders:
   // beide Zeitstempel stammen aus der DB-Uhr, ein Vergleich mit der Node-Uhr
   // wäre bei abweichender Zeitzone falsch. Stornierte zählen nicht mit.
-  const durations = await db
+  const durationsQuery = db
     .select({
       avgReady: sql<
         number | null
@@ -802,6 +825,27 @@ export async function getKasseSessionStats(
         inArray(kasseOrders.status, ['ready', 'delivered']),
       ),
     );
+
+  const [totals, products, options, waiters, durations] = await Promise.all([
+    totalsQuery,
+    productsQuery,
+    optionsQuery,
+    waitersQuery,
+    durationsQuery,
+  ]);
+
+  let orderCount = 0;
+  let cancelledCount = 0;
+  let revenueRappen = 0;
+  for (const row of totals) {
+    const count = Number(row.count);
+    if (row.status === 'cancelled') {
+      cancelledCount += count;
+      continue;
+    }
+    orderCount += count;
+    revenueRappen += Number(row.revenue);
+  }
 
   const avgReady = durations[0]?.avgReady;
   const avgDelivered = durations[0]?.avgDelivered;
@@ -821,6 +865,11 @@ export async function getKasseSessionStats(
     options: options.map(o => ({
       optionName: o.optionName,
       quantity: Number(o.quantity),
+    })),
+    waiters: waiters.map(w => ({
+      waiterName: w.waiterName,
+      orderCount: Number(w.orderCount),
+      revenueRappen: Number(w.revenue),
     })),
   };
 }

@@ -78,7 +78,7 @@ export default function KasseService() {
   const [cartOpen, setCartOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
-  // Kurzes Aufleuchten nach dem Antippen. Ohne das quittiert nur das
+  // Aufleuchten nach dem Antippen. Ohne das quittiert nur das
   // active:bg-accent des Browsers, was auf dem Handy unter dem Finger liegt
   // und beim Loslassen schon wieder weg ist.
   const [flashId, setFlashId] = useState<number | null>(null);
@@ -264,16 +264,33 @@ export default function KasseService() {
   };
 
   const flashTimer = useRef<number | null>(null);
+  const flashFrame = useRef<number | null>(null);
   useEffect(() => {
     return () => {
       if (flashTimer.current !== null) window.clearTimeout(flashTimer.current);
+      if (flashFrame.current !== null)
+        window.cancelAnimationFrame(flashFrame.current);
     };
   }, []);
 
+  /**
+   * Zweimal dasselbe Produkt hintereinander ist der häufigste Fall überhaupt
+   * (drei Bier). Dieselbe ID nochmals zu setzen ändert die Klassenliste nicht,
+   * und eine CSS-Animation startet nur neu, wenn sich der animation-name
+   * ändert oder das Element neu eingehängt wird. Darum erst abräumen und im
+   * nächsten Frame neu setzen, damit die Klasse wirklich weg war.
+   */
   const flashProduct = (productId: number) => {
     if (flashTimer.current !== null) window.clearTimeout(flashTimer.current);
-    setFlashId(productId);
-    flashTimer.current = window.setTimeout(() => setFlashId(null), 600);
+    if (flashFrame.current !== null)
+      window.cancelAnimationFrame(flashFrame.current);
+
+    setFlashId(null);
+    flashFrame.current = window.requestAnimationFrame(() => {
+      flashFrame.current = null;
+      setFlashId(productId);
+      flashTimer.current = window.setTimeout(() => setFlashId(null), 700);
+    });
   };
 
   const handleProductTap = (productId: number) => {
@@ -496,14 +513,19 @@ export default function KasseService() {
                           ? product.options.length - shown.length
                           : 0;
                       const inCart = quantityByProduct.get(product.id) ?? 0;
+                      // Beim Antippen färbt sich die ganze Zeile satt in der
+                      // Bestätigungsfarbe und stösst kurz an. Ein getönter
+                      // Hintergrund allein ging am Event unter, darum
+                      // Vollfläche, Häkchen und Bewegung zusammen.
+                      const flashing = flashId === product.id;
                       return (
                         <button
                           key={product.id}
                           type="button"
                           onClick={() => handleProductTap(product.id)}
-                          className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-[background-color,border-color,transform] duration-150 active:bg-accent ${
-                            flashId === product.id
-                              ? 'border-success bg-success/15 scale-[0.98]'
+                          className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity] duration-200 active:bg-accent ${
+                            flashing
+                              ? 'kasse-tap-flash border-success bg-success text-success-foreground shadow-lg'
                               : 'border-border'
                           }`}
                         >
@@ -516,13 +538,23 @@ export default function KasseService() {
                                 {shown.map(option => (
                                   <span
                                     key={option.id}
-                                    className="max-w-[9rem] truncate rounded-full border px-2 py-0.5 text-xs text-muted-foreground"
+                                    className={`max-w-[9rem] truncate rounded-full border px-2 py-0.5 text-xs ${
+                                      flashing
+                                        ? 'border-success-foreground/40'
+                                        : 'text-muted-foreground'
+                                    }`}
                                   >
                                     {option.name}
                                   </span>
                                 ))}
                                 {hidden > 0 && (
-                                  <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                                  <span
+                                    className={`rounded-full border px-2 py-0.5 text-xs ${
+                                      flashing
+                                        ? 'border-success-foreground/40'
+                                        : 'text-muted-foreground'
+                                    }`}
+                                  >
                                     +{hidden}
                                   </span>
                                 )}
@@ -530,13 +562,33 @@ export default function KasseService() {
                             )}
                           </span>
                           <span className="ml-3 flex shrink-0 items-center gap-2">
+                            {/* Platz dauerhaft reserviert: ein eingehängtes
+                                Icon schöbe Abzeichen und Preis zur Seite und
+                                kürzte den Produktnamen für die Dauer der
+                                Rückmeldung ab, genau unter dem Finger. */}
+                            <Check
+                              className={`h-5 w-5 shrink-0 ${
+                                flashing ? 'opacity-100' : 'opacity-0'
+                              }`}
+                              aria-hidden="true"
+                            />
                             {inCart > 0 && (
-                              <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold tabular-nums text-primary-foreground">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
+                                  flashing
+                                    ? 'bg-success-foreground text-success'
+                                    : 'bg-primary text-primary-foreground'
+                                }`}
+                              >
                                 {inCart}×
                                 <span className="sr-only"> im Warenkorb</span>
                               </span>
                             )}
-                            <span className="tabular-nums text-sm text-muted-foreground">
+                            <span
+                              className={`tabular-nums text-sm ${
+                                flashing ? '' : 'text-muted-foreground'
+                              }`}
+                            >
                               {formatChf(product.priceRappen)}
                             </span>
                           </span>
