@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server';
 import { and, asc, desc, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getDb } from './db';
@@ -127,6 +128,57 @@ export async function closeKasseSession(sessionId: number): Promise<void> {
     .update(kasseSessions)
     .set({ status: 'closed', closedAt: new Date() })
     .where(eq(kasseSessions.id, sessionId));
+}
+
+/**
+ * Offene Bestellungen stornieren und die Session schliessen — in einer
+ * Transaktion und unter Sperre der Session-Zeile.
+ *
+ * Zwei getrennte Statements liessen eine Lücke: eine Bestellung, die zwischen
+ * Storno und Schliessen eintrifft, hat ihre `requireOpenSession`-Prüfung
+ * vorher bestanden, bleibt danach aber als `pending` in einer geschlossenen
+ * Session liegen — unsichtbar in Küche und Service, aber im Umsatz. Das
+ * `FOR UPDATE` serialisiert sie gegen das Schliessen: entweder ist sie vorher
+ * da und wird mitstorniert, oder createKasseOrder sieht die geschlossene
+ * Session und lehnt ab.
+ */
+export async function closeKasseSessionSettling(
+  sessionId: number,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  return db.transaction(async tx => {
+    await tx
+      .select({ id: kasseSessions.id })
+      .from(kasseSessions)
+      .where(eq(kasseSessions.id, sessionId))
+      .for('update');
+
+    const stillOpen = and(
+      eq(kasseOrders.sessionId, sessionId),
+      inArray(kasseOrders.status, ['pending', 'ready']),
+    );
+
+    const open = await tx
+      .select({ id: kasseOrders.id })
+      .from(kasseOrders)
+      .where(stillOpen);
+
+    if (open.length > 0) {
+      await tx
+        .update(kasseOrders)
+        .set({ status: 'cancelled', cancelledAt: sql`NOW()` })
+        .where(stillOpen);
+    }
+
+    await tx
+      .update(kasseSessions)
+      .set({ status: 'closed', closedAt: sql`NOW()` })
+      .where(eq(kasseSessions.id, sessionId));
+
+    return open.length;
+  });
 }
 
 export async function reopenKasseSession(sessionId: number): Promise<void> {
@@ -303,11 +355,29 @@ export async function listKasseTables() {
   );
 }
 
+/**
+ * `kasse_tables.name` ist UNIQUE. Ohne Vorprüfung wird aus einem doppelten
+ * Namen ein ER_DUP_ENTRY und daraus ein INTERNAL_SERVER_ERROR-Toast; die
+ * Bereichsanlage filtert vorhandene Namen längst weg (createKasseTablesBulk).
+ */
 export async function createKasseTable(
   data: InsertKasseTable,
 ): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
+
+  const existing = await db
+    .select({ id: kasseTables.id })
+    .from(kasseTables)
+    .where(eq(kasseTables.name, data.name))
+    .limit(1);
+  if (existing.length > 0) {
+    throw new TRPCError({
+      code: 'CONFLICT',
+      message: `Tisch \u201E${data.name}\u201C gibt es schon.`,
+    });
+  }
+
   const result = await db.insert(kasseTables).values(data);
   return Number(result[0].insertId);
 }
@@ -385,6 +455,24 @@ export async function createKasseOrder(
   // Bestellung mit Betrag, aber ohne Positionen zurückbleiben: die Küche sieht
   // eine leere Bestellung und die Auswertung zählt Umsatz ohne Produkte.
   return db.transaction(async tx => {
+    // Session unter Sperre gegenprüfen: die Prüfung im Router lief vor dieser
+    // Transaktion, dazwischen kann die Kasse geschlossen worden sein. Ohne das
+    // landet die Bestellung als `pending` in einer geschlossenen Session —
+    // unsichtbar in Küche und Service, aber im Umsatz.
+    const target = await tx
+      .select({ status: kasseSessions.status })
+      .from(kasseSessions)
+      .where(eq(kasseSessions.id, order.sessionId))
+      .for('update');
+
+    if (target[0]?.status !== 'open') {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message:
+          'Die Kasse wurde gerade geschlossen — Bestellung nicht erfasst.',
+      });
+    }
+
     const result = await tx.insert(kasseOrders).values(order);
     const orderId = Number(result[0].insertId);
 
@@ -438,6 +526,7 @@ export async function getKasseOrder(orderId: number) {
 export async function listKasseOrders(
   sessionId: number,
   statuses?: Array<'pending' | 'ready' | 'delivered' | 'cancelled'>,
+  opts?: { limit?: number; newestFirst?: boolean },
 ) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
@@ -468,7 +557,12 @@ export async function listKasseOrders(
     })
     .from(kasseOrders)
     .where(where)
-    .orderBy(asc(kasseOrders.createdAt), asc(kasseOrders.id));
+    .orderBy(
+      ...(opts?.newestFirst
+        ? [desc(kasseOrders.createdAt), desc(kasseOrders.id)]
+        : [asc(kasseOrders.createdAt), asc(kasseOrders.id)]),
+    )
+    .limit(opts?.limit ?? Number.MAX_SAFE_INTEGER);
 
   if (orders.length === 0) return [];
 

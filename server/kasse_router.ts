@@ -6,7 +6,7 @@ import { hasPermission } from './permissions';
 import { createActivityLog } from './db';
 import {
   cancelOpenKasseOrders,
-  closeKasseSession,
+  closeKasseSessionSettling,
   countOpenKasseOrders,
   createKasseOrder,
   createKasseProduct,
@@ -65,11 +65,14 @@ const manageKasse = requirePermission('manage_kasse');
  * Konzept wie beim Diashow-Upload. Der Token ist damit das Geheimnis; er wird
  * per QR/Link verteilt und kann jederzeit rotiert werden.
  */
-async function requireToken(token: string): Promise<void> {
+async function requireToken(token: string) {
   const settings = await getKasseSettings();
   if (token !== settings.accessToken) {
     throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Ungültiger Token' });
   }
+  // Zurückgeben statt verwerfen: createOrder braucht `ordersOpen` und holte
+  // dafür bisher dieselbe Single-Row-Zeile ein zweites Mal.
+  return settings;
 }
 
 /** Die aktuell offene Session, oder ein sprechender Fehler. */
@@ -115,6 +118,7 @@ const rateLimited = (bucket: string, limit: number) =>
 async function settleOpenOrders(
   sessionId: number,
   force: boolean | undefined,
+  opts?: { dryRun?: boolean },
 ): Promise<number> {
   const open = await countOpenKasseOrders(sessionId);
   if (open === 0) return 0;
@@ -125,6 +129,10 @@ async function settleOpenOrders(
       message: `Es sind noch ${open} Bestellung(en) offen. Zuerst abschliessen — oder das Schliessen bestätigen, dann werden sie storniert.`,
     });
   }
+
+  // Nur prüfen: der Aufrufer storniert gleich selbst, in derselben
+  // Transaktion, in der er die Session schliesst.
+  if (opts?.dryRun) return open;
 
   return cancelOpenKasseOrders(sessionId);
 }
@@ -223,11 +231,10 @@ export const kasseRouter = router({
       await requireToken(input.token);
       const session = await getOpenKasseSession();
       if (!session) return [];
-      const orders = await listKasseOrders(session.id, [
-        'delivered',
-        'cancelled',
-      ]);
-      return orders.reverse().slice(0, input.limit);
+      return listKasseOrders(session.id, ['delivered', 'cancelled'], {
+        limit: input.limit,
+        newestFirst: true,
+      });
     }),
 
   /**
@@ -245,9 +252,7 @@ export const kasseRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      await requireToken(input.token);
-
-      const settings = await getKasseSettings();
+      const settings = await requireToken(input.token);
       if (!settings.ordersOpen) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
@@ -434,9 +439,10 @@ export const kasseRouter = router({
         });
       }
 
-      const cancelled = await settleOpenOrders(input.sessionId, input.force);
-
-      await closeKasseSession(input.sessionId);
+      // Prüfung vorab (damit ohne `force` gar nichts passiert), das eigentliche
+      // Stornieren und Schliessen dann atomar in closeKasseSessionSettling.
+      await settleOpenOrders(input.sessionId, input.force, { dryRun: true });
+      const cancelled = await closeKasseSessionSettling(input.sessionId);
       await createActivityLog({
         userId: ctx.user.id,
         userName: ctx.user.name || 'Unknown',
@@ -451,7 +457,12 @@ export const kasseRouter = router({
     }),
 
   reopenSession: manageKasse
-    .input(z.object({ sessionId: z.number().int().positive() }))
+    .input(
+      z.object({
+        sessionId: z.number().int().positive(),
+        force: z.boolean().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const session = await getKasseSession(input.sessionId);
       if (!session) {
@@ -460,6 +471,27 @@ export const kasseRouter = router({
           message: 'Session not found',
         });
       }
+
+      // Wiederöffnen schliesst die laufende Kasse — also dieselbe Regel wie
+      // beim Öffnen und Schliessen. Ohne das bleiben deren offene
+      // Bestellungen in einer geschlossenen Session zurück: weg aus Küche und
+      // Service, aber weiter im Umsatz.
+      const running = await getOpenKasseSession();
+      if (running && running.id !== input.sessionId) {
+        await settleOpenOrders(running.id, input.force, { dryRun: true });
+        const cancelled = await closeKasseSessionSettling(running.id);
+        if (cancelled > 0) {
+          await createActivityLog({
+            userId: ctx.user.id,
+            userName: ctx.user.name || 'Unknown',
+            action: 'kasse_orders_cancelled',
+            details: `Cancelled ${cancelled} open order(s) when reopening session #${input.sessionId}`,
+            ipAddress: null,
+            userAgent: null,
+          });
+        }
+      }
+
       await reopenKasseSession(input.sessionId);
       await createActivityLog({
         userId: ctx.user.id,
@@ -482,6 +514,19 @@ export const kasseRouter = router({
           message: 'Session not found',
         });
       }
+
+      // Löschen kaskadiert auf Bestellungen, Positionen und Zusätze und ist
+      // nicht rückholbar. Der Löschknopf im Admin hängt an einer bis zu 15 s
+      // alten Antwort — öffnet jemand anders die Kasse in der Zwischenzeit,
+      // zeigt die Ansicht ihn weiterhin an. Darum hier nochmal gegen den
+      // aktuellen Stand prüfen statt der Ansicht zu vertrauen.
+      if (session.status === 'open') {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Diese Kasse ist offen. Zuerst schliessen, dann löschen.',
+        });
+      }
+
       await deleteKasseSession(input.sessionId);
       await createActivityLog({
         userId: ctx.user.id,

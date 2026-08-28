@@ -49,9 +49,17 @@ export default function KasseKueche() {
 
   const utils = trpc.useUtils();
   const setStatus = trpc.kasse.setOrderStatus.useMutation({
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       utils.kasse.listOpenOrders.invalidate();
-      utils.kasse.listClosedOrders.invalidate();
+      // Nur nachladen, wenn die Liste überhaupt offen ist: das Tablet pollt
+      // im 3-Sekunden-Takt, und jede „Bereit"-Bestätigung hätte sonst eine
+      // zweite Abfrage über die ganze Historie ausgelöst.
+      if (
+        showClosed &&
+        (variables.status === 'delivered' || variables.status === 'cancelled')
+      ) {
+        utils.kasse.listClosedOrders.invalidate();
+      }
     },
     onError: e => toast.error(e.message),
   });

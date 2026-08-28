@@ -42,6 +42,14 @@ const WAITER_NAME_KEY = 'kasse.waiterName';
 /** Wie viele Zusätze als Pill unter dem Produkt stehen, bevor „+n" übernimmt. */
 const OPTION_PILL_LIMIT = 3;
 
+// Spiegel der Zod-Grenzen in server/kasse_router.ts (orderItemInput). Ohne sie
+// scheitert erst die Mutation — und dann an der Eingabevalidierung, die eine
+// Zod-Fehlerliste statt eines deutschen Satzes zurückgibt und die *ganze*
+// Bestellung ablehnt, nicht die eine Position.
+const MAX_QUANTITY = 99;
+const MAX_LINES = 40;
+const MAX_OPTIONS_PER_LINE = 20;
+
 type CartLine = {
   productId: number;
   optionIds: number[];
@@ -93,10 +101,7 @@ export default function KasseService() {
   );
 
   const utils = trpc.useUtils();
-  const refreshOrders = () => {
-    utils.kasse.listOpenOrders.invalidate();
-    utils.kasse.listClosedOrders.invalidate();
-  };
+  const refreshOrders = () => utils.kasse.listOpenOrders.invalidate();
 
   const createOrder = trpc.kasse.createOrder.useMutation({
     onSuccess: () => {
@@ -110,7 +115,18 @@ export default function KasseService() {
     onError: e => toast.error(e.message),
   });
   const setStatus = trpc.kasse.setOrderStatus.useMutation({
-    onSuccess: () => refreshOrders(),
+    onSuccess: (_result, variables) => {
+      refreshOrders();
+      // Die abgeschlossenen Bestellungen sind eine eigene Abfrage — nur
+      // nachladen, wenn die Liste offen ist und der Wechsel überhaupt eine
+      // dorthin verschiebt.
+      if (
+        showClosed &&
+        (variables.status === 'delivered' || variables.status === 'cancelled')
+      ) {
+        utils.kasse.listClosedOrders.invalidate();
+      }
+    },
     onError: e => toast.error(e.message),
   });
 
@@ -190,9 +206,20 @@ export default function KasseService() {
       const idx = prev.findIndex(
         l => lineKey(l.productId, l.optionIds) === key,
       );
-      if (idx === -1) return [...prev, { productId, optionIds, quantity: 1 }];
+      if (idx === -1) {
+        if (prev.length >= MAX_LINES) {
+          toast.error(`Mehr als ${MAX_LINES} Positionen gehen nicht.`);
+          return prev;
+        }
+        return [...prev, { productId, optionIds, quantity: 1 }];
+      }
       const next = [...prev];
-      next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+      const quantity = Math.min(MAX_QUANTITY, next[idx].quantity + 1);
+      if (quantity === next[idx].quantity) {
+        toast.error(`Mehr als ${MAX_QUANTITY} pro Position gehen nicht.`);
+        return prev;
+      }
+      next[idx] = { ...next[idx], quantity };
       return next;
     });
   };
@@ -202,7 +229,7 @@ export default function KasseService() {
       prev
         .map(l =>
           lineKey(l.productId, l.optionIds) === key
-            ? { ...l, quantity: l.quantity + delta }
+            ? { ...l, quantity: Math.min(MAX_QUANTITY, l.quantity + delta) }
             : l,
         )
         .filter(l => l.quantity > 0),
@@ -221,11 +248,14 @@ export default function KasseService() {
   };
 
   const toggleDraftOption = (optionId: number) => {
-    setDraftOptionIds(prev =>
-      prev.includes(optionId)
-        ? prev.filter(id => id !== optionId)
-        : [...prev, optionId],
-    );
+    setDraftOptionIds(prev => {
+      if (prev.includes(optionId)) return prev.filter(id => id !== optionId);
+      if (prev.length >= MAX_OPTIONS_PER_LINE) {
+        toast.error(`Mehr als ${MAX_OPTIONS_PER_LINE} Zusätze gehen nicht.`);
+        return prev;
+      }
+      return [...prev, optionId];
+    });
   };
 
   const submit = () => {
@@ -318,6 +348,11 @@ export default function KasseService() {
   }
 
   const session = state.data.session;
+  // Der Admin-Schalter verspricht „Service kann keine neuen Bestellungen mehr
+  // senden" — ohne diese Auswertung merkte das Handy davon nichts und lief
+  // erst beim Senden in eine rote Fehlermeldung, mit fertig getippter
+  // Bestellung. Gleiches gilt, wenn gar keine Kasse offen ist.
+  const canSend = state.data.ordersOpen && session != null;
   const orders = openOrders.data ?? [];
   const readyOrders = orders.filter(o => o.status === 'ready');
   const pendingOrders = orders.filter(o => o.status === 'pending');
@@ -382,11 +417,18 @@ export default function KasseService() {
         </div>
       </header>
 
-      {!session && (
+      {!session ? (
         <div className="m-4 rounded-lg border border-pending/40 bg-pending/10 p-4 text-sm">
           Aktuell ist keine Kasse offen. Ein Admin muss im Kassen-Admin zuerst
           ein Event öffnen.
         </div>
+      ) : (
+        !state.data.ordersOpen && (
+          <div className="m-4 rounded-lg border border-pending/40 bg-pending/10 p-4 text-sm">
+            Die Bestellannahme ist geschlossen. Offene Bestellungen lassen sich
+            noch abschliessen, neue nimmt die Küche nicht mehr an.
+          </div>
+        )
       )}
 
       {tab === 'order' ? (
@@ -703,7 +745,10 @@ export default function KasseService() {
               className="h-12 flex-1 text-base"
               onClick={submit}
               disabled={
-                createOrder.isPending || cartCount === 0 || tableId == null
+                createOrder.isPending ||
+                cartCount === 0 ||
+                tableId == null ||
+                !canSend
               }
             >
               {createOrder.isPending ? (
@@ -812,6 +857,7 @@ export default function KasseService() {
                       size="icon"
                       className="h-10 w-10"
                       onClick={() => changeQuantity(key, 1)}
+                      disabled={line.quantity >= MAX_QUANTITY}
                       aria-label="Mehr"
                     >
                       <Plus className="h-4 w-4" />

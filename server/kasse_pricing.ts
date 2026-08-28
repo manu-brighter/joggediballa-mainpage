@@ -68,9 +68,15 @@ export function buildOrderItems(
       };
     });
 
-    const unitPriceRappen =
+    // Abschläge dürfen den Preis nicht unter null drücken: Zusätze können
+    // einen negativen Aufpreis haben („ohne Beilage") und mehrere davon
+    // kombiniert ergäben sonst eine Position mit negativem Betrag, die sich
+    // direkt vom Umsatz der Session abzieht.
+    const unitPriceRappen = Math.max(
+      0,
       product.priceRappen +
-      chosen.reduce((sum, o) => sum + o.priceDeltaRappen, 0);
+        chosen.reduce((sum, o) => sum + o.priceDeltaRappen, 0),
+    );
 
     items.push({
       productId: product.id,

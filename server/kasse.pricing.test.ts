@@ -159,6 +159,33 @@ describe('buildOrderItems', () => {
     ).toThrow(/Unbekannter Zusatz/);
   });
 
+  it('lässt den Stückpreis nicht unter null fallen', () => {
+    // Zusätze dürfen einen Abschlag tragen; mehrere kombiniert könnten den
+    // Produktpreis sonst unterschreiten und der Umsatz der Session sänke.
+    const abschlaege: PricingOption[] = [
+      {
+        id: 20,
+        productId: 1,
+        name: 'ohne Beilage',
+        priceDeltaRappen: -500,
+        isActive: true,
+      },
+      {
+        id: 21,
+        productId: 1,
+        name: 'ohne Sauce',
+        priceDeltaRappen: -300,
+        isActive: true,
+      },
+    ];
+    const items = buildOrderItems(products, abschlaege, [
+      { productId: 1, optionIds: [20, 21], quantity: 2 },
+    ]);
+    expect(items[0].unitPriceRappen).toBe(0);
+    expect(items[0].lineTotalRappen).toBe(0);
+    expect(orderTotalRappen(items)).toBe(0);
+  });
+
   it('nimmt eine leere Zusatzliste wie „ohne Zusatz"', () => {
     const items = buildOrderItems(products, options, [
       { productId: 1, optionIds: [], quantity: 1 },

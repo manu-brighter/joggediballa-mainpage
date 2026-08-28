@@ -216,10 +216,19 @@ async function startServer() {
   // server/kasse_ratelimit.ts) — this skip only stops the blanket limiter from
   // rejecting them first. `req.path` is relative to the /api/trpc mount and
   // holds the (possibly batched, comma-separated) procedure names.
+  //
+  // Namentlich, nicht per `kasse.`-Präfix: ein eigenes Budget haben nur diese
+  // beiden. Die übrigen ~20 Kassen-Mutationen (rotateToken, deleteSession,
+  // createTableRange mit bis zu 999 Zeilen …) hätte ein Präfix-Test ohne
+  // Ersatz aus dem Limiter genommen.
+  const KASSE_SELF_LIMITED = new Set([
+    'kasse.createOrder',
+    'kasse.setOrderStatus',
+  ]);
   const isKasseOnly = (req: Request): boolean => {
     const procedures = req.path.replace(/^\//, '').split(',');
     return (
-      procedures.length > 0 && procedures.every(p => p.startsWith('kasse.'))
+      procedures.length > 0 && procedures.every(p => KASSE_SELF_LIMITED.has(p))
     );
   };
 

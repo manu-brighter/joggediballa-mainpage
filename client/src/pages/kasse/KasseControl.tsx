@@ -194,6 +194,15 @@ export default function KasseControl() {
     price: '',
   });
   const [optionDrafts, setOptionDrafts] = useState<Record<number, string>>({});
+  // Ein Dialog für alle harten Löschungen. Produkt, Zusatz und Tisch werden
+  // serverseitig echt gelöscht; Kasse schliessen, Token rotieren und Session
+  // löschen fragen in dieser Datei längst nach, diese drei feuerten auf einen
+  // Fingertipp — mitten am Event neben dem Mengen-Plus keine gute Idee.
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    description: string;
+    run: () => void;
+  } | null>(null);
   // Aufpreis je Zusatz, als Text — geparst wird erst beim Anlegen. Leer heisst
   // 0, der Zusatz kostet dann gleich viel wie das Produkt ohne ihn.
   const [optionPriceDrafts, setOptionPriceDrafts] = useState<
@@ -364,7 +373,11 @@ export default function KasseControl() {
                 className="flex justify-center rounded-xl p-5"
                 style={{ backgroundColor: QR_BG }}
               >
-                <StyledQr value={serviceUrl} size={150} />
+                <StyledQr
+                  value={serviceUrl}
+                  size={150}
+                  label="QR-Code für die Service-Seite (Handy)"
+                />
               </div>
               <CopyableLink url={serviceUrl} />
             </div>
@@ -374,7 +387,11 @@ export default function KasseControl() {
                 className="flex justify-center rounded-xl p-5"
                 style={{ backgroundColor: QR_BG }}
               >
-                <StyledQr value={kuecheUrl} size={150} />
+                <StyledQr
+                  value={kuecheUrl}
+                  size={150}
+                  label="QR-Code für die Küchen-Seite (Tablet)"
+                />
               </div>
               <CopyableLink url={kuecheUrl} />
             </div>
@@ -491,7 +508,14 @@ export default function KasseControl() {
                         variant="ghost"
                         size="icon"
                         aria-label={`${product.name} löschen`}
-                        onClick={() => deleteProduct.mutate({ id: product.id })}
+                        onClick={() =>
+                          setConfirm({
+                            title: `„${product.name}" löschen?`,
+                            description:
+                              'Das Produkt und seine Zusätze verschwinden aus der Auswahl. Bereits erfasste Bestellungen behalten Name und Preis.',
+                            run: () => deleteProduct.mutate({ id: product.id }),
+                          })
+                        }
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -521,7 +545,13 @@ export default function KasseControl() {
                               type="button"
                               aria-label={`${option.name} entfernen`}
                               onClick={() =>
-                                deleteOption.mutate({ id: option.id })
+                                setConfirm({
+                                  title: `Zusatz „${option.name}" löschen?`,
+                                  description:
+                                    'Der Zusatz verschwindet aus der Auswahl. Bereits erfasste Bestellungen behalten ihn als Snapshot.',
+                                  run: () =>
+                                    deleteOption.mutate({ id: option.id }),
+                                })
                               }
                               className="text-muted-foreground hover:text-destructive"
                             >
@@ -607,6 +637,31 @@ export default function KasseControl() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={confirm != null}
+        onOpenChange={open => !open && setConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirm?.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                confirm?.run();
+                setConfirm(null);
+              }}
+            >
+              Bestätigen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Tische */}
       <Card>
@@ -729,7 +784,14 @@ export default function KasseControl() {
                   <button
                     type="button"
                     aria-label={`Tisch ${table.name} löschen`}
-                    onClick={() => deleteTable.mutate({ id: table.id })}
+                    onClick={() =>
+                      setConfirm({
+                        title: `Tisch „${table.name}" löschen?`,
+                        description:
+                          'Der Tisch verschwindet aus der Auswahl. Laufende Bestellungen behalten ihren Tischnamen.',
+                        run: () => deleteTable.mutate({ id: table.id }),
+                      })
+                    }
                     className="text-muted-foreground hover:text-destructive"
                   >
                     ×
@@ -895,7 +957,16 @@ export default function KasseControl() {
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            reopenSession.mutate({ sessionId: statsSessionId })
+                            setConfirm({
+                              title: 'Diese Kasse wieder öffnen?',
+                              description:
+                                'Eine laufende Kasse wird dabei geschlossen. Sind dort noch Bestellungen offen, werden sie storniert — sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.',
+                              run: () =>
+                                reopenSession.mutate({
+                                  sessionId: statsSessionId,
+                                  force: true,
+                                }),
+                            })
                           }
                         >
                           Wieder öffnen
