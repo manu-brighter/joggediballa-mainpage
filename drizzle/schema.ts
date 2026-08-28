@@ -593,13 +593,13 @@ export type SlideshowSettings = typeof slideshowSettings.$inferSelect;
 export type InsertSlideshowSettings = typeof slideshowSettings.$inferInsert;
 
 // ============================================
-// KASSENSYSTEM (POS) — Event-Bestellsystem
+// KASSENSYSTEM (POS): Event-Bestellsystem
 // ============================================
 
 /**
- * Kassensystem — Single-Row Settings/State (id=1, Pattern wie slideshowSettings).
+ * Kassensystem, Single-Row Settings/State (id=1, Pattern wie slideshowSettings).
  * `accessToken` gated die Service- und Küchen-Seiten (kein Login nötig, das
- * Personal am Event hat i. d. R. keinen Account — gleiches Konzept wie der
+ * Personal am Event hat i. d. R. keinen Account, gleiches Konzept wie der
  * Diashow-Upload-Token).
  */
 export const kasseSettings = mysqlTable('kasse_settings', {
@@ -637,7 +637,7 @@ export type KasseSession = typeof kasseSessions.$inferSelect;
 export type InsertKasseSession = typeof kasseSessions.$inferInsert;
 
 /**
- * Produkt. Preis in Rappen (Integer) — nie Float für Geld.
+ * Produkt. Preis in Rappen (Integer), nie Float für Geld.
  * Beim Löschen wird `kasseOrderItems.productId` auf NULL gesetzt; die History
  * lebt von den Snapshot-Spalten der Bestellposition, nicht von dieser Zeile.
  */
@@ -756,7 +756,7 @@ export type InsertKasseOrder = typeof kasseOrders.$inferInsert;
  * Bestellposition. Preise sind Snapshots zum Bestellzeitpunkt (siehe oben);
  * `lineTotalRappen` = quantity * unitPriceRappen.
  *
- * Die gewählten Zusätze hängen in `kasseOrderItemOptions` — eine Position kann
+ * Die gewählten Zusätze hängen in `kasseOrderItemOptions`. Eine Position kann
  * mehrere haben (Senf *und* Mayo), darum eine eigene Tabelle statt einer
  * optionId-Spalte.
  */
@@ -785,7 +785,7 @@ export type InsertKasseOrderItem = typeof kasseOrderItems.$inferInsert;
  * Gewählter Zusatz einer Bestellposition. Mehrere pro Position möglich.
  * `optionName` und `priceDeltaRappen` sind wieder Snapshots, damit die
  * Auswertung stimmt, wenn ein Zusatz später umbenannt, umgepreist oder
- * gelöscht wird — deshalb ist `optionId` nullable und nur die Herkunft.
+ * gelöscht wird. Deshalb ist `optionId` nullable und nur die Herkunft.
  */
 export const kasseOrderItemOptions = mysqlTable(
   'kasse_order_item_options',

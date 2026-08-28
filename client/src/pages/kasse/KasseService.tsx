@@ -43,7 +43,7 @@ const WAITER_NAME_KEY = 'kasse.waiterName';
 const OPTION_PILL_LIMIT = 3;
 
 // Spiegel der Zod-Grenzen in server/kasse_router.ts (orderItemInput). Ohne sie
-// scheitert erst die Mutation — und dann an der Eingabevalidierung, die eine
+// scheitert erst die Mutation, und zwar an der Eingabevalidierung, die eine
 // Zod-Fehlerliste statt eines deutschen Satzes zurückgibt und die *ganze*
 // Bestellung ablehnt, nicht die eine Position.
 const MAX_QUANTITY = 99;
@@ -78,6 +78,10 @@ export default function KasseService() {
   const [cartOpen, setCartOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
+  // Kurzes Aufleuchten nach dem Antippen. Ohne das quittiert nur das
+  // active:bg-accent des Browsers, was auf dem Handy unter dem Finger liegt
+  // und beim Loslassen schon wieder weg ist.
+  const [flashId, setFlashId] = useState<number | null>(null);
 
   const state = trpc.kasse.publicState.useQuery(
     { token },
@@ -93,7 +97,7 @@ export default function KasseService() {
     { token },
     { enabled: state.data?.valid === true, refetchInterval: 5000 },
   );
-  // Abgeschlossene bewusst ohne Polling — die Liste ist ein Nachschlagewerk,
+  // Abgeschlossene bewusst ohne Polling. Die Liste ist ein Nachschlagewerk,
   // kein Arbeitsvorrat, und am Event werden das schnell ein paar hundert.
   const closedOrders = trpc.kasse.listClosedOrders.useQuery(
     { token, limit: 50 },
@@ -117,7 +121,7 @@ export default function KasseService() {
   const setStatus = trpc.kasse.setOrderStatus.useMutation({
     onSuccess: (_result, variables) => {
       refreshOrders();
-      // Die abgeschlossenen Bestellungen sind eine eigene Abfrage — nur
+      // Die abgeschlossenen Bestellungen sind eine eigene Abfrage, also nur
       // nachladen, wenn die Liste offen ist und der Wechsel überhaupt eine
       // dorthin verschiebt.
       if (
@@ -131,7 +135,7 @@ export default function KasseService() {
   });
 
   // Sobald eine Bestellung von der Küche auf „bereit" gesetzt wird, meldet sich
-  // das Handy — sonst müsste das Personal die Liste dauernd im Auge behalten.
+  // das Handy. Sonst müsste das Personal die Liste dauernd im Auge behalten.
   const seenReady = useRef<Set<number> | null>(null);
   useEffect(() => {
     const orders = openOrders.data;
@@ -200,6 +204,17 @@ export default function KasseService() {
   const cartTotal = cartLines.reduce((sum, l) => sum + l.lineTotalRappen, 0);
   const cartCount = cartLines.reduce((sum, l) => sum + l.quantity, 0);
 
+  // Menge je Produkt über alle Zusatz-Kombinationen. Das Abzeichen bleibt
+  // stehen und beantwortet die Frage „habe ich das jetzt getippt oder nicht"
+  // auch dann noch, wenn das Aufleuchten längst vorbei ist.
+  const quantityByProduct = new Map<number, number>();
+  for (const line of cart) {
+    quantityByProduct.set(
+      line.productId,
+      (quantityByProduct.get(line.productId) ?? 0) + line.quantity,
+    );
+  }
+
   const addToCart = (productId: number, optionIds: number[]) => {
     const key = lineKey(productId, optionIds);
     setCart(prev => {
@@ -236,6 +251,19 @@ export default function KasseService() {
     );
   };
 
+  const flashTimer = useRef<number | null>(null);
+  useEffect(() => {
+    return () => {
+      if (flashTimer.current !== null) window.clearTimeout(flashTimer.current);
+    };
+  }, []);
+
+  const flashProduct = (productId: number) => {
+    if (flashTimer.current !== null) window.clearTimeout(flashTimer.current);
+    setFlashId(productId);
+    flashTimer.current = window.setTimeout(() => setFlashId(null), 600);
+  };
+
   const handleProductTap = (productId: number) => {
     const product = productById.get(productId);
     if (!product) return;
@@ -245,6 +273,7 @@ export default function KasseService() {
       return;
     }
     addToCart(productId, []);
+    flashProduct(productId);
   };
 
   const toggleDraftOption = (optionId: number) => {
@@ -310,7 +339,7 @@ export default function KasseService() {
   if (!waiterName) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <SEO title="Kasse — Service" noIndex />
+        <SEO title="Kassen-Service" noIndex />
         <Card className="w-full max-w-sm">
           <CardHeader>
             <CardTitle>Wer bist du?</CardTitle>
@@ -349,7 +378,7 @@ export default function KasseService() {
 
   const session = state.data.session;
   // Der Admin-Schalter verspricht „Service kann keine neuen Bestellungen mehr
-  // senden" — ohne diese Auswertung merkte das Handy davon nichts und lief
+  // senden". Ohne diese Auswertung merkte das Handy davon nichts und lief
   // erst beim Senden in eine rote Fehlermeldung, mit fertig getippter
   // Bestellung. Gleiches gilt, wenn gar keine Kasse offen ist.
   const canSend = state.data.ordersOpen && session != null;
@@ -368,7 +397,7 @@ export default function KasseService() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
-      <SEO title="Kasse — Service" noIndex />
+      <SEO title="Kassen-Service" noIndex />
 
       <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur px-4 py-3">
         <div className="flex items-center justify-between gap-3">
@@ -433,7 +462,7 @@ export default function KasseService() {
 
       {tab === 'order' ? (
         <main className="flex-1 space-y-6 p-4">
-          {/* Produkte zuerst — der Griff zum Tisch kommt beim Abschicken. */}
+          {/* Produkte zuerst, der Griff zum Tisch kommt beim Abschicken. */}
           <section className="space-y-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Produkte
@@ -453,12 +482,17 @@ export default function KasseService() {
                         product.options.length - shown.length > 0
                           ? product.options.length - shown.length
                           : 0;
+                      const inCart = quantityByProduct.get(product.id) ?? 0;
                       return (
                         <button
                           key={product.id}
                           type="button"
                           onClick={() => handleProductTap(product.id)}
-                          className="flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors active:bg-accent"
+                          className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-all duration-150 active:bg-accent ${
+                            flashId === product.id
+                              ? 'border-success bg-success/15 scale-[0.98]'
+                              : 'border-border'
+                          }`}
                         >
                           <span className="min-w-0">
                             <span className="block truncate font-medium">
@@ -482,8 +516,15 @@ export default function KasseService() {
                               </span>
                             )}
                           </span>
-                          <span className="ml-3 shrink-0 tabular-nums text-sm text-muted-foreground">
-                            {formatChf(product.priceRappen)}
+                          <span className="ml-3 flex shrink-0 items-center gap-2">
+                            {inCart > 0 && (
+                              <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold tabular-nums text-primary-foreground">
+                                {inCart}×
+                              </span>
+                            )}
+                            <span className="tabular-nums text-sm text-muted-foreground">
+                              {formatChf(product.priceRappen)}
+                            </span>
                           </span>
                         </button>
                       );
@@ -495,7 +536,7 @@ export default function KasseService() {
           </section>
 
           {/* Tisch und Notiz nebeneinander: die Notiz gehört zur Bestellung,
-              nicht zum zuletzt angetippten Produkt — direkt unter der
+              nicht zum zuletzt angetippten Produkt. Direkt unter der
               Produktliste las sie sich wie ein weiterer Zusatz. */}
           <div className="grid gap-6 sm:grid-cols-2">
             <section className="space-y-3">
@@ -581,7 +622,7 @@ export default function KasseService() {
                         {item.quantity}× {item.productName}
                         {item.options.length > 0 && (
                           <span className="text-muted-foreground">
-                            {' — '}
+                            {', '}
                             {item.options.map(o => o.optionName).join(', ')}
                           </span>
                         )}
@@ -608,7 +649,7 @@ export default function KasseService() {
                     }
                   >
                     <Check className="mr-2 h-5 w-5" />
-                    Serviert — abschliessen
+                    Serviert, abschliessen
                   </Button>
                 </div>
               ))
@@ -646,7 +687,7 @@ export default function KasseService() {
                       <li key={item.id}>
                         {item.quantity}× {item.productName}
                         {item.options.length > 0 &&
-                          ` — ${item.options.map(o => o.optionName).join(', ')}`}
+                          `, ${item.options.map(o => o.optionName).join(', ')}`}
                       </li>
                     ))}
                   </ul>
@@ -668,7 +709,7 @@ export default function KasseService() {
             )}
           </section>
 
-          {/* Abgeschlossenes ist zum Nachschauen da, nicht zum Arbeiten —
+          {/* Abgeschlossenes ist zum Nachschauen da, nicht zum Arbeiten,
               darum eingeklappt und ohne Polling. */}
           <section className="space-y-3 border-t pt-4">
             <Button
@@ -760,7 +801,7 @@ export default function KasseService() {
         </div>
       )}
 
-      {/* Zusatz-Auswahl — mehrere gleichzeitig möglich (Senf *und* Mayo). */}
+      {/* Zusatz-Auswahl, mehrere gleichzeitig möglich (Senf *und* Mayo). */}
       <Sheet
         open={optionProduct != null}
         onOpenChange={open => {
@@ -874,7 +915,7 @@ export default function KasseService() {
         </SheetContent>
       </Sheet>
 
-      {/* Storno bestätigen — ein Fehlgriff auf dem Handy soll die Küche nicht
+      {/* Storno bestätigen. Ein Fehlgriff auf dem Handy soll die Küche nicht
           um eine Bestellung bringen. */}
       <AlertDialog
         open={cancelId != null}

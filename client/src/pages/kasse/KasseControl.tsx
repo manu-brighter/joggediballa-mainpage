@@ -58,7 +58,7 @@ function CopyableLink({ url }: { url: string }) {
 
 /**
  * Aufpreis eines Zusatzes in Rappen. Leer = 0 (gratis), führendes Minus
- * erlaubt — „ohne Beilage" darf den Preis senken. null = ungültige Eingabe.
+ * erlaubt, damit „ohne Beilage" den Preis senken kann. null = ungültige Eingabe.
  */
 function parseOptionDelta(input: string | undefined): number | null {
   const raw = (input ?? '').trim();
@@ -109,7 +109,7 @@ export default function KasseControl() {
   const rotateToken = trpc.kasse.rotateToken.useMutation({
     onSuccess: () => {
       invalidateSettings();
-      toast.success('Neuer Token — alte Links und QR-Codes sind ungültig.');
+      toast.success('Neuer Token. Alte Links und QR-Codes sind ungültig.');
     },
     onError,
   });
@@ -125,7 +125,7 @@ export default function KasseControl() {
       invalidateSettings();
       if (r.cancelled > 0) {
         toast.warning(
-          `Kasse geschlossen — ${r.cancelled} offene Bestellung(en) storniert.`,
+          `Kasse geschlossen, ${r.cancelled} offene Bestellung(en) storniert.`,
         );
       } else {
         toast.success('Kasse geschlossen.');
@@ -197,13 +197,13 @@ export default function KasseControl() {
   // Ein Dialog für alle harten Löschungen. Produkt, Zusatz und Tisch werden
   // serverseitig echt gelöscht; Kasse schliessen, Token rotieren und Session
   // löschen fragen in dieser Datei längst nach, diese drei feuerten auf einen
-  // Fingertipp — mitten am Event neben dem Mengen-Plus keine gute Idee.
+  // Fingertipp, mitten am Event neben dem Mengen-Plus keine gute Idee.
   const [confirm, setConfirm] = useState<{
     title: string;
     description: string;
     run: () => void;
   } | null>(null);
-  // Aufpreis je Zusatz, als Text — geparst wird erst beim Anlegen. Leer heisst
+  // Aufpreis je Zusatz, als Text. Geparst wird erst beim Anlegen. Leer heisst
   // 0, der Zusatz kostet dann gleich viel wie das Produkt ohne ihn.
   const [optionPriceDrafts, setOptionPriceDrafts] = useState<
     Record<number, string>
@@ -218,7 +218,7 @@ export default function KasseControl() {
   if (!canManage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <SEO title="Kasse — Verwaltung" noIndex />
+        <SEO title="Kassen-Verwaltung" noIndex />
         <Card className="w-full max-w-sm">
           <CardHeader>
             <CardTitle>Kein Zugriff</CardTitle>
@@ -265,13 +265,13 @@ export default function KasseControl() {
 
   return (
     <div className="container mx-auto max-w-5xl space-y-6 px-4 py-8">
-      <SEO title="Kasse — Verwaltung" noIndex />
+      <SEO title="Kassen-Verwaltung" noIndex />
 
       <div>
         <h1 className="text-2xl font-bold">Kassensystem</h1>
         <p className="text-sm text-muted-foreground">
           Produkte, Tische und Auswertung. Service und Küche arbeiten über die
-          Links unten — dort braucht es keinen Login.
+          Links unten, dort braucht es keinen Login.
         </p>
       </div>
 
@@ -301,7 +301,7 @@ export default function KasseControl() {
                     <AlertDialogTitle>Kasse schliessen?</AlertDialogTitle>
                     <AlertDialogDescription>
                       {settings.openOrderCount > 0
-                        ? `Es sind noch ${settings.openOrderCount} Bestellung(en) offen. Beim Schliessen werden sie storniert — sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.`
+                        ? `Es sind noch ${settings.openOrderCount} Bestellung(en) offen. Beim Schliessen werden sie storniert. Sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.`
                         : 'Service und Küche können danach keine Bestellungen mehr aufnehmen. Die Auswertung bleibt erhalten.'}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -624,11 +624,6 @@ export default function KasseControl() {
                       >
                         Hinzufügen
                       </Button>
-                      <p className="w-full text-xs text-muted-foreground">
-                        Aufpreis leer lassen für gratis — der Zusatz kostet dann
-                        gleich viel wie das Produkt. Ein Minus ist erlaubt (z.
-                        B. −1.00 für „ohne Beilage&quot;).
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -960,7 +955,7 @@ export default function KasseControl() {
                             setConfirm({
                               title: 'Diese Kasse wieder öffnen?',
                               description:
-                                'Eine laufende Kasse wird dabei geschlossen. Sind dort noch Bestellungen offen, werden sie storniert — sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.',
+                                'Eine laufende Kasse wird dabei geschlossen. Sind dort noch Bestellungen offen, werden sie storniert. Sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.',
                               run: () =>
                                 reopenSession.mutate({
                                   sessionId: statsSessionId,

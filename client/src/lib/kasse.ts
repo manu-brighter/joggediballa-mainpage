@@ -1,5 +1,5 @@
 /**
- * Kassensystem — geteilte Helfer für Service-, Küchen- und Verwaltungsseite.
+ * Kassensystem: geteilte Helfer für Service-, Küchen- und Verwaltungsseite.
  *
  * Geld wird durchgehend als Integer in Rappen gehalten (nie Float), damit sich
  * beim Summieren keine Rundungsfehler einschleichen. Formatiert wird erst für
@@ -19,7 +19,7 @@ export function parseChfToRappen(input: string): number | null {
 
 /**
  * Wartezeit in Minuten. Die Sekunden kommen vom Server, wo MySQL sie per
- * TIMESTAMPDIFF gegen dieselbe Uhr rechnet, aus der `createdAt` stammt — die
+ * TIMESTAMPDIFF gegen dieselbe Uhr rechnet, aus der `createdAt` stammt. Die
  * Uhr des Handys bleibt bewusst aussen vor. Weicht sie ab (oder liegt die
  * Zeitzone daneben), zeigte eine Rechnung gegen `Date.now()` sonst dauerhaft 0.
  */
@@ -38,8 +38,8 @@ export function formatWait(seconds: number | null | undefined): string {
 
 /**
  * Farbstufe einer wartenden Bestellung. Bis 5 Minuten normal, danach
- * „dringend", ab 10 Minuten „überfällig" — die Küche sieht auf einen Blick,
- * was liegen geblieben ist.
+ * „dringend", ab 10 Minuten „überfällig". So sieht die Küche auf einen Blick, was
+ * liegen geblieben ist.
  */
 export function urgency(minutes: number): 'normal' | 'urgent' | 'overdue' {
   if (minutes >= 10) return 'overdue';
