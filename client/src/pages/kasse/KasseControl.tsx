@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { usePermission } from '@/hooks/usePermissions';
 import { SEO } from '@/components/SEO';
-import { StyledQr } from '@/components/StyledQr';
+import { QR_BG, StyledQr } from '@/components/StyledQr';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -342,14 +342,20 @@ export default function KasseControl() {
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-3">
               <p className="text-sm font-medium">Service (Handy)</p>
-              <div className="flex justify-center rounded-lg border p-4">
+              <div
+                className="flex justify-center rounded-xl p-5"
+                style={{ backgroundColor: QR_BG }}
+              >
                 <StyledQr value={serviceUrl} size={150} />
               </div>
               <CopyableLink url={serviceUrl} />
             </div>
             <div className="space-y-3">
               <p className="text-sm font-medium">Küche (Tablet)</p>
-              <div className="flex justify-center rounded-lg border p-4">
+              <div
+                className="flex justify-center rounded-xl p-5"
+                style={{ backgroundColor: QR_BG }}
+              >
                 <StyledQr value={kuecheUrl} size={150} />
               </div>
               <CopyableLink url={kuecheUrl} />

@@ -354,10 +354,11 @@ export default function KasseService() {
                       <Button
                         key={table.id}
                         variant={tableId === table.id ? 'default' : 'outline'}
-                        className="h-12 text-base font-semibold"
+                        className="h-12 px-2 text-base font-semibold"
                         onClick={() => setTableId(table.id)}
+                        title={table.name}
                       >
-                        {table.name}
+                        <span className="truncate">{table.name}</span>
                       </Button>
                     ))}
                   </div>
@@ -435,9 +436,14 @@ export default function KasseService() {
                   key={order.id}
                   className="rounded-lg border-2 border-success bg-success/10 p-4"
                 >
-                  <div className="flex items-baseline justify-between">
-                    <p className="text-xl font-bold">Tisch {order.tableName}</p>
-                    <p className="text-sm tabular-nums text-muted-foreground">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p
+                      className="min-w-0 truncate text-xl font-bold"
+                      title={order.tableName}
+                    >
+                      Tisch {order.tableName}
+                    </p>
+                    <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
                       {formatChf(order.totalRappen)}
                     </p>
                   </div>
@@ -490,11 +496,14 @@ export default function KasseService() {
                   key={order.id}
                   className="rounded-lg border border-pending/50 bg-pending/5 p-4"
                 >
-                  <div className="flex items-baseline justify-between">
-                    <p className="text-lg font-semibold">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p
+                      className="min-w-0 truncate text-lg font-semibold"
+                      title={order.tableName}
+                    >
                       Tisch {order.tableName}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="shrink-0 text-xs text-muted-foreground">
                       seit {minutesSince(order.createdAt, Date.now())} Min ·{' '}
                       {order.waiterName ?? '—'}
                     </p>
