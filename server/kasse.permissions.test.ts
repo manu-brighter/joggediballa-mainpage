@@ -1,5 +1,5 @@
 /**
- * Die Verwaltungs-Procedures der Kasse müssen `manage_kasse` verlangen — ein
+ * Die Verwaltungs-Procedures der Kasse müssen `manage_kasse` verlangen. Ein
  * eingeloggter User allein reicht nicht (gleiche Logik wie A-P0-05 bei der
  * Anwesenheitsliste).
  *
@@ -48,7 +48,7 @@ function makeCtx(
   };
 }
 
-describe('kasse — Verwaltung verlangt manage_kasse', () => {
+describe('kasse: Verwaltung verlangt manage_kasse', () => {
   beforeEach(() => {
     clearPermissionCache();
   });

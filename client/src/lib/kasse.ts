@@ -38,7 +38,7 @@ export function formatWait(seconds: number | null | undefined): string {
 
 /**
  * Farbstufe einer wartenden Bestellung. Bis 5 Minuten normal, danach
- * „dringend", ab 10 Minuten „überfällig". So sieht die Küche auf einen Blick, was
+ * „dringend“, ab 10 Minuten „überfällig“. So sieht die Küche auf einen Blick, was
  * liegen geblieben ist.
  */
 export function urgency(minutes: number): 'normal' | 'urgent' | 'overdue' {

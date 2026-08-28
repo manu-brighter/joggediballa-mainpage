@@ -108,7 +108,7 @@ export async function createKasseSession(
   if (!db) throw new Error('Database not available');
 
   // B-P0-05: Schliessen und Anlegen in einer Transaktion, sonst kann ein
-  // Fehler dazwischen die Invariante „höchstens eine offene Session" brechen
+  // Fehler dazwischen die Invariante „höchstens eine offene Session“ brechen
   // (gleiche Begründung wie bei sdkCreateSession).
   return db.transaction(async tx => {
     await tx
@@ -695,9 +695,9 @@ export type KasseSessionStats = {
   orderCount: number;
   cancelledCount: number;
   revenueRappen: number;
-  /** Schnitt Bestellung → „bereit", in Sekunden. Null, solange nichts fertig ist. */
+  /** Schnitt Bestellung → „bereit“, in Sekunden. Null, solange nichts fertig ist. */
   avgReadySeconds: number | null;
-  /** Schnitt Bestellung → „serviert", in Sekunden. */
+  /** Schnitt Bestellung → „serviert“, in Sekunden. */
   avgDeliveredSeconds: number | null;
   products: Array<{
     productName: string;
@@ -762,7 +762,7 @@ export async function getKasseSessionStats(
     .orderBy(desc(sql`SUM(${kasseOrderItems.quantity})`));
 
   // Zusätze separat: eine Position kann mehrere haben, und für den Einkauf
-  // zählt „wie viel Mayo ist weg", nicht die Kombination.
+  // zählt „wie viel Mayo ist weg“, nicht die Kombination.
   const options = await db
     .select({
       optionName: kasseOrderItemOptions.optionName,

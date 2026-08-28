@@ -58,7 +58,7 @@ function CopyableLink({ url }: { url: string }) {
 
 /**
  * Aufpreis eines Zusatzes in Rappen. Leer = 0 (gratis), führendes Minus
- * erlaubt, damit „ohne Beilage" den Preis senken kann. null = ungültige Eingabe.
+ * erlaubt, damit „ohne Beilage“ den Preis senken kann. null = ungültige Eingabe.
  */
 function parseOptionDelta(input: string | undefined): number | null {
   const raw = (input ?? '').trim();
@@ -292,7 +292,10 @@ export default function KasseControl() {
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" disabled={closeSession.isPending}>
+                  <Button
+                    className="w-full sm:w-auto"
+                    disabled={closeSession.isPending}
+                  >
                     Kasse schliessen
                   </Button>
                 </AlertDialogTrigger>
@@ -427,6 +430,11 @@ export default function KasseControl() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Produkte</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Zusätze: Aufpreis leer lassen für gratis, dann kostet der Zusatz
+            gleich viel wie das Produkt. Ein Minus ist erlaubt, etwa −1.00 für
+            „ohne Beilage“.
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
@@ -510,7 +518,7 @@ export default function KasseControl() {
                         aria-label={`${product.name} löschen`}
                         onClick={() =>
                           setConfirm({
-                            title: `„${product.name}" löschen?`,
+                            title: `„${product.name}“ löschen?`,
                             description:
                               'Das Produkt und seine Zusätze verschwinden aus der Auswahl. Bereits erfasste Bestellungen behalten Name und Preis.',
                             run: () => deleteProduct.mutate({ id: product.id }),
@@ -546,7 +554,7 @@ export default function KasseControl() {
                               aria-label={`${option.name} entfernen`}
                               onClick={() =>
                                 setConfirm({
-                                  title: `Zusatz „${option.name}" löschen?`,
+                                  title: `Zusatz „${option.name}“ löschen?`,
                                   description:
                                     'Der Zusatz verschwindet aus der Auswahl. Bereits erfasste Bestellungen behalten ihn als Snapshot.',
                                   run: () =>
@@ -781,7 +789,7 @@ export default function KasseControl() {
                     aria-label={`Tisch ${table.name} löschen`}
                     onClick={() =>
                       setConfirm({
-                        title: `Tisch „${table.name}" löschen?`,
+                        title: `Tisch „${table.name}“ löschen?`,
                         description:
                           'Der Tisch verschwindet aus der Auswahl. Laufende Bestellungen behalten ihren Tischnamen.',
                         run: () => deleteTable.mutate({ id: table.id }),

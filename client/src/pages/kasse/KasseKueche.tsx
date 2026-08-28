@@ -52,7 +52,7 @@ export default function KasseKueche() {
     onSuccess: (_result, variables) => {
       utils.kasse.listOpenOrders.invalidate();
       // Nur nachladen, wenn die Liste überhaupt offen ist: das Tablet pollt
-      // im 3-Sekunden-Takt, und jede „Bereit"-Bestätigung hätte sonst eine
+      // im 3-Sekunden-Takt, und jede „Bereit“-Bestätigung hätte sonst eine
       // zweite Abfrage über die ganze Historie ausgelöst.
       if (
         showClosed &&
@@ -100,11 +100,11 @@ export default function KasseKueche() {
       <SEO title="Kassen-Küche" noIndex />
 
       <header className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b bg-background/95 px-4 py-3 backdrop-blur xl:px-6">
-        <div className="flex items-center gap-3">
-          <Utensils className="h-6 w-6 text-primary" />
-          <div>
+        <div className="flex min-w-0 items-center gap-3">
+          <Utensils className="h-6 w-6 shrink-0 text-primary" />
+          <div className="min-w-0">
             <h1 className="text-lg font-semibold leading-tight">Küche</h1>
-            <p className="text-xs text-muted-foreground">
+            <p className="truncate text-xs text-muted-foreground">
               {state.data.session?.name ?? 'Keine offene Kasse'}
             </p>
           </div>
@@ -181,7 +181,7 @@ export default function KasseKueche() {
                             {item.productName}
                             {item.options.length > 0 && (
                               <span className="text-muted-foreground">
-                                {', '}
+                                {' · '}
                                 {item.options.map(o => o.optionName).join(', ')}
                               </span>
                             )}
@@ -262,10 +262,10 @@ export default function KasseKueche() {
                   </div>
                   <ul className="mt-2 space-y-0.5 text-sm text-muted-foreground">
                     {order.items.map(item => (
-                      <li key={item.id}>
+                      <li key={item.id} className="break-words">
                         {item.quantity}× {item.productName}
                         {item.options.length > 0 &&
-                          `, ${item.options.map(o => o.optionName).join(', ')}`}
+                          ` · ${item.options.map(o => o.optionName).join(', ')}`}
                       </li>
                     ))}
                   </ul>

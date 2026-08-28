@@ -8,7 +8,7 @@ import { TRPCError } from '@trpc/server';
  *   pending → cancelled
  *
  * Ohne diese Regel kann ein Gerät mit veralteter Ansicht eine bereits
- * servierte Bestellung zurück auf „bereit" setzen (Küchen-Tablet pollt alle
+ * servierte Bestellung zurück auf „bereit“ setzen (Küchen-Tablet pollt alle
  * 3 s). Sie taucht dann auf allen Service-Handys wieder in der Abholliste auf
  * und das Essen wird ein zweites Mal serviert.
  */
@@ -50,7 +50,7 @@ export function assertTransition(
   if (!isAllowedTransition(from, to)) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
-      message: `Bestellung ist bereits ${STATUS_LABEL[from]}, Wechsel auf „${STATUS_LABEL[to]}" ist nicht möglich.`,
+      message: `Bestellung ist bereits ${STATUS_LABEL[from]}, Wechsel auf „${STATUS_LABEL[to]}“ ist nicht möglich.`,
     });
   }
 

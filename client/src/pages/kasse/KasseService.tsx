@@ -39,7 +39,7 @@ import {
 
 const WAITER_NAME_KEY = 'kasse.waiterName';
 
-/** Wie viele Zusätze als Pill unter dem Produkt stehen, bevor „+n" übernimmt. */
+/** Wie viele Zusätze als Pill unter dem Produkt stehen, bevor „+n“ übernimmt. */
 const OPTION_PILL_LIMIT = 3;
 
 // Spiegel der Zod-Grenzen in server/kasse_router.ts (orderItemInput). Ohne sie
@@ -134,7 +134,7 @@ export default function KasseService() {
     onError: e => toast.error(e.message),
   });
 
-  // Sobald eine Bestellung von der Küche auf „bereit" gesetzt wird, meldet sich
+  // Sobald eine Bestellung von der Küche auf „bereit“ gesetzt wird, meldet sich
   // das Handy. Sonst müsste das Personal die Liste dauernd im Auge behalten.
   const seenReady = useRef<Set<number> | null>(null);
   useEffect(() => {
@@ -205,15 +205,27 @@ export default function KasseService() {
   const cartCount = cartLines.reduce((sum, l) => sum + l.quantity, 0);
 
   // Menge je Produkt über alle Zusatz-Kombinationen. Das Abzeichen bleibt
-  // stehen und beantwortet die Frage „habe ich das jetzt getippt oder nicht"
+  // stehen und beantwortet die Frage „habe ich das jetzt getippt oder nicht“
   // auch dann noch, wenn das Aufleuchten längst vorbei ist.
-  const quantityByProduct = new Map<number, number>();
-  for (const line of cart) {
-    quantityByProduct.set(
-      line.productId,
-      (quantityByProduct.get(line.productId) ?? 0) + line.quantity,
-    );
-  }
+  const quantityByProduct = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const line of cart) {
+      map.set(line.productId, (map.get(line.productId) ?? 0) + line.quantity);
+    }
+    return map;
+  }, [cart]);
+
+  /**
+   * Ob ein weiterer Tipp überhaupt im Warenkorb landet. addToCart lehnt an den
+   * Grenzen ab und meldet das per Toast; ohne diese Vorabprüfung leuchtete die
+   * Zeile trotzdem grün auf und widerspräche der roten Meldung.
+   */
+  const canAddToCart = (productId: number, optionIds: number[]) => {
+    const key = lineKey(productId, optionIds);
+    const line = cart.find(l => lineKey(l.productId, l.optionIds) === key);
+    if (!line) return cart.length < MAX_LINES;
+    return line.quantity < MAX_QUANTITY;
+  };
 
   const addToCart = (productId: number, optionIds: number[]) => {
     const key = lineKey(productId, optionIds);
@@ -272,8 +284,9 @@ export default function KasseService() {
       setOptionsFor(productId);
       return;
     }
+    const accepted = canAddToCart(productId, []);
     addToCart(productId, []);
-    flashProduct(productId);
+    if (accepted) flashProduct(productId);
   };
 
   const toggleDraftOption = (optionId: number) => {
@@ -378,7 +391,7 @@ export default function KasseService() {
 
   const session = state.data.session;
   // Der Admin-Schalter verspricht „Service kann keine neuen Bestellungen mehr
-  // senden". Ohne diese Auswertung merkte das Handy davon nichts und lief
+  // senden“. Ohne diese Auswertung merkte das Handy davon nichts und lief
   // erst beim Senden in eine rote Fehlermeldung, mit fertig getippter
   // Bestellung. Gleiches gilt, wenn gar keine Kasse offen ist.
   const canSend = state.data.ordersOpen && session != null;
@@ -488,7 +501,7 @@ export default function KasseService() {
                           key={product.id}
                           type="button"
                           onClick={() => handleProductTap(product.id)}
-                          className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-all duration-150 active:bg-accent ${
+                          className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-[background-color,border-color,transform] duration-150 active:bg-accent ${
                             flashId === product.id
                               ? 'border-success bg-success/15 scale-[0.98]'
                               : 'border-border'
@@ -520,6 +533,7 @@ export default function KasseService() {
                             {inCart > 0 && (
                               <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold tabular-nums text-primary-foreground">
                                 {inCart}×
+                                <span className="sr-only"> im Warenkorb</span>
                               </span>
                             )}
                             <span className="tabular-nums text-sm text-muted-foreground">
@@ -618,11 +632,11 @@ export default function KasseService() {
                   </div>
                   <ul className="mt-2 space-y-0.5 text-sm">
                     {order.items.map(item => (
-                      <li key={item.id}>
+                      <li key={item.id} className="break-words">
                         {item.quantity}× {item.productName}
                         {item.options.length > 0 && (
                           <span className="text-muted-foreground">
-                            {', '}
+                            {' · '}
                             {item.options.map(o => o.optionName).join(', ')}
                           </span>
                         )}
@@ -630,7 +644,7 @@ export default function KasseService() {
                     ))}
                   </ul>
                   {order.note && (
-                    <p className="mt-2 text-sm italic text-muted-foreground">
+                    <p className="mt-2 break-words text-sm italic text-muted-foreground">
                       {order.note}
                     </p>
                   )}
@@ -684,10 +698,10 @@ export default function KasseService() {
                   </div>
                   <ul className="mt-2 space-y-0.5 text-sm text-muted-foreground">
                     {order.items.map(item => (
-                      <li key={item.id}>
+                      <li key={item.id} className="break-words">
                         {item.quantity}× {item.productName}
                         {item.options.length > 0 &&
-                          `, ${item.options.map(o => o.optionName).join(', ')}`}
+                          ` · ${item.options.map(o => o.optionName).join(', ')}`}
                       </li>
                     ))}
                   </ul>
@@ -844,7 +858,14 @@ export default function KasseService() {
             <Button
               className="mt-2 h-12 text-base"
               onClick={() => {
-                if (optionProduct) addToCart(optionProduct.id, draftOptionIds);
+                if (optionProduct) {
+                  const accepted = canAddToCart(
+                    optionProduct.id,
+                    draftOptionIds,
+                  );
+                  addToCart(optionProduct.id, draftOptionIds);
+                  if (accepted) flashProduct(optionProduct.id);
+                }
                 setOptionsFor(null);
                 setDraftOptionIds([]);
               }}

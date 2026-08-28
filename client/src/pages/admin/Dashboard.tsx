@@ -974,7 +974,7 @@ export default function AdminDashboard() {
               >
                 <span className="flex items-center gap-2">
                   <Receipt className="h-4 w-4 text-muted-foreground" />
-                  Kassensystem — Verwaltung
+                  Kassen-Verwaltung
                 </span>
                 <ChevronRight
                   className="h-4 w-4 text-muted-foreground"

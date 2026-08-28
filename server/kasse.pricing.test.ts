@@ -1,5 +1,5 @@
 /**
- * Preisberechnung der Kasse — reine Funktion, keine DB. Deckt die
+ * Preisberechnung der Kasse, reine Funktion, keine DB. Deckt die
  * geldkritischen Fälle ab: Preise kommen immer vom Server, Zusätze müssen zum
  * Produkt gehören, und Beträge bleiben ganzzahlig in Rappen.
  */
@@ -143,7 +143,7 @@ describe('buildOrderItems', () => {
 
   it('zählt einen doppelt geschickten Zusatz nur einmal', () => {
     // Ein Handy, das dieselbe Option zweimal in die Liste legt, darf den
-    // Aufpreis nicht verdoppeln — gewählt ist gewählt.
+    // Aufpreis nicht verdoppeln, gewählt ist gewählt.
     const items = buildOrderItems(products, options, [
       { productId: 1, optionIds: [11, 11], quantity: 1 },
     ]);
@@ -186,7 +186,7 @@ describe('buildOrderItems', () => {
     expect(orderTotalRappen(items)).toBe(0);
   });
 
-  it('nimmt eine leere Zusatzliste wie „ohne Zusatz"', () => {
+  it('nimmt eine leere Zusatzliste wie „ohne Zusatz“', () => {
     const items = buildOrderItems(products, options, [
       { productId: 1, optionIds: [], quantity: 1 },
     ]);

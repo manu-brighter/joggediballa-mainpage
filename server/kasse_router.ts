@@ -89,7 +89,7 @@ async function requireOpenSession() {
 
 /**
  * Per-Procedure-Rate-Limit als tRPC-Middleware. `server/CLAUDE.md`: „Per-procedure
- * rate limiting must be implemented as tRPC middleware, not Express middleware."
+ * rate limiting must be implemented as tRPC middleware, not Express middleware.“
  * tRPC-Batch-URLs laufen an Express-Route-Matchern vorbei.
  *
  * Wie bei den Express-Limitern sind die Limits ausserhalb von Produktion aus,
@@ -670,7 +670,7 @@ export const kasseRouter = router({
       if (input.to < input.from) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: '„Bis" muss grösser oder gleich „von" sein.',
+          message: '„Bis“ muss grösser oder gleich „von“ sein.',
         });
       }
       const rows = [];

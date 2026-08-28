@@ -69,7 +69,7 @@ export function buildOrderItems(
     });
 
     // Abschläge dürfen den Preis nicht unter null drücken: Zusätze können
-    // einen negativen Aufpreis haben („ohne Beilage") und mehrere davon
+    // einen negativen Aufpreis haben („ohne Beilage“) und mehrere davon
     // kombiniert ergäben sonst eine Position mit negativem Betrag, die sich
     // direkt vom Umsatz der Session abzieht.
     const unitPriceRappen = Math.max(
