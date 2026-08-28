@@ -4,7 +4,7 @@
  * Liegt bewusst hier und nicht bei den Express-Limitern: per-Procedure-Limits
  * gehören laut `server/CLAUDE.md` in tRPC-Middleware, weil die tRPC-Batch-URLs
  * (`/api/trpc/a,b`) an Express-Route-Matchern vorbeilaufen. Der Express-Limiter
- * lässt Kassen-Mutationen darum nur durch — das eigentliche Budget wird hier
+ * lässt Kassen-Mutationen darum nur durch, das eigentliche Budget wird hier
  * pro Procedure vergeben.
  *
  * Warum überhaupt ein eigenes Budget: am Event hängen alle Handys und das
@@ -17,7 +17,7 @@
 
 const WINDOW_MS = 15 * 60 * 1000;
 
-/** Bestellungen legen Zeilen an — das engste Budget. */
+/** Bestellungen legen Zeilen an, das engste Budget. */
 export const CREATE_ORDER_LIMIT = 150;
 
 /** Statuswechsel sind durch die Zahl bestehender Bestellungen gedeckelt. */
@@ -51,7 +51,7 @@ export function consume(
 }
 
 /**
- * Hält die Map klein — ohne das wächst sie über die Laufzeit mit jeder je
+ * Hält die Map klein. Ohne das wächst sie über die Laufzeit mit jeder je
  * gesehenen IP. Läuft nur beim Anlegen eines neuen Fensters, nicht auf jedem
  * Request.
  */

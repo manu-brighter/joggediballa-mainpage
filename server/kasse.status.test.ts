@@ -1,7 +1,7 @@
 /**
  * Der Statusfluss einer Bestellung ist vorwärts-only. Der teure Fall, den das
- * verhindert: das Küchen-Tablet zeigt (3-Sekunden-Poll) noch „in Arbeit",
- * während der Service schon serviert hat — ein Tipp auf „Bereit" würde die
+ * verhindert: das Küchen-Tablet zeigt (3-Sekunden-Poll) noch „in Arbeit“,
+ * während der Service schon serviert hat. Ein Tipp auf „Bereit“ würde die
  * Bestellung sonst zurückholen und das Essen ginge ein zweites Mal raus.
  */
 import { describe, it, expect } from 'vitest';

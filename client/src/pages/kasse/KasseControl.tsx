@@ -20,6 +20,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { formatChf, formatWait, parseChfToRappen } from '@/lib/kasse';
 import {
   Copy,
@@ -58,7 +66,7 @@ function CopyableLink({ url }: { url: string }) {
 
 /**
  * Aufpreis eines Zusatzes in Rappen. Leer = 0 (gratis), führendes Minus
- * erlaubt — „ohne Beilage" darf den Preis senken. null = ungültige Eingabe.
+ * erlaubt, damit „ohne Beilage“ den Preis senken kann. null = ungültige Eingabe.
  */
 function parseOptionDelta(input: string | undefined): number | null {
   const raw = (input ?? '').trim();
@@ -109,7 +117,7 @@ export default function KasseControl() {
   const rotateToken = trpc.kasse.rotateToken.useMutation({
     onSuccess: () => {
       invalidateSettings();
-      toast.success('Neuer Token — alte Links und QR-Codes sind ungültig.');
+      toast.success('Neuer Token. Alte Links und QR-Codes sind ungültig.');
     },
     onError,
   });
@@ -125,7 +133,7 @@ export default function KasseControl() {
       invalidateSettings();
       if (r.cancelled > 0) {
         toast.warning(
-          `Kasse geschlossen — ${r.cancelled} offene Bestellung(en) storniert.`,
+          `Kasse geschlossen, ${r.cancelled} offene Bestellung(en) storniert.`,
         );
       } else {
         toast.success('Kasse geschlossen.');
@@ -197,13 +205,13 @@ export default function KasseControl() {
   // Ein Dialog für alle harten Löschungen. Produkt, Zusatz und Tisch werden
   // serverseitig echt gelöscht; Kasse schliessen, Token rotieren und Session
   // löschen fragen in dieser Datei längst nach, diese drei feuerten auf einen
-  // Fingertipp — mitten am Event neben dem Mengen-Plus keine gute Idee.
+  // Fingertipp, mitten am Event neben dem Mengen-Plus keine gute Idee.
   const [confirm, setConfirm] = useState<{
     title: string;
     description: string;
     run: () => void;
   } | null>(null);
-  // Aufpreis je Zusatz, als Text — geparst wird erst beim Anlegen. Leer heisst
+  // Aufpreis je Zusatz, als Text. Geparst wird erst beim Anlegen. Leer heisst
   // 0, der Zusatz kostet dann gleich viel wie das Produkt ohne ihn.
   const [optionPriceDrafts, setOptionPriceDrafts] = useState<
     Record<number, string>
@@ -218,7 +226,7 @@ export default function KasseControl() {
   if (!canManage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <SEO title="Kasse — Verwaltung" noIndex />
+        <SEO title="Kassen-Verwaltung" noIndex />
         <Card className="w-full max-w-sm">
           <CardHeader>
             <CardTitle>Kein Zugriff</CardTitle>
@@ -265,13 +273,13 @@ export default function KasseControl() {
 
   return (
     <div className="container mx-auto max-w-5xl space-y-6 px-4 py-8">
-      <SEO title="Kasse — Verwaltung" noIndex />
+      <SEO title="Kassen-Verwaltung" noIndex />
 
       <div>
         <h1 className="text-2xl font-bold">Kassensystem</h1>
         <p className="text-sm text-muted-foreground">
           Produkte, Tische und Auswertung. Service und Küche arbeiten über die
-          Links unten — dort braucht es keinen Login.
+          Links unten, dort braucht es keinen Login.
         </p>
       </div>
 
@@ -292,7 +300,10 @@ export default function KasseControl() {
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" disabled={closeSession.isPending}>
+                  <Button
+                    className="w-full sm:w-auto"
+                    disabled={closeSession.isPending}
+                  >
                     Kasse schliessen
                   </Button>
                 </AlertDialogTrigger>
@@ -301,7 +312,7 @@ export default function KasseControl() {
                     <AlertDialogTitle>Kasse schliessen?</AlertDialogTitle>
                     <AlertDialogDescription>
                       {settings.openOrderCount > 0
-                        ? `Es sind noch ${settings.openOrderCount} Bestellung(en) offen. Beim Schliessen werden sie storniert — sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.`
+                        ? `Es sind noch ${settings.openOrderCount} Bestellung(en) offen. Beim Schliessen werden sie storniert. Sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.`
                         : 'Service und Küche können danach keine Bestellungen mehr aufnehmen. Die Auswertung bleibt erhalten.'}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -427,6 +438,11 @@ export default function KasseControl() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Produkte</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Zusätze: Aufpreis leer lassen für gratis, dann kostet der Zusatz
+            gleich viel wie das Produkt. Ein Minus ist erlaubt, etwa −1.00 für
+            „ohne Beilage“.
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
@@ -510,7 +526,7 @@ export default function KasseControl() {
                         aria-label={`${product.name} löschen`}
                         onClick={() =>
                           setConfirm({
-                            title: `„${product.name}" löschen?`,
+                            title: `„${product.name}“ löschen?`,
                             description:
                               'Das Produkt und seine Zusätze verschwinden aus der Auswahl. Bereits erfasste Bestellungen behalten Name und Preis.',
                             run: () => deleteProduct.mutate({ id: product.id }),
@@ -546,7 +562,7 @@ export default function KasseControl() {
                               aria-label={`${option.name} entfernen`}
                               onClick={() =>
                                 setConfirm({
-                                  title: `Zusatz „${option.name}" löschen?`,
+                                  title: `Zusatz „${option.name}“ löschen?`,
                                   description:
                                     'Der Zusatz verschwindet aus der Auswahl. Bereits erfasste Bestellungen behalten ihn als Snapshot.',
                                   run: () =>
@@ -624,11 +640,6 @@ export default function KasseControl() {
                       >
                         Hinzufügen
                       </Button>
-                      <p className="w-full text-xs text-muted-foreground">
-                        Aufpreis leer lassen für gratis — der Zusatz kostet dann
-                        gleich viel wie das Produkt. Ein Minus ist erlaubt (z.
-                        B. −1.00 für „ohne Beilage&quot;).
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -786,7 +797,7 @@ export default function KasseControl() {
                     aria-label={`Tisch ${table.name} löschen`}
                     onClick={() =>
                       setConfirm({
-                        title: `Tisch „${table.name}" löschen?`,
+                        title: `Tisch „${table.name}“ löschen?`,
                         description:
                           'Der Tisch verschwindet aus der Auswahl. Laufende Bestellungen behalten ihren Tischnamen.',
                         run: () => deleteTable.mutate({ id: table.id }),
@@ -867,88 +878,134 @@ export default function KasseControl() {
                     </div>
                     <div className="rounded-lg border p-4">
                       <p className="text-xs text-muted-foreground">
-                        Ø bis serviert
+                        Ø bis abgeschlossen
                       </p>
                       <p className="text-2xl font-bold tabular-nums">
                         {formatWait(stats.avgDeliveredSeconds)}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Bestellung → am Tisch
+                        Bestellung bis serviert oder abgeholt
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-6 lg:grid-cols-2">
                     {stats.products.length > 0 && (
-                      <div className="overflow-x-auto">
+                      <div>
                         <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
                           Produkte
                         </p>
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b text-left text-muted-foreground">
-                              <th className="py-2 font-medium">Produkt</th>
-                              <th className="py-2 text-right font-medium">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Produkt</TableHead>
+                              <TableHead className="text-right">
                                 Menge
-                              </th>
-                              <th className="py-2 text-right font-medium">
+                              </TableHead>
+                              <TableHead className="text-right">
                                 Umsatz
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
                             {stats.products.map(row => (
-                              <tr
-                                key={row.productName}
-                                className="border-b last:border-0"
-                              >
-                                <td className="py-2">{row.productName}</td>
-                                <td className="py-2 text-right tabular-nums">
+                              <TableRow key={row.productName}>
+                                <TableCell>{row.productName}</TableCell>
+                                <TableCell className="text-right tabular-nums">
                                   {row.quantity}
-                                </td>
-                                <td className="py-2 text-right tabular-nums">
+                                </TableCell>
+                                <TableCell className="text-right tabular-nums">
                                   {formatChf(row.revenueRappen)}
-                                </td>
-                              </tr>
+                                </TableCell>
+                              </TableRow>
                             ))}
-                          </tbody>
-                        </table>
+                          </TableBody>
+                        </Table>
                       </div>
                     )}
 
                     {/* Zusätze separat: eine Position kann mehrere haben, für
                         den Einkauf zählt der Verbrauch pro Zusatz. */}
                     {stats.options.length > 0 && (
-                      <div className="overflow-x-auto">
+                      <div>
                         <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
                           Zusätze
                         </p>
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b text-left text-muted-foreground">
-                              <th className="py-2 font-medium">Zusatz</th>
-                              <th className="py-2 text-right font-medium">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Zusatz</TableHead>
+                              <TableHead className="text-right">
                                 Menge
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
                             {stats.options.map(row => (
-                              <tr
-                                key={row.optionName}
-                                className="border-b last:border-0"
-                              >
-                                <td className="py-2">{row.optionName}</td>
-                                <td className="py-2 text-right tabular-nums">
+                              <TableRow key={row.optionName}>
+                                <TableCell>{row.optionName}</TableCell>
+                                <TableCell className="text-right tabular-nums">
                                   {row.quantity}
-                                </td>
-                              </tr>
+                                </TableCell>
+                              </TableRow>
                             ))}
-                          </tbody>
-                        </table>
+                          </TableBody>
+                        </Table>
                       </div>
                     )}
                   </div>
+
+                  {stats.waiters.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                        Aufgenommen pro Service
+                      </p>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead className="text-right">
+                              Bestellungen
+                            </TableHead>
+                            <TableHead className="text-right">Umsatz</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {stats.waiters.map(row => (
+                            <TableRow
+                              // Ein Gerät kann sich „ohne Name" nennen, ein
+                              // fester Platzhalter wäre also kollidierbar.
+                              key={
+                                row.waiterName == null
+                                  ? '\u0000null'
+                                  : `n:${row.waiterName}`
+                              }
+                            >
+                              <TableCell>
+                                {row.waiterName ?? (
+                                  <span className="text-muted-foreground">
+                                    ohne Name
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {row.orderCount}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {formatChf(row.revenueRappen)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Der Name stammt vom Gerät des Service. Gross- und
+                        Kleinschreibung werden zusammengefasst, unterschiedliche
+                        Schreibweisen nicht. Stornierte Bestellungen zählen
+                        nicht mit.
+                      </p>
+                    </div>
+                  )}
 
                   {statsSessionId != null &&
                     settings.openSession?.id !== statsSessionId && (
@@ -960,7 +1017,7 @@ export default function KasseControl() {
                             setConfirm({
                               title: 'Diese Kasse wieder öffnen?',
                               description:
-                                'Eine laufende Kasse wird dabei geschlossen. Sind dort noch Bestellungen offen, werden sie storniert — sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.',
+                                'Eine laufende Kasse wird dabei geschlossen. Sind dort noch Bestellungen offen, werden sie storniert. Sie verschwinden aus Küche und Service und zählen nicht zum Umsatz.',
                               run: () =>
                                 reopenSession.mutate({
                                   sessionId: statsSessionId,

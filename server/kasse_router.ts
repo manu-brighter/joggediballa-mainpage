@@ -44,7 +44,7 @@ import {
 } from './kasse_ratelimit';
 
 /**
- * Local copy of the requirePermission middleware factory — same reasoning as
+ * Local copy of the requirePermission middleware factory, same reasoning as
  * in attendance_router.ts (routers.ts imports this file, so importing back
  * would be circular).
  */
@@ -61,7 +61,7 @@ const manageKasse = requirePermission('manage_kasse');
 
 /**
  * Service- und Küchen-Seite laufen ohne Login: das Personal am Event hat in der
- * Regel keinen Account. Zugang gated ein rotierbarer Token in der URL — gleiches
+ * Regel keinen Account. Zugang gated ein rotierbarer Token in der URL, gleiches
  * Konzept wie beim Diashow-Upload. Der Token ist damit das Geheimnis; er wird
  * per QR/Link verteilt und kann jederzeit rotiert werden.
  */
@@ -89,8 +89,8 @@ async function requireOpenSession() {
 
 /**
  * Per-Procedure-Rate-Limit als tRPC-Middleware. `server/CLAUDE.md`: „Per-procedure
- * rate limiting must be implemented as tRPC middleware, not Express middleware."
- * — tRPC-Batch-URLs laufen an Express-Route-Matchern vorbei.
+ * rate limiting must be implemented as tRPC middleware, not Express middleware.“
+ * tRPC-Batch-URLs laufen an Express-Route-Matchern vorbei.
  *
  * Wie bei den Express-Limitern sind die Limits ausserhalb von Produktion aus,
  * damit HMR-Reloads und Playwright-Läufe nicht in 429er laufen.
@@ -126,7 +126,7 @@ async function settleOpenOrders(
   if (!force) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
-      message: `Es sind noch ${open} Bestellung(en) offen. Zuerst abschliessen — oder das Schliessen bestätigen, dann werden sie storniert.`,
+      message: `Es sind noch ${open} Bestellung(en) offen. Zuerst abschliessen, oder das Schliessen bestätigen, dann werden sie storniert.`,
     });
   }
 
@@ -218,7 +218,7 @@ export const kasseRouter = router({
   /**
    * Abgeschlossene Bestellungen der laufenden Session, neueste zuerst.
    * Service und Küche blenden sie nur auf Wunsch ein, darum bewusst ohne
-   * Polling und mit Deckel — am Event werden das schnell ein paar hundert.
+   * Polling und mit Deckel, am Event werden das schnell ein paar hundert.
    */
   listClosedOrders: publicProcedure
     .input(
@@ -238,7 +238,7 @@ export const kasseRouter = router({
     }),
 
   /**
-   * Bestellung aufnehmen. Preise kommen ausschliesslich aus der DB — der Client
+   * Bestellung aufnehmen. Preise kommen ausschliesslich aus der DB, der Client
    * schickt nur Produkt-, Options- und Mengenangaben.
    */
   createOrder: rateLimited('createOrder', CREATE_ORDER_LIMIT)
@@ -296,7 +296,7 @@ export const kasseRouter = router({
    * Küche: fertig. Service: abgeschlossen. Storno nur solange pending.
    *
    * Der Statusfluss ist vorwärts-only (siehe kasse_status.ts) und die
-   * Bestellung muss zur laufenden Session gehören — ein Gerät mit veralteter
+   * Bestellung muss zur laufenden Session gehören. Ein Gerät mit veralteter
    * Ansicht darf weder eine servierte Bestellung zurückholen noch die History
    * einer bereits geschlossenen Kasse nachträglich verändern.
    */
@@ -472,7 +472,7 @@ export const kasseRouter = router({
         });
       }
 
-      // Wiederöffnen schliesst die laufende Kasse — also dieselbe Regel wie
+      // Wiederöffnen schliesst die laufende Kasse, also dieselbe Regel wie
       // beim Öffnen und Schliessen. Ohne das bleiben deren offene
       // Bestellungen in einer geschlossenen Session zurück: weg aus Küche und
       // Service, aber weiter im Umsatz.
@@ -517,7 +517,7 @@ export const kasseRouter = router({
 
       // Löschen kaskadiert auf Bestellungen, Positionen und Zusätze und ist
       // nicht rückholbar. Der Löschknopf im Admin hängt an einer bis zu 15 s
-      // alten Antwort — öffnet jemand anders die Kasse in der Zwischenzeit,
+      // alten Antwort. Öffnet jemand anders die Kasse in der Zwischenzeit,
       // zeigt die Ansicht ihn weiterhin an. Darum hier nochmal gegen den
       // aktuellen Stand prüfen statt der Ansicht zu vertrauen.
       if (session.status === 'open') {
@@ -670,7 +670,7 @@ export const kasseRouter = router({
       if (input.to < input.from) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: '„Bis" muss grösser oder gleich „von" sein.',
+          message: '„Bis“ muss grösser oder gleich „von“ sein.',
         });
       }
       const rows = [];

@@ -1,4 +1,4 @@
--- Kassensystem (POS) — Schema für PR #37 (feat/kassensystem)
+-- Kassensystem (POS): Schema für PR #37 (feat/kassensystem)
 --
 -- Generiert mit drizzle-kit aus `drizzle/schema.ts` (Diff main → feat/kassensystem),
 -- danach von Hand um den `manage_kasse`-Permission-Eintrag ergänzt.
@@ -6,7 +6,7 @@
 --
 --   mysql -u <user> -p <database> < docs/sql/2026-08-28-kassensystem.sql
 --
--- Hinweis: DDL in MySQL committet implizit — das Skript läuft nicht als eine
+-- Hinweis: DDL in MySQL committet implizit, das Skript läuft nicht als eine
 -- Transaktion. Bei einem Abbruch mittendrin sind die bereits angelegten Tabellen da.
 
 -- ============================================
@@ -139,7 +139,7 @@ CREATE INDEX `idx_kasse_tables_active_sort` ON `kasse_tables` (`isActive`,`displ
 -- 4. Permission `manage_kasse`
 -- ============================================
 -- `initializeDefaultPermissions()` in server/db.ts seedet nur, solange
--- `role_permissions` komplett leer ist — auf einer bestehenden DB passiert
+-- `role_permissions` komplett leer ist. Auf einer bestehenden DB passiert
 -- also nichts. Darum hier von Hand (INSERT IGNORE wegen dem Unique-Index
 -- `uniquePermissionRole`, damit ein zweiter Lauf nicht knallt).
 
@@ -151,5 +151,5 @@ INSERT IGNORE INTO `role_permissions` (`permissionKey`, `role`) VALUES
 -- 5. Kein Seed nötig
 -- ============================================
 -- Die Single-Row `kasse_settings` (id=1, frischer accessToken) legt
--- `getKasseSettings()` beim ersten Zugriff selbst an — nichts zu tun.
+-- `getKasseSettings()` beim ersten Zugriff selbst an, nichts zu tun.
 -- Produkte, Zusätze und Tische werden über /kasse/control gepflegt.

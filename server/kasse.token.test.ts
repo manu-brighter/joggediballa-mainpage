@@ -1,5 +1,5 @@
 /**
- * Service- und Küchenseite laufen ohne Login — der Zugang hängt allein am
+ * Service- und Küchenseite laufen ohne Login, der Zugang hängt allein am
  * Token. Diese Tests prüfen, dass ohne gültigen Token nichts geht.
  *
  * Integrationstests gegen die echte DB (wie slideshow/shotcounter); in CI
@@ -21,7 +21,7 @@ function anonCtx(): TrpcContext {
   };
 }
 
-describe('kasse — Token-Gate', () => {
+describe('kasse: Token-Gate', () => {
   it.skipIf(skipIntegration)(
     'publicState liefert valid:false bei falschem Token',
     async () => {

@@ -37,7 +37,7 @@ export async function getKasseSettings(): Promise<KasseSettings> {
     .limit(1);
   if (existing.length > 0) return existing[0];
 
-  // Idempotent create — parallele First-Hits kollidieren auf dem Primary Key,
+  // Idempotent create, parallele First-Hits kollidieren auf dem Primary Key,
   // statt eine zweite Settings-Row anzulegen (Pattern: getSlideshowSettings).
   await db
     .insert(kasseSettings)
@@ -108,7 +108,7 @@ export async function createKasseSession(
   if (!db) throw new Error('Database not available');
 
   // B-P0-05: Schliessen und Anlegen in einer Transaktion, sonst kann ein
-  // Fehler dazwischen die Invariante „höchstens eine offene Session" brechen
+  // Fehler dazwischen die Invariante „höchstens eine offene Session“ brechen
   // (gleiche Begründung wie bei sdkCreateSession).
   return db.transaction(async tx => {
     await tx
@@ -131,13 +131,13 @@ export async function closeKasseSession(sessionId: number): Promise<void> {
 }
 
 /**
- * Offene Bestellungen stornieren und die Session schliessen — in einer
+ * Offene Bestellungen stornieren und die Session schliessen, in einer
  * Transaktion und unter Sperre der Session-Zeile.
  *
  * Zwei getrennte Statements liessen eine Lücke: eine Bestellung, die zwischen
  * Storno und Schliessen eintrifft, hat ihre `requireOpenSession`-Prüfung
  * vorher bestanden, bleibt danach aber als `pending` in einer geschlossenen
- * Session liegen — unsichtbar in Küche und Service, aber im Umsatz. Das
+ * Session liegen, unsichtbar in Küche und Service, aber im Umsatz. Das
  * `FOR UPDATE` serialisiert sie gegen das Schliessen: entweder ist sie vorher
  * da und wird mitstorniert, oder createKasseOrder sieht die geschlossene
  * Session und lehnt ab.
@@ -185,7 +185,7 @@ export async function reopenKasseSession(sessionId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  // B-P0-05: siehe createKasseSession — schliessen und öffnen atomar.
+  // B-P0-05: siehe createKasseSession, schliessen und öffnen atomar.
   await db.transaction(async tx => {
     await tx
       .update(kasseSessions)
@@ -210,7 +210,7 @@ export async function deleteKasseSession(sessionId: number): Promise<void> {
 // PRODUKTE + ZUSÄTZE
 // ============================================
 
-/** Alle Produkte (inkl. inaktiver) — für die Verwaltung. */
+/** Alle Produkte inklusive inaktiver, für die Verwaltung. */
 export async function listKasseProducts() {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
@@ -265,7 +265,7 @@ export async function updateKasseProduct(
 }
 
 /**
- * Hart löschen. Bestellpositionen verlieren nur die FK — `productName` und die
+ * Hart löschen. Bestellpositionen verlieren nur die FK. `productName` und die
  * Preis-Snapshots bleiben, die Auswertung alter Events stimmt weiterhin.
  */
 export async function deleteKasseProduct(productId: number): Promise<void> {
@@ -277,7 +277,7 @@ export async function deleteKasseProduct(productId: number): Promise<void> {
     .set({ productId: null })
     .where(eq(kasseOrderItems.productId, productId));
 
-  // Die Zusätze verschwinden per ON DELETE CASCADE mit dem Produkt — ihre FK in
+  // Die Zusätze verschwinden per ON DELETE CASCADE mit dem Produkt, ihre FK in
   // den gewählten Zusätzen muss vorher weg, sonst blockt MySQL das Löschen.
   const options = await db
     .select({ id: kasseProductOptions.id })
@@ -320,7 +320,7 @@ export async function updateKasseProductOption(
 }
 
 /**
- * Zusätze werden hart gelöscht — Bestellpositionen halten `optionName` als
+ * Zusätze werden hart gelöscht. Bestellpositionen halten `optionName` als
  * Snapshot, die History bleibt also lesbar.
  */
 export async function deleteKasseProductOption(
@@ -451,13 +451,13 @@ export async function createKasseOrder(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  // B-P0-05: Kopf und Positionen in einer Transaktion — sonst kann eine
+  // B-P0-05: Kopf und Positionen in einer Transaktion, sonst kann eine
   // Bestellung mit Betrag, aber ohne Positionen zurückbleiben: die Küche sieht
   // eine leere Bestellung und die Auswertung zählt Umsatz ohne Produkte.
   return db.transaction(async tx => {
     // Session unter Sperre gegenprüfen: die Prüfung im Router lief vor dieser
     // Transaktion, dazwischen kann die Kasse geschlossen worden sein. Ohne das
-    // landet die Bestellung als `pending` in einer geschlossenen Session —
+    // landet die Bestellung als `pending` in einer geschlossenen Session,
     // unsichtbar in Küche und Service, aber im Umsatz.
     const target = await tx
       .select({ status: kasseSessions.status })
@@ -469,7 +469,7 @@ export async function createKasseOrder(
       throw new TRPCError({
         code: 'PRECONDITION_FAILED',
         message:
-          'Die Kasse wurde gerade geschlossen — Bestellung nicht erfasst.',
+          'Die Kasse wurde gerade geschlossen, Bestellung nicht erfasst.',
       });
     }
 
@@ -478,7 +478,7 @@ export async function createKasseOrder(
 
     // Positionen einzeln, weil wir die insertId jeder Position brauchen, um
     // die gewählten Zusätze daranzuhängen. Eine Bestellung hat eine Handvoll
-    // Positionen — das kostet nichts und bleibt in derselben Transaktion.
+    // Positionen, das kostet nichts und bleibt in derselben Transaktion.
     for (const item of items) {
       const row: InsertKasseOrderItem = {
         orderId,
@@ -520,7 +520,7 @@ export async function getKasseOrder(orderId: number) {
 }
 
 /**
- * Bestellungen einer Session inkl. Positionen, älteste zuerst — die Küche
+ * Bestellungen einer Session inkl. Positionen, älteste zuerst, die Küche
  * arbeitet von oben nach unten ab.
  */
 export async function listKasseOrders(
@@ -695,19 +695,25 @@ export type KasseSessionStats = {
   orderCount: number;
   cancelledCount: number;
   revenueRappen: number;
-  /** Schnitt Bestellung → „bereit", in Sekunden. Null, solange nichts fertig ist. */
+  /** Schnitt Bestellung → „bereit“, in Sekunden. Null, solange nichts fertig ist. */
   avgReadySeconds: number | null;
-  /** Schnitt Bestellung → „serviert", in Sekunden. */
+  /** Schnitt Bestellung → „serviert“, in Sekunden. */
   avgDeliveredSeconds: number | null;
   products: Array<{
     productName: string;
     quantity: number;
     revenueRappen: number;
   }>;
-  /** Verbrauch pro Zusatz, unabhängig vom Produkt — für den Einkauf. */
+  /** Verbrauch pro Zusatz, unabhängig vom Produkt, für den Einkauf. */
   options: Array<{
     optionName: string;
     quantity: number;
+  }>;
+  /** Aufgenommene Bestellungen pro Servicekraft. */
+  waiters: Array<{
+    waiterName: string | null;
+    orderCount: number;
+    revenueRappen: number;
   }>;
 };
 
@@ -721,7 +727,7 @@ export async function getKasseSessionStats(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  const totals = await db
+  const totalsQuery = db
     .select({
       status: kasseOrders.status,
       count: sql<number>`COUNT(*)`,
@@ -731,20 +737,7 @@ export async function getKasseSessionStats(
     .where(eq(kasseOrders.sessionId, sessionId))
     .groupBy(kasseOrders.status);
 
-  let orderCount = 0;
-  let cancelledCount = 0;
-  let revenueRappen = 0;
-  for (const row of totals) {
-    const count = Number(row.count);
-    if (row.status === 'cancelled') {
-      cancelledCount += count;
-      continue;
-    }
-    orderCount += count;
-    revenueRappen += Number(row.revenue);
-  }
-
-  const products = await db
+  const productsQuery = db
     .select({
       productName: kasseOrderItems.productName,
       quantity: sql<number>`SUM(${kasseOrderItems.quantity})`,
@@ -759,11 +752,14 @@ export async function getKasseSessionStats(
       ),
     )
     .groupBy(kasseOrderItems.productName)
-    .orderBy(desc(sql`SUM(${kasseOrderItems.quantity})`));
+    .orderBy(
+      desc(sql`SUM(${kasseOrderItems.quantity})`),
+      asc(kasseOrderItems.productName),
+    );
 
   // Zusätze separat: eine Position kann mehrere haben, und für den Einkauf
-  // zählt „wie viel Mayo ist weg", nicht die Kombination.
-  const options = await db
+  // zählt „wie viel Mayo ist weg“, nicht die Kombination.
+  const optionsQuery = db
     .select({
       optionName: kasseOrderItemOptions.optionName,
       quantity: sql<number>`SUM(${kasseOrderItems.quantity})`,
@@ -781,12 +777,39 @@ export async function getKasseSessionStats(
       ),
     )
     .groupBy(kasseOrderItemOptions.optionName)
-    .orderBy(desc(sql`SUM(${kasseOrderItems.quantity})`));
+    .orderBy(
+      desc(sql`SUM(${kasseOrderItems.quantity})`),
+      asc(kasseOrderItemOptions.optionName),
+    );
+
+  // Wer wie viel aufgenommen hat. Der Name kommt vom Gerät des Service; ohne
+  // Namen laufen die Bestellungen unter NULL. Gruppiert wird unter der
+  // Standard-Collation utf8mb4_0900_ai_ci, „Anna" und „anna" landen also in
+  // derselben Zeile, was hier erwünscht ist. Welche Schreibweise MySQL dann
+  // als Namen zurückgibt, ist allerdings nicht festgelegt. Stornierte zählen
+  // nicht mit, sonst stünde eine zurückgezogene Bestellung als Leistung da.
+  const waitersQuery = db
+    .select({
+      waiterName: kasseOrders.waiterName,
+      orderCount: sql<number>`COUNT(*)`,
+      revenue: sql<number>`COALESCE(SUM(${kasseOrders.totalRappen}), 0)`,
+    })
+    .from(kasseOrders)
+    .where(
+      and(
+        eq(kasseOrders.sessionId, sessionId),
+        inArray(kasseOrders.status, ['pending', 'ready', 'delivered']),
+      ),
+    )
+    .groupBy(kasseOrders.waiterName)
+    // Ohne zweites Kriterium darf MySQL bei Gleichstand jede Reihenfolge
+    // liefern, und die Tabelle mischt sich zwischen zwei Aufrufen neu.
+    .orderBy(desc(sql`COUNT(*)`), asc(kasseOrders.waiterName));
 
   // Wartezeiten rechnet MySQL, aus demselben Grund wie in listKasseOrders:
   // beide Zeitstempel stammen aus der DB-Uhr, ein Vergleich mit der Node-Uhr
   // wäre bei abweichender Zeitzone falsch. Stornierte zählen nicht mit.
-  const durations = await db
+  const durationsQuery = db
     .select({
       avgReady: sql<
         number | null
@@ -802,6 +825,27 @@ export async function getKasseSessionStats(
         inArray(kasseOrders.status, ['ready', 'delivered']),
       ),
     );
+
+  const [totals, products, options, waiters, durations] = await Promise.all([
+    totalsQuery,
+    productsQuery,
+    optionsQuery,
+    waitersQuery,
+    durationsQuery,
+  ]);
+
+  let orderCount = 0;
+  let cancelledCount = 0;
+  let revenueRappen = 0;
+  for (const row of totals) {
+    const count = Number(row.count);
+    if (row.status === 'cancelled') {
+      cancelledCount += count;
+      continue;
+    }
+    orderCount += count;
+    revenueRappen += Number(row.revenue);
+  }
 
   const avgReady = durations[0]?.avgReady;
   const avgDelivered = durations[0]?.avgDelivered;
@@ -821,6 +865,11 @@ export async function getKasseSessionStats(
     options: options.map(o => ({
       optionName: o.optionName,
       quantity: Number(o.quantity),
+    })),
+    waiters: waiters.map(w => ({
+      waiterName: w.waiterName,
+      orderCount: Number(w.orderCount),
+      revenueRappen: Number(w.revenue),
     })),
   };
 }

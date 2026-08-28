@@ -2,12 +2,12 @@ import { TRPCError } from '@trpc/server';
 import type { NewOrderItem } from './kasse_db';
 
 /**
- * Preisberechnung einer Bestellung — bewusst als reine Funktion ausgelagert,
+ * Preisberechnung einer Bestellung, bewusst als reine Funktion ausgelagert,
  * damit sie ohne DB testbar ist. Der Client schickt nur Produkt-, Options- und
  * Mengenangaben; jeder Preis kommt aus diesen (aus der DB geladenen) Listen.
  *
  * Eine Position kann mehrere Zusätze haben (Senf *und* Mayo). Der Stückpreis
- * ist der Produktpreis plus die Aufpreise aller gewählten Zusätze — ohne
+ * ist der Produktpreis plus die Aufpreise aller gewählten Zusätze, ohne
  * Zusatz also schlicht der Produktpreis.
  */
 
@@ -48,7 +48,7 @@ export function buildOrderItems(
       });
     }
 
-    // Doppelte IDs würden den Aufpreis mehrfach berechnen — der Zusatz ist
+    // Doppelte IDs würden den Aufpreis mehrfach berechnen. Der Zusatz ist
     // gewählt oder nicht, eine Menge gibt es auf dieser Ebene nicht.
     const optionIds = Array.from(new Set(line.optionIds ?? []));
     const chosen = optionIds.map(optionId => {
@@ -69,7 +69,7 @@ export function buildOrderItems(
     });
 
     // Abschläge dürfen den Preis nicht unter null drücken: Zusätze können
-    // einen negativen Aufpreis haben („ohne Beilage") und mehrere davon
+    // einen negativen Aufpreis haben („ohne Beilage“) und mehrere davon
     // kombiniert ergäben sonst eine Position mit negativem Betrag, die sich
     // direkt vom Umsatz der Session abzieht.
     const unitPriceRappen = Math.max(
