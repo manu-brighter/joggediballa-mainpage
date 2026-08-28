@@ -5,6 +5,10 @@ import type { NewOrderItem } from './kasse_db';
  * Preisberechnung einer Bestellung — bewusst als reine Funktion ausgelagert,
  * damit sie ohne DB testbar ist. Der Client schickt nur Produkt-, Options- und
  * Mengenangaben; jeder Preis kommt aus diesen (aus der DB geladenen) Listen.
+ *
+ * Eine Position kann mehrere Zusätze haben (Senf *und* Mayo). Der Stückpreis
+ * ist der Produktpreis plus die Aufpreise aller gewählten Zusätze — ohne
+ * Zusatz also schlicht der Produktpreis.
  */
 
 export type PricingProduct = {
@@ -24,7 +28,7 @@ export type PricingOption = {
 
 export type OrderLineInput = {
   productId: number;
-  optionId?: number | null;
+  optionIds?: number[] | null;
   quantity: number;
 };
 
@@ -44,32 +48,37 @@ export function buildOrderItems(
       });
     }
 
-    let option: PricingOption | null = null;
-    if (line.optionId != null) {
-      option =
-        options.find(
-          o =>
-            o.id === line.optionId && o.productId === product.id && o.isActive,
-        ) ?? null;
+    // Doppelte IDs würden den Aufpreis mehrfach berechnen — der Zusatz ist
+    // gewählt oder nicht, eine Menge gibt es auf dieser Ebene nicht.
+    const optionIds = Array.from(new Set(line.optionIds ?? []));
+    const chosen = optionIds.map(optionId => {
+      const option = options.find(
+        o => o.id === optionId && o.productId === product.id && o.isActive,
+      );
       if (!option) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: `Unbekannter Zusatz für ${product.name}`,
         });
       }
-    }
+      return {
+        optionId: option.id,
+        optionName: option.name,
+        priceDeltaRappen: option.priceDeltaRappen,
+      };
+    });
 
     const unitPriceRappen =
-      product.priceRappen + (option?.priceDeltaRappen ?? 0);
+      product.priceRappen +
+      chosen.reduce((sum, o) => sum + o.priceDeltaRappen, 0);
 
     items.push({
       productId: product.id,
       productName: product.name,
-      optionId: option?.id ?? null,
-      optionName: option?.name ?? null,
       quantity: line.quantity,
       unitPriceRappen,
       lineTotalRappen: unitPriceRappen * line.quantity,
+      options: chosen,
     });
   }
 

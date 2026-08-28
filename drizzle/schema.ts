@@ -755,6 +755,10 @@ export type InsertKasseOrder = typeof kasseOrders.$inferInsert;
 /**
  * Bestellposition. Preise sind Snapshots zum Bestellzeitpunkt (siehe oben);
  * `lineTotalRappen` = quantity * unitPriceRappen.
+ *
+ * Die gewählten Zusätze hängen in `kasseOrderItemOptions` — eine Position kann
+ * mehrere haben (Senf *und* Mayo), darum eine eigene Tabelle statt einer
+ * optionId-Spalte.
  */
 export const kasseOrderItems = mysqlTable(
   'kasse_order_items',
@@ -765,8 +769,6 @@ export const kasseOrderItems = mysqlTable(
       .references(() => kasseOrders.id, { onDelete: 'cascade' }),
     productId: int('productId').references(() => kasseProducts.id),
     productName: varchar('productName', { length: 100 }).notNull(),
-    optionId: int('optionId').references(() => kasseProductOptions.id),
-    optionName: varchar('optionName', { length: 100 }),
     quantity: int('quantity').notNull(),
     unitPriceRappen: int('unitPriceRappen').notNull(), // inkl. Options-Aufpreis
     lineTotalRappen: int('lineTotalRappen').notNull(),
@@ -778,3 +780,29 @@ export const kasseOrderItems = mysqlTable(
 
 export type KasseOrderItem = typeof kasseOrderItems.$inferSelect;
 export type InsertKasseOrderItem = typeof kasseOrderItems.$inferInsert;
+
+/**
+ * Gewählter Zusatz einer Bestellposition. Mehrere pro Position möglich.
+ * `optionName` und `priceDeltaRappen` sind wieder Snapshots, damit die
+ * Auswertung stimmt, wenn ein Zusatz später umbenannt, umgepreist oder
+ * gelöscht wird — deshalb ist `optionId` nullable und nur die Herkunft.
+ */
+export const kasseOrderItemOptions = mysqlTable(
+  'kasse_order_item_options',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    orderItemId: int('orderItemId')
+      .notNull()
+      .references(() => kasseOrderItems.id, { onDelete: 'cascade' }),
+    optionId: int('optionId').references(() => kasseProductOptions.id),
+    optionName: varchar('optionName', { length: 100 }).notNull(),
+    priceDeltaRappen: int('priceDeltaRappen').default(0).notNull(),
+  },
+  table => ({
+    itemIdx: index('idx_kasse_order_item_options_item').on(table.orderItemId),
+  }),
+);
+
+export type KasseOrderItemOption = typeof kasseOrderItemOptions.$inferSelect;
+export type InsertKasseOrderItemOption =
+  typeof kasseOrderItemOptions.$inferInsert;

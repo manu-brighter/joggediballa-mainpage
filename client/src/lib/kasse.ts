@@ -17,10 +17,23 @@ export function parseChfToRappen(input: string): number | null {
   return Math.round(Number(normalized) * 100);
 }
 
-/** Minuten seit Bestelleingang — Basis für die Farbeskalation in der Küche. */
-export function minutesSince(date: Date | string, now: number): number {
-  const ts = typeof date === 'string' ? Date.parse(date) : date.getTime();
-  return Math.max(0, Math.floor((now - ts) / 60000));
+/**
+ * Wartezeit in Minuten. Die Sekunden kommen vom Server, wo MySQL sie per
+ * TIMESTAMPDIFF gegen dieselbe Uhr rechnet, aus der `createdAt` stammt — die
+ * Uhr des Handys bleibt bewusst aussen vor. Weicht sie ab (oder liegt die
+ * Zeitzone daneben), zeigte eine Rechnung gegen `Date.now()` sonst dauerhaft 0.
+ */
+export function waitMinutes(seconds: number | null | undefined): number {
+  if (seconds == null) return 0;
+  return Math.max(0, Math.floor(seconds / 60));
+}
+
+/** Wartezeit für die Anzeige: "7′" bis 59 Minuten, danach "1 h 05′". */
+export function formatWait(seconds: number | null | undefined): string {
+  if (seconds == null) return '–';
+  const total = waitMinutes(seconds);
+  if (total < 60) return `${total}′`;
+  return `${Math.floor(total / 60)} h ${String(total % 60).padStart(2, '0')}′`;
 }
 
 /**
