@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { formatChf, parseChfToRappen } from '@/lib/kasse';
+import { formatChf, formatWait, parseChfToRappen } from '@/lib/kasse';
 import {
   Copy,
   ExternalLink,
@@ -54,6 +54,19 @@ function CopyableLink({ url }: { url: string }) {
       </Button>
     </div>
   );
+}
+
+/**
+ * Aufpreis eines Zusatzes in Rappen. Leer = 0 (gratis), führendes Minus
+ * erlaubt — „ohne Beilage" darf den Preis senken. null = ungültige Eingabe.
+ */
+function parseOptionDelta(input: string | undefined): number | null {
+  const raw = (input ?? '').trim();
+  if (raw === '') return 0;
+  const negative = raw.startsWith('-') || raw.startsWith('\u2212');
+  const rappen = parseChfToRappen(raw.replace(/^[-\u2212]/, ''));
+  if (rappen === null) return null;
+  return negative ? -rappen : rappen;
 }
 
 export default function KasseControl() {
@@ -181,6 +194,11 @@ export default function KasseControl() {
     price: '',
   });
   const [optionDrafts, setOptionDrafts] = useState<Record<number, string>>({});
+  // Aufpreis je Zusatz, als Text — geparst wird erst beim Anlegen. Leer heisst
+  // 0, der Zusatz kostet dann gleich viel wie das Produkt ohne ihn.
+  const [optionPriceDrafts, setOptionPriceDrafts] = useState<
+    Record<number, string>
+  >({});
   const [tableRange, setTableRange] = useState({
     area: 'A',
     from: '1',
@@ -513,7 +531,7 @@ export default function KasseControl() {
                         ))}
                       </div>
                     )}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Input
                         value={optionDrafts[product.id] ?? ''}
                         onChange={e =>
@@ -526,29 +544,61 @@ export default function KasseControl() {
                         className="max-w-xs"
                         maxLength={100}
                       />
+                      <Input
+                        value={optionPriceDrafts[product.id] ?? ''}
+                        onChange={e =>
+                          setOptionPriceDrafts(d => ({
+                            ...d,
+                            [product.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="Aufpreis, z. B. 0.50"
+                        className="w-40"
+                        inputMode="decimal"
+                        aria-label={`Aufpreis für Zusatz von ${product.name}`}
+                      />
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={!optionDrafts[product.id]?.trim()}
-                        onClick={() =>
+                        disabled={
+                          !optionDrafts[product.id]?.trim() ||
+                          parseOptionDelta(optionPriceDrafts[product.id]) ===
+                            null
+                        }
+                        onClick={() => {
+                          const delta = parseOptionDelta(
+                            optionPriceDrafts[product.id],
+                          );
+                          if (delta === null) return;
                           createOption.mutate(
                             {
                               productId: product.id,
                               name: (optionDrafts[product.id] ?? '').trim(),
+                              priceDeltaRappen: delta,
                               displayOrder: product.options.length,
                             },
                             {
-                              onSuccess: () =>
+                              onSuccess: () => {
                                 setOptionDrafts(d => ({
                                   ...d,
                                   [product.id]: '',
-                                })),
+                                }));
+                                setOptionPriceDrafts(d => ({
+                                  ...d,
+                                  [product.id]: '',
+                                }));
+                              },
                             },
-                          )
-                        }
+                          );
+                        }}
                       >
                         Hinzufügen
                       </Button>
+                      <p className="w-full text-xs text-muted-foreground">
+                        Aufpreis leer lassen für gratis — der Zusatz kostet dann
+                        gleich viel wie das Produkt. Ein Minus ist erlaubt (z.
+                        B. −1.00 für „ohne Beilage&quot;).
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -721,7 +771,7 @@ export default function KasseControl() {
 
               {stats && (
                 <div className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
                     <div className="rounded-lg border p-4">
                       <p className="text-xs text-muted-foreground">Umsatz</p>
                       <p className="text-2xl font-bold tabular-nums">
@@ -742,45 +792,101 @@ export default function KasseControl() {
                         {stats.cancelledCount}
                       </p>
                     </div>
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Ø bis bereit
+                      </p>
+                      <p className="text-2xl font-bold tabular-nums">
+                        {formatWait(stats.avgReadySeconds)}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Bestellung → Küche fertig
+                      </p>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Ø bis serviert
+                      </p>
+                      <p className="text-2xl font-bold tabular-nums">
+                        {formatWait(stats.avgDeliveredSeconds)}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Bestellung → am Tisch
+                      </p>
+                    </div>
                   </div>
 
-                  {stats.products.length > 0 && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b text-left text-muted-foreground">
-                            <th className="py-2 font-medium">Produkt</th>
-                            <th className="py-2 font-medium">Zusatz</th>
-                            <th className="py-2 text-right font-medium">
-                              Menge
-                            </th>
-                            <th className="py-2 text-right font-medium">
-                              Umsatz
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {stats.products.map(row => (
-                            <tr
-                              key={`${row.productName}:${row.optionName ?? ''}`}
-                              className="border-b last:border-0"
-                            >
-                              <td className="py-2">{row.productName}</td>
-                              <td className="py-2 text-muted-foreground">
-                                {row.optionName ?? '—'}
-                              </td>
-                              <td className="py-2 text-right tabular-nums">
-                                {row.quantity}
-                              </td>
-                              <td className="py-2 text-right tabular-nums">
-                                {formatChf(row.revenueRappen)}
-                              </td>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    {stats.products.length > 0 && (
+                      <div className="overflow-x-auto">
+                        <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                          Produkte
+                        </p>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b text-left text-muted-foreground">
+                              <th className="py-2 font-medium">Produkt</th>
+                              <th className="py-2 text-right font-medium">
+                                Menge
+                              </th>
+                              <th className="py-2 text-right font-medium">
+                                Umsatz
+                              </th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                          </thead>
+                          <tbody>
+                            {stats.products.map(row => (
+                              <tr
+                                key={row.productName}
+                                className="border-b last:border-0"
+                              >
+                                <td className="py-2">{row.productName}</td>
+                                <td className="py-2 text-right tabular-nums">
+                                  {row.quantity}
+                                </td>
+                                <td className="py-2 text-right tabular-nums">
+                                  {formatChf(row.revenueRappen)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* Zusätze separat: eine Position kann mehrere haben, für
+                        den Einkauf zählt der Verbrauch pro Zusatz. */}
+                    {stats.options.length > 0 && (
+                      <div className="overflow-x-auto">
+                        <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                          Zusätze
+                        </p>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b text-left text-muted-foreground">
+                              <th className="py-2 font-medium">Zusatz</th>
+                              <th className="py-2 text-right font-medium">
+                                Menge
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {stats.options.map(row => (
+                              <tr
+                                key={row.optionName}
+                                className="border-b last:border-0"
+                              >
+                                <td className="py-2">{row.optionName}</td>
+                                <td className="py-2 text-right tabular-nums">
+                                  {row.quantity}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
 
                   {statsSessionId != null &&
                     settings.openSession?.id !== statsSessionId && (

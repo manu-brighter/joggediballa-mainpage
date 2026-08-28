@@ -1,7 +1,8 @@
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getDb } from './db';
 import {
+  kasseOrderItemOptions,
   kasseOrderItems,
   kasseOrders,
   kasseProductOptions,
@@ -11,6 +12,7 @@ import {
   kasseTables,
   type InsertKasseOrder,
   type InsertKasseOrderItem,
+  type InsertKasseOrderItemOption,
   type InsertKasseProduct,
   type InsertKasseProductOption,
   type InsertKasseSettings,
@@ -224,18 +226,18 @@ export async function deleteKasseProduct(productId: number): Promise<void> {
     .where(eq(kasseOrderItems.productId, productId));
 
   // Die Zusätze verschwinden per ON DELETE CASCADE mit dem Produkt — ihre FK in
-  // den Bestellpositionen muss vorher weg, sonst blockt MySQL das Löschen.
+  // den gewählten Zusätzen muss vorher weg, sonst blockt MySQL das Löschen.
   const options = await db
     .select({ id: kasseProductOptions.id })
     .from(kasseProductOptions)
     .where(eq(kasseProductOptions.productId, productId));
   if (options.length > 0) {
     await db
-      .update(kasseOrderItems)
+      .update(kasseOrderItemOptions)
       .set({ optionId: null })
       .where(
         inArray(
-          kasseOrderItems.optionId,
+          kasseOrderItemOptions.optionId,
           options.map(o => o.id),
         ),
       );
@@ -275,9 +277,9 @@ export async function deleteKasseProductOption(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
   await db
-    .update(kasseOrderItems)
+    .update(kasseOrderItemOptions)
     .set({ optionId: null })
-    .where(eq(kasseOrderItems.optionId, optionId));
+    .where(eq(kasseOrderItemOptions.optionId, optionId));
   await db
     .delete(kasseProductOptions)
     .where(eq(kasseProductOptions.id, optionId));
@@ -290,10 +292,15 @@ export async function deleteKasseProductOption(
 export async function listKasseTables() {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
-  return db
-    .select()
-    .from(kasseTables)
-    .orderBy(asc(kasseTables.displayOrder), asc(kasseTables.name));
+  const tables = await db.select().from(kasseTables);
+
+  // Natürlich sortieren statt nach displayOrder: bei Bereichsanlage bekommen
+  // A1, B1, A2, B2 ihre Reihenfolge in der Anlagereihenfolge, was in der
+  // Verwaltung durcheinander aussieht. `numeric` sorgt ausserdem dafür, dass
+  // A10 nach A2 kommt und nicht dazwischen.
+  return tables.sort((a, b) =>
+    a.name.localeCompare(b.name, 'de-CH', { numeric: true }),
+  );
 }
 
 export async function createKasseTable(
@@ -352,14 +359,19 @@ export async function deleteKasseTable(tableId: number): Promise<void> {
 // BESTELLUNGEN
 // ============================================
 
+export type NewOrderItemOption = {
+  optionId: number;
+  optionName: string;
+  priceDeltaRappen: number;
+};
+
 export type NewOrderItem = {
   productId: number;
   productName: string;
-  optionId: number | null;
-  optionName: string | null;
   quantity: number;
   unitPriceRappen: number;
   lineTotalRappen: number;
+  options: NewOrderItemOption[];
 };
 
 export async function createKasseOrder(
@@ -376,17 +388,33 @@ export async function createKasseOrder(
     const result = await tx.insert(kasseOrders).values(order);
     const orderId = Number(result[0].insertId);
 
-    const rows: InsertKasseOrderItem[] = items.map(item => ({
-      orderId,
-      productId: item.productId,
-      productName: item.productName,
-      optionId: item.optionId,
-      optionName: item.optionName,
-      quantity: item.quantity,
-      unitPriceRappen: item.unitPriceRappen,
-      lineTotalRappen: item.lineTotalRappen,
-    }));
-    await tx.insert(kasseOrderItems).values(rows);
+    // Positionen einzeln, weil wir die insertId jeder Position brauchen, um
+    // die gewählten Zusätze daranzuhängen. Eine Bestellung hat eine Handvoll
+    // Positionen — das kostet nichts und bleibt in derselben Transaktion.
+    for (const item of items) {
+      const row: InsertKasseOrderItem = {
+        orderId,
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPriceRappen: item.unitPriceRappen,
+        lineTotalRappen: item.lineTotalRappen,
+      };
+      const inserted = await tx.insert(kasseOrderItems).values(row);
+      const orderItemId = Number(inserted[0].insertId);
+
+      if (item.options.length > 0) {
+        const optionRows: InsertKasseOrderItemOption[] = item.options.map(
+          option => ({
+            orderItemId,
+            optionId: option.optionId,
+            optionName: option.optionName,
+            priceDeltaRappen: option.priceDeltaRappen,
+          }),
+        );
+        await tx.insert(kasseOrderItemOptions).values(optionRows);
+      }
+    }
 
     return orderId;
   });
@@ -422,8 +450,22 @@ export async function listKasseOrders(
         )
       : eq(kasseOrders.sessionId, sessionId);
 
+  // Die Wartezeit rechnet MySQL, nicht der Client: `createdAt` kommt aus
+  // `DEFAULT (now())` der Datenbank, `Date.now()` aus der Uhr des Handys. Weichen
+  // die Zeitzonen voneinander ab, liegt der Zeitstempel in der Zukunft und die
+  // Wartezeit klebt auf 0. TIMESTAMPDIFF vergleicht beide Werte innerhalb
+  // derselben Uhr und ist damit unabhängig von Gerät und Zeitzone.
   const orders = await db
-    .select()
+    .select({
+      ...getTableColumns(kasseOrders),
+      waitSeconds: sql<number>`TIMESTAMPDIFF(SECOND, ${kasseOrders.createdAt}, NOW())`,
+      readySeconds: sql<
+        number | null
+      >`TIMESTAMPDIFF(SECOND, ${kasseOrders.createdAt}, ${kasseOrders.readyAt})`,
+      deliveredSeconds: sql<
+        number | null
+      >`TIMESTAMPDIFF(SECOND, ${kasseOrders.createdAt}, ${kasseOrders.deliveredAt})`,
+    })
     .from(kasseOrders)
     .where(where)
     .orderBy(asc(kasseOrders.createdAt), asc(kasseOrders.id));
@@ -441,8 +483,34 @@ export async function listKasseOrders(
     )
     .orderBy(asc(kasseOrderItems.id));
 
-  const byOrder = new Map<number, typeof items>();
-  for (const item of items) {
+  const chosenOptions =
+    items.length > 0
+      ? await db
+          .select()
+          .from(kasseOrderItemOptions)
+          .where(
+            inArray(
+              kasseOrderItemOptions.orderItemId,
+              items.map(i => i.id),
+            ),
+          )
+          .orderBy(asc(kasseOrderItemOptions.id))
+      : [];
+
+  const optionsByItem = new Map<number, typeof chosenOptions>();
+  for (const option of chosenOptions) {
+    const list = optionsByItem.get(option.orderItemId);
+    if (list) list.push(option);
+    else optionsByItem.set(option.orderItemId, [option]);
+  }
+
+  const itemsWithOptions = items.map(item => ({
+    ...item,
+    options: optionsByItem.get(item.id) ?? [],
+  }));
+
+  const byOrder = new Map<number, typeof itemsWithOptions>();
+  for (const item of itemsWithOptions) {
     const list = byOrder.get(item.orderId);
     if (list) list.push(item);
     else byOrder.set(item.orderId, [item]);
@@ -450,6 +518,11 @@ export async function listKasseOrders(
 
   return orders.map(order => ({
     ...order,
+    waitSeconds: Number(order.waitSeconds ?? 0),
+    readySeconds:
+      order.readySeconds == null ? null : Number(order.readySeconds),
+    deliveredSeconds:
+      order.deliveredSeconds == null ? null : Number(order.deliveredSeconds),
     items: byOrder.get(order.id) ?? [],
   }));
 }
@@ -501,12 +574,23 @@ export async function setKasseOrderStatus(
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  const patch: Partial<InsertKasseOrder> = { status };
-  if (status === 'ready') patch.readyAt = new Date();
-  if (status === 'delivered') patch.deliveredAt = new Date();
-  if (status === 'cancelled') patch.cancelledAt = new Date();
+  // NOW() statt `new Date()`: `createdAt` setzt MySQL selbst per DEFAULT. Käme
+  // der zweite Zeitstempel aus der Node-Uhr, wären die beiden bei
+  // abweichender Zeitzone nicht vergleichbar und die Wartezeit-Auswertung
+  // rechnete Unsinn.
+  const stamped =
+    status === 'ready'
+      ? { readyAt: sql`NOW()` }
+      : status === 'delivered'
+        ? { deliveredAt: sql`NOW()` }
+        : status === 'cancelled'
+          ? { cancelledAt: sql`NOW()` }
+          : {};
 
-  await db.update(kasseOrders).set(patch).where(eq(kasseOrders.id, orderId));
+  await db
+    .update(kasseOrders)
+    .set({ status, ...stamped })
+    .where(eq(kasseOrders.id, orderId));
 }
 
 // ============================================
@@ -517,11 +601,19 @@ export type KasseSessionStats = {
   orderCount: number;
   cancelledCount: number;
   revenueRappen: number;
+  /** Schnitt Bestellung → „bereit", in Sekunden. Null, solange nichts fertig ist. */
+  avgReadySeconds: number | null;
+  /** Schnitt Bestellung → „serviert", in Sekunden. */
+  avgDeliveredSeconds: number | null;
   products: Array<{
     productName: string;
-    optionName: string | null;
     quantity: number;
     revenueRappen: number;
+  }>;
+  /** Verbrauch pro Zusatz, unabhängig vom Produkt — für den Einkauf. */
+  options: Array<{
+    optionName: string;
+    quantity: number;
   }>;
 };
 
@@ -561,7 +653,6 @@ export async function getKasseSessionStats(
   const products = await db
     .select({
       productName: kasseOrderItems.productName,
-      optionName: kasseOrderItems.optionName,
       quantity: sql<number>`SUM(${kasseOrderItems.quantity})`,
       revenue: sql<number>`SUM(${kasseOrderItems.lineTotalRappen})`,
     })
@@ -573,18 +664,69 @@ export async function getKasseSessionStats(
         inArray(kasseOrders.status, ['pending', 'ready', 'delivered']),
       ),
     )
-    .groupBy(kasseOrderItems.productName, kasseOrderItems.optionName)
+    .groupBy(kasseOrderItems.productName)
     .orderBy(desc(sql`SUM(${kasseOrderItems.quantity})`));
+
+  // Zusätze separat: eine Position kann mehrere haben, und für den Einkauf
+  // zählt „wie viel Mayo ist weg", nicht die Kombination.
+  const options = await db
+    .select({
+      optionName: kasseOrderItemOptions.optionName,
+      quantity: sql<number>`SUM(${kasseOrderItems.quantity})`,
+    })
+    .from(kasseOrderItemOptions)
+    .innerJoin(
+      kasseOrderItems,
+      eq(kasseOrderItemOptions.orderItemId, kasseOrderItems.id),
+    )
+    .innerJoin(kasseOrders, eq(kasseOrderItems.orderId, kasseOrders.id))
+    .where(
+      and(
+        eq(kasseOrders.sessionId, sessionId),
+        inArray(kasseOrders.status, ['pending', 'ready', 'delivered']),
+      ),
+    )
+    .groupBy(kasseOrderItemOptions.optionName)
+    .orderBy(desc(sql`SUM(${kasseOrderItems.quantity})`));
+
+  // Wartezeiten rechnet MySQL, aus demselben Grund wie in listKasseOrders:
+  // beide Zeitstempel stammen aus der DB-Uhr, ein Vergleich mit der Node-Uhr
+  // wäre bei abweichender Zeitzone falsch. Stornierte zählen nicht mit.
+  const durations = await db
+    .select({
+      avgReady: sql<
+        number | null
+      >`AVG(TIMESTAMPDIFF(SECOND, ${kasseOrders.createdAt}, ${kasseOrders.readyAt}))`,
+      avgDelivered: sql<
+        number | null
+      >`AVG(TIMESTAMPDIFF(SECOND, ${kasseOrders.createdAt}, ${kasseOrders.deliveredAt}))`,
+    })
+    .from(kasseOrders)
+    .where(
+      and(
+        eq(kasseOrders.sessionId, sessionId),
+        inArray(kasseOrders.status, ['ready', 'delivered']),
+      ),
+    );
+
+  const avgReady = durations[0]?.avgReady;
+  const avgDelivered = durations[0]?.avgDelivered;
 
   return {
     orderCount,
     cancelledCount,
     revenueRappen,
+    avgReadySeconds: avgReady == null ? null : Math.round(Number(avgReady)),
+    avgDeliveredSeconds:
+      avgDelivered == null ? null : Math.round(Number(avgDelivered)),
     products: products.map(p => ({
       productName: p.productName,
-      optionName: p.optionName,
       quantity: Number(p.quantity),
       revenueRappen: Number(p.revenue),
+    })),
+    options: options.map(o => ({
+      optionName: o.optionName,
+      quantity: Number(o.quantity),
     })),
   };
 }

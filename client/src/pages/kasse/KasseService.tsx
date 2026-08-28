@@ -7,16 +7,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatChf, minutesSince } from '@/lib/kasse';
+import { formatChf, formatWait } from '@/lib/kasse';
 import {
   Check,
   ClipboardList,
+  ConciergeBell,
+  History,
   Loader2,
   Minus,
   Plus,
@@ -27,14 +39,18 @@ import {
 
 const WAITER_NAME_KEY = 'kasse.waiterName';
 
+/** Wie viele Zusätze als Pill unter dem Produkt stehen, bevor „+n" übernimmt. */
+const OPTION_PILL_LIMIT = 3;
+
 type CartLine = {
   productId: number;
-  optionId: number | null;
+  optionIds: number[];
   quantity: number;
 };
 
-const lineKey = (productId: number, optionId: number | null) =>
-  `${productId}:${optionId ?? 'none'}`;
+/** Gleiches Produkt mit gleicher Zusatz-Kombination ist dieselbe Position. */
+const lineKey = (productId: number, optionIds: number[]) =>
+  `${productId}:${[...optionIds].sort((a, b) => a - b).join('-') || 'none'}`;
 
 export default function KasseService() {
   const params = useParams<{ token: string }>();
@@ -50,7 +66,10 @@ export default function KasseService() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [note, setNote] = useState('');
   const [optionsFor, setOptionsFor] = useState<number | null>(null);
+  const [draftOptionIds, setDraftOptionIds] = useState<number[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [showClosed, setShowClosed] = useState(false);
+  const [cancelId, setCancelId] = useState<number | null>(null);
 
   const state = trpc.kasse.publicState.useQuery(
     { token },
@@ -66,9 +85,18 @@ export default function KasseService() {
     { token },
     { enabled: state.data?.valid === true, refetchInterval: 5000 },
   );
+  // Abgeschlossene bewusst ohne Polling — die Liste ist ein Nachschlagewerk,
+  // kein Arbeitsvorrat, und am Event werden das schnell ein paar hundert.
+  const closedOrders = trpc.kasse.listClosedOrders.useQuery(
+    { token, limit: 50 },
+    { enabled: state.data?.valid === true && showClosed },
+  );
 
   const utils = trpc.useUtils();
-  const refreshOrders = () => utils.kasse.listOpenOrders.invalidate();
+  const refreshOrders = () => {
+    utils.kasse.listOpenOrders.invalidate();
+    utils.kasse.listClosedOrders.invalidate();
+  };
 
   const createOrder = trpc.kasse.createOrder.useMutation({
     onSuccess: () => {
@@ -139,15 +167,16 @@ export default function KasseService() {
 
   const cartLines = cart.map(line => {
     const product = productById.get(line.productId);
-    const option =
-      line.optionId != null
-        ? (product?.options.find(o => o.id === line.optionId) ?? null)
-        : null;
-    const unit = (product?.priceRappen ?? 0) + (option?.priceDeltaRappen ?? 0);
+    const chosen = line.optionIds
+      .map(id => product?.options.find(o => o.id === id))
+      .filter((o): o is NonNullable<typeof o> => o != null);
+    const unit =
+      (product?.priceRappen ?? 0) +
+      chosen.reduce((sum, o) => sum + o.priceDeltaRappen, 0);
     return {
       ...line,
       productName: product?.name ?? 'Unbekannt',
-      optionName: option?.name ?? null,
+      optionNames: chosen.map(o => o.name),
       unitPriceRappen: unit,
       lineTotalRappen: unit * line.quantity,
     };
@@ -155,12 +184,13 @@ export default function KasseService() {
   const cartTotal = cartLines.reduce((sum, l) => sum + l.lineTotalRappen, 0);
   const cartCount = cartLines.reduce((sum, l) => sum + l.quantity, 0);
 
-  const addToCart = (productId: number, optionId: number | null) => {
+  const addToCart = (productId: number, optionIds: number[]) => {
+    const key = lineKey(productId, optionIds);
     setCart(prev => {
       const idx = prev.findIndex(
-        l => l.productId === productId && l.optionId === optionId,
+        l => lineKey(l.productId, l.optionIds) === key,
       );
-      if (idx === -1) return [...prev, { productId, optionId, quantity: 1 }];
+      if (idx === -1) return [...prev, { productId, optionIds, quantity: 1 }];
       const next = [...prev];
       next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
       return next;
@@ -171,7 +201,7 @@ export default function KasseService() {
     setCart(prev =>
       prev
         .map(l =>
-          lineKey(l.productId, l.optionId) === key
+          lineKey(l.productId, l.optionIds) === key
             ? { ...l, quantity: l.quantity + delta }
             : l,
         )
@@ -183,10 +213,19 @@ export default function KasseService() {
     const product = productById.get(productId);
     if (!product) return;
     if (product.options.length > 0) {
+      setDraftOptionIds([]);
       setOptionsFor(productId);
       return;
     }
-    addToCart(productId, null);
+    addToCart(productId, []);
+  };
+
+  const toggleDraftOption = (optionId: number) => {
+    setDraftOptionIds(prev =>
+      prev.includes(optionId)
+        ? prev.filter(id => id !== optionId)
+        : [...prev, optionId],
+    );
   };
 
   const submit = () => {
@@ -205,7 +244,7 @@ export default function KasseService() {
       note: note.trim() || undefined,
       items: cart.map(l => ({
         productId: l.productId,
-        optionId: l.optionId,
+        optionIds: l.optionIds,
         quantity: l.quantity,
       })),
     });
@@ -259,7 +298,6 @@ export default function KasseService() {
                 onChange={e => setNameDraft(e.target.value)}
                 placeholder="z. B. Manuel"
                 maxLength={60}
-                autoFocus
               />
             </div>
             <Button
@@ -271,7 +309,7 @@ export default function KasseService() {
                 setWaiterName(name);
               }}
             >
-              Los geht's
+              Weiter
             </Button>
           </CardContent>
         </Card>
@@ -286,17 +324,27 @@ export default function KasseService() {
   const optionProduct =
     optionsFor != null ? (productById.get(optionsFor) ?? null) : null;
 
+  const draftUnitPrice = optionProduct
+    ? optionProduct.priceRappen +
+      optionProduct.options
+        .filter(o => draftOptionIds.includes(o.id))
+        .reduce((sum, o) => sum + o.priceDeltaRappen, 0)
+    : 0;
+
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
       <SEO title="Kasse — Service" noIndex />
 
       <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Service</p>
-            <h1 className="truncate text-base font-semibold">
-              {session?.name ?? 'Keine offene Kasse'}
-            </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <ConciergeBell className="h-6 w-6 shrink-0 text-primary" />
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold leading-tight">Service</h1>
+              <p className="truncate text-xs text-muted-foreground">
+                {session?.name ?? 'Keine offene Kasse'}
+              </p>
+            </div>
           </div>
           <span className="shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground">
             {waiterName}
@@ -318,9 +366,16 @@ export default function KasseService() {
           >
             <ClipboardList className="mr-2 h-4 w-4" />
             Offen
-            {orders.length > 0 && (
-              <span className="ml-2 rounded-full bg-background/20 px-2 py-0.5 text-xs">
-                {orders.length}
+            {/* Bereit und in der Küche getrennt: auf dem Handy soll man ohne
+                Umschalten sehen, ob etwas zum Abholen bereitsteht. */}
+            {readyOrders.length > 0 && (
+              <span className="ml-2 rounded-full bg-success px-2 py-0.5 text-xs font-semibold text-success-foreground">
+                {readyOrders.length} bereit
+              </span>
+            )}
+            {pendingOrders.length > 0 && (
+              <span className="ml-1 rounded-full bg-pending px-2 py-0.5 text-xs font-semibold text-pending-foreground">
+                {pendingOrders.length}
               </span>
             )}
           </Button>
@@ -336,38 +391,7 @@ export default function KasseService() {
 
       {tab === 'order' ? (
         <main className="flex-1 space-y-6 p-4">
-          {/* Tischauswahl */}
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Tisch
-            </h2>
-            {tables.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Noch keine Tische erfasst.
-              </p>
-            ) : (
-              tableAreas.map(([area, areaTables]) => (
-                <div key={area} className="space-y-2">
-                  <p className="text-xs text-muted-foreground">{area}</p>
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-                    {areaTables.map(table => (
-                      <Button
-                        key={table.id}
-                        variant={tableId === table.id ? 'default' : 'outline'}
-                        className="h-12 px-2 text-base font-semibold"
-                        onClick={() => setTableId(table.id)}
-                        title={table.name}
-                      >
-                        <span className="truncate">{table.name}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </section>
-
-          {/* Produkte */}
+          {/* Produkte zuerst — der Griff zum Tisch kommt beim Abschicken. */}
           <section className="space-y-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Produkte
@@ -381,44 +405,106 @@ export default function KasseService() {
                 <div key={category} className="space-y-2">
                   <p className="text-xs text-muted-foreground">{category}</p>
                   <div className="grid gap-2">
-                    {items.map(product => (
-                      <button
-                        key={product.id}
-                        type="button"
-                        onClick={() => handleProductTap(product.id)}
-                        className="flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors active:bg-accent"
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium">
-                            {product.name}
-                          </span>
-                          {product.options.length > 0 && (
-                            <span className="block text-xs text-muted-foreground">
-                              {product.options.length} Zusätze
+                    {items.map(product => {
+                      const shown = product.options.slice(0, OPTION_PILL_LIMIT);
+                      const hidden =
+                        product.options.length - shown.length > 0
+                          ? product.options.length - shown.length
+                          : 0;
+                      return (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onClick={() => handleProductTap(product.id)}
+                          className="flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors active:bg-accent"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">
+                              {product.name}
                             </span>
-                          )}
-                        </span>
-                        <span className="ml-3 shrink-0 tabular-nums text-sm text-muted-foreground">
-                          {formatChf(product.priceRappen)}
-                        </span>
-                      </button>
-                    ))}
+                            {product.options.length > 0 && (
+                              <span className="mt-1 flex flex-wrap items-center gap-1">
+                                {shown.map(option => (
+                                  <span
+                                    key={option.id}
+                                    className="max-w-[9rem] truncate rounded-full border px-2 py-0.5 text-xs text-muted-foreground"
+                                  >
+                                    {option.name}
+                                  </span>
+                                ))}
+                                {hidden > 0 && (
+                                  <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                                    +{hidden}
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                          </span>
+                          <span className="ml-3 shrink-0 tabular-nums text-sm text-muted-foreground">
+                            {formatChf(product.priceRappen)}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ))
             )}
           </section>
 
-          <section className="space-y-2">
-            <Label htmlFor="kasse-note">Notiz (optional)</Label>
-            <Input
-              id="kasse-note"
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              placeholder="z. B. eine Pommes ohne Salz"
-              maxLength={255}
-            />
-          </section>
+          {/* Tisch und Notiz nebeneinander: die Notiz gehört zur Bestellung,
+              nicht zum zuletzt angetippten Produkt — direkt unter der
+              Produktliste las sie sich wie ein weiterer Zusatz. */}
+          <div className="grid gap-6 sm:grid-cols-2">
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Tisch
+              </h2>
+              {tables.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Noch keine Tische erfasst.
+                </p>
+              ) : (
+                tableAreas.map(([area, areaTables]) => (
+                  <div key={area} className="space-y-2">
+                    <p className="text-xs text-muted-foreground">{area}</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {areaTables.map(table => (
+                        <Button
+                          key={table.id}
+                          variant={tableId === table.id ? 'default' : 'outline'}
+                          className="h-12 px-2 text-base font-semibold"
+                          onClick={() => setTableId(table.id)}
+                          title={table.name}
+                        >
+                          <span className="truncate">{table.name}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </section>
+
+            <section className="space-y-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Notiz
+              </h2>
+              <div className="rounded-lg border p-3">
+                <Label htmlFor="kasse-note" className="text-xs">
+                  Gilt für die ganze Bestellung (optional)
+                </Label>
+                <Input
+                  id="kasse-note"
+                  className="mt-2"
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  placeholder="z. B. eine Pommes ohne Salz"
+                  maxLength={255}
+                />
+              </div>
+            </section>
+          </div>
         </main>
       ) : (
         <main className="flex-1 space-y-6 p-4">
@@ -451,7 +537,12 @@ export default function KasseService() {
                     {order.items.map(item => (
                       <li key={item.id}>
                         {item.quantity}× {item.productName}
-                        {item.optionName ? ` — ${item.optionName}` : ''}
+                        {item.options.length > 0 && (
+                          <span className="text-muted-foreground">
+                            {' — '}
+                            {item.options.map(o => o.optionName).join(', ')}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -504,15 +595,16 @@ export default function KasseService() {
                       Tisch {order.tableName}
                     </p>
                     <p className="shrink-0 text-xs text-muted-foreground">
-                      seit {minutesSince(order.createdAt, Date.now())} Min ·{' '}
-                      {order.waiterName ?? '—'}
+                      seit {formatWait(order.waitSeconds)} ·{' '}
+                      {order.waiterName ?? 'ohne Name'}
                     </p>
                   </div>
                   <ul className="mt-2 space-y-0.5 text-sm text-muted-foreground">
                     {order.items.map(item => (
                       <li key={item.id}>
                         {item.quantity}× {item.productName}
-                        {item.optionName ? ` — ${item.optionName}` : ''}
+                        {item.options.length > 0 &&
+                          ` — ${item.options.map(o => o.optionName).join(', ')}`}
                       </li>
                     ))}
                   </ul>
@@ -524,13 +616,7 @@ export default function KasseService() {
                       setStatus.isPending &&
                       setStatus.variables?.orderId === order.id
                     }
-                    onClick={() =>
-                      setStatus.mutate({
-                        token,
-                        orderId: order.id,
-                        status: 'cancelled',
-                      })
-                    }
+                    onClick={() => setCancelId(order.id)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Stornieren
@@ -538,6 +624,64 @@ export default function KasseService() {
                 </div>
               ))
             )}
+          </section>
+
+          {/* Abgeschlossenes ist zum Nachschauen da, nicht zum Arbeiten —
+              darum eingeklappt und ohne Polling. */}
+          <section className="space-y-3 border-t pt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setShowClosed(v => !v)}
+            >
+              <History className="mr-2 h-4 w-4" />
+              {showClosed
+                ? 'Abgeschlossene ausblenden'
+                : 'Abgeschlossene anzeigen'}
+            </Button>
+
+            {showClosed &&
+              (closedOrders.isLoading ? (
+                <p className="text-sm text-muted-foreground">Lädt …</p>
+              ) : (closedOrders.data ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Noch nichts abgeschlossen.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {(closedOrders.data ?? []).map(order => (
+                    <li
+                      key={order.id}
+                      className="rounded-lg border px-3 py-2 text-sm"
+                    >
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span
+                          className="min-w-0 truncate font-medium"
+                          title={order.tableName}
+                        >
+                          Tisch {order.tableName}
+                          {order.status === 'cancelled' && (
+                            <span className="ml-2 text-xs text-destructive">
+                              storniert
+                            </span>
+                          )}
+                        </span>
+                        <span className="shrink-0 tabular-nums text-muted-foreground">
+                          {formatChf(order.totalRappen)}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {order.items
+                          .map(i => `${i.quantity}× ${i.productName}`)
+                          .join(', ')}
+                        {order.deliveredSeconds != null &&
+                          ` · ${formatWait(order.deliveredSeconds)} Wartezeit`}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ))}
           </section>
         </main>
       )}
@@ -571,44 +715,55 @@ export default function KasseService() {
         </div>
       )}
 
-      {/* Zusatz-Auswahl */}
+      {/* Zusatz-Auswahl — mehrere gleichzeitig möglich (Senf *und* Mayo). */}
       <Sheet
         open={optionProduct != null}
-        onOpenChange={open => !open && setOptionsFor(null)}
+        onOpenChange={open => {
+          if (!open) {
+            setOptionsFor(null);
+            setDraftOptionIds([]);
+          }
+        }}
       >
         <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{optionProduct?.name}</SheetTitle>
           </SheetHeader>
           <div className="grid gap-2 p-4">
-            {optionProduct?.options.map(option => (
-              <Button
-                key={option.id}
-                variant="outline"
-                className="h-12 justify-between text-base"
-                onClick={() => {
-                  addToCart(optionProduct.id, option.id);
-                  setOptionsFor(null);
-                }}
-              >
-                <span>{option.name}</span>
-                {option.priceDeltaRappen !== 0 && (
-                  <span className="text-sm text-muted-foreground">
-                    {option.priceDeltaRappen > 0 ? '+' : '−'}
-                    {formatChf(Math.abs(option.priceDeltaRappen))}
+            <p className="text-xs text-muted-foreground">
+              Mehrfachauswahl möglich. Ohne Auswahl gilt der Produktpreis.
+            </p>
+            {optionProduct?.options.map(option => {
+              const active = draftOptionIds.includes(option.id);
+              return (
+                <Button
+                  key={option.id}
+                  variant={active ? 'default' : 'outline'}
+                  className="h-12 justify-between text-base"
+                  onClick={() => toggleDraftOption(option.id)}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    {active && <Check className="h-4 w-4 shrink-0" />}
+                    <span className="truncate">{option.name}</span>
                   </span>
-                )}
-              </Button>
-            ))}
+                  {option.priceDeltaRappen !== 0 && (
+                    <span className="shrink-0 text-sm tabular-nums opacity-80">
+                      {option.priceDeltaRappen > 0 ? '+' : '−'}
+                      {formatChf(Math.abs(option.priceDeltaRappen))}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
             <Button
-              variant="ghost"
-              className="h-12 text-base"
+              className="mt-2 h-12 text-base"
               onClick={() => {
-                if (optionProduct) addToCart(optionProduct.id, null);
+                if (optionProduct) addToCart(optionProduct.id, draftOptionIds);
                 setOptionsFor(null);
+                setDraftOptionIds([]);
               }}
             >
-              Ohne Zusatz
+              Hinzufügen · {formatChf(draftUnitPrice)}
             </Button>
           </div>
         </SheetContent>
@@ -622,7 +777,7 @@ export default function KasseService() {
           </SheetHeader>
           <div className="space-y-2 p-4">
             {cartLines.map(line => {
-              const key = lineKey(line.productId, line.optionId);
+              const key = lineKey(line.productId, line.optionIds);
               return (
                 <div
                   key={key}
@@ -630,9 +785,9 @@ export default function KasseService() {
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium">{line.productName}</p>
-                    {line.optionName && (
+                    {line.optionNames.length > 0 && (
                       <p className="text-xs text-muted-foreground">
-                        {line.optionName}
+                        {line.optionNames.join(', ')}
                       </p>
                     )}
                     <p className="text-xs tabular-nums text-muted-foreground">
@@ -672,6 +827,40 @@ export default function KasseService() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Storno bestätigen — ein Fehlgriff auf dem Handy soll die Küche nicht
+          um eine Bestellung bringen. */}
+      <AlertDialog
+        open={cancelId != null}
+        onOpenChange={open => !open && setCancelId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bestellung stornieren?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Die Bestellung verschwindet aus der Küche und zählt nicht zum
+              Umsatz. Rückgängig machen geht nicht.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (cancelId != null) {
+                  setStatus.mutate({
+                    token,
+                    orderId: cancelId,
+                    status: 'cancelled',
+                  });
+                }
+                setCancelId(null);
+              }}
+            >
+              Stornieren
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

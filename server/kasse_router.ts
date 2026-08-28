@@ -131,7 +131,9 @@ async function settleOpenOrders(
 
 const orderItemInput = z.object({
   productId: z.number().int().positive(),
-  optionId: z.number().int().positive().nullable().optional(),
+  // Mehrere Zusätze pro Position (Senf *und* Mayo). Die Obergrenze ist eine
+  // Plausibilitätsschranke, nicht die Anzahl gepflegter Zusätze.
+  optionIds: z.array(z.number().int().positive()).max(20).optional(),
   quantity: z.number().int().min(1).max(99),
 });
 
@@ -203,6 +205,29 @@ export const kasseRouter = router({
       const session = await getOpenKasseSession();
       if (!session) return [];
       return listKasseOrders(session.id, ['pending', 'ready']);
+    }),
+
+  /**
+   * Abgeschlossene Bestellungen der laufenden Session, neueste zuerst.
+   * Service und Küche blenden sie nur auf Wunsch ein, darum bewusst ohne
+   * Polling und mit Deckel — am Event werden das schnell ein paar hundert.
+   */
+  listClosedOrders: publicProcedure
+    .input(
+      z.object({
+        token: z.string(),
+        limit: z.number().int().min(1).max(100).default(50),
+      }),
+    )
+    .query(async ({ input }) => {
+      await requireToken(input.token);
+      const session = await getOpenKasseSession();
+      if (!session) return [];
+      const orders = await listKasseOrders(session.id, [
+        'delivered',
+        'cancelled',
+      ]);
+      return orders.reverse().slice(0, input.limit);
     }),
 
   /**
