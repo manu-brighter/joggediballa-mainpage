@@ -63,6 +63,7 @@ import {
   EyeOff,
   Zap,
   Projector,
+  Receipt,
   ChevronRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -118,6 +119,12 @@ const PERMISSIONS = [
     key: 'manage_slideshow',
     label: 'Live-Diashow verwalten',
     icon: Projector,
+    roles: ['admin', 'maintainer'],
+  },
+  {
+    key: 'manage_kasse',
+    label: 'Kassensystem verwalten',
+    icon: Receipt,
     roles: ['admin', 'maintainer'],
   },
 ];
@@ -955,6 +962,19 @@ export default function AdminDashboard() {
                 <span className="flex items-center gap-2">
                   <Wine className="h-4 w-4 text-muted-foreground" />
                   Schlag den Kassier — Overlay-Steuerung
+                </span>
+                <ChevronRight
+                  className="h-4 w-4 text-muted-foreground"
+                  aria-hidden
+                />
+              </a>
+              <a
+                href="/kasse/control"
+                className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-accent"
+              >
+                <span className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-muted-foreground" />
+                  Kassensystem — Verwaltung
                 </span>
                 <ChevronRight
                   className="h-4 w-4 text-muted-foreground"
