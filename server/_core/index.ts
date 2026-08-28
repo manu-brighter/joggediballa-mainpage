@@ -208,12 +208,28 @@ async function startServer() {
   });
   app.use(generalLimiter);
 
+  // The kasse (POS) pages are the one flow that legitimately fires many
+  // mutations from a single IP: at an event every phone and the kitchen tablet
+  // sit behind the same NAT, and each order costs 3 mutations (create → ready →
+  // delivered), which would exhaust the 60/15min window within minutes. Their
+  // budget is therefore granted per procedure in tRPC middleware instead (see
+  // server/kasse_ratelimit.ts) — this skip only stops the blanket limiter from
+  // rejecting them first. `req.path` is relative to the /api/trpc mount and
+  // holds the (possibly batched, comma-separated) procedure names.
+  const isKasseOnly = (req: Request): boolean => {
+    const procedures = req.path.replace(/^\//, '').split(',');
+    return (
+      procedures.length > 0 && procedures.every(p => p.startsWith('kasse.'))
+    );
+  };
+
   const trpcMutationLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 60, // 60 mutations / 15 min / IP — well above normal use
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: req => skipInNonProd() || req.method.toUpperCase() === 'GET',
+    skip: req =>
+      skipInNonProd() || req.method.toUpperCase() === 'GET' || isKasseOnly(req),
   });
 
   // Body parsing — file uploads use multipart (not JSON), so 1 MB is sufficient here

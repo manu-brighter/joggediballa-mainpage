@@ -591,3 +591,190 @@ export const slideshowSettings = mysqlTable('slideshow_settings', {
 
 export type SlideshowSettings = typeof slideshowSettings.$inferSelect;
 export type InsertSlideshowSettings = typeof slideshowSettings.$inferInsert;
+
+// ============================================
+// KASSENSYSTEM (POS) — Event-Bestellsystem
+// ============================================
+
+/**
+ * Kassensystem — Single-Row Settings/State (id=1, Pattern wie slideshowSettings).
+ * `accessToken` gated die Service- und Küchen-Seiten (kein Login nötig, das
+ * Personal am Event hat i. d. R. keinen Account — gleiches Konzept wie der
+ * Diashow-Upload-Token).
+ */
+export const kasseSettings = mysqlTable('kasse_settings', {
+  id: int('id').autoincrement().primaryKey(),
+  accessToken: varchar('accessToken', { length: 64 }).notNull(),
+  ordersOpen: boolean('ordersOpen').default(true).notNull(), // Master-Schalter
+  updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
+  updatedBy: int('updatedBy').references(() => users.id),
+});
+
+export type KasseSettings = typeof kasseSettings.$inferSelect;
+export type InsertKasseSettings = typeof kasseSettings.$inferInsert;
+
+/**
+ * Kassen-Event ("Session"). Höchstens eine Session ist `open`; alle Bestellungen
+ * hängen daran, damit die Auswertung pro Event sauber getrennt bleibt.
+ */
+export const kasseSessions = mysqlTable(
+  'kasse_sessions',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    name: varchar('name', { length: 150 }).notNull(),
+    status: mysqlEnum('status', ['open', 'closed']).default('open').notNull(),
+    openedAt: timestamp('openedAt').defaultNow().notNull(),
+    closedAt: timestamp('closedAt'),
+    createdBy: int('createdBy').references(() => users.id),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+  },
+  table => ({
+    statusIdx: index('idx_kasse_sessions_status').on(table.status),
+  }),
+);
+
+export type KasseSession = typeof kasseSessions.$inferSelect;
+export type InsertKasseSession = typeof kasseSessions.$inferInsert;
+
+/**
+ * Produkt. Preis in Rappen (Integer) — nie Float für Geld.
+ * Beim Löschen wird `kasseOrderItems.productId` auf NULL gesetzt; die History
+ * lebt von den Snapshot-Spalten der Bestellposition, nicht von dieser Zeile.
+ */
+export const kasseProducts = mysqlTable(
+  'kasse_products',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    name: varchar('name', { length: 100 }).notNull(),
+    category: varchar('category', { length: 50 }), // z. B. "Essen", "Getränke"
+    priceRappen: int('priceRappen').notNull(),
+    displayOrder: int('displayOrder').default(0).notNull(),
+    isActive: boolean('isActive').default(true).notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
+    createdBy: int('createdBy').references(() => users.id),
+  },
+  table => ({
+    activeSortIdx: index('idx_kasse_products_active_sort').on(
+      table.isActive,
+      table.displayOrder,
+    ),
+  }),
+);
+
+export type KasseProduct = typeof kasseProducts.$inferSelect;
+export type InsertKasseProduct = typeof kasseProducts.$inferInsert;
+
+/**
+ * Zusatz/Unterkategorie eines Produkts (z. B. Pommes → Ketchup / Mayo / ohne).
+ * `priceDeltaRappen` erlaubt Aufpreise, ist aber normalerweise 0.
+ */
+export const kasseProductOptions = mysqlTable(
+  'kasse_product_options',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    productId: int('productId')
+      .notNull()
+      .references(() => kasseProducts.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 100 }).notNull(),
+    priceDeltaRappen: int('priceDeltaRappen').default(0).notNull(),
+    displayOrder: int('displayOrder').default(0).notNull(),
+    isActive: boolean('isActive').default(true).notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+  },
+  table => ({
+    productIdx: index('idx_kasse_product_options_product').on(table.productId),
+  }),
+);
+
+export type KasseProductOption = typeof kasseProductOptions.$inferSelect;
+export type InsertKasseProductOption = typeof kasseProductOptions.$inferInsert;
+
+/**
+ * Tisch. `area` + `number` ergeben den Namen (A1, A2, B1 …); der Name wird
+ * denormalisiert gespeichert, weil er auf jeder Bestellung angezeigt wird.
+ */
+export const kasseTables = mysqlTable(
+  'kasse_tables',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    name: varchar('name', { length: 20 }).notNull().unique(),
+    area: varchar('area', { length: 10 }), // Gruppierung in der Tischauswahl
+    displayOrder: int('displayOrder').default(0).notNull(),
+    isActive: boolean('isActive').default(true).notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+  },
+  table => ({
+    activeSortIdx: index('idx_kasse_tables_active_sort').on(
+      table.isActive,
+      table.displayOrder,
+    ),
+  }),
+);
+
+export type KasseTable = typeof kasseTables.$inferSelect;
+export type InsertKasseTable = typeof kasseTables.$inferInsert;
+
+/**
+ * Bestellung. Statusfluss: pending → ready → delivered (oder cancelled).
+ * `tableName` und die Positions-Snapshots machen die History unabhängig davon,
+ * ob Produkte/Tische später umbenannt oder gelöscht werden.
+ */
+export const kasseOrders = mysqlTable(
+  'kasse_orders',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    sessionId: int('sessionId')
+      .notNull()
+      .references(() => kasseSessions.id, { onDelete: 'cascade' }),
+    tableId: int('tableId').references(() => kasseTables.id),
+    tableName: varchar('tableName', { length: 20 }).notNull(),
+    status: mysqlEnum('status', ['pending', 'ready', 'delivered', 'cancelled'])
+      .default('pending')
+      .notNull(),
+    totalRappen: int('totalRappen').notNull(),
+    note: varchar('note', { length: 255 }),
+    waiterName: varchar('waiterName', { length: 60 }), // Gerätename des Service
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    readyAt: timestamp('readyAt'),
+    deliveredAt: timestamp('deliveredAt'),
+    cancelledAt: timestamp('cancelledAt'),
+  },
+  table => ({
+    sessionStatusIdx: index('idx_kasse_orders_session_status').on(
+      table.sessionId,
+      table.status,
+      table.createdAt,
+    ),
+  }),
+);
+
+export type KasseOrder = typeof kasseOrders.$inferSelect;
+export type InsertKasseOrder = typeof kasseOrders.$inferInsert;
+
+/**
+ * Bestellposition. Preise sind Snapshots zum Bestellzeitpunkt (siehe oben);
+ * `lineTotalRappen` = quantity * unitPriceRappen.
+ */
+export const kasseOrderItems = mysqlTable(
+  'kasse_order_items',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    orderId: int('orderId')
+      .notNull()
+      .references(() => kasseOrders.id, { onDelete: 'cascade' }),
+    productId: int('productId').references(() => kasseProducts.id),
+    productName: varchar('productName', { length: 100 }).notNull(),
+    optionId: int('optionId').references(() => kasseProductOptions.id),
+    optionName: varchar('optionName', { length: 100 }),
+    quantity: int('quantity').notNull(),
+    unitPriceRappen: int('unitPriceRappen').notNull(), // inkl. Options-Aufpreis
+    lineTotalRappen: int('lineTotalRappen').notNull(),
+  },
+  table => ({
+    orderIdx: index('idx_kasse_order_items_order').on(table.orderId),
+  }),
+);
+
+export type KasseOrderItem = typeof kasseOrderItems.$inferSelect;
+export type InsertKasseOrderItem = typeof kasseOrderItems.$inferInsert;

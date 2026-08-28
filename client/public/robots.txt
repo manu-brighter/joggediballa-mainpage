@@ -11,3 +11,6 @@ Disallow: /admin/
 
 # Disallow overlay routes (OBS browser sources, not for public)
 Disallow: /overlay/
+
+# Disallow kasse routes (Event-Kassensystem, not for public)
+Disallow: /kasse/
