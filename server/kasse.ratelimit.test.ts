@@ -1,6 +1,6 @@
 /**
  * Das Kassen-Budget wird pro Procedure und IP vergeben (tRPC-Middleware, nicht
- * Express — siehe server/CLAUDE.md). Getestet wird der Zähler selbst: Grenze,
+ * Express, siehe server/CLAUDE.md). Getestet wird der Zähler selbst: Grenze,
  * Trennung der Buckets und der Fensterwechsel.
  */
 import { describe, it, expect, beforeEach } from 'vitest';

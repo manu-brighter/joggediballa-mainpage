@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatChf, formatWait, urgency, waitMinutes } from '@/lib/kasse';
 import { Check, History, Loader2, Trash2, Utensils } from 'lucide-react';
 
-/** Farbcodierung der Wartezeit — die Küche sieht sofort, was liegen bleibt. */
+/** Farbcodierung der Wartezeit, damit die Küche sofort sieht, was liegen bleibt. */
 const URGENCY_STYLES = {
   normal: 'border-pending/50 bg-pending/10',
   urgent: 'border-pending bg-pending/20',
@@ -52,7 +52,7 @@ export default function KasseKueche() {
     onSuccess: (_result, variables) => {
       utils.kasse.listOpenOrders.invalidate();
       // Nur nachladen, wenn die Liste überhaupt offen ist: das Tablet pollt
-      // im 3-Sekunden-Takt, und jede „Bereit"-Bestätigung hätte sonst eine
+      // im 3-Sekunden-Takt, und jede „Bereit“-Bestätigung hätte sonst eine
       // zweite Abfrage über die ganze Historie ausgelöst.
       if (
         showClosed &&
@@ -97,30 +97,30 @@ export default function KasseKueche() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Kasse — Küche" noIndex />
+      <SEO title="Kassen-Küche" noIndex />
 
       <header className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b bg-background/95 px-4 py-3 backdrop-blur xl:px-6">
-        <div className="flex items-center gap-3">
-          <Utensils className="h-6 w-6 text-primary" />
-          <div>
+        <div className="flex min-w-0 items-center gap-3">
+          <Utensils className="h-6 w-6 shrink-0 text-primary" />
+          <div className="min-w-0">
             <h1 className="text-lg font-semibold leading-tight">Küche</h1>
-            <p className="text-xs text-muted-foreground">
+            <p className="truncate text-xs text-muted-foreground">
               {state.data.session?.name ?? 'Keine offene Kasse'}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-6 text-sm">
+        <div className="flex shrink-0 items-center gap-3 text-sm sm:gap-6">
           <span>
-            <span className="text-2xl font-bold tabular-nums text-pending">
+            <span className="text-xl font-bold tabular-nums text-pending sm:text-2xl">
               {pending.length}
             </span>
-            <span className="ml-2 text-muted-foreground">offen</span>
+            <span className="ml-1 text-muted-foreground sm:ml-2">offen</span>
           </span>
           <span>
-            <span className="text-2xl font-bold tabular-nums text-success">
+            <span className="text-xl font-bold tabular-nums text-success sm:text-2xl">
               {ready.length}
             </span>
-            <span className="ml-2 text-muted-foreground">bereit</span>
+            <span className="ml-1 text-muted-foreground sm:ml-2">bereit</span>
           </span>
         </div>
       </header>
@@ -168,12 +168,12 @@ export default function KasseKueche() {
                       </p>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <ul className="space-y-1">
                         {order.items.map(item => (
                           <li
                             key={item.id}
-                            className="text-base leading-snug xl:text-lg"
+                            className="break-words text-base leading-snug xl:text-lg"
                           >
                             <span className="font-bold tabular-nums">
                               {item.quantity}×
@@ -181,7 +181,7 @@ export default function KasseKueche() {
                             {item.productName}
                             {item.options.length > 0 && (
                               <span className="text-muted-foreground">
-                                {' — '}
+                                {' · '}
                                 {item.options.map(o => o.optionName).join(', ')}
                               </span>
                             )}
@@ -189,7 +189,7 @@ export default function KasseKueche() {
                         ))}
                       </ul>
                       {order.note && (
-                        <p className="mt-2 text-sm italic xl:text-base">
+                        <p className="mt-2 break-words text-sm italic xl:text-base">
                           {order.note}
                         </p>
                       )}
@@ -202,9 +202,9 @@ export default function KasseKueche() {
                       <p className="text-xs text-muted-foreground">Wartezeit</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
                       <Button
-                        className="h-14 flex-1 text-base font-semibold xl:h-20 xl:text-xl"
+                        className="h-14 min-w-0 flex-1 text-base font-semibold xl:h-20 xl:text-xl"
                         disabled={busy(order.id)}
                         onClick={() =>
                           setStatus.mutate({
@@ -262,10 +262,10 @@ export default function KasseKueche() {
                   </div>
                   <ul className="mt-2 space-y-0.5 text-sm text-muted-foreground">
                     {order.items.map(item => (
-                      <li key={item.id}>
+                      <li key={item.id} className="break-words">
                         {item.quantity}× {item.productName}
                         {item.options.length > 0 &&
-                          ` — ${item.options.map(o => o.optionName).join(', ')}`}
+                          ` · ${item.options.map(o => o.optionName).join(', ')}`}
                       </li>
                     ))}
                   </ul>
@@ -275,7 +275,7 @@ export default function KasseKueche() {
           )}
         </section>
 
-        {/* Nachschlagen, was schon durch ist — ohne Polling, damit die
+        {/* Nachschlagen, was schon durch ist. Ohne Polling, damit die
             Arbeitsliste oben die einzige ist, die sich dauernd bewegt. */}
         <section className="space-y-3 border-t pt-4">
           <Button

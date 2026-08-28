@@ -70,7 +70,7 @@ function getLayoutMode(location: string): LayoutMode {
   if (location.startsWith('/diashow/') && location !== '/diashow/control') {
     return 'bare-black';
   }
-  // Kassensystem: Service (Handy) und Küche (Tablet) laufen ohne Nav/Footer —
+  // Kassensystem: Service (Handy) und Küche (Tablet) laufen ohne Nav/Footer,
   // sie brauchen die volle Höhe. /kasse/control bleibt eine normale Seite.
   if (location.startsWith('/kasse/') && location !== '/kasse/control') {
     return 'bare-app';
@@ -114,7 +114,7 @@ function Router() {
         <Route path="/diashow/control" component={DiashowControl} />
         <Route path="/diashow/:token/upload" component={DiashowUpload} />
         <Route path="/diashow/:token" component={Diashow} />
-        {/* Kassensystem — nicht verlinkt, nicht indexiert */}
+        {/* Kassensystem, nicht verlinkt, nicht indexiert */}
         <Route path="/kasse/control" component={KasseControl} />
         <Route path="/kasse/service/:token" component={KasseService} />
         <Route path="/kasse/kueche/:token" component={KasseKueche} />
@@ -213,7 +213,7 @@ function AppContent() {
     );
   }
 
-  // Kassen-Seiten: ebenfalls ohne Nav/Footer, aber mit Toaster — Service und
+  // Kassen-Seiten: ebenfalls ohne Nav/Footer, aber mit Toaster. Service und
   // Küche melden Fehler und Statuswechsel über Toasts.
   if (layoutMode === 'bare-app') {
     return (

@@ -1,4 +1,4 @@
--- Kassensystem — Mehrfach-Zusätze pro Bestellposition
+-- Kassensystem: Mehrfach-Zusätze pro Bestellposition
 --
 -- Nachtrag zu docs/sql/2026-08-28-kassensystem.sql. Eine Position konnte bisher
 -- genau einen Zusatz tragen (`optionId`/`optionName` direkt auf der Position);
@@ -10,7 +10,7 @@
 --   mysql -u <user> -p <database> < docs/sql/2026-08-28-kassensystem-mehrfachzusaetze.sql
 --
 -- Reihenfolge ist wichtig: erst die neue Tabelle samt Daten, dann die alten
--- Spalten. DDL committet in MySQL implizit — das läuft nicht als eine
+-- Spalten. DDL committet in MySQL implizit, das läuft nicht als eine
 -- Transaktion.
 
 -- ============================================
