@@ -121,11 +121,14 @@ export default function KasseKueche() {
                       URGENCY_STYLES[urgency(minutes)]
                     }`}
                   >
-                    <div>
-                      <p className="text-3xl font-bold leading-none">
+                    <div className="min-w-0">
+                      <p
+                        className="truncate text-3xl font-bold leading-none"
+                        title={order.tableName}
+                      >
                         {order.tableName}
                       </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-1 truncate text-xs text-muted-foreground">
                         {order.waiterName ?? '—'}
                       </p>
                     </div>
@@ -198,9 +201,14 @@ export default function KasseKueche() {
                   key={order.id}
                   className="rounded-xl border-2 border-success bg-success/10 p-4"
                 >
-                  <div className="flex items-baseline justify-between">
-                    <p className="text-2xl font-bold">{order.tableName}</p>
-                    <p className="text-sm tabular-nums text-muted-foreground">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p
+                      className="min-w-0 truncate text-2xl font-bold"
+                      title={order.tableName}
+                    >
+                      {order.tableName}
+                    </p>
+                    <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
                       {formatChf(order.totalRappen)}
                     </p>
                   </div>
