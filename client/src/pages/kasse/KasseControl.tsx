@@ -5,7 +5,13 @@ import { usePermission } from '@/hooks/usePermissions';
 import { SEO } from '@/components/SEO';
 import { QR_BG, StyledQr } from '@/components/StyledQr';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -191,6 +197,13 @@ export default function KasseControl() {
   });
   const deleteTable = trpc.kasse.deleteTable.useMutation({
     onSuccess: invalidateTables,
+    onError,
+  });
+  const deleteAllTables = trpc.kasse.deleteAllTables.useMutation({
+    onSuccess: r => {
+      invalidateTables();
+      toast.success(`${r.deleted} Tische gelöscht.`);
+    },
     onError,
   });
 
@@ -678,6 +691,28 @@ export default function KasseControl() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Tische</CardTitle>
+          {tables.length > 0 && (
+            <CardAction>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                disabled={deleteAllTables.isPending}
+                onClick={() =>
+                  setConfirm({
+                    title: 'Alle Tische löschen?',
+                    description: runningSession
+                      ? `Die Kasse läuft gerade. Alle ${tables.length} Tische verschwinden sofort aus der Tischauswahl im Service, laufende Bestellungen behalten ihren Tischnamen.`
+                      : `Alle ${tables.length} Tische verschwinden aus der Auswahl. Laufende Bestellungen behalten ihren Tischnamen.`,
+                    run: () => deleteAllTables.mutate(),
+                  })
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+                Alle löschen
+              </Button>
+            </CardAction>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-2">

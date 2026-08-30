@@ -1,5 +1,14 @@
 import { TRPCError } from '@trpc/server';
-import { and, asc, desc, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  isNotNull,
+  sql,
+} from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getDb } from './db';
 import {
@@ -423,6 +432,35 @@ export async function deleteKasseTable(tableId: number): Promise<void> {
     .set({ tableId: null })
     .where(eq(kasseOrders.tableId, tableId));
   await db.delete(kasseTables).where(eq(kasseTables.id, tableId));
+}
+
+/**
+ * Leert die Tischliste komplett. Gedacht fürs Neuaufsetzen zwischen zwei
+ * Events, wenn die Bestuhlung anders ist und man nicht 40 Tische einzeln
+ * wegklicken will. Wie beim Einzellöschen behalten Bestellungen ihren
+ * `tableName` als Snapshot.
+ */
+export async function deleteAllKasseTables(): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  // In einer Transaktion, weil die beiden Statements nur zusammen sinnvoll
+  // sind: `kasse_orders.tableId` hat ON DELETE NO ACTION, also lehnt MySQL das
+  // DELETE ab, sobald der Service zwischen UPDATE und DELETE eine Bestellung
+  // absetzt. Ohne Transaktion bliebe dann die Tischliste stehen, während der
+  // `tableId` jeder je erfassten Bestellung schon genullt wäre. Nebeneffekt:
+  // die zurückgegebene Anzahl kann nicht mehr durch eine parallele Anlage
+  // veralten.
+  return db.transaction(async tx => {
+    const existing = await tx.select({ id: kasseTables.id }).from(kasseTables);
+    if (existing.length === 0) return 0;
+    await tx
+      .update(kasseOrders)
+      .set({ tableId: null })
+      .where(isNotNull(kasseOrders.tableId));
+    await tx.delete(kasseTables);
+    return existing.length;
+  });
 }
 
 // ============================================

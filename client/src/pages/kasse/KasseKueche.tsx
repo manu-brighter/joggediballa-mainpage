@@ -328,8 +328,7 @@ export default function KasseKueche() {
                       zu zücken, bleibt die Bestellung sonst in der Abholliste
                       liegen. Derselbe Statuswechsel wie im Service. */}
                   <Button
-                    variant="outline"
-                    className="mt-3 h-12 w-full border-success text-base font-semibold"
+                    className="mt-3 h-12 w-full bg-success text-base font-semibold text-success-foreground shadow-sm hover:bg-success/90"
                     disabled={busy(order.id)}
                     onClick={() =>
                       setStatus.mutate({
