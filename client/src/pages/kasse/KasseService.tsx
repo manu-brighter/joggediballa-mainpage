@@ -379,7 +379,6 @@ export default function KasseService() {
                 aria-label hält das Feld trotzdem beschriftet, weil der Titel
                 nicht programmatisch damit verknüpft ist. */}
             <Input
-              id="kasse-waiter-name"
               aria-label="Name"
               value={nameDraft}
               onChange={e => setNameDraft(e.target.value)}
