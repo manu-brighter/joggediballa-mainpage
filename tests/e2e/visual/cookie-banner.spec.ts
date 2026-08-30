@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setTheme } from './helpers';
+import { hideVolatileSections, setTheme } from './helpers';
 
 /**
  * One dedicated baseline for the cookie consent banner — captured WITHOUT
@@ -7,7 +7,15 @@ import { setTheme } from './helpers';
  * banner itself (a component that the rest of the visual suite explicitly
  * hides). Single viewport screenshot (above-the-fold) — fullPage is
  * unnecessary, the banner is always pinned at the bottom.
+ *
+ * These shots are taken on Home, so they need the same volatile-section
+ * treatment as the page baselines: a promo button switched on in the admin
+ * dashboard would otherwise move the hero and turn these red.
  */
+test.beforeEach(async ({ page }) => {
+  await hideVolatileSections(page);
+});
+
 test.describe('Cookie consent banner', () => {
   test('appears at bottom of page on first visit (light)', async ({ page }) => {
     await setTheme(page, 'light');

@@ -129,7 +129,10 @@ export default function Home() {
                 {/* Temp Button — configurable promo CTA (URL + text set in the
                     admin dashboard), only shown when enabled, on its own row. */}
                 {showTempButton && (
-                  <div className="flex justify-center lg:justify-start">
+                  <div
+                    className="flex justify-center lg:justify-start"
+                    data-visual-volatile
+                  >
                     <Button
                       asChild
                       size="lg"

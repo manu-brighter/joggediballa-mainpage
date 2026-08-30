@@ -573,7 +573,20 @@ export default function Shotcounter() {
                           so the motion says "this just changed" instead of
                           decorating. Seconds move every second, days once a
                           day. */}
-                      <div className="relative h-[2.75rem] overflow-hidden md:h-[3.5rem]">
+                      <div className="relative overflow-hidden">
+                        {/* Die animierte Ziffer liegt absolut und trägt damit
+                            nichts zur Grösse bei. Ohne diesen Platzhalter
+                            erbt der Kasten seine Breite vom Label darunter —
+                            „Tage“ ist schmaler als „123“, und overflow-hidden
+                            schnitt die Zahl beidseitig ab. Der Platzhalter
+                            gibt Breite und Höhe vor und wächst mit dem Wert
+                            mit. */}
+                        <span
+                          aria-hidden="true"
+                          className="invisible block text-4xl md:text-5xl font-black tabular-nums"
+                        >
+                          {item.value.toString().padStart(2, '0')}
+                        </span>
                         <AnimatePresence initial={false}>
                           <MotionDiv
                             key={item.value}
@@ -592,7 +605,7 @@ export default function Shotcounter() {
                               duration: shouldReduceMotion ? 0 : 0.35,
                               ease: [0.25, 1, 0.5, 1],
                             }}
-                            className="absolute inset-x-0 text-4xl md:text-5xl font-black tabular-nums text-primary"
+                            className="absolute inset-0 text-4xl md:text-5xl font-black tabular-nums text-primary"
                           >
                             {item.value.toString().padStart(2, '0')}
                           </MotionDiv>

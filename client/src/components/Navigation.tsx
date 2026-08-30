@@ -36,7 +36,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 
-type NavLink = { href: string; label: string; external?: boolean };
+type NavLink = {
+  href: string;
+  label: string;
+  external?: boolean;
+  /**
+   * Existiert nur, solange ein Feature-Toggle es hergibt. Im Visual-Test
+   * ausgeblendet (`hideVolatileSections`), sonst veraltet jede Baseline,
+   * sobald eine Promo-Aktion an- oder abgeschaltet wird.
+   */
+  volatile?: boolean;
+};
 
 // Map nav items to their feature toggle names
 const NAV_FEATURE_MAP: Record<string, string> = {
@@ -110,6 +120,7 @@ export function Navigation() {
             href: tempButtonToggle!.linkUrl!,
             label: tempButtonToggle!.linkText!,
             external: /^https?:\/\//i.test(tempButtonToggle!.linkUrl!),
+            volatile: true,
           },
         ]
       : []),
@@ -170,27 +181,31 @@ export function Navigation() {
   // bleibt — damit pflegt er sich selbst.
   const canManageSlideshow = usePermission('manage_slideshow');
   const canManageKasse = usePermission('manage_kasse');
-  const hiddenPages = [
-    {
-      href: '/diashow/control',
-      label: 'Live-Diashow',
-      icon: Projector,
-      allowed: canManageSlideshow,
-    },
-    {
-      // Kein Permission-Key: die sdk.*-Procedures hängen an adminProcedure.
-      href: '/overlay/sdk/control',
-      label: 'Schlag den Kassier',
-      icon: Wine,
-      allowed: user?.role === 'admin',
-    },
-    {
-      href: '/kasse/control',
-      label: 'Kassensystem',
-      icon: Receipt,
-      allowed: canManageKasse,
-    },
-  ].filter(page => page.allowed);
+  const hiddenPages = useMemo(
+    () =>
+      [
+        {
+          href: '/diashow/control',
+          label: 'Live-Diashow',
+          icon: Projector,
+          allowed: canManageSlideshow,
+        },
+        {
+          // Kein Permission-Key: die sdk.*-Procedures hängen an adminProcedure.
+          href: '/overlay/sdk/control',
+          label: 'Schlag den Kassier',
+          icon: Wine,
+          allowed: user?.role === 'admin',
+        },
+        {
+          href: '/kasse/control',
+          label: 'Kassensystem',
+          icon: Receipt,
+          allowed: canManageKasse,
+        },
+      ].filter(page => page.allowed),
+    [canManageSlideshow, canManageKasse, user?.role],
+  );
 
   return (
     <>
@@ -228,11 +243,17 @@ export function Navigation() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={className}
+                  data-visual-volatile={link.volatile ? '' : undefined}
                 >
                   {link.label}
                 </a>
               ) : (
-                <Link key={link.href} href={link.href} className={className}>
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={className}
+                  data-visual-volatile={link.volatile ? '' : undefined}
+                >
                   {link.label}
                 </Link>
               );
@@ -512,6 +533,7 @@ export function Navigation() {
                     rel="noopener noreferrer"
                     onClick={() => setMobileMenuOpen(false)}
                     className={className}
+                    data-visual-volatile={link.volatile ? '' : undefined}
                   >
                     {link.label}
                   </a>
@@ -521,6 +543,7 @@ export function Navigation() {
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={className}
+                    data-visual-volatile={link.volatile ? '' : undefined}
                   >
                     {link.label}
                   </Link>
