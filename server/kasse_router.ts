@@ -709,9 +709,21 @@ export const kasseRouter = router({
       return { success: true };
     }),
 
-  /** Leert die Tischliste in einem Rutsch, für ein neu bestuhltes Event. */
-  deleteAllTables: manageKasse.mutation(async () => {
+  /**
+   * Leert die Tischliste in einem Rutsch, für ein neu bestuhltes Event.
+   * Einzige Ein-Klick-Aktion im Router, die einen ganzen Datenbestand
+   * ausräumt — deshalb protokolliert, anders als das Einzellöschen.
+   */
+  deleteAllTables: manageKasse.mutation(async ({ ctx }) => {
     const deleted = await deleteAllKasseTables();
+    await createActivityLog({
+      userId: ctx.user.id,
+      userName: ctx.user.name || 'Unknown',
+      action: 'kasse_tables_delete_all',
+      details: `Deleted all ${deleted} table(s)`,
+      ipAddress: null,
+      userAgent: null,
+    });
     return { deleted };
   }),
 

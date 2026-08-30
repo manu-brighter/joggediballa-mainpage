@@ -74,6 +74,14 @@ describe('kasse: Verwaltung verlangt manage_kasse', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
+  // Die destruktivste Tisch-Operation: ein Klick räumt die ganze Liste aus.
+  it("weist die Rolle 'editor' beim Löschen aller Tische ab", async () => {
+    const caller = appRouter.createCaller(makeCtx('editor'));
+    await expect(caller.kasse.deleteAllTables()).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+  });
+
   it("weist die Rolle 'user' beim Öffnen einer Kasse ab", async () => {
     const caller = appRouter.createCaller(makeCtx('user'));
     await expect(

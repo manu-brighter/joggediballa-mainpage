@@ -701,7 +701,9 @@ export default function KasseControl() {
                 onClick={() =>
                   setConfirm({
                     title: 'Alle Tische löschen?',
-                    description: `Alle ${tables.length} Tische verschwinden aus der Auswahl. Laufende Bestellungen behalten ihren Tischnamen.`,
+                    description: runningSession
+                      ? `Die Kasse läuft gerade. Alle ${tables.length} Tische verschwinden sofort aus der Tischauswahl im Service, laufende Bestellungen behalten ihren Tischnamen.`
+                      : `Alle ${tables.length} Tische verschwinden aus der Auswahl. Laufende Bestellungen behalten ihren Tischnamen.`,
                     run: () => deleteAllTables.mutate(),
                   })
                 }
