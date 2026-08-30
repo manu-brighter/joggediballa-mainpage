@@ -274,7 +274,9 @@ export default function KasseKueche() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="h-14 w-14 shrink-0 text-destructive hover:text-destructive xl:h-20 xl:w-20"
+                        // dark:-Pendants nötig: die outline-Variante setzt
+                        // dark:bg-transparent, das sonst im Dark Mode gewinnt.
+                        className="h-14 w-14 shrink-0 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive dark:bg-destructive/10 dark:hover:bg-destructive/20 xl:h-20 xl:w-20"
                         disabled={busy(order.id)}
                         onClick={() => setCancelId(order.id)}
                         aria-label={`Bestellung für Tisch ${order.tableName} stornieren`}

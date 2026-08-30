@@ -760,7 +760,9 @@ export default function KasseService() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-2 text-destructive hover:text-destructive"
+                    // dark:-Pendants nötig: die ghost-Variante setzt
+                    // dark:hover:bg-accent/50, das sonst im Dark Mode gewinnt.
+                    className="mt-2 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive dark:bg-destructive/10 dark:hover:bg-destructive/20"
                     disabled={
                       setStatus.isPending &&
                       setStatus.variables?.orderId === order.id

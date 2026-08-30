@@ -11,6 +11,10 @@ import {
   Users,
   Lock,
   ClipboardList,
+  EyeOff,
+  Projector,
+  Wine,
+  Receipt,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -24,12 +28,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 
-type NavLink = { href: string; label: string; external?: boolean };
+type NavLink = {
+  href: string;
+  label: string;
+  external?: boolean;
+  /**
+   * Existiert nur, solange ein Feature-Toggle es hergibt. Im Visual-Test
+   * ausgeblendet (`hideVolatileSections`), sonst veraltet jede Baseline,
+   * sobald eine Promo-Aktion an- oder abgeschaltet wird.
+   */
+  volatile?: boolean;
+};
 
 // Map nav items to their feature toggle names
 const NAV_FEATURE_MAP: Record<string, string> = {
@@ -103,6 +120,7 @@ export function Navigation() {
             href: tempButtonToggle!.linkUrl!,
             label: tempButtonToggle!.linkText!,
             external: /^https?:\/\//i.test(tempButtonToggle!.linkUrl!),
+            volatile: true,
           },
         ]
       : []),
@@ -155,6 +173,40 @@ export function Navigation() {
   const canViewGoennermitglieder = usePermission('manage_goennermitglieder');
   const canViewAttendance = usePermission('manage_attendance');
 
+  // Die nicht verlinkten Steuerungs-Seiten, bisher nur über das Admin-
+  // Dashboard erreichbar. Bewusst kein eigener Sichtbarkeits-Schalter: jede
+  // Seite bringt ihre Berechtigung schon mit, und ein zusätzlicher Toggle
+  // könnte davon abweichen (Eintrag sichtbar ohne Recht, oder Recht ohne
+  // Eintrag). Der Reiter erscheint, sobald mindestens eine Seite übrig
+  // bleibt — damit pflegt er sich selbst.
+  const canManageSlideshow = usePermission('manage_slideshow');
+  const canManageKasse = usePermission('manage_kasse');
+  const hiddenPages = useMemo(
+    () =>
+      [
+        {
+          href: '/diashow/control',
+          label: 'Live-Diashow',
+          icon: Projector,
+          allowed: canManageSlideshow,
+        },
+        {
+          // Kein Permission-Key: die sdk.*-Procedures hängen an adminProcedure.
+          href: '/overlay/sdk/control',
+          label: 'Schlag den Kassier',
+          icon: Wine,
+          allowed: user?.role === 'admin',
+        },
+        {
+          href: '/kasse/control',
+          label: 'Kassensystem',
+          icon: Receipt,
+          allowed: canManageKasse,
+        },
+      ].filter(page => page.allowed),
+    [canManageSlideshow, canManageKasse, user?.role],
+  );
+
   return (
     <>
       <nav
@@ -191,11 +243,17 @@ export function Navigation() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={className}
+                  data-visual-volatile={link.volatile ? '' : undefined}
                 >
                   {link.label}
                 </a>
               ) : (
-                <Link key={link.href} href={link.href} className={className}>
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={className}
+                  data-visual-volatile={link.volatile ? '' : undefined}
+                >
                   {link.label}
                 </Link>
               );
@@ -400,6 +458,27 @@ export function Navigation() {
                           </Link>
                         </DropdownMenuItem>
                       )}
+                      {hiddenPages.length > 0 && (
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="cursor-pointer">
+                            <EyeOff className="mr-2 h-4 w-4" />
+                            Versteckte Seiten
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {hiddenPages.map(page => (
+                              <DropdownMenuItem key={page.href} asChild>
+                                <Link
+                                  href={page.href}
+                                  className="w-full cursor-pointer flex items-center"
+                                >
+                                  <page.icon className="mr-2 h-4 w-4" />
+                                  {page.label}
+                                </Link>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={handleLogout}
@@ -454,6 +533,7 @@ export function Navigation() {
                     rel="noopener noreferrer"
                     onClick={() => setMobileMenuOpen(false)}
                     className={className}
+                    data-visual-volatile={link.volatile ? '' : undefined}
                   >
                     {link.label}
                   </a>
@@ -463,6 +543,7 @@ export function Navigation() {
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={className}
+                    data-visual-volatile={link.volatile ? '' : undefined}
                   >
                     {link.label}
                   </Link>
@@ -496,7 +577,9 @@ export function Navigation() {
               )}
 
               {/* Admin Links - only visible with permission */}
-              {(canViewGoennermitglieder || canViewAttendance) && (
+              {(canViewGoennermitglieder ||
+                canViewAttendance ||
+                hiddenPages.length > 0) && (
                 <div className="h-px bg-border my-2" />
               )}
 
@@ -532,6 +615,34 @@ export function Navigation() {
                   <ClipboardList className="h-4 w-4" />
                   Anwesenheitsliste
                 </Link>
+              )}
+
+              {/* Versteckte Seiten. Im Burger-Menü flach mit Überschrift statt
+                  als Untermenü: ein aufklappbares Submenü auf dem Handy zu
+                  treffen ist unnötig fummelig, und es sind höchstens drei
+                  Einträge. */}
+              {hiddenPages.length > 0 && (
+                <>
+                  <p className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Versteckte Seiten
+                  </p>
+                  {hiddenPages.map(page => (
+                    <Link
+                      key={page.href}
+                      href={page.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={cn(
+                        'flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-lg transition-colors',
+                        location === page.href
+                          ? 'text-primary bg-primary/10'
+                          : 'text-foreground/70 hover:text-foreground hover:bg-muted',
+                      )}
+                    >
+                      <page.icon className="h-4 w-4" />
+                      {page.label}
+                    </Link>
+                  ))}
+                </>
               )}
             </div>
           </div>
