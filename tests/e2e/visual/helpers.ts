@@ -39,18 +39,40 @@ export async function setTheme(
 }
 
 /**
+ * Hides every element marked `data-visual-volatile` before the first paint.
+ *
+ * Some blocks render from live data and change on their own: the Home hero's
+ * "next event" section only exists while an event is still in the future, so
+ * a baseline captured today silently rots once that date passes. Masking is
+ * not enough — the section's *height* disappears with it, which moves
+ * everything below. Hiding it outright keeps the page height stable whether
+ * or not the data is there, and the rest of the page stays covered.
+ *
+ * Call this BEFORE `page.goto()`.
+ */
+export async function hideVolatileSections(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const inject = () => {
+      const style = document.createElement('style');
+      style.textContent = '[data-visual-volatile]{display:none !important}';
+      document.head.appendChild(style);
+    };
+    if (document.head) inject();
+    else document.addEventListener('DOMContentLoaded', inject, { once: true });
+  });
+}
+
+/**
  * Patches `window.IntersectionObserver` so every observed element fires as
- * `isIntersecting: true` on its first observe() call. Framer Motion's
- * `whileInView` driver listens via IntersectionObserver — without this
- * shim, sections below the fold stay at their `initial` opacity-0 state
- * in fullPage screenshots (Playwright's internal scroll is too fast to
- * give the real observer a paint frame to fire).
+ * `isIntersecting: true` on its first observe() call.
  *
- * Side-effect: any lazy <img> using IntersectionObserver also "intersects"
- * immediately, which is what we want — baselines should include images.
+ * Originally added for Framer Motion's `whileInView` driver; those reveals
+ * are gone, but the shim still earns its place: `LazyImage` and
+ * `SmartCoverImage` load via IntersectionObserver, and Playwright's internal
+ * scroll is too fast to give the real observer a paint frame. Without it,
+ * below-the-fold images stay blank in fullPage screenshots.
  *
- * Call this BEFORE `page.goto()`. Use via `dismissCookieConsent` next to
- * `forceInViewAnimations` in `beforeEach`.
+ * Call this BEFORE `page.goto()`.
  */
 export async function forceInViewAnimations(page: Page): Promise<void> {
   await page.addInitScript(() => {

@@ -335,9 +335,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Next Event Section */}
+      {/* Next Event Section.
+          `data-visual-volatile` blendet den Block im Visual-Regression-Lauf
+          aus: sein Inhalt *und* seine blosse Existenz hängen daran, ob gerade
+          ein Event in der Zukunft liegt. Ohne das veraltet die Home-Baseline
+          von selbst, sobald das nächste Datum durch ist. */}
       {nextEvent && isEventsVisible && (
-        <section className="py-16">
+        <section className="py-16" data-visual-volatile>
           <div className="container">
             <div className="mx-auto max-w-3xl">
               <h2 className="mb-8 text-center text-3xl md:text-4xl font-bold">
