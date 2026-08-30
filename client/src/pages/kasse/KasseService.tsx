@@ -372,23 +372,19 @@ export default function KasseService() {
         <SEO title="Kassen-Service" noIndex />
         <Card className="w-full max-w-sm">
           <CardHeader>
-            <CardTitle>Wer bist du?</CardTitle>
+            <CardTitle>Name</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Der Name erscheint auf deinen Bestellungen, damit die Küche weiss,
-              wer sie aufgenommen hat. Er wird nur auf diesem Gerät gespeichert.
-            </p>
-            <div className="space-y-2">
-              <Label htmlFor="kasse-waiter-name">Name</Label>
-              <Input
-                id="kasse-waiter-name"
-                value={nameDraft}
-                onChange={e => setNameDraft(e.target.value)}
-                placeholder="z. B. Manuel"
-                maxLength={60}
-              />
-            </div>
+            {/* Kein sichtbares Label mehr: der Kartentitel sagt es bereits.
+                aria-label hält das Feld trotzdem beschriftet, weil der Titel
+                nicht programmatisch damit verknüpft ist. */}
+            <Input
+              id="kasse-waiter-name"
+              aria-label="Name"
+              value={nameDraft}
+              onChange={e => setNameDraft(e.target.value)}
+              maxLength={60}
+            />
             <Button
               className="w-full"
               disabled={!nameDraft.trim()}
