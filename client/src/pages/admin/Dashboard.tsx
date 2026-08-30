@@ -192,7 +192,7 @@ export default function AdminDashboard() {
   const togglePermissionMutation = trpc.permissions.toggle.useMutation({
     onSuccess: () => {
       utils.permissions.list.invalidate();
-      toast.success('Berechtigung aktualisiert');
+      toast.success('Berechtigung aktualisiert.');
     },
     onError: error => {
       toast.error(`Fehler: ${error.message}`);
@@ -202,7 +202,7 @@ export default function AdminDashboard() {
   const updateRoleMutation = trpc.users.updateRole.useMutation({
     onSuccess: () => {
       utils.users.list.invalidate();
-      toast.success('Rolle erfolgreich aktualisiert!');
+      toast.success('Rolle aktualisiert.');
     },
     onError: error => {
       toast.error(`Fehler: ${error.message}`);
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
       toast.error(`Fehler: ${error.message}`);
     },
     onSuccess: () => {
-      toast.success('Feature-Toggle aktualisiert!');
+      toast.success('Feature-Toggle aktualisiert.');
     },
     onSettled: () => {
       // Invalidate to refetch
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
     onSuccess: () => {
       utils.features.list.invalidate();
       utils.features.get.invalidate();
-      toast.success('Temp-Button aktualisiert!');
+      toast.success('Temp-Button aktualisiert.');
     },
     onError: error => {
       toast.error(`Fehler: ${error.message}`);
@@ -264,7 +264,7 @@ export default function AdminDashboard() {
   const resetYearMutation = trpc.shotcounter.resetYear.useMutation({
     onSuccess: () => {
       utils.shotcounter.getTeams.invalidate();
-      toast.success('Shotcounter erfolgreich zurückgesetzt!');
+      toast.success('Shotcounter zurückgesetzt.');
       setResetDialogOpen(false);
       setResetType(null);
     },
@@ -276,7 +276,7 @@ export default function AdminDashboard() {
   const resetScoresMutation = trpc.shotcounter.resetScores.useMutation({
     onSuccess: () => {
       utils.shotcounter.getTeams.invalidate();
-      toast.success('Alle Scores wurden auf 0 zurückgesetzt!');
+      toast.success('Alle Scores wurden auf 0 zurückgesetzt.');
       setResetDialogOpen(false);
       setResetType(null);
     },
@@ -361,8 +361,8 @@ export default function AdminDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-4"
       >
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shrink-0">
-          <Shield className="h-8 w-8 text-primary" />
+        <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <Shield className="h-7 w-7" aria-hidden="true" />
         </div>
         <div className="min-w-0">
           <h1 className="text-3xl md:text-4xl font-black tracking-tight truncate">
@@ -935,7 +935,7 @@ export default function AdminDashboard() {
               Versteckte Seiten
             </CardTitle>
             <CardDescription className="text-sm">
-              Nicht verlinkte Steuerungs-Seiten — nur über diese Links
+              Nicht verlinkte Steuerungs-Seiten: nur über diese Links
               erreichbar. Von dort gelangst du auf die jeweiligen Anzeige- und
               Upload-Seiten.
             </CardDescription>
@@ -948,7 +948,7 @@ export default function AdminDashboard() {
               >
                 <span className="flex items-center gap-2">
                   <Projector className="h-4 w-4 text-muted-foreground" />
-                  Live-Diashow — Steuerung
+                  Live-Diashow: Steuerung
                 </span>
                 <ChevronRight
                   className="h-4 w-4 text-muted-foreground"
@@ -961,7 +961,7 @@ export default function AdminDashboard() {
               >
                 <span className="flex items-center gap-2">
                   <Wine className="h-4 w-4 text-muted-foreground" />
-                  Schlag den Kassier — Overlay-Steuerung
+                  Schlag den Kassier: Overlay-Steuerung
                 </span>
                 <ChevronRight
                   className="h-4 w-4 text-muted-foreground"

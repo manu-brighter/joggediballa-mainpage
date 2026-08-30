@@ -134,7 +134,7 @@ export default function DiashowUpload() {
         {state?.valid && state.eventTitle ? state.eventTitle : 'Live-Diashow'}
       </h1>
       <p className="text-muted-foreground text-center mt-1 mb-6 max-w-sm">
-        Lade deine Fotos hoch — sie erscheinen auf der Event-Leinwand.
+        Lade deine Fotos hoch. Sie erscheinen auf der Event-Leinwand.
       </p>
 
       {invalid ? (
@@ -188,8 +188,8 @@ export default function DiashowUpload() {
 
           {/* Subtiler Datenschutz-/Einwilligungshinweis am Upload-Punkt. */}
           <p className="text-[11px] leading-relaxed text-muted-foreground/70 mt-4 text-center max-w-xs">
-            Hochgeladene Fotos erscheinen öffentlich auf der Leinwand — bitte
-            nur Bilder, die du zeigen darfst.{' '}
+            Hochgeladene Fotos erscheinen öffentlich auf der Leinwand. Bitte nur
+            Bilder, die du zeigen darfst.{' '}
             <a
               href="/datenschutz"
               target="_blank"
@@ -203,7 +203,7 @@ export default function DiashowUpload() {
           {contributed > 0 && (
             <p className="text-sm font-medium mt-4">
               Du hast {contributed} {contributed === 1 ? 'Foto' : 'Fotos'}{' '}
-              beigesteuert 🎉
+              beigesteuert.
             </p>
           )}
 

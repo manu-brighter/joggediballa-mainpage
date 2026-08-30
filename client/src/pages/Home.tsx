@@ -15,7 +15,6 @@ import {
   Heart,
   ArrowRight,
   Instagram,
-  Sparkles,
   Gift,
   Twitch,
   Zap,
@@ -25,6 +24,7 @@ import {
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SEO } from '@/components/SEO';
+import { BrandPattern } from '@/components/BrandPattern';
 import { useNavVisibility } from '@/hooks/useNavVisibility';
 
 const MotionDiv = motion.div;
@@ -92,7 +92,7 @@ export default function Home() {
     <div className="space-y-0">
       <SEO
         title="Jogge di Balla - Event- und Kulturverein seit 2022"
-        description="Event- und Kulturverein aus Brislach. Wir bringen Menschen zusammen für unvergessliche Momente, grossartige Events und jede Menge Spass! Shotcounter, Gönnermitglieder, DJ & Fotografie Services."
+        description="Event- und Kulturverein aus Brislach, seit 2022. Anlässe an ungewöhnlichen Orten, Shotcounter, Gönnermitgliedschaft, DJ und Fotografie."
         keywords="Jogge di Balla, Verein, Events, Brislach, Baselland, Laufental, Shotcounter, Party, Community, DJ, Fotografie, Vermietung, Beerpong"
         ogUrl="https://joggediballa.ch/"
         ogImage="https://joggediballa.ch/JoggediBalla-Logo.PNG"
@@ -102,14 +102,7 @@ export default function Home() {
         {/* Animated Background */}
         <div className="absolute inset-0 hero-gradient" />
         {/* Pattern Overlay - only over gradient */}
-        <div
-          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.5]"
-          style={{
-            backgroundImage: 'url(/joggediballa-pattern.png)',
-            backgroundRepeat: 'repeat',
-            backgroundSize: '1129px 610px',
-          }}
-        />
+        <div className="brand-pattern pattern-drift absolute inset-0 opacity-[0.03] dark:opacity-[0.5]" />
         <div className="absolute inset-0 hero-radials" />
 
         <div className="container relative z-10">
@@ -120,11 +113,6 @@ export default function Home() {
               transition={{ duration: shouldReduceMotion ? 0 : 0.6 }}
               className="space-y-6 text-center lg:text-left"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                <Sparkles className="h-4 w-4" />
-                Since 2022
-              </div>
-
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black leading-[1.1] tracking-tight">
                 Willkommen bei{' '}
                 <span className="gradient-text whitespace-nowrap">
@@ -133,8 +121,8 @@ export default function Home() {
               </h1>
 
               <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0">
-                Event- und Kulturverein. Wir bringen Menschen zusammen für
-                unvergessliche Momente, grossartige Events und jede Menge Spass!
+                Event- und Kulturverein aus Brislach, seit 2022. Wir machen
+                Anlässe, auf die sonst niemand kommt.
               </p>
 
               <div className="flex flex-col gap-3 justify-center lg:justify-start">
@@ -145,7 +133,7 @@ export default function Home() {
                     <Button
                       asChild
                       size="lg"
-                      className="group btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-gradient-to-r from-coral to-pending hover:from-coral/90 hover:to-pending/90 text-white shadow-lg shadow-coral/30 hover:shadow-coral/50 border-0 animate-pulse hover:animate-none"
+                      className="group btn-animate text-base h-14 px-10 w-full sm:w-auto font-bold bg-coral text-white hover:bg-coral/90 border-0"
                     >
                       {tempButtonIsExternal ? (
                         <a
@@ -218,7 +206,7 @@ export default function Home() {
               }}
               className="flex justify-center lg:justify-end"
             >
-              <div className="relative float-gentle">
+              <div className="relative">
                 {/* Glow effect behind logo */}
                 <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl scale-75" />
                 <img
@@ -231,32 +219,19 @@ export default function Home() {
             </MotionDiv>
           </div>
         </div>
-
-        {/* Scroll indicator - hidden on mobile to avoid logo overlap */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce hidden md:block">
-          <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-2">
-            <div className="w-1 h-2 bg-muted-foreground/50 rounded-full animate-pulse" />
-          </div>
-        </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-16 bg-muted/30">
         <div className="container">
-          <MotionDiv
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-12"
-          >
+          <div className="mb-10 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Was bei uns abgeht
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Kein langer Pitch. Das wichtigste auf einen Blick.
+            <p className="mx-auto max-w-2xl text-muted-foreground text-lg">
+              Kein langer Pitch. Das Wichtigste auf einen Blick.
             </p>
-          </MotionDiv>
+          </div>
 
           <div
             className={`grid gap-6 ${
@@ -267,13 +242,7 @@ export default function Home() {
           >
             {/* Hero feature: Events & Fotos — big image card (when visible) */}
             {isEventsVisible && (
-              <MotionDiv
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="group md:col-span-2 md:row-span-2"
-              >
+              <div className="group md:col-span-2 md:row-span-2">
                 <Link
                   href="/events"
                   className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -288,10 +257,11 @@ export default function Home() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />
                     <div className="relative z-10 flex h-full flex-col justify-end p-6 md:p-8">
-                      <div className="w-14 h-14 rounded-2xl bg-primary/15 backdrop-blur-sm flex items-center justify-center mb-4">
-                        <Calendar className="h-7 w-7 text-primary" />
-                      </div>
-                      <CardTitle className="text-3xl md:text-4xl font-black tracking-tight">
+                      <CardTitle className="flex items-center gap-3 text-3xl md:text-4xl font-black tracking-tight">
+                        <Calendar
+                          className="h-7 w-7 shrink-0 text-primary"
+                          aria-hidden="true"
+                        />
                         Events & Fotos
                       </CardTitle>
                       <CardDescription className="text-lg max-w-md mt-2">
@@ -305,25 +275,19 @@ export default function Home() {
                     </div>
                   </Card>
                 </Link>
-              </MotionDiv>
+              </div>
             )}
 
             {/* Secondary: Shotcounter (the hero already carries the big CTA) */}
-            <MotionDiv
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="group"
-            >
+            <div className="group">
               <Link
                 href="/shotcounter"
                 className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 <Card className="h-full card-hover border-2 group-hover:border-primary/50 bg-card">
                   <CardHeader>
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                      <Trophy className="h-6 w-6 text-primary" />
+                    <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+                      <Trophy className="h-6 w-6" aria-hidden="true" />
                     </div>
                     <CardTitle className="text-xl">Shotcounter</CardTitle>
                     <CardDescription>
@@ -339,24 +303,18 @@ export default function Home() {
                   </CardContent>
                 </Card>
               </Link>
-            </MotionDiv>
+            </div>
 
             {/* Secondary: Team */}
-            <MotionDiv
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="group"
-            >
+            <div className="group">
               <Link
                 href="/team"
                 className="block h-full rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
-                <Card className="h-full card-hover border-2 group-hover:border-primary/50 bg-card">
+                <Card className="h-full card-hover border-2 group-hover:border-coral/50 bg-card">
                   <CardHeader>
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                      <Users className="h-6 w-6 text-primary" />
+                    <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-coral/10 text-coral transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+                      <Users className="h-6 w-6" aria-hidden="true" />
                     </div>
                     <CardTitle className="text-xl">Unser Team</CardTitle>
                     <CardDescription>
@@ -365,37 +323,26 @@ export default function Home() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <span className="flex items-center gap-2 font-semibold text-primary text-sm">
+                    <span className="flex items-center gap-2 font-semibold text-coral text-sm">
                       Zum Team
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </span>
                   </CardContent>
                 </Card>
               </Link>
-            </MotionDiv>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Next Event Section */}
       {nextEvent && isEventsVisible && (
-        <section className="py-20">
+        <section className="py-16">
           <div className="container">
-            <MotionDiv
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="max-w-3xl mx-auto"
-            >
-              <div className="text-center mb-8">
-                <span className="inline-block px-4 py-1.5 rounded-full bg-coral/20 text-coral text-sm font-semibold mb-4">
-                  Kommendes Event
-                </span>
-                <h2 className="text-3xl md:text-4xl font-bold">
-                  Bald ist's wieder soweit
-                </h2>
-              </div>
+            <div className="mx-auto max-w-3xl">
+              <h2 className="mb-8 text-center text-3xl md:text-4xl font-bold">
+                Bald ist's wieder soweit
+              </h2>
 
               <Card className="border-2 border-primary/30 bg-card overflow-hidden">
                 <CardHeader className="pb-4">
@@ -433,23 +380,17 @@ export default function Home() {
                   </Button>
                 </CardContent>
               </Card>
-            </MotionDiv>
+            </div>
           </div>
         </section>
       )}
 
       {/* About Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-16 bg-muted/30">
         <div className="container">
-          <MotionDiv
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-3xl mx-auto text-center space-y-6"
-          >
-            <div className="w-20 h-20 rounded-full bg-coral/10 flex items-center justify-center mx-auto">
-              <Heart className="h-10 w-10 text-coral" />
+          <div className="mx-auto max-w-3xl space-y-6 text-center">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-coral/10 text-coral">
+              <Heart className="h-8 w-8" aria-hidden="true" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold">Wer wir sind</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
@@ -467,39 +408,31 @@ export default function Home() {
               Schreib uns
               <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
             </Button>
-          </MotionDiv>
+          </div>
         </div>
       </section>
 
       {/* Gönnermitgliedschaft Section */}
-      <section className="py-20 bg-coral/5">
+      <section className="py-16 bg-coral/5">
         <div className="container">
-          <MotionDiv
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-3xl mx-auto"
-          >
-            <Card className="border-2 border-primary/30 overflow-hidden">
-              <CardHeader className="text-center pb-4">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Gift className="h-8 w-8 text-primary" />
+          <div className="mx-auto max-w-3xl">
+            <Card className="relative overflow-hidden border-2 border-primary/30">
+              <BrandPattern />
+              <CardHeader className="relative items-center pb-4 text-center">
+                <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Gift className="h-7 w-7" aria-hidden="true" />
                 </div>
                 <CardTitle className="text-2xl md:text-3xl">
-                  Werde Gönnermitglied!
+                  Werde Gönnermitglied
                 </CardTitle>
                 <CardDescription className="text-lg">
-                  20 Stutz pro Jahr. Wenig Aufwand, viel Wirkung.
+                  <span className="text-3xl font-black text-primary">
+                    CHF 20.-
+                  </span>{' '}
+                  pro Jahr. Wenig Aufwand, viel Wirkung.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="text-center space-y-6">
-                <div className="inline-block px-6 py-3 rounded-full bg-primary/10 border border-primary/20">
-                  <span className="text-3xl font-bold text-primary">
-                    CHF 20.-
-                  </span>
-                  <span className="text-muted-foreground ml-2">pro Jahr</span>
-                </div>
+              <CardContent className="relative space-y-6 text-center">
                 <ul className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium">
                   <li className="flex items-center gap-2">
                     <Gift
@@ -533,22 +466,16 @@ export default function Home() {
                 </Button>
               </CardContent>
             </Card>
-          </MotionDiv>
+          </div>
         </div>
       </section>
 
       {/* Social Media Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-16 bg-muted/30">
         <div className="container">
-          <MotionDiv
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center space-y-6"
-          >
+          <div className="space-y-6 text-center">
             <h2 className="text-3xl md:text-4xl font-bold">Social Media</h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            <p className="mx-auto max-w-xl text-lg text-muted-foreground">
               Falls du nichts verpassen willst. Falls doch, auch okay.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
@@ -580,7 +507,7 @@ export default function Home() {
               </a>
               {/* Add more social links here easily */}
             </div>
-          </MotionDiv>
+          </div>
         </div>
       </section>
     </div>

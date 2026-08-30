@@ -1,5 +1,15 @@
 # Brand Page Headers — Design Spec
 
+> **Teilweise überholt (Stand: Unslop-Pass, Branch `refactor/unslop-ui`).**
+> Die Kicker-Pill, die Zwei-Stimmen-Regel (`voice`) und die gestaffelte
+> `MotionDiv`-Einblendung wurden aus `PageHeader` entfernt: Badge-über-H1 und
+> Dauer-Entrance-Animationen sind Standard-Tells für KI-generierte Seiten.
+> `PageHeader` rendert seither nur noch Titel, Lead und einen Actions-Slot,
+> linksbündig. Die Kicker-Tabelle weiter unten ist damit historisch.
+> Was weiterhin gilt: die Problemanalyse und die Regel, dass Akzentwörter im
+> Titel solide Akzentfarbe verwenden und `gradient-text` den Bespoke-Heroes
+> (Home, Harassenlauf, Shotcounter) vorbehalten bleibt.
+
 **Datum:** 2026-07-06
 **Branch:** `ui/brand-page-headers`
 **Register:** brand (öffentliche Surfaces), plus zwei Ein-Zeilen-Fixes auf Product-Surfaces

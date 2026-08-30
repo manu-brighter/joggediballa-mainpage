@@ -40,7 +40,7 @@ import {
   Settings2,
 } from 'lucide-react';
 import { useBeamerMode } from '@/App';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const MotionDiv = motion.div;
@@ -132,6 +132,7 @@ function InlineScoreEdit({
 
 export default function Shotcounter() {
   const { user } = useAuth();
+  const shouldReduceMotion = useReducedMotion();
   const [currentYear] = useState(new Date().getFullYear());
   const [newTeamName, setNewTeamName] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -167,7 +168,7 @@ export default function Shotcounter() {
   const createTeamMutation = trpc.shotcounter.createTeam.useMutation({
     onSuccess: () => {
       utils.shotcounter.getTeams.invalidate();
-      toast.success('Team erfolgreich erstellt!');
+      toast.success('Team erstellt.');
       setNewTeamName('');
       setCreateDialogOpen(false);
     },
@@ -211,7 +212,7 @@ export default function Shotcounter() {
   const deleteTeamMutation = trpc.shotcounter.deleteTeam.useMutation({
     onSuccess: () => {
       utils.shotcounter.getTeams.invalidate();
-      toast.success('Team gelöscht!');
+      toast.success('Team gelöscht.');
       setDeleteDialogOpen(false);
       setTeamToDelete(null);
     },
@@ -225,7 +226,7 @@ export default function Shotcounter() {
 
   const handleCreateTeam = () => {
     if (!newTeamName.trim()) {
-      toast.error('Bitte einen Teamnamen eingeben');
+      toast.error('Bitte einen Teamnamen eingeben.');
       return;
     }
     createTeamMutation.mutate({ name: newTeamName, year: currentYear });
@@ -547,7 +548,8 @@ export default function Shotcounter() {
                     Countdown zum Silvester
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Wer gewinnt dieses Jahr? Vielleicht gibt es ein Preis?
+                    Wer gewinnt dieses Jahr? Vielleicht gibt's sogar einen
+                    Preis.
                   </p>
                 </div>
               </div>
@@ -567,8 +569,34 @@ export default function Shotcounter() {
                     { value: timeToNewYear.seconds, label: 'Sek' },
                   ].map(item => (
                     <div key={item.label} className="text-center">
-                      <div className="text-4xl md:text-5xl font-black tabular-nums text-primary">
-                        {item.value.toString().padStart(2, '0')}
+                      {/* Each unit animates only when its own value ticks over,
+                          so the motion says "this just changed" instead of
+                          decorating. Seconds move every second, days once a
+                          day. */}
+                      <div className="relative h-[2.75rem] overflow-hidden md:h-[3.5rem]">
+                        <AnimatePresence initial={false}>
+                          <MotionDiv
+                            key={item.value}
+                            initial={
+                              shouldReduceMotion
+                                ? false
+                                : { y: '-100%', opacity: 0 }
+                            }
+                            animate={{ y: '0%', opacity: 1 }}
+                            exit={
+                              shouldReduceMotion
+                                ? { opacity: 0 }
+                                : { y: '100%', opacity: 0 }
+                            }
+                            transition={{
+                              duration: shouldReduceMotion ? 0 : 0.35,
+                              ease: [0.25, 1, 0.5, 1],
+                            }}
+                            className="absolute inset-x-0 text-4xl md:text-5xl font-black tabular-nums text-primary"
+                          >
+                            {item.value.toString().padStart(2, '0')}
+                          </MotionDiv>
+                        </AnimatePresence>
                       </div>
                       <div className="text-xs md:text-sm text-muted-foreground">
                         {item.label}
@@ -661,11 +689,16 @@ export default function Shotcounter() {
           </Card>
         ) : (
           <div className="space-y-3">
+            {/* `layout` makes an overtake visible: scores poll every 2s and the
+                list re-sorts, so a team that passes another slides past it
+                instead of teleporting. The motion is the information. */}
             {teams.map((team, index) => (
-              <div
+              <MotionDiv
+                layout={!shouldReduceMotion}
+                transition={{ duration: 0.45, ease: [0.25, 1, 0.5, 1] }}
                 key={team.id}
                 className={cn(
-                  'p-4 md:p-6 rounded-xl border-2 transition-all duration-300',
+                  'p-4 md:p-6 rounded-xl border-2 transition-colors duration-300',
                   index === 0
                     ? 'bg-gradient-to-r from-primary/10 to-coral/10 border-primary shadow-lg shadow-primary/10'
                     : 'bg-card border-border hover:border-muted-foreground/30',
@@ -741,7 +774,7 @@ export default function Shotcounter() {
                     )}
                   </div>
                 </div>
-              </div>
+              </MotionDiv>
             ))}
           </div>
         )}
@@ -774,7 +807,7 @@ export default function Shotcounter() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">
-              🎉 Gewinner {currentYear}! 🎉
+              Gewinner {currentYear}
             </DialogTitle>
           </DialogHeader>
           <div className="text-center py-8">

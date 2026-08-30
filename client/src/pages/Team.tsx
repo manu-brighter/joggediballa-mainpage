@@ -127,7 +127,7 @@ export default function Team() {
   const createMutation = trpc.team.create.useMutation({
     onSuccess: () => {
       utils.team.list.invalidate();
-      toast.success('Mitglied erfolgreich hinzugefügt');
+      toast.success('Mitglied hinzugefügt.');
       setAddDialogOpen(false);
       resetForm();
     },
@@ -139,7 +139,7 @@ export default function Team() {
   const updateMutation = trpc.team.update.useMutation({
     onSuccess: () => {
       utils.team.list.invalidate();
-      toast.success('Mitglied erfolgreich aktualisiert');
+      toast.success('Mitglied aktualisiert.');
       setEditDialogOpen(false);
       resetForm();
     },
@@ -151,7 +151,7 @@ export default function Team() {
   const deleteMutation = trpc.team.delete.useMutation({
     onSuccess: () => {
       utils.team.list.invalidate();
-      toast.success('Mitglied erfolgreich gelöscht');
+      toast.success('Mitglied gelöscht.');
       setDeleteDialogOpen(false);
       setSelectedMember(null);
     },
@@ -273,10 +273,10 @@ export default function Team() {
       setPhotoFile(croppedFile);
 
       setCropperOpen(false);
-      toast.success('Bild zugeschnitten');
+      toast.success('Bild zugeschnitten.');
     } catch (error) {
       console.error('Crop error:', error);
-      toast.error('Fehler beim Zuschneiden');
+      toast.error('Fehler beim Zuschneiden.');
     }
   };
 
@@ -319,7 +319,7 @@ export default function Team() {
       return photoData;
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Fehler beim Hochladen des Bildes');
+      toast.error('Fehler beim Hochladen des Bildes.');
       return null;
     } finally {
       setUploadingPhoto(false);
@@ -328,7 +328,7 @@ export default function Team() {
 
   const handleSubmit = async (isEdit: boolean) => {
     if (!formData.name.trim()) {
-      toast.error('Name ist erforderlich');
+      toast.error('Name ist erforderlich.');
       return;
     }
 
@@ -420,8 +420,6 @@ export default function Team() {
       <div className="container py-12 space-y-8">
         {/* Header */}
         <PageHeader
-          kicker="Der Verein"
-          kickerIcon={Users}
           title={
             <>
               Unser <span className="text-primary">Team</span>

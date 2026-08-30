@@ -173,7 +173,7 @@ export default function Attendance() {
   const createSessionMutation = trpc.attendance.createSession.useMutation({
     onSuccess: () => {
       utils.attendance.listSessions.invalidate();
-      toast.success('Meeting/Event erfolgreich erstellt');
+      toast.success('Meeting/Event erstellt.');
       setSessionDialogOpen(false);
       resetSessionForm();
     },
@@ -185,7 +185,7 @@ export default function Attendance() {
   const updateSessionMutation = trpc.attendance.updateSession.useMutation({
     onSuccess: () => {
       utils.attendance.listSessions.invalidate();
-      toast.success('Meeting/Event erfolgreich aktualisiert');
+      toast.success('Meeting/Event aktualisiert.');
       setSessionDialogOpen(false);
       resetSessionForm();
     },
@@ -197,7 +197,7 @@ export default function Attendance() {
   const deleteSessionMutation = trpc.attendance.deleteSession.useMutation({
     onSuccess: () => {
       utils.attendance.listSessions.invalidate();
-      toast.success('Meeting/Event erfolgreich gelöscht');
+      toast.success('Meeting/Event gelöscht.');
       setDeleteDialogOpen(false);
       setSelectedSession(null);
     },
@@ -209,7 +209,7 @@ export default function Attendance() {
   const createMemberMutation = trpc.attendance.createMember.useMutation({
     onSuccess: () => {
       utils.attendance.listMembers.invalidate();
-      toast.success('Mitglied erfolgreich hinzugefügt');
+      toast.success('Mitglied hinzugefügt.');
       setMemberDialogOpen(false);
       resetMemberForm();
     },
@@ -221,7 +221,7 @@ export default function Attendance() {
   const saveAttendanceMutation = trpc.attendance.saveAttendance.useMutation({
     onSuccess: () => {
       utils.attendance.listRecords.invalidate();
-      toast.success('Anwesenheit erfolgreich gespeichert');
+      toast.success('Anwesenheit gespeichert.');
       setAttendanceDialogOpen(false);
       setSelectedSession(null);
       setAttendanceForm({});
@@ -248,7 +248,7 @@ export default function Attendance() {
 
   const handleCreateSession = () => {
     if (!sessionForm.title.trim()) {
-      toast.error('Titel ist erforderlich');
+      toast.error('Titel ist erforderlich.');
       return;
     }
     createSessionMutation.mutate(sessionForm);
@@ -257,7 +257,7 @@ export default function Attendance() {
   const handleUpdateSession = () => {
     if (!selectedSession) return;
     if (!sessionForm.title.trim()) {
-      toast.error('Titel ist erforderlich');
+      toast.error('Titel ist erforderlich.');
       return;
     }
     updateSessionMutation.mutate({
@@ -273,7 +273,7 @@ export default function Attendance() {
 
   const handleCreateMember = () => {
     if (!memberForm.name.trim()) {
-      toast.error('Name ist erforderlich');
+      toast.error('Name ist erforderlich.');
       return;
     }
     createMemberMutation.mutate(memberForm);

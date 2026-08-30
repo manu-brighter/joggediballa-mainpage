@@ -66,7 +66,7 @@ export function AttendanceMembersManagement({
   const updateMemberMutation = trpc.attendance.updateMember.useMutation({
     onSuccess: () => {
       utils.attendance.listMembers.invalidate();
-      toast.success('Mitglied aktualisiert');
+      toast.success('Mitglied aktualisiert.');
       setEditDialogOpen(false);
       setSelectedMember(null);
     },
@@ -78,7 +78,7 @@ export function AttendanceMembersManagement({
   const deleteMemberMutation = trpc.attendance.deleteMember.useMutation({
     onSuccess: () => {
       utils.attendance.listMembers.invalidate();
-      toast.success('Mitglied gelöscht');
+      toast.success('Mitglied gelöscht.');
       setDeleteDialogOpen(false);
       setSelectedMember(null);
     },
@@ -90,7 +90,7 @@ export function AttendanceMembersManagement({
   const reorderMembersMutation = trpc.attendance.reorderMembers.useMutation({
     onSuccess: () => {
       utils.attendance.listMembers.invalidate();
-      toast.success('Reihenfolge aktualisiert');
+      toast.success('Reihenfolge aktualisiert.');
     },
     onError: error => {
       toast.error(parseErrorMessage(error.message));

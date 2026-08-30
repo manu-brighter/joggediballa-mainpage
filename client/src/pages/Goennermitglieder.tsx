@@ -349,7 +349,7 @@ export default function Goennermitglieder() {
   const createMutation = trpc.goennermitglieder.create.useMutation({
     onSuccess: () => {
       utils.goennermitglieder.list.invalidate();
-      toast.success('Mitglied erfolgreich hinzugefügt!');
+      toast.success('Mitglied hinzugefügt.');
       setCreateDialogOpen(false);
       resetForm();
     },
@@ -362,7 +362,7 @@ export default function Goennermitglieder() {
     onSuccess: data => {
       utils.goennermitglieder.list.invalidate();
       toast.success(
-        `Mitgliedschaft verlängert bis ${new Date(data.newEndDate).toLocaleDateString('de-DE')}`,
+        `Mitgliedschaft verlängert bis ${new Date(data.newEndDate).toLocaleDateString('de-DE')}.`,
       );
       setExtendDialogOpen(false);
       setSelectedMember(null);
@@ -375,7 +375,7 @@ export default function Goennermitglieder() {
   const deleteMutation = trpc.goennermitglieder.delete.useMutation({
     onSuccess: () => {
       utils.goennermitglieder.list.invalidate();
-      toast.success('Mitglied gelöscht!');
+      toast.success('Mitglied gelöscht.');
       setDeleteDialogOpen(false);
       setSelectedMember(null);
     },
@@ -387,7 +387,7 @@ export default function Goennermitglieder() {
   const updateMutation = trpc.goennermitglieder.update.useMutation({
     onSuccess: () => {
       utils.goennermitglieder.list.invalidate();
-      toast.success('Mitglied aktualisiert!');
+      toast.success('Mitglied aktualisiert.');
       setEditDialogOpen(false);
       setSelectedMember(null);
       resetForm();
@@ -401,7 +401,7 @@ export default function Goennermitglieder() {
     trpc.goennermitglieder.confirmPayment.useMutation({
       onSuccess: () => {
         utils.goennermitglieder.list.invalidate();
-        toast.success('Zahlung bestätigt! Mitgliedschaft ist jetzt aktiv.');
+        toast.success('Zahlung bestätigt. Mitgliedschaft ist jetzt aktiv.');
         setSelectedMember(null);
       },
       onError: error => {
@@ -552,7 +552,7 @@ export default function Goennermitglieder() {
       !formData.zipCode ||
       !formData.city
     ) {
-      toast.error('Bitte alle Pflichtfelder ausfüllen');
+      toast.error('Bitte alle Pflichtfelder ausfüllen.');
       return;
     }
     // Open payment status dialog
@@ -764,7 +764,7 @@ export default function Goennermitglieder() {
                               'CH9800769438714132001',
                             );
                             setCopiedField('iban');
-                            toast.success('IBAN kopiert');
+                            toast.success('IBAN kopiert.');
                             setTimeout(() => setCopiedField(null), 2000);
                           }}
                         >
@@ -810,7 +810,7 @@ export default function Goennermitglieder() {
                               'Gönnermitgliedschaft',
                             );
                             setCopiedField('reference');
-                            toast.success('Zahlungszweck kopiert');
+                            toast.success('Zahlungszweck kopiert.');
                             setTimeout(() => setCopiedField(null), 2000);
                           }}
                         >

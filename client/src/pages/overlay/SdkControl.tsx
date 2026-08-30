@@ -317,7 +317,7 @@ export default function SdkControl() {
     onSuccess: () => {
       utils.sdk.getActive.invalidate();
       utils.sdk.getGameLog.invalidate();
-      toast.success('Neue Session gestartet!');
+      toast.success('Neue Session gestartet.');
     },
     onError: e => toast.error(e.message),
   });
@@ -325,7 +325,7 @@ export default function SdkControl() {
   const updateSession = trpc.sdk.updateSession.useMutation({
     onSuccess: () => {
       utils.sdk.getActive.invalidate();
-      toast.success('Gespeichert');
+      toast.success('Gespeichert.');
     },
     onError: e => toast.error(e.message),
   });
@@ -335,7 +335,7 @@ export default function SdkControl() {
       utils.sdk.getActive.invalidate();
       utils.sdk.getGameLog.invalidate();
       if (updated?.winnerId !== null && updated?.winnerId !== undefined) {
-        toast.success('🏆 Sieger steht fest!', { duration: 5000 });
+        toast.success('Sieger steht fest.', { duration: 5000 });
       }
     },
     onError: e => toast.error(e.message),
@@ -345,7 +345,7 @@ export default function SdkControl() {
     onSuccess: () => {
       utils.sdk.getActive.invalidate();
       utils.sdk.getGameLog.invalidate();
-      toast.success('Letztes Spiel rückgängig gemacht');
+      toast.success('Letztes Spiel rückgängig gemacht.');
     },
     onError: e => toast.error(e.message),
   });
@@ -354,7 +354,7 @@ export default function SdkControl() {
     onSuccess: () => {
       utils.sdk.getActive.invalidate();
       utils.sdk.getGameLog.invalidate();
-      toast.success('Session zurückgesetzt');
+      toast.success('Session zurückgesetzt.');
     },
     onError: e => toast.error(e.message),
   });
@@ -846,8 +846,8 @@ export default function SdkControl() {
                   ? window.location.origin
                   : 'https://joggediballa.ch'}
                 /overlay/sdk
-              </code>{' '}
-              — Empfohlene Breite: <strong>1920px</strong>, Höhe:{' '}
+              </code>
+              . Empfohlene Breite: <strong>1920px</strong>, Höhe:{' '}
               <strong>120px</strong>. Hintergrundfarbe auf transparent stellen.
             </p>
           </CardContent>
