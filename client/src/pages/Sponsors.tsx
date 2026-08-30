@@ -495,7 +495,7 @@ export default function Sponsors() {
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
                 {/* Standard Package */}
                 <div className="bg-background/50 backdrop-blur-sm rounded-xl p-6 border border-border hover:border-primary/30 transition-all ">
                   {/* Header */}
@@ -516,7 +516,7 @@ export default function Sponsors() {
                   </div>
 
                   {/* Liste */}
-                  <ul className="text-sm text-muted-foreground space-y-2 ">
+                  <ul className="text-sm text-muted-foreground space-y-2">
                     <li className="flex items-start gap-2">
                       <Check
                         className="h-4 w-4 shrink-0 mt-0.5 text-primary"
@@ -549,7 +549,7 @@ export default function Sponsors() {
                     </div>
                   </div>
                   {/* Liste */}
-                  <ul className="text-sm text-muted-foreground space-y-2 ">
+                  <ul className="text-sm text-muted-foreground space-y-2">
                     <li className="flex items-start gap-2">
                       <Check
                         className="h-4 w-4 shrink-0 mt-0.5 text-primary"
