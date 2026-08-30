@@ -80,18 +80,20 @@ export function Footer() {
         {/* Top: brand-marker on the left, contextual links on the right */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
+            {/* Decorative: the name is spelled out right next to it. */}
             <img
               src="/JoggediBalla-Logo.PNG"
-              alt="Jogge di Balla Logo"
+              alt=""
+              aria-hidden="true"
               className="h-10 w-auto"
               loading="lazy"
             />
             <div className="text-sm leading-tight">
               <p className="font-medium text-muted-foreground">
-                Gemeinsam feiern seit 2022
+                Jogge di Balla
               </p>
               <p className="text-xs text-muted-foreground/70">
-                Event- und Kulturverein
+                Event- und Kulturverein, Brislach, seit 2022
               </p>
             </div>
           </div>

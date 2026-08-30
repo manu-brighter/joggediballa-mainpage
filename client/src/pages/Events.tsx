@@ -282,7 +282,7 @@ export default function Events() {
   const createEventMutation = trpc.events.create.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
-      toast.success('Event erfolgreich erstellt!');
+      toast.success('Event erstellt.');
       setCreateEventOpen(false);
       resetEventForm();
     },
@@ -292,7 +292,7 @@ export default function Events() {
   const updateEventMutation = trpc.events.update.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
-      toast.success('Event aktualisiert!');
+      toast.success('Event aktualisiert.');
       setEditEventOpen(false);
       resetEventForm();
     },
@@ -317,7 +317,7 @@ export default function Events() {
     onSuccess: () => {
       utils.events.list.invalidate();
       utils.photos.listAll.invalidate();
-      toast.success('Event gelöscht!');
+      toast.success('Event gelöscht.');
       setDeleteEventOpen(false);
       setSelectedEvent(null);
     },
@@ -337,7 +337,7 @@ export default function Events() {
     onSuccess: () => {
       utils.events.list.invalidate();
       utils.photos.listAll.invalidate();
-      toast.success('Foto gelöscht!');
+      toast.success('Foto gelöscht.');
     },
     onError: error => toast.error(parseErrorMessage(error)),
   });
@@ -345,7 +345,7 @@ export default function Events() {
   const setThumbnailMutation = trpc.events.setThumbnail.useMutation({
     onSuccess: () => {
       utils.events.list.invalidate();
-      toast.success('Thumbnail gesetzt!');
+      toast.success('Thumbnail gesetzt.');
     },
     onError: error => toast.error(parseErrorMessage(error)),
   });
@@ -456,7 +456,7 @@ export default function Events() {
 
   const handleCreateEvent = () => {
     if (!eventForm.title.trim() || !eventForm.eventDate) {
-      toast.error('Bitte Titel und Datum angeben');
+      toast.error('Bitte Titel und Datum angeben.');
       return;
     }
     const dateStr = eventForm.eventTime
@@ -475,7 +475,7 @@ export default function Events() {
 
   const handleUpdateEvent = () => {
     if (!selectedEvent || !eventForm.title.trim() || !eventForm.eventDate) {
-      toast.error('Bitte Titel und Datum angeben');
+      toast.error('Bitte Titel und Datum angeben.');
       return;
     }
     const dateStr = eventForm.eventTime
@@ -602,12 +602,12 @@ export default function Events() {
 
       const succeeded = fileList.length - failures.length;
       if (succeeded > 0) {
-        toast.success(`${succeeded} von ${fileList.length} Fotos hochgeladen`);
+        toast.success(`${succeeded} von ${fileList.length} Fotos hochgeladen.`);
       }
       if (failures.length > 0) {
         console.error('Photo upload failures:', failures);
         toast.error(
-          `${failures.length} fehlgeschlagen: ${failures.join(' · ')}`,
+          `${failures.length} fehlgeschlagen: ${failures.join(' · ')}.`,
           { duration: 10000 },
         );
       }
@@ -634,8 +634,6 @@ export default function Events() {
       />
       {/* Header */}
       <PageHeader
-        kicker="Rückblick"
-        kickerIcon={Calendar}
         title={
           <>
             Events & <span className="text-primary">Fotos</span>
@@ -1044,8 +1042,8 @@ export default function Events() {
                                 disabled={togglePublishMutation.isPending}
                                 title={
                                   event.isPublished
-                                    ? 'Veröffentlicht — klicken um als Entwurf zu setzen'
-                                    : 'Entwurf — klicken um zu veröffentlichen'
+                                    ? 'Veröffentlicht. Klicken, um als Entwurf zu setzen'
+                                    : 'Entwurf. Klicken, um zu veröffentlichen'
                                 }
                                 aria-label={
                                   event.isPublished

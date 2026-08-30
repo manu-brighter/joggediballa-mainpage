@@ -137,7 +137,7 @@ export default function AttendanceStatistics() {
     onSuccess: () => {
       utils.attendance.getStatistics.invalidate();
       utils.attendance.getSetting.invalidate();
-      toast.success('Event-Gewichtung aktualisiert');
+      toast.success('Event-Gewichtung aktualisiert.');
       setSettingsOpen(false);
     },
     onError: error => {
@@ -263,7 +263,7 @@ export default function AttendanceStatistics() {
   const handleUpdateWeight = () => {
     const weight = parseFloat(eventWeight);
     if (isNaN(weight) || weight < 1 || weight > 10) {
-      toast.error('Gewichtung muss zwischen 1 und 10 liegen');
+      toast.error('Gewichtung muss zwischen 1 und 10 liegen.');
       return;
     }
     updateWeightMutation.mutate({ weight });

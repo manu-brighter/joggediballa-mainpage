@@ -77,7 +77,7 @@ export default function UserManagement() {
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
   const promoteUserMutation = trpc.users.updateRole.useMutation({
     onSuccess: () => {
-      toast.success('Benutzerrolle erfolgreich aktualisiert');
+      toast.success('Benutzerrolle aktualisiert.');
       refetch();
     },
     onError: (error: any) => {
@@ -87,7 +87,7 @@ export default function UserManagement() {
 
   const deleteUserMutation = trpc.admin.deleteUser.useMutation({
     onSuccess: () => {
-      toast.success('Benutzer erfolgreich gelöscht');
+      toast.success('Benutzer gelöscht.');
       refetch();
     },
     onError: (error: any) => {

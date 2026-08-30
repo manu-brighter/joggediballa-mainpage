@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/lib/errorMessages';
-import { Mail, Send, CheckCircle } from 'lucide-react';
+import { Send, CheckCircle } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { PageHeader } from '@/components/PageHeader';
 import {
@@ -48,7 +48,7 @@ export default function Contact() {
   const submitMutation = trpc.contact.send.useMutation({
     onSuccess: () => {
       setSubmitted(true);
-      toast.success('Nachricht erfolgreich gesendet!');
+      toast.success('Nachricht gesendet.');
       form.reset();
     },
     onError: error => {
@@ -95,10 +95,8 @@ export default function Contact() {
       />
       <PageHeader
         className="mx-auto w-full max-w-2xl"
-        kicker="Kontakt"
-        kickerIcon={Mail}
         title="Schreib uns"
-        lead="Hast du Fragen, Anregungen oder möchtest auf eines unserer Angebote eingehen? Schreib uns eine Nachricht!"
+        lead="Fragen, Anregungen, oder du willst eines unserer Angebote buchen? Immer her damit."
       />
 
       <div className="max-w-2xl mx-auto">

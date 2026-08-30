@@ -81,7 +81,7 @@ export default function Profile() {
   const updatePictureMutation = trpc.profile.updatePicture.useMutation({
     onSuccess: () => {
       utils.auth.me.invalidate();
-      toast.success('Profilbild erfolgreich aktualisiert!');
+      toast.success('Profilbild aktualisiert.');
       setIsUploadDialogOpen(false);
       resetCropState();
     },
@@ -93,7 +93,7 @@ export default function Profile() {
   const updateProfileMutation = trpc.profile.updateProfile.useMutation({
     onSuccess: () => {
       utils.auth.me.invalidate();
-      toast.success('Profil erfolgreich aktualisiert!');
+      toast.success('Profil aktualisiert.');
       setIsEditingProfile(false);
     },
     onError: error => {
@@ -337,7 +337,7 @@ export default function Profile() {
         profilePictureKey: key,
       });
     } catch (error) {
-      toast.error('Fehler beim Hochladen des Bildes');
+      toast.error('Fehler beim Hochladen des Bildes.');
     } finally {
       setIsUploading(false);
     }

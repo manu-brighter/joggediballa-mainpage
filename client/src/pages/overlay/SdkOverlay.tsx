@@ -393,7 +393,7 @@ function PlayerSide({
               textShadow: '0 0 10px rgba(251,191,36,0.65)',
             }}
           >
-            🏆 Sieger
+            Sieger
           </span>
         )}
       </div>
@@ -630,7 +630,7 @@ export default function SdkOverlay() {
                 whiteSpace: 'nowrap',
               }}
             >
-              {hasWinner ? '🏆 Sieger steht fest!' : gameLabel}
+              {hasWinner ? 'Sieger steht fest' : gameLabel}
             </span>
 
             {/* Points value */}
@@ -670,10 +670,10 @@ export default function SdkOverlay() {
                 }}
               >
                 {p1Matchpoint && p2Matchpoint
-                  ? '⚡ Entscheidungsspiel'
+                  ? 'Entscheidungsspiel'
                   : p1Matchpoint
-                    ? `⚡ Matchpunkt ${player1Name}`
-                    : `⚡ Matchpunkt ${player2Name}`}
+                    ? `Matchpunkt ${player1Name}`
+                    : `Matchpunkt ${player2Name}`}
               </span>
             )}
 

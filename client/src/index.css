@@ -450,6 +450,44 @@
       );
   }
 
+  /* The club's doodle pattern as a surface.
+     Image, tile size and drift distance MUST stay in sync — the animation
+     shifts by exactly one tile, so a mismatch makes the loop jump. They live
+     together here for that reason; don't set background-size at the call site.
+     The tile is the tight-margin artwork: the earlier one carried ~64px of
+     empty margin, which doubled at every tile edge into a visible grid of gaps
+     that swept across the hero as it drifted. */
+  .brand-pattern {
+    background-image: url('/joggediballa-pattern-tight.png');
+    background-repeat: repeat;
+    background-size: 1068px 554px;
+  }
+  /* Half-scale tile for card-sized surfaces. */
+  .brand-pattern-sm {
+    background-image: url('/joggediballa-pattern-tight.png');
+    background-repeat: repeat;
+    background-size: 534px 277px;
+  }
+
+  /* Ambient drift, slow enough (2 min per tile) to read as atmosphere rather
+     than as something moving on the page. Pairs with .brand-pattern. */
+  .pattern-drift {
+    animation: patternDrift 120s linear infinite;
+  }
+  @keyframes patternDrift {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 1068px 554px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pattern-drift {
+      animation: none;
+    }
+  }
+
   /* Instagram brand gradient — external-brand requirement (analog to --twitch).
      Two-step purple -> pink, OKLCH approximations of tailwind purple-500/pink-500. */
   .social-instagram {
@@ -574,21 +612,6 @@
     }
     100% {
       transform: scale(1);
-    }
-  }
-
-  /* Gentle idle float — hero logo. Applied to the wrapper (not the img)
-     so the img's own hover scale-transform keeps working. */
-  .float-gentle {
-    animation: floatGentle 6s ease-in-out infinite;
-  }
-  @keyframes floatGentle {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-10px);
     }
   }
 

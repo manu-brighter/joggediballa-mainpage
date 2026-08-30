@@ -82,7 +82,7 @@ export default function DiashowControl() {
   const rotate = trpc.slideshow.rotateToken.useMutation({
     onSuccess: () => {
       utils.slideshow.getSettings.invalidate();
-      toast.success('Neuer Token — alter QR-Code ist jetzt ungültig.');
+      toast.success('Neuer Token. Der alte QR-Code ist jetzt ungültig.');
     },
   });
   const clearAll = trpc.slideshow.clearAll.useMutation({
@@ -134,7 +134,7 @@ export default function DiashowControl() {
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 space-y-6">
       <SEO title="Diashow-Steuerung" noIndex />
-      <h1 className="text-3xl font-bold">Live-Diashow — Steuerung</h1>
+      <h1 className="text-3xl font-bold">Live-Diashow: Steuerung</h1>
 
       {/* Status & Toggles */}
       <Card>
@@ -281,7 +281,7 @@ export default function DiashowControl() {
                 size="icon"
                 onClick={() => {
                   navigator.clipboard.writeText(uploadUrl);
-                  toast.success('Link kopiert');
+                  toast.success('Link kopiert.');
                 }}
               >
                 <Copy className="size-4" />

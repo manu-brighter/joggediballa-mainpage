@@ -37,7 +37,7 @@ export default function MaintenancePage() {
             </div>
             <CardTitle className="text-2xl">Wartungsmodus</CardTitle>
             <CardDescription className="text-base">
-              Wir arbeiten gerade an Verbesserungen für euch!
+              Die Seite ist gerade kurz offline.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

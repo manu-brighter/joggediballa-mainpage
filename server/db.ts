@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lt, isNull, inArray } from 'drizzle-orm';
+import { eq, desc, asc, and, gte, lt, isNull, inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/mysql2';
 import {
   InsertUser,
@@ -184,13 +184,23 @@ export async function deleteUser(userId: number) {
 export async function getShotcounterTeamsByYear(year: number) {
   const db = await getDb();
   if (!db) return [];
-  return db
-    .select()
-    .from(shotcounterTeams)
-    .where(
-      and(eq(shotcounterTeams.year, year), isNull(shotcounterTeams.deletedAt)),
-    )
-    .orderBy(desc(shotcounterTeams.score));
+  return (
+    db
+      .select()
+      .from(shotcounterTeams)
+      .where(
+        and(
+          eq(shotcounterTeams.year, year),
+          isNull(shotcounterTeams.deletedAt),
+        ),
+      )
+      // `id` als zweites Sortierkriterium: bei Punktgleichstand (etwa zu
+      // Jahresbeginn, wenn alle auf 0 stehen) gibt InnoDB sonst keine stabile
+      // Reihenfolge zurück. Die Shotcounter-Liste pollt im 2-Sekunden-Takt und
+      // animiert Rangwechsel — ohne Tiebreaker würde sie bei Gleichstand
+      // dauernd hin und her rutschen.
+      .orderBy(desc(shotcounterTeams.score), asc(shotcounterTeams.id))
+  );
 }
 
 export async function createShotcounterTeam(team: InsertShotcounterTeam) {

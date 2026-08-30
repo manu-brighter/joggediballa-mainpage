@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react';
-import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { usePermission } from '@/hooks/usePermissions';
 import { SEO } from '@/components/SEO';
 import { PageHeader } from '@/components/PageHeader';
+import { BrandPattern } from '@/components/BrandPattern';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -51,6 +51,7 @@ import {
   Loader2,
   Star,
   Crown,
+  Check,
   Mail,
 } from 'lucide-react';
 import { Link } from 'wouter';
@@ -60,7 +61,6 @@ const MotionDiv = motion.div;
 
 export default function Sponsors() {
   const { user } = useAuth();
-  const [, navigate] = useLocation();
   const shouldReduceMotion = useReducedMotion();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -81,7 +81,7 @@ export default function Sponsors() {
   const createSponsorMutation = trpc.sponsors.create.useMutation({
     onSuccess: () => {
       utils.sponsors.list.invalidate();
-      toast.success('Sponsor erfolgreich hinzugefügt!');
+      toast.success('Sponsor hinzugefügt.');
       resetForm();
       setCreateDialogOpen(false);
     },
@@ -93,7 +93,7 @@ export default function Sponsors() {
   const deleteSponsorMutation = trpc.sponsors.delete.useMutation({
     onSuccess: () => {
       utils.sponsors.list.invalidate();
-      toast.success('Sponsor gelöscht!');
+      toast.success('Sponsor gelöscht.');
       setDeleteDialogOpen(false);
       setSelectedSponsor(null);
     },
@@ -147,7 +147,7 @@ export default function Sponsors() {
 
   const handleCreateSponsor = async () => {
     if (!name.trim()) {
-      toast.error('Bitte gib einen Namen ein');
+      toast.error('Bitte gib einen Namen ein.');
       return;
     }
 
@@ -186,7 +186,7 @@ export default function Sponsors() {
       });
     } catch (error) {
       console.error('Error creating sponsor:', error);
-      toast.error('Fehler beim Erstellen des Sponsors');
+      toast.error('Fehler beim Erstellen des Sponsors.');
     } finally {
       setUploading(false);
     }
@@ -214,15 +214,12 @@ export default function Sponsors() {
       />
       {/* Header */}
       <PageHeader
-        kicker="Unsere Partner"
-        kickerIcon={Heart}
-        voice="coral"
         title={
           <>
             Unsere <span className="text-coral">Sponsoren</span>
           </>
         }
-        lead="Ein grosses Dankeschön an alle, die uns unterstützen und unsere Events möglich machen!"
+        lead="Diese Firmen und Leute machen unsere Events möglich. Danke."
         actions={
           canManageSponsors && (
             <Dialog
@@ -388,7 +385,7 @@ export default function Sponsors() {
             </p>
             {canManageSponsors && (
               <p className="text-sm text-muted-foreground mt-2">
-                Füge den ersten Sponsor hinzu!
+                Füge den ersten Sponsor hinzu.
               </p>
             )}
           </CardContent>
@@ -482,24 +479,19 @@ export default function Sponsors() {
       )}
 
       {/* Become a Sponsor CTA */}
-      <MotionDiv
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="mt-12"
-      >
+      <div className="mt-12">
         <Card className="bg-primary/5 border-primary/20 overflow-hidden">
           <CardContent className="p-8">
-            <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/15">
-                <Heart className="h-8 w-8 text-primary" />
-              </div>
-              <div>
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-coral/10 text-coral">
+                  <Heart className="h-7 w-7" aria-hidden="true" />
+                </div>
                 <h2 className="text-2xl md:text-3xl font-bold">
                   Auch Sponsor werden?
                 </h2>
-                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-                  Klare Werbevorteile. Du unterstützt, wir geben zurück.
+                <p className="text-muted-foreground mt-2 mx-auto max-w-2xl">
+                  Zwei Pakete, beide jährlich. Du unterstützt, wir geben zurück.
                 </p>
               </div>
 
@@ -524,9 +516,12 @@ export default function Sponsors() {
                   </div>
 
                   {/* Liste */}
-                  <ul className="text-sm text-muted-foreground space-y-2 text-left">
+                  <ul className="text-sm text-muted-foreground space-y-2">
                     <li className="flex items-start gap-2">
-                      <span className="text-primary">✓</span>
+                      <Check
+                        className="h-4 w-4 shrink-0 mt-0.5 text-primary"
+                        aria-hidden="true"
+                      />
                       Logo und Name auf unserer Website
                     </li>
                   </ul>
@@ -554,59 +549,53 @@ export default function Sponsors() {
                     </div>
                   </div>
                   {/* Liste */}
-                  <ul className="text-sm text-muted-foreground space-y-2 text-left">
+                  <ul className="text-sm text-muted-foreground space-y-2">
                     <li className="flex items-start gap-2">
-                      <span className="text-primary">✓</span>
+                      <Check
+                        className="h-4 w-4 shrink-0 mt-0.5 text-primary"
+                        aria-hidden="true"
+                      />
                       Alles aus Standard
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary">✓</span>
+                      <Check
+                        className="h-4 w-4 shrink-0 mt-0.5 text-primary"
+                        aria-hidden="true"
+                      />
                       Social Media Shoutout
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary">✓</span>
+                      <Check
+                        className="h-4 w-4 shrink-0 mt-0.5 text-primary"
+                        aria-hidden="true"
+                      />
                       Erwähnung und Werbung an unseren Events
                     </li>
                   </ul>
                 </div>
               </div>
-
-              <Button asChild size="lg" className="btn-animate gap-2">
-                <Link href="/contact">
-                  <Mail className="h-5 w-5" />
-                  Anfrage starten
-                </Link>
-              </Button>
             </div>
           </CardContent>
         </Card>
-      </MotionDiv>
+      </div>
 
       {/* Werde Gönnermitglied Section */}
-      <MotionDiv
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.3 }}
-        className="max-w-3xl mx-auto mt-20"
-      >
-        <Card className="border-2 border-primary/30 overflow-hidden">
-          <CardHeader className="text-center pb-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <Gift className="h-8 w-8 text-primary" />
+      <div className="mx-auto mt-20 max-w-3xl">
+        <Card className="relative overflow-hidden border-2 border-primary/30">
+          <BrandPattern />
+          <CardHeader className="relative items-center pb-4 text-center">
+            <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Gift className="h-7 w-7" aria-hidden="true" />
             </div>
             <CardTitle className="text-2xl md:text-3xl">
-              Werde Gönnermitglied!
+              Werde Gönnermitglied
             </CardTitle>
             <CardDescription className="text-lg">
-              20 Stutz pro Jahr. Wenig Aufwand, viel Wirkung.
+              <span className="text-3xl font-black text-primary">CHF 20.-</span>{' '}
+              pro Jahr. Wenig Aufwand, viel Wirkung.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center space-y-6">
-            <div className="inline-block px-6 py-3 rounded-full bg-primary/10 border border-primary/20">
-              <span className="text-3xl font-bold text-primary">CHF 20.-</span>
-              <span className="text-muted-foreground ml-2">pro Jahr</span>
-            </div>
+          <CardContent className="relative space-y-6 text-center">
             <ul className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium">
               <li className="flex items-center gap-2">
                 <Gift
@@ -630,17 +619,24 @@ export default function Sponsors() {
                 Du machst's möglich
               </li>
             </ul>
-            <Button
-              size="lg"
-              className="btn-animate"
-              onClick={() => navigate('/contact')}
-            >
-              Jetzt Gönner werden, schreib uns!
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
           </CardContent>
         </Card>
-      </MotionDiv>
+      </div>
+
+      {/* Ein gemeinsamer Weg ins Kontaktformular für beide Angebote oben —
+          Sponsoring und Gönnermitgliedschaft landen ohnehin am selben Ort. */}
+      <div className="mt-10 text-center">
+        <Button asChild size="lg" className="btn-animate gap-2">
+          <Link href="/contact">
+            <Mail className="h-5 w-5" />
+            Anfrage starten
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Für Sponsoring und Gönnermitgliedschaft.
+        </p>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

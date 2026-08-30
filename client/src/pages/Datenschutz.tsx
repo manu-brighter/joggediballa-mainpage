@@ -11,7 +11,6 @@ export default function Datenschutz() {
       />
       <PageHeader
         className="mx-auto w-full max-w-3xl"
-        kicker="Rechtliches"
         title="Datenschutzerklärung"
       />
 

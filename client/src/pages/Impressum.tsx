@@ -9,11 +9,7 @@ export default function Impressum() {
         description="Impressum des Vereins Jogge di Balla: Verantwortliche, Adresse, Kontakt und rechtliche Hinweise."
         ogUrl="https://joggediballa.ch/impressum"
       />
-      <PageHeader
-        className="mx-auto w-full max-w-3xl"
-        kicker="Rechtliches"
-        title="Impressum"
-      />
+      <PageHeader className="mx-auto w-full max-w-3xl" title="Impressum" />
 
       <div className="mx-auto max-w-3xl space-y-8 text-sm">
         <div>
