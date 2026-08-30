@@ -14,6 +14,7 @@ import {
   createKasseSession,
   createKasseTable,
   createKasseTablesBulk,
+  deleteAllKasseTables,
   deleteKasseProduct,
   deleteKasseProductOption,
   deleteKasseSession,
@@ -707,6 +708,12 @@ export const kasseRouter = router({
       await deleteKasseTable(input.id);
       return { success: true };
     }),
+
+  /** Leert die Tischliste in einem Rutsch, für ein neu bestuhltes Event. */
+  deleteAllTables: manageKasse.mutation(async () => {
+    const deleted = await deleteAllKasseTables();
+    return { deleted };
+  }),
 
   // ---- Auswertung ----
 
