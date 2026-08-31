@@ -13,8 +13,8 @@ Please **do not open a public issue** for security problems.
 1. **Preferred:** use GitHub's private vulnerability reporting — the "Report a
    vulnerability" button under the repository's _Security_ tab. This keeps the
    report private until a fix is out.
-2. **Alternative:** email `kontakt@joggediballa.ch` with "Security" in the
-   subject.
+2. **Alternative:** email `joggediballa+security@gmail.com`. The `+security`
+   tag reaches the same inbox and keeps the report sorted.
 
 Useful things to include: the affected endpoint or file, what an attacker can
 achieve, and a minimal reproduction. A rough description is welcome too — an
