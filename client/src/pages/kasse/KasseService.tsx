@@ -37,6 +37,7 @@ import {
   User,
   Users,
   UtensilsCrossed,
+  X,
 } from 'lucide-react';
 
 const WAITER_NAME_KEY = 'kasse.waiterName';
@@ -96,6 +97,8 @@ export default function KasseService() {
   const [cartOpen, setCartOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
+  // Namen ändern: das Feld ersetzt das Abzeichen im Kopf an Ort und Stelle.
+  const [editingName, setEditingName] = useState(false);
   const [scope, setScope] = useState<OrderScope>(() => {
     if (typeof window === 'undefined') return 'mine';
     return window.localStorage.getItem(ORDER_SCOPE_KEY) === 'all'
@@ -106,6 +109,37 @@ export default function KasseService() {
   // active:bg-accent des Browsers, was auf dem Handy unter dem Finger liegt
   // und beim Loslassen schon wieder weg ist.
   const [flashId, setFlashId] = useState<number | null>(null);
+
+  const saveWaiterName = (name: string) => {
+    setWaiterName(name);
+    try {
+      window.localStorage.setItem(WAITER_NAME_KEY, name);
+    } catch {
+      // Privater Modus o. ä.: der Name gilt dann nur für diese Sitzung.
+    }
+  };
+
+  /**
+   * Namen übernehmen. Der Name hängt an jeder Bestellung, die dieses Gerät
+   * absetzt, und entscheidet unter „Meine“, was in der Liste steht — darum
+   * nicht still tauschen, sondern sagen, was zurückbleibt.
+   */
+  const commitName = () => {
+    const name = nameDraft.trim();
+    if (!name) return;
+    const previous = waiterName;
+    saveWaiterName(name);
+    setEditingName(false);
+    if (normalizeWaiter(previous) === normalizeWaiter(name)) return;
+    const stranded = (openOrders.data ?? []).filter(
+      o => normalizeWaiter(o.waiterName) === normalizeWaiter(previous),
+    ).length;
+    if (stranded > 0) {
+      toast.info(
+        `${stranded} offene Bestellung(en) laufen weiter unter „${previous}“.`,
+      );
+    }
+  };
 
   const setOrderScope = (next: OrderScope) => {
     setScope(next);
@@ -434,11 +468,7 @@ export default function KasseService() {
             <Button
               className="w-full"
               disabled={!nameDraft.trim()}
-              onClick={() => {
-                const name = nameDraft.trim();
-                window.localStorage.setItem(WAITER_NAME_KEY, name);
-                setWaiterName(name);
-              }}
+              onClick={() => saveWaiterName(nameDraft.trim())}
             >
               Weiter
             </Button>
@@ -477,19 +507,75 @@ export default function KasseService() {
       <SEO title="Kassen-Service" noIndex />
 
       <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur px-4 py-3">
+        {/* Der Name lässt sich ändern, ohne dass ein Knopf dafür dauerhaft
+            Platz wegnimmt: das Abzeichen selbst ist der Auslöser und wird an
+            Ort und Stelle zum Feld. Beim Tippen gehört die Zeile ganz dem
+            Feld — auf einem 320px-Gerät liefen Titel und Feld sonst
+            ineinander, und der Kassenname interessiert für die drei Sekunden
+            ohnehin nicht. */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <ConciergeBell className="h-6 w-6 shrink-0 text-primary" />
-            <div className="min-w-0">
-              <h1 className="text-lg font-semibold leading-tight">Service</h1>
-              <p className="truncate text-xs text-muted-foreground">
-                {session?.name ?? 'Keine offene Kasse'}
-              </p>
+          {editingName ? (
+            <div className="flex w-full items-center gap-2">
+              <Input
+                // Fokus direkt: das Feld erscheint auf Antippen und ist das
+                // einzige Ziel. Ohne autoFocus müsste man am Handy ein zweites
+                // Mal tippen, nur um die Tastatur zu bekommen.
+                autoFocus
+                aria-label="Name ändern"
+                value={nameDraft}
+                onChange={e => setNameDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitName();
+                  if (e.key === 'Escape') setEditingName(false);
+                }}
+                maxLength={60}
+                className="h-10 min-w-0 flex-1"
+              />
+              <Button
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                disabled={!nameDraft.trim()}
+                onClick={commitName}
+                aria-label="Name speichern"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => setEditingName(false)}
+                aria-label="Namensänderung abbrechen"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-          </div>
-          <span className="shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground">
-            {waiterName}
-          </span>
+          ) : (
+            <>
+              <div className="flex min-w-0 items-center gap-3">
+                <ConciergeBell className="h-6 w-6 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <h1 className="text-lg font-semibold leading-tight">
+                    Service
+                  </h1>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {session?.name ?? 'Keine offene Kasse'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setNameDraft(waiterName);
+                  setEditingName(true);
+                }}
+                className="max-w-[10rem] shrink-0 truncate rounded-full border px-3 py-1 text-xs text-muted-foreground"
+                title="Name ändern"
+              >
+                {waiterName}
+              </button>
+            </>
+          )}
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button
