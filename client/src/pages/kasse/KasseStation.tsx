@@ -23,6 +23,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import {
+  CATEGORY_FALLBACK,
   categoryKey,
   categoryLabel,
   formatChf,
@@ -33,6 +34,7 @@ import {
 } from '@/lib/kasse';
 import {
   Check,
+  EyeOff,
   History,
   Loader2,
   SlidersHorizontal,
@@ -98,6 +100,8 @@ export default function KasseStation({ station }: { station: StationConfig }) {
   const StationIcon = station.icon;
 
   const [showClosed, setShowClosed] = useState(false);
+  // Bestellungen ausserhalb der eigenen Kategorien: eingeklappt, siehe unten.
+  const [showOther, setShowOther] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   // Gespeicherte Kategorien als Vergleichsschlüssel (kleingeschrieben, siehe
@@ -139,7 +143,14 @@ export default function KasseStation({ station }: { station: StationConfig }) {
     { enabled: state.data?.valid === true, refetchInterval: 3000 },
   );
   const closedOrders = trpc.kasse.listClosedOrders.useQuery(
-    { token, limit: 50 },
+    // Kategorien gehen an den Server: er filtert vor dem LIMIT von 50. Filterte
+    // erst der Client, meldete die Bar „noch nichts abgeschlossen“, sobald die
+    // 50 neuesten Bestellungen reine Küchenbestellungen waren.
+    {
+      token,
+      limit: 50,
+      categoryKeys: selected.length > 0 ? selected : undefined,
+    },
     { enabled: state.data?.valid === true && showClosed },
   );
   // Nur für die Auswahlliste im Filter: welche Kategorien es überhaupt gibt.
@@ -171,14 +182,25 @@ export default function KasseStation({ station }: { station: StationConfig }) {
    * bereits gewählten. Ohne den zweiten Teil verschwände ein Filter aus der
    * Liste, sobald das letzte Produkt dieser Kategorie inaktiv geschaltet wird
    * — und liesse sich nicht mehr abwählen, obwohl er noch filtert.
+   *
+   * „Weiteres“ steht immer zur Wahl, auch wenn gerade kein Produkt ohne
+   * Kategorie aktiv ist: Positionen aus der Zeit vor der Kategorie-Spalte und
+   * jedes Produkt, bei dem jemand das Feld leer lässt, landen dort — sie
+   * müssen sich anwählen lassen.
    */
   const categoryChoices = useMemo(() => {
-    const byKey = new Map<string, string>();
+    const byKey = new Map<string, string>([
+      [categoryKey(null), CATEGORY_FALLBACK],
+    ]);
     for (const product of menu.data?.products ?? []) {
       byKey.set(categoryKey(product.category), categoryLabel(product.category));
     }
     for (const key of selected) {
-      if (!byKey.has(key)) byKey.set(key, key);
+      // Kategorie gibt es nicht mehr (umbenannt, letztes Produkt gelöscht):
+      // der Schlüssel ist kleingeschrieben, als Label taugt er so nicht.
+      if (!byKey.has(key)) {
+        byKey.set(key, key.charAt(0).toLocaleUpperCase('de-CH') + key.slice(1));
+      }
     }
     return Array.from(byKey.entries())
       .map(([key, label]) => ({ key, label }))
@@ -190,22 +212,34 @@ export default function KasseStation({ station }: { station: StationConfig }) {
    * anderer Stationen fliegen raus, ihre Anzahl bleibt als Hinweis stehen:
    * sonst wirkt eine Bestellung mit zwei Bier und einer Wurst an der Bar wie
    * eine vollständige, und niemand wundert sich über die fehlende Wurst.
+   *
+   * Bestellungen, bei denen *keine* Position passt, werden nicht verworfen,
+   * sondern getrennt zurückgegeben. Der Filter ist eine Geräte-Einstellung;
+   * keine Station weiss, was die andere eingestellt hat. Ein neues Produkt
+   * ohne Kategorie oder eine umbenannte Kategorie liesse eine Bestellung sonst
+   * auf *keinem* Tablet erscheinen — der Service wartet, die Küche weiss von
+   * nichts, und niemand kann es merken.
    */
   function forStation<
     T extends { items: Array<{ productCategory: string | null }> },
   >(list: T[]) {
-    return list
-      .map(order => {
-        const items = order.items.filter(item =>
-          matchesCategories(item.productCategory, selected),
-        );
-        return {
-          ...order,
-          items,
-          hiddenCount: order.items.length - items.length,
-        };
-      })
-      .filter(order => order.items.length > 0);
+    const mine: Array<T & { hiddenCount: number }> = [];
+    const unassigned: T[] = [];
+    for (const order of list) {
+      const items = order.items.filter(item =>
+        matchesCategories(item.productCategory, selected),
+      );
+      if (items.length === 0) {
+        unassigned.push(order);
+        continue;
+      }
+      mine.push({
+        ...order,
+        items,
+        hiddenCount: order.items.length - items.length,
+      });
+    }
+    return { mine, unassigned };
   }
 
   if (state.isLoading) {
@@ -233,10 +267,22 @@ export default function KasseStation({ station }: { station: StationConfig }) {
     );
   }
 
-  const all = forStation(orders.data ?? []);
-  const pending = all.filter(o => o.status === 'pending');
-  const ready = all.filter(o => o.status === 'ready');
-  const closed = forStation(closedOrders.data ?? []);
+  const open = forStation(orders.data ?? []);
+  const pending = open.mine.filter(o => o.status === 'pending');
+  const ready = open.mine.filter(o => o.status === 'ready');
+  // Offene Bestellungen, für die diese Station keine einzige Position hat —
+  // pending wie ready. Ohne die zweite Hälfte fiele eine solche Bestellung
+  // nach dem Antippen von „Bereit“ sofort wieder aus jeder Ansicht.
+  const unassigned = open.unassigned;
+  // Welche Bestellungen abgeschlossen zurückkommen, entscheidet der Server
+  // (vor dem LIMIT). Die Positionen anderer Stationen hier trotzdem
+  // wegblenden, damit die Historie dieselbe Sicht zeigt wie die Arbeitsliste.
+  const closed = (closedOrders.data ?? []).map(order => ({
+    ...order,
+    items: order.items.filter(item =>
+      matchesCategories(item.productCategory, selected),
+    ),
+  }));
   const busy = (orderId: number) =>
     setStatus.isPending && setStatus.variables?.orderId === orderId;
 
@@ -277,6 +323,7 @@ export default function KasseStation({ station }: { station: StationConfig }) {
             </span>
             <span className="ml-1 text-muted-foreground sm:ml-2">bereit</span>
           </span>
+
           {/* Der Filter gehört in den Kopf, nicht in ein Menü: er entscheidet,
               was diese Station überhaupt sieht, und muss darum jederzeit
               ablesbar sein. */}
@@ -444,6 +491,83 @@ export default function KasseStation({ station }: { station: StationConfig }) {
             </div>
           )}
         </section>
+
+        {/* Sicherheitsnetz gegen die eine Sorte Fehler, die am Event niemand
+            bemerkt: eine Bestellung, die auf *keinem* Tablet auftaucht. Der
+            Filter ist eine Geräte-Einstellung, keine Station weiss, was die
+            andere eingestellt hat — ein Produkt ohne Kategorie, eine neue oder
+            eine umbenannte Kategorie fällt sonst überall durch.
+
+            Bewusst leise und eingeklappt: hier steht auch jede ganz normale
+            Bestellung der anderen Station drin. Als roter Alarm wäre die Zeile
+            nach zehn Minuten Event Rauschen, den alle wegsehen — und damit
+            wertlos für den einen Fall, für den sie da ist. Wer sie aufklappt,
+            kann die Bestellung auch gleich erledigen. */}
+        {unassigned.length > 0 && (
+          <section className="space-y-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setShowOther(v => !v)}
+              aria-expanded={showOther}
+            >
+              <EyeOff className="mr-2 h-4 w-4" />
+              {unassigned.length} offene Bestellung(en) ausserhalb dieser
+              Kategorien
+            </Button>
+
+            {showOther && (
+              <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {unassigned.map(order => (
+                  <li
+                    key={order.id}
+                    className="rounded-lg border px-3 py-2 text-sm"
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span
+                        className="min-w-0 truncate font-medium"
+                        title={order.tableName}
+                      >
+                        {order.tableName}
+                      </span>
+                      <span className="shrink-0 tabular-nums text-muted-foreground">
+                        {formatWait(order.waitSeconds)}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {order.items
+                        .map(
+                          i =>
+                            `${i.quantity}× ${i.productName} (${categoryLabel(
+                              i.productCategory,
+                            )})`,
+                        )
+                        .join(', ')}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 h-9 w-full"
+                      disabled={busy(order.id)}
+                      onClick={() =>
+                        setStatus.mutate({
+                          token,
+                          orderId: order.id,
+                          status:
+                            order.status === 'ready' ? 'delivered' : 'ready',
+                        })
+                      }
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      {order.status === 'ready' ? 'Abgeholt' : 'Bereit'}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-success">

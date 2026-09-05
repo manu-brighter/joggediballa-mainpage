@@ -23,7 +23,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatChf, formatWait } from '@/lib/kasse';
+import { categoryKey, categoryLabel, formatChf, formatWait } from '@/lib/kasse';
 import {
   Check,
   ClipboardList,
@@ -167,7 +167,10 @@ export default function KasseService() {
   // Abgeschlossene bewusst ohne Polling. Die Liste ist ein Nachschlagewerk,
   // kein Arbeitsvorrat, und am Event werden das schnell ein paar hundert.
   const closedOrders = trpc.kasse.listClosedOrders.useQuery(
-    { token, limit: 50 },
+    // Der Name geht an den Server: er filtert vor dem LIMIT von 50. Filterte
+    // erst der Client, sähe eine Servicekraft mit 40 eigenen Bestellungen
+    // „nichts abgeschlossen“, sobald die 50 neuesten von anderen stammen.
+    { token, limit: 50, waiterName: scope === 'mine' ? waiterName : undefined },
     { enabled: state.data?.valid === true && showClosed },
   );
 
@@ -245,12 +248,21 @@ export default function KasseService() {
   );
 
   const categories = useMemo(() => {
-    const groups = new Map<string, typeof products>();
+    // Gruppiert wird über `categoryKey`, angezeigt über `categoryLabel` —
+    // dieselben Helfer, nach denen Küche und Bar filtern. Ein eigener
+    // Vergleich hier wäre gross-/kleinschreibungsempfindlich: „Drinks“ und
+    // „drinks“ ergäben im Service zwei Gruppen, an der Bar aber einen
+    // einzigen Filtereintrag, der beide erfasst.
+    const groups = new Map<string, { label: string; items: typeof products }>();
     for (const product of products) {
-      const key = product.category?.trim() || 'Weiteres';
-      const list = groups.get(key);
-      if (list) list.push(product);
-      else groups.set(key, [product]);
+      const key = categoryKey(product.category);
+      const group = groups.get(key);
+      if (group) group.items.push(product);
+      else
+        groups.set(key, {
+          label: categoryLabel(product.category),
+          items: [product],
+        });
     }
     return Array.from(groups.entries());
   }, [products]);
@@ -407,17 +419,36 @@ export default function KasseService() {
       toast.error('Die Bestellung ist leer.');
       return;
     }
-    createOrder.mutate({
-      token,
-      tableId,
-      waiterName: waiterName || undefined,
-      note: note.trim() || undefined,
-      items: cart.map(l => ({
-        productId: l.productId,
-        optionIds: l.optionIds,
-        quantity: l.quantity,
-      })),
-    });
+    // Der angezeigte Betrag stammt aus dem `menu`-Cache (60 s). Gerechnet
+    // wird ausschliesslich serverseitig aus der DB. Ändert der Admin einen
+    // Preis, während die Bestellung getippt wird, nennt der Service dem Gast
+    // den alten Betrag und gebucht wird der neue — beim Kassensturz fehlt
+    // dann Geld, ohne dass jemand weiss warum. Darum den gebuchten Betrag
+    // gegen den angezeigten prüfen und den Unterschied melden.
+    const expectedRappen = cartTotal;
+    createOrder.mutate(
+      {
+        token,
+        tableId,
+        waiterName: waiterName || undefined,
+        note: note.trim() || undefined,
+        items: cart.map(l => ({
+          productId: l.productId,
+          optionIds: l.optionIds,
+          quantity: l.quantity,
+        })),
+      },
+      {
+        onSuccess: result => {
+          if (result.totalRappen !== expectedRappen) {
+            toast.warning(
+              `Preis hat sich geändert: gebucht ${formatChf(result.totalRappen)} statt ${formatChf(expectedRappen)}.`,
+              { duration: 12000 },
+            );
+          }
+        },
+      },
+    );
   };
 
   // ---- Zugriff / Zustand ----
@@ -487,7 +518,8 @@ export default function KasseService() {
   const orders = (openOrders.data ?? []).filter(inScope);
   const readyOrders = orders.filter(o => o.status === 'ready');
   const pendingOrders = orders.filter(o => o.status === 'pending');
-  const closed = (closedOrders.data ?? []).filter(inScope);
+  // Die Abgeschlossenen filtert der Server, siehe listClosedOrders.
+  const closed = closedOrders.data ?? [];
   // Wie viele Bestellungen die Ansicht gerade ausblendet. Ohne den Hinweis
   // wirkt eine leere Liste wie „nichts offen“, obwohl der Filter greift.
   const hiddenOpenCount =
@@ -635,11 +667,11 @@ export default function KasseService() {
                 Noch keine Produkte erfasst.
               </p>
             ) : (
-              categories.map(([category, items]) => (
-                <div key={category} className="space-y-2">
-                  <p className="text-xs text-muted-foreground">{category}</p>
+              categories.map(([key, group]) => (
+                <div key={key} className="space-y-2">
+                  <p className="text-xs text-muted-foreground">{group.label}</p>
                   <div className="grid gap-2">
-                    {items.map(product => {
+                    {group.items.map(product => {
                       const shown = product.options.slice(0, OPTION_PILL_LIMIT);
                       const hidden =
                         product.options.length - shown.length > 0

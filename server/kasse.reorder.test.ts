@@ -68,3 +68,29 @@ describe('kasse.reorderProducts', () => {
     ).rejects.toThrow(/Database not available/);
   });
 });
+
+describe('kasse.listClosedOrders: Filter', () => {
+  it('nimmt waiterName und categoryKeys entgegen', async () => {
+    // Beide Filter laufen serverseitig, vor dem LIMIT von 50. Ohne sie sah
+    // eine Servicekraft „nichts abgeschlossen“, sobald die 50 neuesten
+    // Bestellungen von anderen stammten.
+    const caller = appRouter.createCaller(adminCtx());
+    await expect(
+      caller.kasse.listClosedOrders({
+        token: 'egal',
+        waiterName: 'Anna',
+        categoryKeys: ['food', 'weiteres'],
+      }),
+    ).rejects.toThrow(/Database not available/);
+  });
+
+  it('lehnt einen zu langen Namen ab', async () => {
+    const caller = appRouter.createCaller(adminCtx());
+    await expect(
+      caller.kasse.listClosedOrders({
+        token: 'egal',
+        waiterName: 'x'.repeat(61),
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+});

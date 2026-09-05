@@ -227,15 +227,24 @@ export const kasseRouter = router({
       z.object({
         token: z.string(),
         limit: z.number().int().min(1).max(100).default(50),
+        /** Service: nur die eigenen Bestellungen („Meine“). */
+        waiterName: z.string().trim().max(60).optional(),
+        /** Küche/Bar: nur Bestellungen mit Positionen dieser Kategorien. */
+        categoryKeys: z.array(z.string().trim().max(50)).max(50).optional(),
       }),
     )
     .query(async ({ input }) => {
       await requireToken(input.token);
       const session = await getOpenKasseSession();
       if (!session) return [];
+      // Gefiltert wird in SQL, vor dem LIMIT. Ein Filter im Client sähe nur
+      // die 50 neuesten der ganzen Session und meldete „nichts abgeschlossen“,
+      // sobald die von anderen stammen.
       return listKasseOrders(session.id, ['delivered', 'cancelled'], {
         limit: input.limit,
         newestFirst: true,
+        waiterName: input.waiterName,
+        categoryKeys: input.categoryKeys,
       });
     }),
 

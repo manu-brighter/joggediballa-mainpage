@@ -96,9 +96,10 @@ export default function KasseControl() {
     enabled: canManage,
     refetchInterval: 15000,
   });
-  const { data: products = [] } = trpc.kasse.listProducts.useQuery(undefined, {
-    enabled: canManage,
-  });
+  const { data: products = [], isFetching: productsFetching } =
+    trpc.kasse.listProducts.useQuery(undefined, {
+      enabled: canManage,
+    });
   const { data: tables = [] } = trpc.kasse.listTables.useQuery(undefined, {
     enabled: canManage,
   });
@@ -296,6 +297,8 @@ export default function KasseControl() {
 
   const submitEdit = () => {
     if (editProductId == null) return;
+    const previousName =
+      products.find(p => p.id === editProductId)?.name ?? editDraft.name.trim();
     const priceRappen = parseChfToRappen(editDraft.price);
     if (!editDraft.name.trim() || priceRappen == null) {
       toast.error('Name und ein gültiger Preis (z. B. 8.50) sind nötig.');
@@ -312,8 +315,15 @@ export default function KasseControl() {
         onSuccess: () => {
           setEditProductId(null);
           // Bereits erfasste Bestellungen behalten ihre Snapshots; die
-          // Änderung gilt erst ab der nächsten Bestellung.
-          toast.success('Produkt gespeichert.');
+          // Änderung gilt erst ab der nächsten Bestellung. Beim Namen hat das
+          // eine sichtbare Folge: die Auswertung gruppiert über den Namen,
+          // ein Umbenennen mitten in der Kasse ergibt dort zwei Zeilen.
+          const renamed = editDraft.name.trim() !== previousName;
+          toast.success(
+            renamed
+              ? `Produkt gespeichert. „${previousName}“ bleibt in der Auswertung der laufenden Kasse als eigene Zeile stehen.`
+              : 'Produkt gespeichert.',
+          );
         },
       },
     );
@@ -332,6 +342,14 @@ export default function KasseControl() {
     [ids[index], ids[target]] = [ids[target], ids[index]];
     reorderProducts.mutate({ ids });
   };
+
+  /**
+   * Die Pfeile bleiben bis zur nachgeladenen Liste gesperrt, nicht nur bis zum
+   * Ende der Mutation. Dazwischen zeigt die Ansicht noch die alte Reihenfolge,
+   * `moveProduct` bildet `ids` aber genau aus ihr: ein zweiter Klick in diesem
+   * Fenster schickte eine Reihenfolge los, die den ersten Zug zurücknimmt.
+   */
+  const reorderBusy = reorderProducts.isPending || productsFetching;
 
   const submitProduct = () => {
     const priceRappen = parseChfToRappen(productDraft.price);
@@ -670,7 +688,7 @@ export default function KasseControl() {
                           variant="ghost"
                           size="icon"
                           aria-label={`${product.name} nach oben`}
-                          disabled={index === 0 || reorderProducts.isPending}
+                          disabled={index === 0 || reorderBusy}
                           onClick={() => moveProduct(index, -1)}
                         >
                           <ArrowUp className="h-4 w-4" />
@@ -680,8 +698,7 @@ export default function KasseControl() {
                           size="icon"
                           aria-label={`${product.name} nach unten`}
                           disabled={
-                            index === products.length - 1 ||
-                            reorderProducts.isPending
+                            index === products.length - 1 || reorderBusy
                           }
                           onClick={() => moveProduct(index, 1)}
                         >
