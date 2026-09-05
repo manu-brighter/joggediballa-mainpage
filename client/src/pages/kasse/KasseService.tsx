@@ -23,7 +23,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatChf, formatWait } from '@/lib/kasse';
+import { categoryKey, categoryLabel, formatChf, formatWait } from '@/lib/kasse';
 import {
   Check,
   ClipboardList,
@@ -34,10 +34,21 @@ import {
   Plus,
   ShoppingCart,
   Trash2,
+  User,
+  Users,
   UtensilsCrossed,
+  X,
 } from 'lucide-react';
 
 const WAITER_NAME_KEY = 'kasse.waiterName';
+/**
+ * „Meine“ oder „Alle“ Bestellungen in der Offen-Ansicht. Geräte-Einstellung
+ * wie der Name: an einem Event mit mehreren Servicekräften interessiert
+ * normalerweise nur, was man selbst aufgenommen hat.
+ */
+const ORDER_SCOPE_KEY = 'kasse.orderScope';
+
+type OrderScope = 'mine' | 'all';
 
 /** Wie viele Zusätze als Pill unter dem Produkt stehen, bevor „+n“ übernimmt. */
 const OPTION_PILL_LIMIT = 3;
@@ -55,6 +66,14 @@ type CartLine = {
   optionIds: number[];
   quantity: number;
 };
+
+/**
+ * Vergleichsform eines Servicenamens. Der Name wird auf jedem Gerät von Hand
+ * eingetippt, „Anna“ und „anna“ sind dieselbe Person — sonst fiele die halbe
+ * eigene Liste unter „Alle“.
+ */
+const normalizeWaiter = (name: string | null | undefined) =>
+  (name ?? '').trim().toLocaleLowerCase('de-CH');
 
 /** Gleiches Produkt mit gleicher Zusatz-Kombination ist dieselbe Position. */
 const lineKey = (productId: number, optionIds: number[]) =>
@@ -78,10 +97,58 @@ export default function KasseService() {
   const [cartOpen, setCartOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
+  // Namen ändern: das Feld ersetzt das Abzeichen im Kopf an Ort und Stelle.
+  const [editingName, setEditingName] = useState(false);
+  const [scope, setScope] = useState<OrderScope>(() => {
+    if (typeof window === 'undefined') return 'mine';
+    return window.localStorage.getItem(ORDER_SCOPE_KEY) === 'all'
+      ? 'all'
+      : 'mine';
+  });
   // Aufleuchten nach dem Antippen. Ohne das quittiert nur das
   // active:bg-accent des Browsers, was auf dem Handy unter dem Finger liegt
   // und beim Loslassen schon wieder weg ist.
   const [flashId, setFlashId] = useState<number | null>(null);
+
+  const saveWaiterName = (name: string) => {
+    setWaiterName(name);
+    try {
+      window.localStorage.setItem(WAITER_NAME_KEY, name);
+    } catch {
+      // Privater Modus o. ä.: der Name gilt dann nur für diese Sitzung.
+    }
+  };
+
+  /**
+   * Namen übernehmen. Der Name hängt an jeder Bestellung, die dieses Gerät
+   * absetzt, und entscheidet unter „Meine“, was in der Liste steht — darum
+   * nicht still tauschen, sondern sagen, was zurückbleibt.
+   */
+  const commitName = () => {
+    const name = nameDraft.trim();
+    if (!name) return;
+    const previous = waiterName;
+    saveWaiterName(name);
+    setEditingName(false);
+    if (normalizeWaiter(previous) === normalizeWaiter(name)) return;
+    const stranded = (openOrders.data ?? []).filter(
+      o => normalizeWaiter(o.waiterName) === normalizeWaiter(previous),
+    ).length;
+    if (stranded > 0) {
+      toast.info(
+        `${stranded} offene Bestellung(en) laufen weiter unter „${previous}“.`,
+      );
+    }
+  };
+
+  const setOrderScope = (next: OrderScope) => {
+    setScope(next);
+    try {
+      window.localStorage.setItem(ORDER_SCOPE_KEY, next);
+    } catch {
+      // Privater Modus o. ä.: die Wahl gilt dann nur für diese Sitzung.
+    }
+  };
 
   const state = trpc.kasse.publicState.useQuery(
     { token },
@@ -100,12 +167,20 @@ export default function KasseService() {
   // Abgeschlossene bewusst ohne Polling. Die Liste ist ein Nachschlagewerk,
   // kein Arbeitsvorrat, und am Event werden das schnell ein paar hundert.
   const closedOrders = trpc.kasse.listClosedOrders.useQuery(
-    { token, limit: 50 },
+    // Der Name geht an den Server: er filtert vor dem LIMIT von 50. Filterte
+    // erst der Client, sähe eine Servicekraft mit 40 eigenen Bestellungen
+    // „nichts abgeschlossen“, sobald die 50 neuesten von anderen stammen.
+    { token, limit: 50, waiterName: scope === 'mine' ? waiterName : undefined },
     { enabled: state.data?.valid === true && showClosed },
   );
 
   const utils = trpc.useUtils();
   const refreshOrders = () => utils.kasse.listOpenOrders.invalidate();
+
+  // Bereits gemeldete „bereit“-Bestellungen. Sobald eine Bestellung auf
+  // „bereit“ springt, meldet sich das Handy — sonst müsste das Personal die
+  // Liste dauernd im Auge behalten. Siehe den Effekt weiter unten.
+  const seenReady = useRef<Set<number> | null>(null);
 
   const createOrder = trpc.kasse.createOrder.useMutation({
     onSuccess: () => {
@@ -114,11 +189,20 @@ export default function KasseService() {
       setTableId(null);
       setCartOpen(false);
       refreshOrders();
-      toast.success('Bestellung an die Küche geschickt.');
+      toast.success('Bestellung abgeschickt.');
     },
     onError: e => toast.error(e.message),
   });
   const setStatus = trpc.kasse.setOrderStatus.useMutation({
+    // Beim Absenden vormerken, nicht erst bei der Antwort: die Liste wird
+    // alle 5 s neu geladen, und eine Antwort, die nach dem Commit gelesen
+    // wurde, aber vor der Mutations-Antwort eintrifft, meldete sonst „ist
+    // bereit“ auf genau dem Gerät, das den Knopf gedrückt hat.
+    onMutate: variables => {
+      if (variables.status === 'ready') {
+        seenReady.current?.add(variables.orderId);
+      }
+    },
     onSuccess: (_result, variables) => {
       refreshOrders();
       // Die abgeschlossenen Bestellungen sind eine eigene Abfrage, also nur
@@ -134,26 +218,37 @@ export default function KasseService() {
     onError: e => toast.error(e.message),
   });
 
-  // Sobald eine Bestellung von der Küche auf „bereit“ gesetzt wird, meldet sich
-  // das Handy. Sonst müsste das Personal die Liste dauernd im Auge behalten.
-  const seenReady = useRef<Set<number> | null>(null);
+  /** Ob eine Bestellung im gewählten Umfang liegt („Meine“ oder „Alle“). */
+  const inScope = (order: { waiterName: string | null }) =>
+    scope === 'all' ||
+    normalizeWaiter(order.waiterName) === normalizeWaiter(waiterName);
+
   useEffect(() => {
     const orders = openOrders.data;
     if (!orders) return;
+    // Gemerkt wird über *alle* Bestellungen, gemeldet nur über die im
+    // gewählten Umfang. Sonst gälte eine Bestellung nach dem Umschalten auf
+    // „Alle“ als neu und meldete sich ein zweites Mal.
     const ready = orders.filter(o => o.status === 'ready').map(o => o.id);
     if (seenReady.current === null) {
       seenReady.current = new Set(ready);
       return;
     }
+    const me = normalizeWaiter(waiterName);
     for (const order of orders) {
-      if (order.status === 'ready' && !seenReady.current.has(order.id)) {
+      const mine = normalizeWaiter(order.waiterName) === me;
+      if (
+        order.status === 'ready' &&
+        !seenReady.current.has(order.id) &&
+        (scope === 'all' || mine)
+      ) {
         toast.success(`Tisch ${order.tableName} ist bereit zum Abholen.`, {
           duration: 10000,
         });
       }
     }
     seenReady.current = new Set(ready);
-  }, [openOrders.data]);
+  }, [openOrders.data, scope, waiterName]);
 
   const products = menu.data?.products ?? [];
   const tables = menu.data?.tables ?? [];
@@ -164,12 +259,21 @@ export default function KasseService() {
   );
 
   const categories = useMemo(() => {
-    const groups = new Map<string, typeof products>();
+    // Gruppiert wird über `categoryKey`, angezeigt über `categoryLabel` —
+    // dieselben Helfer, nach denen Küche und Bar filtern. Ein eigener
+    // Vergleich hier wäre gross-/kleinschreibungsempfindlich: „Drinks“ und
+    // „drinks“ ergäben im Service zwei Gruppen, an der Bar aber einen
+    // einzigen Filtereintrag, der beide erfasst.
+    const groups = new Map<string, { label: string; items: typeof products }>();
     for (const product of products) {
-      const key = product.category?.trim() || 'Weiteres';
-      const list = groups.get(key);
-      if (list) list.push(product);
-      else groups.set(key, [product]);
+      const key = categoryKey(product.category);
+      const group = groups.get(key);
+      if (group) group.items.push(product);
+      else
+        groups.set(key, {
+          label: categoryLabel(product.category),
+          items: [product],
+        });
     }
     return Array.from(groups.entries());
   }, [products]);
@@ -326,17 +430,36 @@ export default function KasseService() {
       toast.error('Die Bestellung ist leer.');
       return;
     }
-    createOrder.mutate({
-      token,
-      tableId,
-      waiterName: waiterName || undefined,
-      note: note.trim() || undefined,
-      items: cart.map(l => ({
-        productId: l.productId,
-        optionIds: l.optionIds,
-        quantity: l.quantity,
-      })),
-    });
+    // Der angezeigte Betrag stammt aus dem `menu`-Cache (60 s). Gerechnet
+    // wird ausschliesslich serverseitig aus der DB. Ändert der Admin einen
+    // Preis, während die Bestellung getippt wird, nennt der Service dem Gast
+    // den alten Betrag und gebucht wird der neue — beim Kassensturz fehlt
+    // dann Geld, ohne dass jemand weiss warum. Darum den gebuchten Betrag
+    // gegen den angezeigten prüfen und den Unterschied melden.
+    const expectedRappen = cartTotal;
+    createOrder.mutate(
+      {
+        token,
+        tableId,
+        waiterName: waiterName || undefined,
+        note: note.trim() || undefined,
+        items: cart.map(l => ({
+          productId: l.productId,
+          optionIds: l.optionIds,
+          quantity: l.quantity,
+        })),
+      },
+      {
+        onSuccess: result => {
+          if (result.totalRappen !== expectedRappen) {
+            toast.warning(
+              `Preis hat sich geändert: gebucht ${formatChf(result.totalRappen)} statt ${formatChf(expectedRappen)}.`,
+              { duration: 12000 },
+            );
+          }
+        },
+      },
+    );
   };
 
   // ---- Zugriff / Zustand ----
@@ -387,11 +510,7 @@ export default function KasseService() {
             <Button
               className="w-full"
               disabled={!nameDraft.trim()}
-              onClick={() => {
-                const name = nameDraft.trim();
-                window.localStorage.setItem(WAITER_NAME_KEY, name);
-                setWaiterName(name);
-              }}
+              onClick={() => saveWaiterName(nameDraft.trim())}
             >
               Weiter
             </Button>
@@ -407,9 +526,15 @@ export default function KasseService() {
   // erst beim Senden in eine rote Fehlermeldung, mit fertig getippter
   // Bestellung. Gleiches gilt, wenn gar keine Kasse offen ist.
   const canSend = state.data.ordersOpen && session != null;
-  const orders = openOrders.data ?? [];
+  const orders = (openOrders.data ?? []).filter(inScope);
   const readyOrders = orders.filter(o => o.status === 'ready');
   const pendingOrders = orders.filter(o => o.status === 'pending');
+  // Die Abgeschlossenen filtert der Server, siehe listClosedOrders.
+  const closed = closedOrders.data ?? [];
+  // Wie viele Bestellungen die Ansicht gerade ausblendet. Ohne den Hinweis
+  // wirkt eine leere Liste wie „nichts offen“, obwohl der Filter greift.
+  const hiddenOpenCount =
+    scope === 'mine' ? (openOrders.data ?? []).length - orders.length : 0;
   const optionProduct =
     optionsFor != null ? (productById.get(optionsFor) ?? null) : null;
 
@@ -425,19 +550,75 @@ export default function KasseService() {
       <SEO title="Kassen-Service" noIndex />
 
       <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur px-4 py-3">
+        {/* Der Name lässt sich ändern, ohne dass ein Knopf dafür dauerhaft
+            Platz wegnimmt: das Abzeichen selbst ist der Auslöser und wird an
+            Ort und Stelle zum Feld. Beim Tippen gehört die Zeile ganz dem
+            Feld — auf einem 320px-Gerät liefen Titel und Feld sonst
+            ineinander, und der Kassenname interessiert für die drei Sekunden
+            ohnehin nicht. */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <ConciergeBell className="h-6 w-6 shrink-0 text-primary" />
-            <div className="min-w-0">
-              <h1 className="text-lg font-semibold leading-tight">Service</h1>
-              <p className="truncate text-xs text-muted-foreground">
-                {session?.name ?? 'Keine offene Kasse'}
-              </p>
+          {editingName ? (
+            <div className="flex w-full items-center gap-2">
+              <Input
+                // Fokus direkt: das Feld erscheint auf Antippen und ist das
+                // einzige Ziel. Ohne autoFocus müsste man am Handy ein zweites
+                // Mal tippen, nur um die Tastatur zu bekommen.
+                autoFocus
+                aria-label="Name ändern"
+                value={nameDraft}
+                onChange={e => setNameDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitName();
+                  if (e.key === 'Escape') setEditingName(false);
+                }}
+                maxLength={60}
+                className="h-10 min-w-0 flex-1"
+              />
+              <Button
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                disabled={!nameDraft.trim()}
+                onClick={commitName}
+                aria-label="Name speichern"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => setEditingName(false)}
+                aria-label="Namensänderung abbrechen"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-          </div>
-          <span className="shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground">
-            {waiterName}
-          </span>
+          ) : (
+            <>
+              <div className="flex min-w-0 items-center gap-3">
+                <ConciergeBell className="h-6 w-6 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <h1 className="text-lg font-semibold leading-tight">
+                    Service
+                  </h1>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {session?.name ?? 'Keine offene Kasse'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setNameDraft(waiterName);
+                  setEditingName(true);
+                }}
+                className="max-w-[10rem] shrink-0 truncate rounded-full border px-3 py-1 text-xs text-muted-foreground"
+                title="Name ändern"
+              >
+                {waiterName}
+              </button>
+            </>
+          )}
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button
@@ -497,11 +678,11 @@ export default function KasseService() {
                 Noch keine Produkte erfasst.
               </p>
             ) : (
-              categories.map(([category, items]) => (
-                <div key={category} className="space-y-2">
-                  <p className="text-xs text-muted-foreground">{category}</p>
+              categories.map(([key, group]) => (
+                <div key={key} className="space-y-2">
+                  <p className="text-xs text-muted-foreground">{group.label}</p>
                   <div className="grid gap-2">
-                    {items.map(product => {
+                    {group.items.map(product => {
                       const shown = product.options.slice(0, OPTION_PILL_LIMIT);
                       const hidden =
                         product.options.length - shown.length > 0
@@ -652,6 +833,34 @@ export default function KasseService() {
         </main>
       ) : (
         <main className="flex-1 space-y-6 p-4">
+          {/* Standardmässig nur die eigenen Bestellungen: an einem Event mit
+              mehreren Servicekräften ist die gemeinsame Liste zu lang, um
+              darin die eigenen drei Tische zu finden. „Alle“ bleibt einen
+              Fingertipp entfernt, etwa wenn jemand einspringt. */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={scope === 'mine' ? 'default' : 'outline'}
+              className="h-11"
+              onClick={() => setOrderScope('mine')}
+            >
+              <User className="mr-2 h-4 w-4" />
+              Meine
+            </Button>
+            <Button
+              variant={scope === 'all' ? 'default' : 'outline'}
+              className="h-11"
+              onClick={() => setOrderScope('all')}
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Alle
+            </Button>
+          </div>
+          {hiddenOpenCount > 0 && (
+            <p className="-mt-3 text-xs text-muted-foreground">
+              {hiddenOpenCount} Bestellung(en) von anderen sind ausgeblendet.
+            </p>
+          )}
+
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-success">
               Bereit zum Abholen ({readyOrders.length})
@@ -752,21 +961,46 @@ export default function KasseService() {
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    // dark:-Pendants nötig: die ghost-Variante setzt
-                    // dark:hover:bg-accent/50, das sonst im Dark Mode gewinnt.
-                    className="mt-2 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive dark:bg-destructive/10 dark:hover:bg-destructive/20"
-                    disabled={
-                      setStatus.isPending &&
-                      setStatus.variables?.orderId === order.id
-                    }
-                    onClick={() => setCancelId(order.id)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Stornieren
-                  </Button>
+                  {/* Auch der Service kann fertigmelden: wer am
+                      Durchreichefenster steht, hat die Bestellung vor sich,
+                      während das Tablet drinnen gerade jemand anders bedient.
+                      Danach steht sie oben unter „Bereit zum Abholen“ und wird
+                      dort abgeschlossen — derselbe Weg wie in Küche und Bar. */}
+                  <div className="mt-3 flex items-center gap-2">
+                    <Button
+                      className="h-11 flex-1"
+                      disabled={
+                        setStatus.isPending &&
+                        setStatus.variables?.orderId === order.id
+                      }
+                      onClick={() =>
+                        setStatus.mutate({
+                          token,
+                          orderId: order.id,
+                          status: 'ready',
+                        })
+                      }
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      Bereit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      // dark:-Pendants nötig: die outline-Variante setzt
+                      // dark:bg-transparent und dark:border-input, die sonst
+                      // im Dark Mode gewinnen.
+                      className="h-11 w-11 shrink-0 border-destructive/30 bg-destructive/10 text-destructive hover:border-destructive/50 hover:bg-destructive/20 hover:text-destructive dark:border-destructive/30 dark:bg-destructive/10 dark:hover:border-destructive/50 dark:hover:bg-destructive/20"
+                      disabled={
+                        setStatus.isPending &&
+                        setStatus.variables?.orderId === order.id
+                      }
+                      onClick={() => setCancelId(order.id)}
+                      aria-label={`Bestellung für Tisch ${order.tableName} stornieren`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))
             )}
@@ -790,13 +1024,15 @@ export default function KasseService() {
             {showClosed &&
               (closedOrders.isLoading ? (
                 <p className="text-sm text-muted-foreground">Lädt …</p>
-              ) : (closedOrders.data ?? []).length === 0 ? (
+              ) : closed.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Noch nichts abgeschlossen.
+                  {scope === 'mine'
+                    ? 'Von dir ist noch nichts abgeschlossen.'
+                    : 'Noch nichts abgeschlossen.'}
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {(closedOrders.data ?? []).map(order => (
+                  {closed.map(order => (
                     <li
                       key={order.id}
                       className="rounded-lg border px-3 py-2 text-sm"

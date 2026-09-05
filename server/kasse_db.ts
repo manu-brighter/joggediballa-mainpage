@@ -208,6 +208,44 @@ export async function reopenKasseSession(sessionId: number): Promise<void> {
   });
 }
 
+/**
+ * Leert eine Kasse: alle Bestellungen der Session weg, die Session selbst
+ * bleibt stehen. Gedacht für die Generalprobe — am Nachmittag ein paar
+ * Testbestellungen durchspielen und vor dem Öffnen der Tore die Auswertung auf
+ * null stellen, ohne die Kasse neu anlegen und die Links neu verteilen zu
+ * müssen.
+ *
+ * Positionen und gewählte Zusätze hängen per ON DELETE CASCADE an den
+ * Bestellungen. Gibt zurück, wie viele Bestellungen gelöscht wurden.
+ */
+export async function clearKasseSessionOrders(
+  sessionId: number,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  // In einer Transaktion und unter Sperre der Session-Zeile, aus demselben
+  // Grund wie in closeKasseSessionSettling: eine Bestellung, die zwischen
+  // Zählen und Löschen eintrifft, bliebe sonst als einzige stehen — der Admin
+  // sieht „42 gelöscht“ und die Auswertung steht trotzdem nicht auf null.
+  return db.transaction(async tx => {
+    await tx
+      .select({ id: kasseSessions.id })
+      .from(kasseSessions)
+      .where(eq(kasseSessions.id, sessionId))
+      .for('update');
+
+    const existing = await tx
+      .select({ id: kasseOrders.id })
+      .from(kasseOrders)
+      .where(eq(kasseOrders.sessionId, sessionId));
+    if (existing.length === 0) return 0;
+
+    await tx.delete(kasseOrders).where(eq(kasseOrders.sessionId, sessionId));
+    return existing.length;
+  });
+}
+
 export async function deleteKasseSession(sessionId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
@@ -271,6 +309,35 @@ export async function updateKasseProduct(
     .update(kasseProducts)
     .set(patch)
     .where(eq(kasseProducts.id, productId));
+}
+
+/**
+ * Reihenfolge der Produkte neu setzen. `ids` ist die vollständige, bereits
+ * sortierte Liste; `displayOrder` wird auf den Index gesetzt.
+ *
+ * Ein einziges UPDATE mit CASE statt einer Transaktion aus N Einzelupdates.
+ * Das ist nicht nur kürzer, es räumt zwei Probleme weg: eine halb angewandte
+ * Reihenfolge kann gar nicht entstehen (Service, Küche und Bar lesen dieselbe
+ * Spalte und zeigten sonst zwei Produkte an derselben Position), und die
+ * Zeilensperren fallen nicht mehr in der vom Client gelieferten Reihenfolge
+ * an — zwei gegenläufige Sortierungen konnten sich so gegenseitig blockieren.
+ *
+ * Unbekannte IDs treffen keine Zeile und werden still ignoriert, damit ein
+ * parallel gelöschtes Produkt nicht die ganze Sortierung scheitern lässt.
+ */
+export async function reorderKasseProducts(ids: number[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  if (ids.length === 0) return;
+
+  const cases = sql.join(
+    ids.map((id, index) => sql`WHEN ${id} THEN ${index}`),
+    sql` `,
+  );
+  await db
+    .update(kasseProducts)
+    .set({ displayOrder: sql`CASE ${kasseProducts.id} ${cases} END` })
+    .where(inArray(kasseProducts.id, ids));
 }
 
 /**
@@ -467,6 +534,13 @@ export async function deleteAllKasseTables(): Promise<number> {
 // BESTELLUNGEN
 // ============================================
 
+/**
+ * Vergleichsschlüssel für Positionen ohne Kategorie. Muss zu
+ * `CATEGORY_FALLBACK` / `categoryKey()` in `client/src/lib/kasse.ts` passen —
+ * Küche und Bar filtern im Client nach demselben Wert.
+ */
+const CATEGORY_FALLBACK_KEY = 'weiteres';
+
 export type NewOrderItemOption = {
   optionId: number;
   optionName: string;
@@ -476,6 +550,7 @@ export type NewOrderItemOption = {
 export type NewOrderItem = {
   productId: number;
   productName: string;
+  productCategory: string | null;
   quantity: number;
   unitPriceRappen: number;
   lineTotalRappen: number;
@@ -522,6 +597,7 @@ export async function createKasseOrder(
         orderId,
         productId: item.productId,
         productName: item.productName,
+        productCategory: item.productCategory,
         quantity: item.quantity,
         unitPriceRappen: item.unitPriceRappen,
         lineTotalRappen: item.lineTotalRappen,
@@ -564,18 +640,41 @@ export async function getKasseOrder(orderId: number) {
 export async function listKasseOrders(
   sessionId: number,
   statuses?: Array<'pending' | 'ready' | 'delivered' | 'cancelled'>,
-  opts?: { limit?: number; newestFirst?: boolean },
+  opts?: {
+    limit?: number;
+    newestFirst?: boolean;
+    /** Nur Bestellungen dieser Servicekraft (Vergleich wie im Client: getrimmt, klein). */
+    waiterName?: string;
+    /** Nur Bestellungen mit mindestens einer Position in diesen Kategorien. */
+    categoryKeys?: string[];
+  },
 ) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
 
-  const where =
-    statuses && statuses.length > 0
-      ? and(
-          eq(kasseOrders.sessionId, sessionId),
-          inArray(kasseOrders.status, statuses),
-        )
-      : eq(kasseOrders.sessionId, sessionId);
+  // Die Filter gehören vor das LIMIT, nicht in den Client: `listClosedOrders`
+  // liefert die 50 neuesten der ganzen Session. Filterte erst der Client, sähe
+  // eine Servicekraft mit 40 eigenen Bestellungen „nichts abgeschlossen“,
+  // sobald die 50 neuesten von anderen stammen.
+  const filters = [eq(kasseOrders.sessionId, sessionId)];
+  if (statuses && statuses.length > 0) {
+    filters.push(inArray(kasseOrders.status, statuses));
+  }
+  if (opts?.waiterName != null) {
+    // Derselbe Vergleich wie `normalizeWaiter` im Service: der Name wird auf
+    // jedem Gerät von Hand getippt, „Anna“ und „anna“ sind dieselbe Person.
+    filters.push(
+      sql`LOWER(TRIM(COALESCE(${kasseOrders.waiterName}, ''))) = ${opts.waiterName.trim().toLowerCase()}`,
+    );
+  }
+  if (opts?.categoryKeys && opts.categoryKeys.length > 0) {
+    // Spiegelt `categoryKey()` im Client: getrimmt, kleingeschrieben, leer
+    // oder NULL zählt als „weiteres“.
+    filters.push(
+      sql`EXISTS (SELECT 1 FROM ${kasseOrderItems} WHERE ${kasseOrderItems.orderId} = ${kasseOrders.id} AND (CASE WHEN TRIM(COALESCE(${kasseOrderItems.productCategory}, '')) = '' THEN ${CATEGORY_FALLBACK_KEY} ELSE LOWER(TRIM(${kasseOrderItems.productCategory})) END) IN ${opts.categoryKeys})`,
+    );
+  }
+  const where = filters.length === 1 ? filters[0] : and(...filters);
 
   // Die Wartezeit rechnet MySQL, nicht der Client: `createdAt` kommt aus
   // `DEFAULT (now())` der Datenbank, `Date.now()` aus der Uhr des Handys. Weichen

@@ -6,6 +6,7 @@ import { hasPermission } from './permissions';
 import { createActivityLog } from './db';
 import {
   cancelOpenKasseOrders,
+  clearKasseSessionOrders,
   closeKasseSessionSettling,
   countOpenKasseOrders,
   createKasseOrder,
@@ -30,6 +31,7 @@ import {
   listKasseSessions,
   listKasseTables,
   reopenKasseSession,
+  reorderKasseProducts,
   setKasseOrderStatus,
   updateKasseProduct,
   updateKasseProductOption,
@@ -226,15 +228,24 @@ export const kasseRouter = router({
       z.object({
         token: z.string(),
         limit: z.number().int().min(1).max(100).default(50),
+        /** Service: nur die eigenen Bestellungen („Meine“). */
+        waiterName: z.string().trim().max(60).optional(),
+        /** Küche/Bar: nur Bestellungen mit Positionen dieser Kategorien. */
+        categoryKeys: z.array(z.string().trim().max(50)).max(50).optional(),
       }),
     )
     .query(async ({ input }) => {
       await requireToken(input.token);
       const session = await getOpenKasseSession();
       if (!session) return [];
+      // Gefiltert wird in SQL, vor dem LIMIT. Ein Filter im Client sähe nur
+      // die 50 neuesten der ganzen Session und meldete „nichts abgeschlossen“,
+      // sobald die von anderen stammen.
       return listKasseOrders(session.id, ['delivered', 'cancelled'], {
         limit: input.limit,
         newestFirst: true,
+        waiterName: input.waiterName,
+        categoryKeys: input.categoryKeys,
       });
     }),
 
@@ -505,6 +516,37 @@ export const kasseRouter = router({
       return { success: true };
     }),
 
+  /**
+   * Alle Bestellungen einer Kasse löschen, die Kasse bleibt offen. Für die
+   * Generalprobe: testen, dann die Auswertung auf null stellen, ohne die Kasse
+   * neu anzulegen und die Links neu zu verteilen.
+   *
+   * Nicht rückholbar und trifft den Umsatz, darum protokolliert — dieselbe
+   * Begründung wie bei deleteAllTables.
+   */
+  clearSession: manageKasse
+    .input(z.object({ sessionId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const session = await getKasseSession(input.sessionId);
+      if (!session) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Session not found',
+        });
+      }
+
+      const deleted = await clearKasseSessionOrders(input.sessionId);
+      await createActivityLog({
+        userId: ctx.user.id,
+        userName: ctx.user.name || 'Unknown',
+        action: 'kasse_session_clear',
+        details: `Cleared ${deleted} order(s) from session "${session.name}" (#${session.id})`,
+        ipAddress: null,
+        userAgent: null,
+      });
+      return { deleted };
+    }),
+
   deleteSession: manageKasse
     .input(z.object({ sessionId: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {
@@ -585,6 +627,32 @@ export const kasseRouter = router({
     .mutation(async ({ input }) => {
       const { id, ...patch } = input;
       await updateKasseProduct(id, patch);
+      return { success: true };
+    }),
+
+  /**
+   * Reihenfolge der Produkte setzen. Erwartet die vollständige, sortierte
+   * Liste der IDs; `displayOrder` wird auf den jeweiligen Index gesetzt.
+   *
+   * Bewusst die ganze Liste statt „schiebe #7 auf Position 3“: die Verwaltung
+   * hat die Reihenfolge ohnehin vor sich, und eine relative Verschiebung gegen
+   * eine bis zu 15 s alte Ansicht landete sonst neben dem gemeinten Platz.
+   */
+  reorderProducts: manageKasse
+    .input(
+      z.object({
+        ids: z.array(z.number().int().positive()).min(1).max(500),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const unique = Array.from(new Set(input.ids));
+      if (unique.length !== input.ids.length) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Doppelte Produkt-IDs in der Reihenfolge.',
+        });
+      }
+      await reorderKasseProducts(unique);
       return { success: true };
     }),
 

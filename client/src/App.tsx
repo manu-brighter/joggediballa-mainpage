@@ -48,6 +48,7 @@ const DiashowControl = lazy(() => import('./pages/diashow/DiashowControl'));
 const KasseControl = lazy(() => import('./pages/kasse/KasseControl'));
 const KasseService = lazy(() => import('./pages/kasse/KasseService'));
 const KasseKueche = lazy(() => import('./pages/kasse/KasseKueche'));
+const KasseBar = lazy(() => import('./pages/kasse/KasseBar'));
 
 // Beamer Mode Context
 interface BeamerModeContextType {
@@ -70,8 +71,9 @@ function getLayoutMode(location: string): LayoutMode {
   if (location.startsWith('/diashow/') && location !== '/diashow/control') {
     return 'bare-black';
   }
-  // Kassensystem: Service (Handy) und Küche (Tablet) laufen ohne Nav/Footer,
-  // sie brauchen die volle Höhe. /kasse/control bleibt eine normale Seite.
+  // Kassensystem: Service (Handy), Küche und Bar (Tablet) laufen ohne
+  // Nav/Footer, sie brauchen die volle Höhe. /kasse/control bleibt eine
+  // normale Seite.
   if (location.startsWith('/kasse/') && location !== '/kasse/control') {
     return 'bare-app';
   }
@@ -118,6 +120,7 @@ function Router() {
         <Route path="/kasse/control" component={KasseControl} />
         <Route path="/kasse/service/:token" component={KasseService} />
         <Route path="/kasse/kueche/:token" component={KasseKueche} />
+        <Route path="/kasse/bar/:token" component={KasseBar} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
@@ -213,8 +216,8 @@ function AppContent() {
     );
   }
 
-  // Kassen-Seiten: ebenfalls ohne Nav/Footer, aber mit Toaster. Service und
-  // Küche melden Fehler und Statuswechsel über Toasts.
+  // Kassen-Seiten: ebenfalls ohne Nav/Footer, aber mit Toaster. Service,
+  // Küche und Bar melden Fehler und Statuswechsel über Toasts.
   if (layoutMode === 'bare-app') {
     return (
       <div className="min-h-screen">

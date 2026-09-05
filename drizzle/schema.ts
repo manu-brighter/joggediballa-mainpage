@@ -769,6 +769,18 @@ export const kasseOrderItems = mysqlTable(
       .references(() => kasseOrders.id, { onDelete: 'cascade' }),
     productId: int('productId').references(() => kasseProducts.id),
     productName: varchar('productName', { length: 100 }).notNull(),
+    // Snapshot wie `productName`: Küche und Bar filtern ihre Ansicht über die
+    // Kategorie. Käme sie per Join aus `kasse_products`, verschwände eine
+    // Position aus der Ansicht, sobald jemand das Produkt umkategorisiert oder
+    // löscht — mitten am Event, bei einer bereits laufenden Bestellung.
+    //
+    // Der Backfill gehört zwingend zum ALTER: ohne ihn stehen alle
+    // Bestandszeilen auf NULL und zählen als Kategorie „Weiteres“.
+    //
+    // ALTER TABLE kasse_order_items ADD COLUMN productCategory VARCHAR(50) NULL AFTER productName;
+    // UPDATE kasse_order_items i JOIN kasse_products p ON p.id = i.productId
+    //   SET i.productCategory = p.category WHERE i.productCategory IS NULL;
+    productCategory: varchar('productCategory', { length: 50 }),
     quantity: int('quantity').notNull(),
     unitPriceRappen: int('unitPriceRappen').notNull(), // inkl. Options-Aufpreis
     lineTotalRappen: int('lineTotalRappen').notNull(),
