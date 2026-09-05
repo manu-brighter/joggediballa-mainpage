@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { usePermission } from '@/hooks/usePermissions';
@@ -41,7 +41,10 @@ import {
   closestCenter,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
+  type KeyboardCoordinateGetter,
+  type UniqueIdentifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -109,6 +112,80 @@ function parseOptionDelta(input: string | undefined): number | null {
   return negative ? -rappen : rappen;
 }
 
+/**
+ * Gruppen und Produkte sind beide sortierbar und liegen ineinander: das
+ * Rechteck einer Gruppe umschliesst alle ihre Produkte. dnd-kit wirft aber
+ * sämtliche Ziele in einen Topf und vergleicht nur Mittelpunkte — beim Ziehen
+ * eines Produkts gewinnt darum rund um die Gruppenmitte die *Gruppe*, und der
+ * Zug landet auf einem Ziel, das `handleDragEnd` verwerfen muss. Ergebnis war
+ * eine tote Zone von einer halben Zeilenhöhe mitten in jeder Kategorie: kurze
+ * Züge taten wortlos nichts, erst ab gut einer Zeile griff der Tausch.
+ *
+ * Darum kollidieren Gruppen nur mit Gruppen und Produkte nur mit Produkten.
+ */
+const isGroupId = (id: UniqueIdentifier) => String(id).startsWith('group:');
+
+/**
+ * Ansagen für Bildschirmleser. dnd-kit liefert sonst englische Sätze mitten
+ * in einer durchgehend deutschen Oberfläche. Die Position kommt aus
+ * `aria-label` des Anfassers, deshalb wird hier nur der Vorgang beschrieben.
+ */
+const DND_ACCESSIBILITY = {
+  screenReaderInstructions: {
+    draggable:
+      'Mit Leertaste oder Enter aufnehmen, mit den Pfeiltasten verschieben, ' +
+      'mit Leertaste oder Enter ablegen, mit Escape abbrechen.',
+  },
+  announcements: {
+    onDragStart: () => 'Verschieben gestartet.',
+    onDragOver: () => undefined,
+    onDragEnd: ({
+      over,
+    }: {
+      over: { id: UniqueIdentifier } | null;
+    }): string | undefined =>
+      over ? 'An der neuen Position abgelegt.' : 'Ohne Ziel losgelassen.',
+    onDragCancel: () => 'Verschieben abgebrochen.',
+  },
+};
+
+const sameLevelCollision: CollisionDetection = args =>
+  closestCenter({
+    ...args,
+    droppableContainers: args.droppableContainers.filter(
+      c => isGroupId(c.id) === isGroupId(args.active.id),
+    ),
+  });
+
+/**
+ * Dieselbe Trennung für die Tastatur. `sortableKeyboardCoordinates` benutzt
+ * *nicht* die Kollisionserkennung des DndContext, sondern sucht selbst über
+ * alle Ziele — beim Verschieben einer Kategorie lägen sonst deren eigene
+ * Produkte am nächsten und jeder Pfeiltastendruck wäre ein No-op.
+ */
+const sameLevelKeyboard: KeyboardCoordinateGetter = (event, args) => {
+  const containers = args.context.droppableContainers;
+  // `droppableContainers` ist eine Map-Unterklasse mit eigenen Methoden
+  // (getEnabled/get), die der Getter benutzt. Über ihren Konstruktor neu
+  // aufbauen statt ein Array zu filtern, sonst gehen genau die verloren.
+  const Filtered = containers.constructor as {
+    new (
+      entries: Iterable<readonly [UniqueIdentifier, unknown]>,
+    ): typeof containers;
+  };
+  return sortableKeyboardCoordinates(event, {
+    ...args,
+    context: {
+      ...args.context,
+      droppableContainers: new Filtered(
+        Array.from(containers).filter(
+          ([id]) => isGroupId(id) === isGroupId(args.active),
+        ),
+      ),
+    },
+  });
+};
+
 export default function KasseControl() {
   const canManage = usePermission('manage_kasse');
   const utils = trpc.useUtils();
@@ -138,23 +215,48 @@ export default function KasseControl() {
   }, [settings, statsSessionId]);
 
   /**
-   * Produkte nach Kategorie gruppiert, in der Reihenfolge, in der die Gruppe
-   * das erste Mal vorkommt. Genau dieselbe Regel wendet die Serviceansicht an,
-   * die Verwaltung zeigt also, was das Handy zeigen wird.
+   * Produkte nach Kategorie gruppiert. Die Reihenfolge der Gruppen entscheidet
+   * das erste *aktive* Produkt — genau wie in der Serviceansicht, die nur
+   * aktive Produkte bekommt und danach gruppiert. Ginge die Verwaltung vom
+   * ersten Produkt überhaupt aus, stünden die Gruppen anders als auf dem
+   * Handy, sobald ein ausverkauftes Produkt vorne in seiner Kategorie liegt.
+   * Label ebenso: es soll das sein, das der Service anzeigt.
+   *
+   * Gruppen ohne ein einziges aktives Produkt tauchen im Service nicht auf und
+   * ordnen sich nach ihrem ersten Produkt ein.
    */
   const groups = useMemo(() => {
-    const map = new Map<string, { label: string; items: typeof products }>();
-    for (const product of products) {
+    type Group = {
+      label: string;
+      items: typeof products;
+      rank: number;
+      hasActive: boolean;
+    };
+    const map = new Map<string, Group>();
+    products.forEach((product, index) => {
       const key = categoryKey(product.category);
       const group = map.get(key);
-      if (group) group.items.push(product);
-      else
+      if (!group) {
         map.set(key, {
           label: categoryLabel(product.category),
           items: [product],
+          rank: index,
+          hasActive: product.isActive,
         });
-    }
-    return Array.from(map, ([key, group]) => ({ key, ...group }));
+        return;
+      }
+      group.items.push(product);
+      // Das erste aktive Produkt übernimmt Rang und Label von einem allenfalls
+      // vorher eingetragenen inaktiven.
+      if (product.isActive && !group.hasActive) {
+        group.rank = index;
+        group.label = categoryLabel(product.category);
+        group.hasActive = true;
+      }
+    });
+    return Array.from(map, ([key, group]) => ({ key, ...group })).sort(
+      (a, b) => a.rank - b.rank,
+    );
   }, [products]);
 
   // `distance: 8` unterscheidet Ziehen von Tippen: ohne die Schwelle löst
@@ -162,9 +264,7 @@ export default function KasseControl() {
   // Fehlgriff beim Scrollen verschiebt ein Produkt.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sameLevelKeyboard }),
   );
 
   const invalidateSettings = () => utils.kasse.getSettings.invalidate();
@@ -237,7 +337,7 @@ export default function KasseControl() {
     onError,
   });
   const reorderProducts = trpc.kasse.reorderProducts.useMutation({
-    onSuccess: invalidateProducts,
+    // Das Nachladen hängt am Aufruf, nicht an der Mutation — siehe applyOrder.
     onError: e => {
       // Die Liste steht lokal schon in der neuen Reihenfolge (applyOrder).
       // Ohne das Nachladen bliebe sie so stehen und zeigte eine Sortierung,
@@ -322,6 +422,8 @@ export default function KasseControl() {
     to: '10',
   });
   const [tableName, setTableName] = useState('');
+  // Laufende Nummer der Sortier-Mutationen, siehe applyOrder.
+  const reorderSeq = useRef(0);
 
   if (!canManage) {
     return (
@@ -406,12 +508,6 @@ export default function KasseControl() {
   };
 
   /**
-   * Ein Produkt eine Position nach oben oder unten. Geschickt wird die ganze
-   * neue Reihenfolge, nicht „tausche 3 und 4“: die Verwaltung sieht die Liste
-   * ohnehin komplett, und der Server muss keine relative Bewegung gegen einen
-   * womöglich veralteten Stand auflösen.
-   */
-  /**
    * Reihenfolge speichern und die Liste sofort lokal umsortieren. Ohne das
    * optimistische Update schnappt die gezogene Zeile zurück, bis die Antwort
    * da ist — und ein zweiter Zug in diesem Fenster ginge von der alten
@@ -428,7 +524,20 @@ export default function KasseControl() {
           )
         : prev,
     );
-    reorderProducts.mutate({ ids });
+
+    // Zwei Züge kurz hintereinander schicken zwei Mutationen los. Lädt die
+    // Antwort der ersten die Liste nach, überschreibt sie kurz den
+    // optimistischen Stand des zweiten und die Zeile springt sichtbar zurück.
+    // Darum lädt nur der jüngste Zug nach.
+    const seq = ++reorderSeq.current;
+    reorderProducts.mutate(
+      { ids },
+      {
+        onSuccess: () => {
+          if (seq === reorderSeq.current) invalidateProducts();
+        },
+      },
+    );
   };
 
   /** Die Gruppen wieder zu einer flachen Reihenfolge von Produkt-IDs. */
@@ -739,7 +848,8 @@ export default function KasseControl() {
           ) : (
             <DndContext
               sensors={sensors}
-              collisionDetection={closestCenter}
+              accessibility={DND_ACCESSIBILITY}
+              collisionDetection={sameLevelCollision}
               onDragEnd={handleDragEnd}
             >
               <SortableContext

@@ -194,14 +194,17 @@ export default function KasseService() {
     onError: e => toast.error(e.message),
   });
   const setStatus = trpc.kasse.setOrderStatus.useMutation({
-    onSuccess: (_result, variables) => {
-      refreshOrders();
-      // Wer selbst auf „Bereit“ tippt, braucht keine Meldung, dass die
-      // Bestellung bereit ist. Vormerken, bevor die nächste Abfrage sie als
-      // neu bereit sieht.
+    // Beim Absenden vormerken, nicht erst bei der Antwort: die Liste wird
+    // alle 5 s neu geladen, und eine Antwort, die nach dem Commit gelesen
+    // wurde, aber vor der Mutations-Antwort eintrifft, meldete sonst „ist
+    // bereit“ auf genau dem Gerät, das den Knopf gedrückt hat.
+    onMutate: variables => {
       if (variables.status === 'ready') {
         seenReady.current?.add(variables.orderId);
       }
+    },
+    onSuccess: (_result, variables) => {
+      refreshOrders();
       // Die abgeschlossenen Bestellungen sind eine eigene Abfrage, also nur
       // nachladen, wenn die Liste offen ist und der Wechsel überhaupt eine
       // dorthin verschiebt.
