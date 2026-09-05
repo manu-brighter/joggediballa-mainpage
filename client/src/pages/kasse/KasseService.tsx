@@ -34,10 +34,20 @@ import {
   Plus,
   ShoppingCart,
   Trash2,
+  User,
+  Users,
   UtensilsCrossed,
 } from 'lucide-react';
 
 const WAITER_NAME_KEY = 'kasse.waiterName';
+/**
+ * „Meine“ oder „Alle“ Bestellungen in der Offen-Ansicht. Geräte-Einstellung
+ * wie der Name: an einem Event mit mehreren Servicekräften interessiert
+ * normalerweise nur, was man selbst aufgenommen hat.
+ */
+const ORDER_SCOPE_KEY = 'kasse.orderScope';
+
+type OrderScope = 'mine' | 'all';
 
 /** Wie viele Zusätze als Pill unter dem Produkt stehen, bevor „+n“ übernimmt. */
 const OPTION_PILL_LIMIT = 3;
@@ -55,6 +65,14 @@ type CartLine = {
   optionIds: number[];
   quantity: number;
 };
+
+/**
+ * Vergleichsform eines Servicenamens. Der Name wird auf jedem Gerät von Hand
+ * eingetippt, „Anna“ und „anna“ sind dieselbe Person — sonst fiele die halbe
+ * eigene Liste unter „Alle“.
+ */
+const normalizeWaiter = (name: string | null | undefined) =>
+  (name ?? '').trim().toLocaleLowerCase('de-CH');
 
 /** Gleiches Produkt mit gleicher Zusatz-Kombination ist dieselbe Position. */
 const lineKey = (productId: number, optionIds: number[]) =>
@@ -78,10 +96,25 @@ export default function KasseService() {
   const [cartOpen, setCartOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
+  const [scope, setScope] = useState<OrderScope>(() => {
+    if (typeof window === 'undefined') return 'mine';
+    return window.localStorage.getItem(ORDER_SCOPE_KEY) === 'all'
+      ? 'all'
+      : 'mine';
+  });
   // Aufleuchten nach dem Antippen. Ohne das quittiert nur das
   // active:bg-accent des Browsers, was auf dem Handy unter dem Finger liegt
   // und beim Loslassen schon wieder weg ist.
   const [flashId, setFlashId] = useState<number | null>(null);
+
+  const setOrderScope = (next: OrderScope) => {
+    setScope(next);
+    try {
+      window.localStorage.setItem(ORDER_SCOPE_KEY, next);
+    } catch {
+      // Privater Modus o. ä.: die Wahl gilt dann nur für diese Sitzung.
+    }
+  };
 
   const state = trpc.kasse.publicState.useQuery(
     { token },
@@ -114,7 +147,7 @@ export default function KasseService() {
       setTableId(null);
       setCartOpen(false);
       refreshOrders();
-      toast.success('Bestellung an die Küche geschickt.');
+      toast.success('Bestellung abgeschickt.');
     },
     onError: e => toast.error(e.message),
   });
@@ -134,26 +167,40 @@ export default function KasseService() {
     onError: e => toast.error(e.message),
   });
 
+  /** Ob eine Bestellung im gewählten Umfang liegt („Meine“ oder „Alle“). */
+  const inScope = (order: { waiterName: string | null }) =>
+    scope === 'all' ||
+    normalizeWaiter(order.waiterName) === normalizeWaiter(waiterName);
+
   // Sobald eine Bestellung von der Küche auf „bereit“ gesetzt wird, meldet sich
   // das Handy. Sonst müsste das Personal die Liste dauernd im Auge behalten.
   const seenReady = useRef<Set<number> | null>(null);
   useEffect(() => {
     const orders = openOrders.data;
     if (!orders) return;
+    // Gemerkt wird über *alle* Bestellungen, gemeldet nur über die im
+    // gewählten Umfang. Sonst gälte eine Bestellung nach dem Umschalten auf
+    // „Alle“ als neu und meldete sich ein zweites Mal.
     const ready = orders.filter(o => o.status === 'ready').map(o => o.id);
     if (seenReady.current === null) {
       seenReady.current = new Set(ready);
       return;
     }
+    const me = normalizeWaiter(waiterName);
     for (const order of orders) {
-      if (order.status === 'ready' && !seenReady.current.has(order.id)) {
+      const mine = normalizeWaiter(order.waiterName) === me;
+      if (
+        order.status === 'ready' &&
+        !seenReady.current.has(order.id) &&
+        (scope === 'all' || mine)
+      ) {
         toast.success(`Tisch ${order.tableName} ist bereit zum Abholen.`, {
           duration: 10000,
         });
       }
     }
     seenReady.current = new Set(ready);
-  }, [openOrders.data]);
+  }, [openOrders.data, scope, waiterName]);
 
   const products = menu.data?.products ?? [];
   const tables = menu.data?.tables ?? [];
@@ -407,9 +454,14 @@ export default function KasseService() {
   // erst beim Senden in eine rote Fehlermeldung, mit fertig getippter
   // Bestellung. Gleiches gilt, wenn gar keine Kasse offen ist.
   const canSend = state.data.ordersOpen && session != null;
-  const orders = openOrders.data ?? [];
+  const orders = (openOrders.data ?? []).filter(inScope);
   const readyOrders = orders.filter(o => o.status === 'ready');
   const pendingOrders = orders.filter(o => o.status === 'pending');
+  const closed = (closedOrders.data ?? []).filter(inScope);
+  // Wie viele Bestellungen die Ansicht gerade ausblendet. Ohne den Hinweis
+  // wirkt eine leere Liste wie „nichts offen“, obwohl der Filter greift.
+  const hiddenOpenCount =
+    scope === 'mine' ? (openOrders.data ?? []).length - orders.length : 0;
   const optionProduct =
     optionsFor != null ? (productById.get(optionsFor) ?? null) : null;
 
@@ -652,6 +704,34 @@ export default function KasseService() {
         </main>
       ) : (
         <main className="flex-1 space-y-6 p-4">
+          {/* Standardmässig nur die eigenen Bestellungen: an einem Event mit
+              mehreren Servicekräften ist die gemeinsame Liste zu lang, um
+              darin die eigenen drei Tische zu finden. „Alle“ bleibt einen
+              Fingertipp entfernt, etwa wenn jemand einspringt. */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={scope === 'mine' ? 'default' : 'outline'}
+              className="h-11"
+              onClick={() => setOrderScope('mine')}
+            >
+              <User className="mr-2 h-4 w-4" />
+              Meine
+            </Button>
+            <Button
+              variant={scope === 'all' ? 'default' : 'outline'}
+              className="h-11"
+              onClick={() => setOrderScope('all')}
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Alle
+            </Button>
+          </div>
+          {hiddenOpenCount > 0 && (
+            <p className="-mt-3 text-xs text-muted-foreground">
+              {hiddenOpenCount} Bestellung(en) von anderen sind ausgeblendet.
+            </p>
+          )}
+
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-success">
               Bereit zum Abholen ({readyOrders.length})
@@ -790,13 +870,15 @@ export default function KasseService() {
             {showClosed &&
               (closedOrders.isLoading ? (
                 <p className="text-sm text-muted-foreground">Lädt …</p>
-              ) : (closedOrders.data ?? []).length === 0 ? (
+              ) : closed.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Noch nichts abgeschlossen.
+                  {scope === 'mine'
+                    ? 'Von dir ist noch nichts abgeschlossen.'
+                    : 'Noch nichts abgeschlossen.'}
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {(closedOrders.data ?? []).map(order => (
+                  {closed.map(order => (
                     <li
                       key={order.id}
                       className="rounded-lg border px-3 py-2 text-sm"

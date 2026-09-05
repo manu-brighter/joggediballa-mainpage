@@ -274,6 +274,32 @@ export async function updateKasseProduct(
 }
 
 /**
+ * Reihenfolge der Produkte neu setzen. `ids` ist die vollständige, bereits
+ * sortierte Liste; `displayOrder` wird auf den Index gesetzt.
+ *
+ * In einer Transaktion, weil eine halb angewandte Reihenfolge schlimmer ist
+ * als die alte: Service und Küche lesen dieselbe Spalte und zeigten sonst
+ * zwei Produkte an derselben Position, in einer Reihenfolge, die MySQL frei
+ * wählen darf. Unbekannte IDs werden ignoriert (das UPDATE trifft dann keine
+ * Zeile), damit ein Produkt, das jemand parallel gelöscht hat, nicht die
+ * ganze Sortierung scheitern lässt.
+ */
+export async function reorderKasseProducts(ids: number[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  if (ids.length === 0) return;
+
+  await db.transaction(async tx => {
+    for (let index = 0; index < ids.length; index++) {
+      await tx
+        .update(kasseProducts)
+        .set({ displayOrder: index })
+        .where(eq(kasseProducts.id, ids[index]));
+    }
+  });
+}
+
+/**
  * Hart löschen. Bestellpositionen verlieren nur die FK. `productName` und die
  * Preis-Snapshots bleiben, die Auswertung alter Events stimmt weiterhin.
  */
@@ -476,6 +502,7 @@ export type NewOrderItemOption = {
 export type NewOrderItem = {
   productId: number;
   productName: string;
+  productCategory: string | null;
   quantity: number;
   unitPriceRappen: number;
   lineTotalRappen: number;
@@ -522,6 +549,7 @@ export async function createKasseOrder(
         orderId,
         productId: item.productId,
         productName: item.productName,
+        productCategory: item.productCategory,
         quantity: item.quantity,
         unitPriceRappen: item.unitPriceRappen,
         lineTotalRappen: item.lineTotalRappen,

@@ -36,12 +36,17 @@ import {
 } from '@/components/ui/table';
 import { formatChf, formatWait, parseChfToRappen } from '@/lib/kasse';
 import {
+  ArrowDown,
+  ArrowUp,
+  Check,
   Copy,
   ExternalLink,
   Loader2,
+  Pencil,
   Plus,
   RefreshCw,
   Trash2,
+  X,
 } from 'lucide-react';
 
 function CopyableLink({ url }: { url: string }) {
@@ -167,6 +172,10 @@ export default function KasseControl() {
     onSuccess: invalidateProducts,
     onError,
   });
+  const reorderProducts = trpc.kasse.reorderProducts.useMutation({
+    onSuccess: invalidateProducts,
+    onError,
+  });
   const deleteProduct = trpc.kasse.deleteProduct.useMutation({
     onSuccess: invalidateProducts,
     onError,
@@ -215,6 +224,14 @@ export default function KasseControl() {
     price: '',
   });
   const [optionDrafts, setOptionDrafts] = useState<Record<number, string>>({});
+  // Produkt in Bearbeitung. Nur eines gleichzeitig, damit ein angefangener
+  // Preis nicht in einer zweiten offenen Zeile untergeht.
+  const [editProductId, setEditProductId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState({
+    name: '',
+    category: '',
+    price: '',
+  });
   // Ein Dialog für alle harten Löschungen. Produkt, Zusatz und Tisch werden
   // serverseitig echt gelöscht; Kasse schliessen, Token rotieren und Session
   // löschen fragen in dieser Datei längst nach, diese drei feuerten auf einen
@@ -264,6 +281,57 @@ export default function KasseControl() {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const serviceUrl = `${origin}/kasse/service/${settings.accessToken}`;
   const kuecheUrl = `${origin}/kasse/kueche/${settings.accessToken}`;
+  const barUrl = `${origin}/kasse/bar/${settings.accessToken}`;
+
+  const startEdit = (product: (typeof products)[number]) => {
+    setEditProductId(product.id);
+    setEditDraft({
+      name: product.name,
+      category: product.category ?? '',
+      // Als Text, sonst müsste jeder Tastendruck durch parseChfToRappen und
+      // „8.“ wäre zwischendurch ungültig. Geparst wird beim Speichern.
+      price: (product.priceRappen / 100).toFixed(2),
+    });
+  };
+
+  const submitEdit = () => {
+    if (editProductId == null) return;
+    const priceRappen = parseChfToRappen(editDraft.price);
+    if (!editDraft.name.trim() || priceRappen == null) {
+      toast.error('Name und ein gültiger Preis (z. B. 8.50) sind nötig.');
+      return;
+    }
+    updateProduct.mutate(
+      {
+        id: editProductId,
+        name: editDraft.name.trim(),
+        category: editDraft.category.trim() || null,
+        priceRappen,
+      },
+      {
+        onSuccess: () => {
+          setEditProductId(null);
+          // Bereits erfasste Bestellungen behalten ihre Snapshots; die
+          // Änderung gilt erst ab der nächsten Bestellung.
+          toast.success('Produkt gespeichert.');
+        },
+      },
+    );
+  };
+
+  /**
+   * Ein Produkt eine Position nach oben oder unten. Geschickt wird die ganze
+   * neue Reihenfolge, nicht „tausche 3 und 4“: die Verwaltung sieht die Liste
+   * ohnehin komplett, und der Server muss keine relative Bewegung gegen einen
+   * womöglich veralteten Stand auflösen.
+   */
+  const moveProduct = (index: number, delta: number) => {
+    const target = index + delta;
+    if (target < 0 || target >= products.length) return;
+    const ids = products.map(p => p.id);
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    reorderProducts.mutate({ ids });
+  };
 
   const submitProduct = () => {
     const priceRappen = parseChfToRappen(productDraft.price);
@@ -387,10 +455,16 @@ export default function KasseControl() {
       {/* Zugangslinks */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Zugang für Service & Küche</CardTitle>
+          <CardTitle className="text-lg">
+            Zugang für Service, Küche & Bar
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Küche und Bar zeigen dieselbe Ansicht. Welche Kategorien ein Gerät
+            anzeigt, wird direkt auf dem Gerät eingestellt (Knopf oben rechts).
+          </p>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-3">
               <p className="text-sm font-medium">Service (Handy)</p>
               <div
@@ -418,6 +492,20 @@ export default function KasseControl() {
                 />
               </div>
               <CopyableLink url={kuecheUrl} />
+            </div>
+            <div className="space-y-3">
+              <p className="text-sm font-medium">Bar (Tablet)</p>
+              <div
+                className="flex justify-center rounded-xl p-5"
+                style={{ backgroundColor: QR_BG }}
+              >
+                <StyledQr
+                  value={barUrl}
+                  size={150}
+                  label="QR-Code für die Bar-Seite (Tablet)"
+                />
+              </div>
+              <CopyableLink url={barUrl} />
             </div>
           </div>
 
@@ -455,6 +543,12 @@ export default function KasseControl() {
             Zusätze: Aufpreis leer lassen für gratis, dann kostet der Zusatz
             gleich viel wie das Produkt. Ein Minus ist erlaubt, etwa −1.00 für
             „ohne Beilage“.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Die Reihenfolge hier ist die Reihenfolge im Service. Dort sind die
+            Produkte nach Kategorie gruppiert; eine Gruppe steht dort, wo ihr
+            erstes Produkt in dieser Liste steht. Die Kategorie steuert
+            ausserdem, welche Station (Küche oder Bar) eine Position sieht.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -498,23 +592,102 @@ export default function KasseControl() {
             </p>
           ) : (
             <div className="space-y-3">
-              {products.map(product => (
+              {products.map((product, index) => (
                 <div key={product.id} className="rounded-lg border p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium">
-                        {product.name}
-                        {product.category && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {product.category}
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-sm tabular-nums text-muted-foreground">
-                        {formatChf(product.priceRappen)}
-                      </p>
-                    </div>
+                    {editProductId === product.id ? (
+                      <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+                        <Input
+                          value={editDraft.name}
+                          onChange={e =>
+                            setEditDraft(d => ({ ...d, name: e.target.value }))
+                          }
+                          className="flex-1 min-w-[12rem]"
+                          maxLength={100}
+                          aria-label={`Name von ${product.name}`}
+                        />
+                        <Input
+                          value={editDraft.category}
+                          onChange={e =>
+                            setEditDraft(d => ({
+                              ...d,
+                              category: e.target.value,
+                            }))
+                          }
+                          placeholder="Kategorie"
+                          className="w-36"
+                          maxLength={50}
+                          aria-label={`Kategorie von ${product.name}`}
+                        />
+                        <Input
+                          value={editDraft.price}
+                          onChange={e =>
+                            setEditDraft(d => ({ ...d, price: e.target.value }))
+                          }
+                          placeholder="8.50"
+                          inputMode="decimal"
+                          className="w-24"
+                          aria-label={`Preis von ${product.name}`}
+                        />
+                        <Button
+                          size="icon"
+                          aria-label="Änderungen speichern"
+                          disabled={updateProduct.isPending}
+                          onClick={submitEdit}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          aria-label="Bearbeiten abbrechen"
+                          onClick={() => setEditProductId(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="min-w-0">
+                        <p className="font-medium">
+                          {product.name}
+                          {product.category && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {product.category}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-sm tabular-nums text-muted-foreground">
+                          {formatChf(product.priceRappen)}
+                        </p>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3">
+                      {/* Hoch/Runter statt Ziehen: die Verwaltung läuft auch
+                          auf dem Handy, und Drag & Drop ist dort neben einer
+                          scrollenden Liste kaum treffsicher. */}
+                      <div className="flex items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`${product.name} nach oben`}
+                          disabled={index === 0 || reorderProducts.isPending}
+                          onClick={() => moveProduct(index, -1)}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`${product.name} nach unten`}
+                          disabled={
+                            index === products.length - 1 ||
+                            reorderProducts.isPending
+                          }
+                          onClick={() => moveProduct(index, 1)}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <div className="flex items-center gap-2">
                         <Label
                           htmlFor={`product-active-${product.id}`}
@@ -533,6 +706,18 @@ export default function KasseControl() {
                           }
                         />
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`${product.name} bearbeiten`}
+                        onClick={() =>
+                          editProductId === product.id
+                            ? setEditProductId(null)
+                            : startEdit(product)
+                        }
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

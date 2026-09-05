@@ -14,6 +14,7 @@ import type { NewOrderItem } from './kasse_db';
 export type PricingProduct = {
   id: number;
   name: string;
+  category?: string | null;
   priceRappen: number;
   isActive: boolean;
 };
@@ -81,6 +82,9 @@ export function buildOrderItems(
     items.push({
       productId: product.id,
       productName: product.name,
+      // Kategorie als Snapshot mitschreiben, sonst kann die Bestellung später
+      // nicht mehr sauber der Station (Küche/Bar) zugeordnet werden.
+      productCategory: product.category ?? null,
       quantity: line.quantity,
       unitPriceRappen,
       lineTotalRappen: unitPriceRappen * line.quantity,

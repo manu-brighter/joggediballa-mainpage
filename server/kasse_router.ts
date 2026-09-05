@@ -30,6 +30,7 @@ import {
   listKasseSessions,
   listKasseTables,
   reopenKasseSession,
+  reorderKasseProducts,
   setKasseOrderStatus,
   updateKasseProduct,
   updateKasseProductOption,
@@ -585,6 +586,32 @@ export const kasseRouter = router({
     .mutation(async ({ input }) => {
       const { id, ...patch } = input;
       await updateKasseProduct(id, patch);
+      return { success: true };
+    }),
+
+  /**
+   * Reihenfolge der Produkte setzen. Erwartet die vollständige, sortierte
+   * Liste der IDs; `displayOrder` wird auf den jeweiligen Index gesetzt.
+   *
+   * Bewusst die ganze Liste statt „schiebe #7 auf Position 3“: die Verwaltung
+   * hat die Reihenfolge ohnehin vor sich, und eine relative Verschiebung gegen
+   * eine bis zu 15 s alte Ansicht landete sonst neben dem gemeinten Platz.
+   */
+  reorderProducts: manageKasse
+    .input(
+      z.object({
+        ids: z.array(z.number().int().positive()).min(1).max(500),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const unique = Array.from(new Set(input.ids));
+      if (unique.length !== input.ids.length) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Doppelte Produkt-IDs in der Reihenfolge.',
+        });
+      }
+      await reorderKasseProducts(unique);
       return { success: true };
     }),
 

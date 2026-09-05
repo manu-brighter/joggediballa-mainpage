@@ -74,6 +74,13 @@ describe('kasse: Verwaltung verlangt manage_kasse', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
+  it("weist die Rolle 'editor' beim Sortieren der Produkte ab", async () => {
+    const caller = appRouter.createCaller(makeCtx('editor'));
+    await expect(
+      caller.kasse.reorderProducts({ ids: [1, 2] }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
   // Die destruktivste Tisch-Operation: ein Klick räumt die ganze Liste aus.
   it("weist die Rolle 'editor' beim Löschen aller Tische ab", async () => {
     const caller = appRouter.createCaller(makeCtx('editor'));

@@ -46,3 +46,36 @@ export function urgency(minutes: number): 'normal' | 'urgent' | 'overdue' {
   if (minutes >= 5) return 'urgent';
   return 'normal';
 }
+
+/**
+ * Kategorie-Label für Produkte ohne Kategorie. Küche, Bar und Service
+ * gruppieren alle danach, darum hier einmal.
+ */
+export const CATEGORY_FALLBACK = 'Weiteres';
+
+/** Anzuzeigendes Kategorie-Label ("Food", sonst „Weiteres“). */
+export function categoryLabel(category: string | null | undefined): string {
+  return category?.trim() || CATEGORY_FALLBACK;
+}
+
+/**
+ * Vergleichsschlüssel einer Kategorie. Die Kategorie ist ein Freitextfeld in
+ * der Verwaltung; „Food“ und „food“ sind dieselbe Station, sollen den Filter
+ * einer Bar also nicht auseinanderreissen.
+ */
+export function categoryKey(category: string | null | undefined): string {
+  return categoryLabel(category).toLocaleLowerCase('de-CH');
+}
+
+/**
+ * Ob eine Position in die Ansicht einer Station gehört. Leere Auswahl heisst
+ * „alles“: eine Station ohne eingestellten Filter soll nichts verpassen,
+ * insbesondere nicht am ersten Event, bevor jemand den Filter gesetzt hat.
+ */
+export function matchesCategories(
+  category: string | null | undefined,
+  selectedKeys: string[],
+): boolean {
+  if (selectedKeys.length === 0) return true;
+  return selectedKeys.includes(categoryKey(category));
+}

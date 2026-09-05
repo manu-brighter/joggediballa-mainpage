@@ -13,9 +13,17 @@ import {
 } from './kasse_pricing';
 
 const products: PricingProduct[] = [
-  { id: 1, name: 'Pommes Frites', priceRappen: 600, isActive: true },
-  { id: 2, name: 'Bier', priceRappen: 450, isActive: true },
-  { id: 3, name: 'Suppe', priceRappen: 500, isActive: false },
+  {
+    id: 1,
+    name: 'Pommes Frites',
+    category: 'Food',
+    priceRappen: 600,
+    isActive: true,
+  },
+  { id: 2, name: 'Bier', category: 'Drinks', priceRappen: 450, isActive: true },
+  { id: 3, name: 'Suppe', category: 'Food', priceRappen: 500, isActive: false },
+  // Ohne Kategorie: die Station zeigt so etwas unter „Weiteres“.
+  { id: 4, name: 'Kaffee', priceRappen: 350, isActive: true },
 ];
 
 const options: PricingOption[] = [
@@ -192,5 +200,22 @@ describe('buildOrderItems', () => {
     ]);
     expect(items[0].unitPriceRappen).toBe(600);
     expect(items[0].options).toEqual([]);
+  });
+});
+
+describe('Kategorie-Snapshot', () => {
+  it('schreibt die Kategorie des Produkts in die Position', () => {
+    const items = buildOrderItems(products, options, [
+      { productId: 1, quantity: 1 },
+      { productId: 2, quantity: 2 },
+    ]);
+    expect(items.map(i => i.productCategory)).toEqual(['Food', 'Drinks']);
+  });
+
+  it('setzt die Kategorie auf null, wenn das Produkt keine hat', () => {
+    const items = buildOrderItems(products, options, [
+      { productId: 4, quantity: 1 },
+    ]);
+    expect(items[0].productCategory).toBeNull();
   });
 });
