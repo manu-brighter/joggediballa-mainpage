@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { usePermission } from '@/hooks/usePermissions';
@@ -34,10 +34,30 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatChf, formatWait, parseChfToRappen } from '@/lib/kasse';
 import {
-  ArrowDown,
-  ArrowUp,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  categoryKey,
+  categoryLabel,
+  formatChf,
+  formatWait,
+  parseChfToRappen,
+} from '@/lib/kasse';
+import { DragHandle, SortableRow } from './KasseSortable';
+import {
   Check,
   Copy,
   ExternalLink,
@@ -45,6 +65,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  RotateCcw,
   Trash2,
   X,
 } from 'lucide-react';
@@ -96,10 +117,9 @@ export default function KasseControl() {
     enabled: canManage,
     refetchInterval: 15000,
   });
-  const { data: products = [], isFetching: productsFetching } =
-    trpc.kasse.listProducts.useQuery(undefined, {
-      enabled: canManage,
-    });
+  const { data: products = [] } = trpc.kasse.listProducts.useQuery(undefined, {
+    enabled: canManage,
+  });
   const { data: tables = [] } = trpc.kasse.listTables.useQuery(undefined, {
     enabled: canManage,
   });
@@ -116,6 +136,36 @@ export default function KasseControl() {
     const fallback = settings.openSession ?? settings.sessions[0];
     if (fallback) setStatsSessionId(fallback.id);
   }, [settings, statsSessionId]);
+
+  /**
+   * Produkte nach Kategorie gruppiert, in der Reihenfolge, in der die Gruppe
+   * das erste Mal vorkommt. Genau dieselbe Regel wendet die Serviceansicht an,
+   * die Verwaltung zeigt also, was das Handy zeigen wird.
+   */
+  const groups = useMemo(() => {
+    const map = new Map<string, { label: string; items: typeof products }>();
+    for (const product of products) {
+      const key = categoryKey(product.category);
+      const group = map.get(key);
+      if (group) group.items.push(product);
+      else
+        map.set(key, {
+          label: categoryLabel(product.category),
+          items: [product],
+        });
+    }
+    return Array.from(map, ([key, group]) => ({ key, ...group }));
+  }, [products]);
+
+  // `distance: 8` unterscheidet Ziehen von Tippen: ohne die Schwelle löst
+  // jeder Fingerkontakt auf dem Anfasser schon einen Zug aus, und ein
+  // Fehlgriff beim Scrollen verschiebt ein Produkt.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const invalidateSettings = () => utils.kasse.getSettings.invalidate();
   const invalidateProducts = () => utils.kasse.listProducts.invalidate();
@@ -157,6 +207,19 @@ export default function KasseControl() {
     onSuccess: invalidateSettings,
     onError,
   });
+  const clearSession = trpc.kasse.clearSession.useMutation({
+    onSuccess: r => {
+      invalidateSettings();
+      utils.kasse.sessionStats.invalidate();
+      utils.kasse.sessionOrders.invalidate();
+      toast.success(
+        r.deleted > 0
+          ? `${r.deleted} Bestellung(en) gelöscht, die Auswertung steht auf null.`
+          : 'Es gab nichts zu löschen.',
+      );
+    },
+    onError,
+  });
   const deleteSession = trpc.kasse.deleteSession.useMutation({
     onSuccess: () => {
       invalidateSettings();
@@ -175,7 +238,13 @@ export default function KasseControl() {
   });
   const reorderProducts = trpc.kasse.reorderProducts.useMutation({
     onSuccess: invalidateProducts,
-    onError,
+    onError: e => {
+      // Die Liste steht lokal schon in der neuen Reihenfolge (applyOrder).
+      // Ohne das Nachladen bliebe sie so stehen und zeigte eine Sortierung,
+      // die in der Datenbank nie angekommen ist.
+      toast.error(e.message);
+      invalidateProducts();
+    },
   });
   const deleteProduct = trpc.kasse.deleteProduct.useMutation({
     onSuccess: invalidateProducts,
@@ -279,6 +348,13 @@ export default function KasseControl() {
   }
 
   const runningSession = settings.openSession;
+  // Die Kasse, deren Auswertung gerade angezeigt wird — nicht zwingend die
+  // laufende. `orderCount` zählt ohne Stornos, für den Bestätigungstext soll
+  // aber dastehen, was tatsächlich verschwindet.
+  const statsSession = stats?.session ?? null;
+  const statsOrderCount = stats
+    ? stats.orderCount + stats.cancelledCount
+    : null;
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const serviceUrl = `${origin}/kasse/service/${settings.accessToken}`;
   const kuecheUrl = `${origin}/kasse/kueche/${settings.accessToken}`;
@@ -335,21 +411,72 @@ export default function KasseControl() {
    * ohnehin komplett, und der Server muss keine relative Bewegung gegen einen
    * womöglich veralteten Stand auflösen.
    */
-  const moveProduct = (index: number, delta: number) => {
-    const target = index + delta;
-    if (target < 0 || target >= products.length) return;
-    const ids = products.map(p => p.id);
-    [ids[index], ids[target]] = [ids[target], ids[index]];
+  /**
+   * Reihenfolge speichern und die Liste sofort lokal umsortieren. Ohne das
+   * optimistische Update schnappt die gezogene Zeile zurück, bis die Antwort
+   * da ist — und ein zweiter Zug in diesem Fenster ginge von der alten
+   * Reihenfolge aus und nähme den ersten zurück.
+   */
+  const applyOrder = (ids: number[]) => {
+    const rank = new Map(ids.map((id, index) => [id, index]));
+    utils.kasse.listProducts.setData(undefined, prev =>
+      prev
+        ? [...prev].sort(
+            (a, b) =>
+              (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+              (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+          )
+        : prev,
+    );
     reorderProducts.mutate({ ids });
   };
 
-  /**
-   * Die Pfeile bleiben bis zur nachgeladenen Liste gesperrt, nicht nur bis zum
-   * Ende der Mutation. Dazwischen zeigt die Ansicht noch die alte Reihenfolge,
-   * `moveProduct` bildet `ids` aber genau aus ihr: ein zweiter Klick in diesem
-   * Fenster schickte eine Reihenfolge los, die den ersten Zug zurücknimmt.
-   */
-  const reorderBusy = reorderProducts.isPending || productsFetching;
+  /** Die Gruppen wieder zu einer flachen Reihenfolge von Produkt-IDs. */
+  const flatten = (list: Array<{ items: typeof products }>) =>
+    list.flatMap(group => group.items.map(p => p.id));
+
+  /** Index der Gruppe, zu der eine Zieh-ID gehört — Überschrift wie Produkt. */
+  const groupIndexOf = (id: string) =>
+    id.startsWith('group:')
+      ? groups.findIndex(g => `group:${g.key}` === id)
+      : groups.findIndex(g => g.items.some(p => `product:${p.id}` === id));
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const activeId = String(event.active.id);
+    const overId = event.over ? String(event.over.id) : null;
+    if (!overId || activeId === overId) return;
+
+    // Ganze Kategorie verschieben. Beim Ziehen über eine andere Gruppe liegt
+    // unter dem Zeiger meist eines ihrer Produkte, nicht ihre Überschrift —
+    // darum das Ziel auf die Gruppe auflösen, zu der es gehört.
+    if (activeId.startsWith('group:')) {
+      const from = groupIndexOf(activeId);
+      const to = groupIndexOf(overId);
+      if (from === -1 || to === -1 || from === to) return;
+      applyOrder(flatten(arrayMove(groups, from, to)));
+      return;
+    }
+
+    // Produkt innerhalb seiner Kategorie verschieben. Ein Zug in eine fremde
+    // Kategorie tut nichts: das wäre eine Änderung am Produkt, nicht an der
+    // Reihenfolge — dafür ist der Stift da.
+    if (activeId.startsWith('product:') && overId.startsWith('product:')) {
+      const group = groups.find(g =>
+        g.items.some(p => `product:${p.id}` === activeId),
+      );
+      if (!group) return;
+      const from = group.items.findIndex(p => `product:${p.id}` === activeId);
+      const to = group.items.findIndex(p => `product:${p.id}` === overId);
+      if (from === -1 || to === -1) return;
+      applyOrder(
+        flatten(
+          groups.map(g =>
+            g === group ? { ...g, items: arrayMove(g.items, from, to) } : g,
+          ),
+        ),
+      );
+    }
+  };
 
   const submitProduct = () => {
     const priceRappen = parseChfToRappen(productDraft.price);
@@ -563,10 +690,11 @@ export default function KasseControl() {
             „ohne Beilage“.
           </p>
           <p className="text-xs text-muted-foreground">
-            Die Reihenfolge hier ist die Reihenfolge im Service. Dort sind die
-            Produkte nach Kategorie gruppiert; eine Gruppe steht dort, wo ihr
-            erstes Produkt in dieser Liste steht. Die Kategorie steuert
-            ausserdem, welche Station (Küche oder Bar) eine Position sieht.
+            Reihenfolge am Punkteraster ziehen — Produkte innerhalb ihrer
+            Kategorie, ganze Kategorien am Raster neben der Überschrift. Genau
+            so steht es danach im Service. Die Kategorie eines Produkts ändert
+            man über den Stift, nicht durchs Ziehen; sie steuert ausserdem,
+            welche Station (Küche oder Bar) eine Position sieht.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -609,257 +737,321 @@ export default function KasseControl() {
               Noch keine Produkte erfasst.
             </p>
           ) : (
-            <div className="space-y-3">
-              {products.map((product, index) => (
-                <div key={product.id} className="rounded-lg border p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    {editProductId === product.id ? (
-                      <div className="flex min-w-0 flex-1 flex-wrap gap-2">
-                        <Input
-                          value={editDraft.name}
-                          onChange={e =>
-                            setEditDraft(d => ({ ...d, name: e.target.value }))
-                          }
-                          className="flex-1 min-w-[12rem]"
-                          maxLength={100}
-                          aria-label={`Name von ${product.name}`}
-                        />
-                        <Input
-                          value={editDraft.category}
-                          onChange={e =>
-                            setEditDraft(d => ({
-                              ...d,
-                              category: e.target.value,
-                            }))
-                          }
-                          placeholder="Kategorie"
-                          className="w-36"
-                          maxLength={50}
-                          aria-label={`Kategorie von ${product.name}`}
-                        />
-                        <Input
-                          value={editDraft.price}
-                          onChange={e =>
-                            setEditDraft(d => ({ ...d, price: e.target.value }))
-                          }
-                          placeholder="8.50"
-                          inputMode="decimal"
-                          className="w-24"
-                          aria-label={`Preis von ${product.name}`}
-                        />
-                        <Button
-                          size="icon"
-                          aria-label="Änderungen speichern"
-                          disabled={updateProduct.isPending}
-                          onClick={submitEdit}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          aria-label="Bearbeiten abbrechen"
-                          onClick={() => setEditProductId(null)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="min-w-0">
-                        <p className="font-medium">
-                          {product.name}
-                          {product.category && (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              {product.category}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={groups.map(g => `group:${g.key}`)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-4">
+                  {groups.map(group => (
+                    <SortableRow
+                      key={`group:${group.key}`}
+                      id={`group:${group.key}`}
+                    >
+                      {groupHandle => (
+                        <section className="rounded-xl border bg-muted/40 p-3">
+                          <div className="mb-3 flex items-center gap-1">
+                            <DragHandle
+                              label={`Kategorie ${group.label} verschieben`}
+                              handle={groupHandle}
+                            />
+                            <h3 className="min-w-0 truncate text-sm font-semibold uppercase tracking-wide">
+                              {group.label}
+                            </h3>
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                              ({group.items.length})
                             </span>
-                          )}
-                        </p>
-                        <p className="text-sm tabular-nums text-muted-foreground">
-                          {formatChf(product.priceRappen)}
-                        </p>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-3">
-                      {/* Hoch/Runter statt Ziehen: die Verwaltung läuft auch
-                          auf dem Handy, und Drag & Drop ist dort neben einer
-                          scrollenden Liste kaum treffsicher. */}
-                      <div className="flex items-center">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`${product.name} nach oben`}
-                          disabled={index === 0 || reorderBusy}
-                          onClick={() => moveProduct(index, -1)}
-                        >
-                          <ArrowUp className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`${product.name} nach unten`}
-                          disabled={
-                            index === products.length - 1 || reorderBusy
-                          }
-                          onClick={() => moveProduct(index, 1)}
-                        >
-                          <ArrowDown className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Label
-                          htmlFor={`product-active-${product.id}`}
-                          className="text-xs text-muted-foreground"
-                        >
-                          Aktiv
-                        </Label>
-                        <Switch
-                          id={`product-active-${product.id}`}
-                          checked={product.isActive}
-                          onCheckedChange={v =>
-                            updateProduct.mutate({
-                              id: product.id,
-                              isActive: v,
-                            })
-                          }
-                        />
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`${product.name} bearbeiten`}
-                        onClick={() =>
-                          editProductId === product.id
-                            ? setEditProductId(null)
-                            : startEdit(product)
-                        }
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`${product.name} löschen`}
-                        onClick={() =>
-                          setConfirm({
-                            title: `„${product.name}“ löschen?`,
-                            description:
-                              'Das Produkt und seine Zusätze verschwinden aus der Auswahl. Bereits erfasste Bestellungen behalten Name und Preis.',
-                            run: () => deleteProduct.mutate({ id: product.id }),
-                          })
-                        }
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
+                          </div>
 
-                  {/* Zusätze */}
-                  <div className="mt-3 space-y-2 border-t pt-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Zusätze
-                    </p>
-                    {product.options.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {product.options.map(option => (
-                          <span
-                            key={option.id}
-                            className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm"
+                          <SortableContext
+                            items={group.items.map(p => `product:${p.id}`)}
+                            strategy={verticalListSortingStrategy}
                           >
-                            {option.name}
-                            {option.priceDeltaRappen !== 0 && (
-                              <span className="text-xs text-muted-foreground">
-                                {option.priceDeltaRappen > 0 ? '+' : '−'}
-                                {formatChf(Math.abs(option.priceDeltaRappen))}
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              aria-label={`${option.name} entfernen`}
-                              onClick={() =>
-                                setConfirm({
-                                  title: `Zusatz „${option.name}“ löschen?`,
-                                  description:
-                                    'Der Zusatz verschwindet aus der Auswahl. Bereits erfasste Bestellungen behalten ihn als Snapshot.',
-                                  run: () =>
-                                    deleteOption.mutate({ id: option.id }),
-                                })
-                              }
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Input
-                        value={optionDrafts[product.id] ?? ''}
-                        onChange={e =>
-                          setOptionDrafts(d => ({
-                            ...d,
-                            [product.id]: e.target.value,
-                          }))
-                        }
-                        placeholder="Zusatz, z. B. Ketchup"
-                        className="max-w-xs"
-                        maxLength={100}
-                      />
-                      <Input
-                        value={optionPriceDrafts[product.id] ?? ''}
-                        onChange={e =>
-                          setOptionPriceDrafts(d => ({
-                            ...d,
-                            [product.id]: e.target.value,
-                          }))
-                        }
-                        placeholder="Aufpreis, z. B. 0.50"
-                        className="w-40"
-                        inputMode="decimal"
-                        aria-label={`Aufpreis für Zusatz von ${product.name}`}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={
-                          !optionDrafts[product.id]?.trim() ||
-                          parseOptionDelta(optionPriceDrafts[product.id]) ===
-                            null
-                        }
-                        onClick={() => {
-                          const delta = parseOptionDelta(
-                            optionPriceDrafts[product.id],
-                          );
-                          if (delta === null) return;
-                          createOption.mutate(
-                            {
-                              productId: product.id,
-                              name: (optionDrafts[product.id] ?? '').trim(),
-                              priceDeltaRappen: delta,
-                              displayOrder: product.options.length,
-                            },
-                            {
-                              onSuccess: () => {
-                                setOptionDrafts(d => ({
-                                  ...d,
-                                  [product.id]: '',
-                                }));
-                                setOptionPriceDrafts(d => ({
-                                  ...d,
-                                  [product.id]: '',
-                                }));
-                              },
-                            },
-                          );
-                        }}
-                      >
-                        Hinzufügen
-                      </Button>
-                    </div>
-                  </div>
+                            <div className="space-y-3">
+                              {group.items.map(product => (
+                                <SortableRow
+                                  key={product.id}
+                                  id={`product:${product.id}`}
+                                >
+                                  {handle => (
+                                    <div className="rounded-lg border bg-background p-4">
+                                      <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <DragHandle
+                                          label={`${product.name} verschieben`}
+                                          handle={handle}
+                                        />
+                                        {editProductId === product.id ? (
+                                          <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+                                            <Input
+                                              value={editDraft.name}
+                                              onChange={e =>
+                                                setEditDraft(d => ({
+                                                  ...d,
+                                                  name: e.target.value,
+                                                }))
+                                              }
+                                              className="flex-1 min-w-[12rem]"
+                                              maxLength={100}
+                                              aria-label={`Name von ${product.name}`}
+                                            />
+                                            <Input
+                                              value={editDraft.category}
+                                              onChange={e =>
+                                                setEditDraft(d => ({
+                                                  ...d,
+                                                  category: e.target.value,
+                                                }))
+                                              }
+                                              placeholder="Kategorie"
+                                              className="w-36"
+                                              maxLength={50}
+                                              aria-label={`Kategorie von ${product.name}`}
+                                            />
+                                            <Input
+                                              value={editDraft.price}
+                                              onChange={e =>
+                                                setEditDraft(d => ({
+                                                  ...d,
+                                                  price: e.target.value,
+                                                }))
+                                              }
+                                              placeholder="8.50"
+                                              inputMode="decimal"
+                                              className="w-24"
+                                              aria-label={`Preis von ${product.name}`}
+                                            />
+                                            <Button
+                                              size="icon"
+                                              aria-label="Änderungen speichern"
+                                              disabled={updateProduct.isPending}
+                                              onClick={submitEdit}
+                                            >
+                                              <Check className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="icon"
+                                              aria-label="Bearbeiten abbrechen"
+                                              onClick={() =>
+                                                setEditProductId(null)
+                                              }
+                                            >
+                                              <X className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        ) : (
+                                          // `flex-1`, damit der Name direkt
+                                          // neben dem Anfasser steht:
+                                          // justify-between schöbe ihn sonst
+                                          // in die Mitte der Zeile.
+                                          <div className="min-w-0 flex-1">
+                                            <p className="font-medium">
+                                              {product.name}
+                                              {product.category && (
+                                                <span className="ml-2 text-xs text-muted-foreground">
+                                                  {product.category}
+                                                </span>
+                                              )}
+                                            </p>
+                                            <p className="text-sm tabular-nums text-muted-foreground">
+                                              {formatChf(product.priceRappen)}
+                                            </p>
+                                          </div>
+                                        )}
+                                        <div className="flex items-center gap-3">
+                                          <div className="flex items-center gap-2">
+                                            <Label
+                                              htmlFor={`product-active-${product.id}`}
+                                              className="text-xs text-muted-foreground"
+                                            >
+                                              Aktiv
+                                            </Label>
+                                            <Switch
+                                              id={`product-active-${product.id}`}
+                                              checked={product.isActive}
+                                              onCheckedChange={v =>
+                                                updateProduct.mutate({
+                                                  id: product.id,
+                                                  isActive: v,
+                                                })
+                                              }
+                                            />
+                                          </div>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label={`${product.name} bearbeiten`}
+                                            onClick={() =>
+                                              editProductId === product.id
+                                                ? setEditProductId(null)
+                                                : startEdit(product)
+                                            }
+                                          >
+                                            <Pencil className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label={`${product.name} löschen`}
+                                            onClick={() =>
+                                              setConfirm({
+                                                title: `„${product.name}“ löschen?`,
+                                                description:
+                                                  'Das Produkt und seine Zusätze verschwinden aus der Auswahl. Bereits erfasste Bestellungen behalten Name und Preis.',
+                                                run: () =>
+                                                  deleteProduct.mutate({
+                                                    id: product.id,
+                                                  }),
+                                              })
+                                            }
+                                          >
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                          </Button>
+                                        </div>
+                                      </div>
+
+                                      {/* Zusätze */}
+                                      <div className="mt-3 space-y-2 border-t pt-3">
+                                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                          Zusätze
+                                        </p>
+                                        {product.options.length > 0 && (
+                                          <div className="flex flex-wrap gap-2">
+                                            {product.options.map(option => (
+                                              <span
+                                                key={option.id}
+                                                className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm"
+                                              >
+                                                {option.name}
+                                                {option.priceDeltaRappen !==
+                                                  0 && (
+                                                  <span className="text-xs text-muted-foreground">
+                                                    {option.priceDeltaRappen > 0
+                                                      ? '+'
+                                                      : '−'}
+                                                    {formatChf(
+                                                      Math.abs(
+                                                        option.priceDeltaRappen,
+                                                      ),
+                                                    )}
+                                                  </span>
+                                                )}
+                                                <button
+                                                  type="button"
+                                                  aria-label={`${option.name} entfernen`}
+                                                  onClick={() =>
+                                                    setConfirm({
+                                                      title: `Zusatz „${option.name}“ löschen?`,
+                                                      description:
+                                                        'Der Zusatz verschwindet aus der Auswahl. Bereits erfasste Bestellungen behalten ihn als Snapshot.',
+                                                      run: () =>
+                                                        deleteOption.mutate({
+                                                          id: option.id,
+                                                        }),
+                                                    })
+                                                  }
+                                                  className="text-muted-foreground hover:text-destructive"
+                                                >
+                                                  ×
+                                                </button>
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <Input
+                                            value={
+                                              optionDrafts[product.id] ?? ''
+                                            }
+                                            onChange={e =>
+                                              setOptionDrafts(d => ({
+                                                ...d,
+                                                [product.id]: e.target.value,
+                                              }))
+                                            }
+                                            placeholder="Zusatz, z. B. Ketchup"
+                                            className="max-w-xs"
+                                            maxLength={100}
+                                          />
+                                          <Input
+                                            value={
+                                              optionPriceDrafts[product.id] ??
+                                              ''
+                                            }
+                                            onChange={e =>
+                                              setOptionPriceDrafts(d => ({
+                                                ...d,
+                                                [product.id]: e.target.value,
+                                              }))
+                                            }
+                                            placeholder="Aufpreis, z. B. 0.50"
+                                            className="w-40"
+                                            inputMode="decimal"
+                                            aria-label={`Aufpreis für Zusatz von ${product.name}`}
+                                          />
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={
+                                              !optionDrafts[
+                                                product.id
+                                              ]?.trim() ||
+                                              parseOptionDelta(
+                                                optionPriceDrafts[product.id],
+                                              ) === null
+                                            }
+                                            onClick={() => {
+                                              const delta = parseOptionDelta(
+                                                optionPriceDrafts[product.id],
+                                              );
+                                              if (delta === null) return;
+                                              createOption.mutate(
+                                                {
+                                                  productId: product.id,
+                                                  name: (
+                                                    optionDrafts[product.id] ??
+                                                    ''
+                                                  ).trim(),
+                                                  priceDeltaRappen: delta,
+                                                  displayOrder:
+                                                    product.options.length,
+                                                },
+                                                {
+                                                  onSuccess: () => {
+                                                    setOptionDrafts(d => ({
+                                                      ...d,
+                                                      [product.id]: '',
+                                                    }));
+                                                    setOptionPriceDrafts(d => ({
+                                                      ...d,
+                                                      [product.id]: '',
+                                                    }));
+                                                  },
+                                                },
+                                              );
+                                            }}
+                                          >
+                                            Hinzufügen
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </SortableRow>
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </section>
+                      )}
+                    </SortableRow>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           )}
         </CardContent>
       </Card>
@@ -1055,6 +1247,37 @@ export default function KasseControl() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Auswertung</CardTitle>
+          {/* Für die Generalprobe: am Nachmittag ein paar Bestellungen
+              durchspielen und vor dem Öffnen der Tore auf null stellen, ohne
+              die Kasse neu anzulegen und QR-Codes neu zu verteilen. Der Dialog
+              nennt die Kasse beim Namen — die Auswahl oben kann auf einem
+              alten Event stehen. */}
+          {statsSession && (
+            <CardAction>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                disabled={clearSession.isPending}
+                onClick={() =>
+                  setConfirm({
+                    title: `Auswertung von „${statsSession.name}“ zurücksetzen?`,
+                    description:
+                      `Alle ${statsOrderCount ?? 0} erfassten Bestellungen dieser Kasse werden gelöscht, Umsatz und Statistik stehen danach auf null. ` +
+                      (statsSession.status === 'open'
+                        ? 'Die Kasse bleibt offen, Links und QR-Codes gelten weiter — auch offene Bestellungen verschwinden aber aus Küche, Bar und Service. '
+                        : '') +
+                      'Rückgängig machen geht nicht.',
+                    run: () =>
+                      clearSession.mutate({ sessionId: statsSession.id }),
+                  })
+                }
+              >
+                <RotateCcw className="h-4 w-4" />
+                Auswertung zurücksetzen
+              </Button>
+            </CardAction>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {settings.sessions.length === 0 ? (

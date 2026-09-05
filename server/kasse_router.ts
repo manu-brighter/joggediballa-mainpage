@@ -6,6 +6,7 @@ import { hasPermission } from './permissions';
 import { createActivityLog } from './db';
 import {
   cancelOpenKasseOrders,
+  clearKasseSessionOrders,
   closeKasseSessionSettling,
   countOpenKasseOrders,
   createKasseOrder,
@@ -513,6 +514,37 @@ export const kasseRouter = router({
         userAgent: null,
       });
       return { success: true };
+    }),
+
+  /**
+   * Alle Bestellungen einer Kasse löschen, die Kasse bleibt offen. Für die
+   * Generalprobe: testen, dann die Auswertung auf null stellen, ohne die Kasse
+   * neu anzulegen und die Links neu zu verteilen.
+   *
+   * Nicht rückholbar und trifft den Umsatz, darum protokolliert — dieselbe
+   * Begründung wie bei deleteAllTables.
+   */
+  clearSession: manageKasse
+    .input(z.object({ sessionId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const session = await getKasseSession(input.sessionId);
+      if (!session) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Session not found',
+        });
+      }
+
+      const deleted = await clearKasseSessionOrders(input.sessionId);
+      await createActivityLog({
+        userId: ctx.user.id,
+        userName: ctx.user.name || 'Unknown',
+        action: 'kasse_session_clear',
+        details: `Cleared ${deleted} order(s) from session "${session.name}" (#${session.id})`,
+        ipAddress: null,
+        userAgent: null,
+      });
+      return { deleted };
     }),
 
   deleteSession: manageKasse

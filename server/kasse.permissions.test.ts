@@ -81,6 +81,14 @@ describe('kasse: Verwaltung verlangt manage_kasse', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
+  // Löscht alle Bestellungen einer Kasse und damit den Umsatz.
+  it("weist die Rolle 'editor' beim Zurücksetzen der Auswertung ab", async () => {
+    const caller = appRouter.createCaller(makeCtx('editor'));
+    await expect(
+      caller.kasse.clearSession({ sessionId: 1 }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
   // Die destruktivste Tisch-Operation: ein Klick räumt die ganze Liste aus.
   it("weist die Rolle 'editor' beim Löschen aller Tische ab", async () => {
     const caller = appRouter.createCaller(makeCtx('editor'));

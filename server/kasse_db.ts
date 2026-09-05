@@ -208,6 +208,44 @@ export async function reopenKasseSession(sessionId: number): Promise<void> {
   });
 }
 
+/**
+ * Leert eine Kasse: alle Bestellungen der Session weg, die Session selbst
+ * bleibt stehen. Gedacht für die Generalprobe — am Nachmittag ein paar
+ * Testbestellungen durchspielen und vor dem Öffnen der Tore die Auswertung auf
+ * null stellen, ohne die Kasse neu anlegen und die Links neu verteilen zu
+ * müssen.
+ *
+ * Positionen und gewählte Zusätze hängen per ON DELETE CASCADE an den
+ * Bestellungen. Gibt zurück, wie viele Bestellungen gelöscht wurden.
+ */
+export async function clearKasseSessionOrders(
+  sessionId: number,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  // In einer Transaktion und unter Sperre der Session-Zeile, aus demselben
+  // Grund wie in closeKasseSessionSettling: eine Bestellung, die zwischen
+  // Zählen und Löschen eintrifft, bliebe sonst als einzige stehen — der Admin
+  // sieht „42 gelöscht“ und die Auswertung steht trotzdem nicht auf null.
+  return db.transaction(async tx => {
+    await tx
+      .select({ id: kasseSessions.id })
+      .from(kasseSessions)
+      .where(eq(kasseSessions.id, sessionId))
+      .for('update');
+
+    const existing = await tx
+      .select({ id: kasseOrders.id })
+      .from(kasseOrders)
+      .where(eq(kasseOrders.sessionId, sessionId));
+    if (existing.length === 0) return 0;
+
+    await tx.delete(kasseOrders).where(eq(kasseOrders.sessionId, sessionId));
+    return existing.length;
+  });
+}
+
 export async function deleteKasseSession(sessionId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
