@@ -177,6 +177,11 @@ export default function KasseService() {
   const utils = trpc.useUtils();
   const refreshOrders = () => utils.kasse.listOpenOrders.invalidate();
 
+  // Bereits gemeldete „bereit“-Bestellungen. Sobald eine Bestellung auf
+  // „bereit“ springt, meldet sich das Handy — sonst müsste das Personal die
+  // Liste dauernd im Auge behalten. Siehe den Effekt weiter unten.
+  const seenReady = useRef<Set<number> | null>(null);
+
   const createOrder = trpc.kasse.createOrder.useMutation({
     onSuccess: () => {
       setCart([]);
@@ -191,6 +196,12 @@ export default function KasseService() {
   const setStatus = trpc.kasse.setOrderStatus.useMutation({
     onSuccess: (_result, variables) => {
       refreshOrders();
+      // Wer selbst auf „Bereit“ tippt, braucht keine Meldung, dass die
+      // Bestellung bereit ist. Vormerken, bevor die nächste Abfrage sie als
+      // neu bereit sieht.
+      if (variables.status === 'ready') {
+        seenReady.current?.add(variables.orderId);
+      }
       // Die abgeschlossenen Bestellungen sind eine eigene Abfrage, also nur
       // nachladen, wenn die Liste offen ist und der Wechsel überhaupt eine
       // dorthin verschiebt.
@@ -209,9 +220,6 @@ export default function KasseService() {
     scope === 'all' ||
     normalizeWaiter(order.waiterName) === normalizeWaiter(waiterName);
 
-  // Sobald eine Bestellung von der Küche auf „bereit“ gesetzt wird, meldet sich
-  // das Handy. Sonst müsste das Personal die Liste dauernd im Auge behalten.
-  const seenReady = useRef<Set<number> | null>(null);
   useEffect(() => {
     const orders = openOrders.data;
     if (!orders) return;
@@ -950,21 +958,46 @@ export default function KasseService() {
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    // dark:-Pendants nötig: die ghost-Variante setzt
-                    // dark:hover:bg-accent/50, das sonst im Dark Mode gewinnt.
-                    className="mt-2 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive dark:bg-destructive/10 dark:hover:bg-destructive/20"
-                    disabled={
-                      setStatus.isPending &&
-                      setStatus.variables?.orderId === order.id
-                    }
-                    onClick={() => setCancelId(order.id)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Stornieren
-                  </Button>
+                  {/* Auch der Service kann fertigmelden: wer am
+                      Durchreichefenster steht, hat die Bestellung vor sich,
+                      während das Tablet drinnen gerade jemand anders bedient.
+                      Danach steht sie oben unter „Bereit zum Abholen“ und wird
+                      dort abgeschlossen — derselbe Weg wie in Küche und Bar. */}
+                  <div className="mt-3 flex items-center gap-2">
+                    <Button
+                      className="h-11 flex-1"
+                      disabled={
+                        setStatus.isPending &&
+                        setStatus.variables?.orderId === order.id
+                      }
+                      onClick={() =>
+                        setStatus.mutate({
+                          token,
+                          orderId: order.id,
+                          status: 'ready',
+                        })
+                      }
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      Bereit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      // dark:-Pendants nötig: die outline-Variante setzt
+                      // dark:bg-transparent und dark:border-input, die sonst
+                      // im Dark Mode gewinnen.
+                      className="h-11 w-11 shrink-0 border-destructive/30 bg-destructive/10 text-destructive hover:border-destructive/50 hover:bg-destructive/20 hover:text-destructive dark:border-destructive/30 dark:bg-destructive/10 dark:hover:border-destructive/50 dark:hover:bg-destructive/20"
+                      disabled={
+                        setStatus.isPending &&
+                        setStatus.variables?.orderId === order.id
+                      }
+                      onClick={() => setCancelId(order.id)}
+                      aria-label={`Bestellung für Tisch ${order.tableName} stornieren`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))
             )}
