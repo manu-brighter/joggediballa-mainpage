@@ -324,6 +324,30 @@ export async function countProductsInKasseCategory(
   return rows.length;
 }
 
+/**
+ * Wie oben, aber nur aktive Produkte. Eine Kategorie zu deaktivieren blendet
+ * sie aus `menu` und damit aus der Service-Produktliste aus (siehe
+ * `menu`-Prozedur) — ein noch aktives Produkt darunter verschwindet dann
+ * kommentarlos aus dem Bestellbildschirm, ohne Fehlermeldung. Inaktive
+ * Produkte stören dabei nicht, die zeigt der Service ohnehin nicht an.
+ */
+export async function countActiveProductsInKasseCategory(
+  categoryId: number,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const rows = await db
+    .select({ id: kasseProducts.id })
+    .from(kasseProducts)
+    .where(
+      and(
+        eq(kasseProducts.categoryId, categoryId),
+        eq(kasseProducts.isActive, true),
+      ),
+    );
+  return rows.length;
+}
+
 export async function deleteKasseCategory(categoryId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');

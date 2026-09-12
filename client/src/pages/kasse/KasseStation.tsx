@@ -512,7 +512,7 @@ export default function KasseStation({ station }: { station: StationConfig }) {
                           darunter — dann lieber sagen, was fehlt. */}
                       <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
                         {order.hiddenCount > 0
-                          ? `+${order.hiddenCount} andere Kategorie`
+                          ? `+${order.hiddenCount} andere Kategorie${order.hiddenCount > 1 ? 'n' : ''}`
                           : formatChf(order.totalRappen)}
                       </p>
                     </div>

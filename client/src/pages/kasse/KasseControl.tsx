@@ -426,7 +426,7 @@ export default function KasseControl() {
   if (!settings) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -1073,11 +1073,16 @@ export default function KasseControl() {
                   <SelectValue placeholder="Kategorie" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(category => (
-                    <SelectItem key={category.id} value={String(category.id)}>
-                      {category.name} ({STATION_LABEL[category.station]})
-                    </SelectItem>
-                  ))}
+                  {/* Nur aktive Kategorien: ein neues Produkt unter einer
+                      bereits deaktivierten Kategorie verschwände sofort
+                      kommentarlos aus dem Service. */}
+                  {categories
+                    .filter(category => category.isActive)
+                    .map(category => (
+                      <SelectItem key={category.id} value={String(category.id)}>
+                        {category.name} ({STATION_LABEL[category.station]})
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               <Input
@@ -1177,13 +1182,22 @@ export default function KasseControl() {
                                           <SelectValue placeholder="Kategorie" />
                                         </SelectTrigger>
                                         <SelectContent>
+                                          {/* Alle Kategorien, auch inaktive:
+                                              ein Altbestand-Produkt kann noch
+                                              an einer deaktivierten hängen,
+                                              die muss sich hier weiter
+                                              anzeigen und ummappen lassen. */}
                                           {categories.map(category => (
                                             <SelectItem
                                               key={category.id}
                                               value={String(category.id)}
                                             >
                                               {category.name} (
-                                              {STATION_LABEL[category.station]})
+                                              {STATION_LABEL[category.station]}
+                                              {category.isActive
+                                                ? ''
+                                                : ', inaktiv'}
+                                              )
                                             </SelectItem>
                                           ))}
                                         </SelectContent>

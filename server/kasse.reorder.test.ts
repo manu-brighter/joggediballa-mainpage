@@ -69,9 +69,56 @@ describe('kasse.reorderProducts', () => {
   });
 });
 
+describe('kasse.reorderCategories', () => {
+  beforeEach(() => {
+    clearPermissionCache();
+  });
+
+  it('lehnt doppelte Kategorie-IDs ab', async () => {
+    const caller = appRouter.createCaller(adminCtx());
+    await expect(
+      caller.kasse.reorderCategories({ ids: [3, 1, 3] }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('lehnt eine leere Liste ab', async () => {
+    const caller = appRouter.createCaller(adminCtx());
+    await expect(caller.kasse.reorderCategories({ ids: [] })).rejects.toThrow();
+  });
+
+  it('kommt bei sauberer Liste bis zur DB-Schicht', async () => {
+    const caller = appRouter.createCaller(adminCtx());
+    await expect(
+      caller.kasse.reorderCategories({ ids: [3, 1, 2] }),
+    ).rejects.toThrow(/Database not available/);
+  });
+});
+
+describe('kasse.listOpenOrders / listClosedOrders: Stations-Filter', () => {
+  it('nimmt station bei listOpenOrders entgegen', async () => {
+    // `station` filtert bereits in SQL, damit Küche/Bar nie Positionen der
+    // anderen Station zu sehen bekommen (siehe listKasseOrders).
+    const caller = appRouter.createCaller(adminCtx());
+    await expect(
+      caller.kasse.listOpenOrders({ token: 'egal', station: 'bar' }),
+    ).rejects.toThrow(/Database not available/);
+  });
+
+  it('lehnt eine unbekannte Station ab', async () => {
+    const caller = appRouter.createCaller(adminCtx());
+    await expect(
+      caller.kasse.listOpenOrders({
+        token: 'egal',
+        // @ts-expect-error absichtlich ungültiger Wert für den Test
+        station: 'kitchen',
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+});
+
 describe('kasse.listClosedOrders: Filter', () => {
-  it('nimmt waiterName und categoryKeys entgegen', async () => {
-    // Beide Filter laufen serverseitig, vor dem LIMIT von 50. Ohne sie sah
+  it('nimmt waiterName, station und categoryKeys entgegen', async () => {
+    // Alle drei Filter laufen serverseitig, vor dem LIMIT von 50. Ohne sie sah
     // eine Servicekraft „nichts abgeschlossen“, sobald die 50 neuesten
     // Bestellungen von anderen stammten.
     const caller = appRouter.createCaller(adminCtx());
@@ -79,6 +126,7 @@ describe('kasse.listClosedOrders: Filter', () => {
       caller.kasse.listClosedOrders({
         token: 'egal',
         waiterName: 'Anna',
+        station: 'kueche',
         categoryKeys: ['food', 'weiteres'],
       }),
     ).rejects.toThrow(/Database not available/);

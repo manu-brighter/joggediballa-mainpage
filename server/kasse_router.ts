@@ -8,6 +8,7 @@ import {
   cancelOpenKasseOrders,
   clearKasseSessionOrders,
   closeKasseSessionSettling,
+  countActiveProductsInKasseCategory,
   countOpenKasseOrders,
   countProductsInKasseCategory,
   createKasseCategory,
@@ -214,7 +215,6 @@ export const kasseRouter = router({
             // vorher: „gelöschte" Kategorie kann bei aktivem Produkt nicht
             // vorkommen (FK), category ist also immer vorhanden.
             category: category?.name ?? 'Weiteres',
-            station: category?.station ?? 'kueche',
             priceRappen: p.priceRappen,
             options: options
               .filter(o => o.productId === p.id && o.isActive)
@@ -681,6 +681,15 @@ export const kasseRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...patch } = input;
+      if (patch.isActive === false) {
+        const inUse = await countActiveProductsInKasseCategory(id);
+        if (inUse > 0) {
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message: `${inUse} aktives Produkt(e) hängen noch an dieser Kategorie. Zuerst umkategorisieren oder deaktivieren, sonst verschwinden sie kommentarlos aus dem Service.`,
+          });
+        }
+      }
       await updateKasseCategory(id, patch);
       return { success: true };
     }),
