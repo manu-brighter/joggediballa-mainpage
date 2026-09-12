@@ -23,13 +23,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  categoryKey,
-  categoryLabel,
-  formatChf,
-  formatWait,
-  sortItemsForDisplay,
-} from '@/lib/kasse';
+import { formatChf, formatWait, sortItemsForDisplay } from '@/lib/kasse';
 import {
   Check,
   ClipboardList,
@@ -242,14 +236,17 @@ export default function KasseService() {
     onError: e => toast.error(e.message),
   });
   const setStatus = trpc.kasse.setOrderStatus.useMutation({
-    onSuccess: (_result, variables) => {
-      refreshOrders();
-      // Wer selbst auf „Bereit“ tippt, braucht keine Meldung, dass die
-      // Bestellung bereit ist. Vormerken, bevor die nächste Abfrage sie als
-      // neu bereit sieht.
+    // Beim Absenden vormerken, nicht erst bei der Antwort: die Liste wird
+    // alle 5 s neu geladen, und eine Antwort, die nach dem Commit gelesen
+    // wurde, aber vor der Mutations-Antwort eintrifft, meldete sonst „ist
+    // bereit“ auf genau dem Gerät, das den Knopf gedrückt hat.
+    onMutate: variables => {
       if (variables.status === 'ready') {
         seenReady.current?.add(variables.orderId);
       }
+    },
+    onSuccess: (_result, variables) => {
+      refreshOrders();
       // Die abgeschlossenen Bestellungen sind eine eigene Abfrage, also nur
       // nachladen, wenn die Liste offen ist und der Wechsel überhaupt eine
       // dorthin verschiebt.
@@ -304,24 +301,31 @@ export default function KasseService() {
   );
 
   const categories = useMemo(() => {
-    // Gruppiert wird über `categoryKey`, angezeigt über `categoryLabel` —
-    // dieselben Helfer, nach denen Küche und Bar filtern. Ein eigener
-    // Vergleich hier wäre gross-/kleinschreibungsempfindlich: „Drinks“ und
-    // „drinks“ ergäben im Service zwei Gruppen, an der Bar aber einen
-    // einzigen Filtereintrag, der beide erfasst.
-    const groups = new Map<string, { label: string; items: typeof products }>();
+    // Reihenfolge und Label kommen direkt von der Kategorie (Kontrolle sortiert
+    // dort per Drag & Drop), nicht mehr vom ersten Produkt, das im Service
+    // auftaucht — sonst könnte die Gruppenreihenfolge hier von der in der
+    // Verwaltung abweichen, sobald sich die Kategorie-Reihenfolge ändert, ohne
+    // dass ein Produkt neu sortiert wurde.
+    const productsByCategory = new Map<number, typeof products>();
     for (const product of products) {
-      const key = categoryKey(product.category);
-      const group = groups.get(key);
-      if (group) group.items.push(product);
-      else
-        groups.set(key, {
-          label: categoryLabel(product.category),
-          items: [product],
-        });
+      const list = productsByCategory.get(product.categoryId);
+      if (list) list.push(product);
+      else productsByCategory.set(product.categoryId, [product]);
     }
-    return Array.from(groups.entries());
-  }, [products]);
+    const menuCategories = menu.data?.categories ?? [];
+    return menuCategories
+      .map(
+        category =>
+          [
+            String(category.id),
+            {
+              label: category.name,
+              items: productsByCategory.get(category.id) ?? [],
+            },
+          ] as const,
+      )
+      .filter(([, group]) => group.items.length > 0);
+  }, [products, menu.data]);
 
   const tableAreas = useMemo(() => {
     const groups = new Map<string, typeof tables>();

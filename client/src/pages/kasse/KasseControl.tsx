@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { usePermission } from '@/hooks/usePermissions';
@@ -42,6 +42,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type UniqueIdentifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -115,6 +116,30 @@ function parseOptionDelta(input: string | undefined): number | null {
   return negative ? -rappen : rappen;
 }
 
+/**
+ * Ansagen für Bildschirmleser. dnd-kit liefert sonst englische Sätze mitten
+ * in einer durchgehend deutschen Oberfläche. Die Position kommt aus
+ * `aria-label` des Anfassers, deshalb wird hier nur der Vorgang beschrieben.
+ */
+const DND_ACCESSIBILITY = {
+  screenReaderInstructions: {
+    draggable:
+      'Mit Leertaste oder Enter aufnehmen, mit den Pfeiltasten verschieben, ' +
+      'mit Leertaste oder Enter ablegen, mit Escape abbrechen.',
+  },
+  announcements: {
+    onDragStart: () => 'Verschieben gestartet.',
+    onDragOver: () => undefined,
+    onDragEnd: ({
+      over,
+    }: {
+      over: { id: UniqueIdentifier } | null;
+    }): string | undefined =>
+      over ? 'An der neuen Position abgelegt.' : 'Ohne Ziel losgelassen.',
+    onDragCancel: () => 'Verschieben abgebrochen.',
+  },
+};
+
 export default function KasseControl() {
   const canManage = usePermission('manage_kasse');
   const utils = trpc.useUtils();
@@ -156,7 +181,11 @@ export default function KasseControl() {
    * Produkte nach Kategorie gruppiert, sortiert nach der Reihenfolge der
    * Kategorien selbst (siehe Kategorien-Karte), nicht mehr nach der
    * Reihenfolge, in der ein Produkt zuerst auftaucht — die Kategorie ist seit
-   * dem Stations-Split eine eigene Entität mit eigener `displayOrder`.
+   * dem Stations-Split eine eigene Entität mit eigener `displayOrder`. Das
+   * ersetzt den früheren Rang nach dem ersten *aktiven* Produkt: Küche/Bar und
+   * Service übernehmen dieselbe `displayOrder` jetzt direkt aus der Kategorie,
+   * keine Ableitung mehr über potenziell unterschiedlich gefilterte
+   * Produktlisten.
    */
   const groups = useMemo(() => {
     const map = new Map<number, { items: typeof products }>();
@@ -203,7 +232,7 @@ export default function KasseControl() {
     onError,
   });
   const reorderCategories = trpc.kasse.reorderCategories.useMutation({
-    onSuccess: invalidateCategories,
+    // Das Nachladen hängt am Aufruf, nicht an der Mutation — siehe applyCategoryOrder.
     onError: e => {
       toast.error(e.message);
       invalidateCategories();
@@ -279,7 +308,7 @@ export default function KasseControl() {
     onError,
   });
   const reorderProducts = trpc.kasse.reorderProducts.useMutation({
-    onSuccess: invalidateProducts,
+    // Das Nachladen hängt am Aufruf, nicht an der Mutation — siehe applyOrder.
     onError: e => {
       // Die Liste steht lokal schon in der neuen Reihenfolge (applyOrder).
       // Ohne das Nachladen bliebe sie so stehen und zeigte eine Sortierung,
@@ -373,6 +402,10 @@ export default function KasseControl() {
     to: '10',
   });
   const [tableName, setTableName] = useState('');
+  // Laufende Nummer der Sortier-Mutationen, siehe applyOrder.
+  const reorderSeq = useRef(0);
+  // Dasselbe für die Kategorien-Reihenfolge, siehe applyCategoryOrder.
+  const categoryReorderSeq = useRef(0);
 
   if (!canManage) {
     return (
@@ -460,12 +493,6 @@ export default function KasseControl() {
   };
 
   /**
-   * Ein Produkt eine Position nach oben oder unten. Geschickt wird die ganze
-   * neue Reihenfolge, nicht „tausche 3 und 4“: die Verwaltung sieht die Liste
-   * ohnehin komplett, und der Server muss keine relative Bewegung gegen einen
-   * womöglich veralteten Stand auflösen.
-   */
-  /**
    * Reihenfolge speichern und die Liste sofort lokal umsortieren. Ohne das
    * optimistische Update schnappt die gezogene Zeile zurück, bis die Antwort
    * da ist — und ein zweiter Zug in diesem Fenster ginge von der alten
@@ -482,7 +509,20 @@ export default function KasseControl() {
           )
         : prev,
     );
-    reorderProducts.mutate({ ids });
+
+    // Zwei Züge kurz hintereinander schicken zwei Mutationen los. Lädt die
+    // Antwort der ersten die Liste nach, überschreibt sie kurz den
+    // optimistischen Stand des zweiten und die Zeile springt sichtbar zurück.
+    // Darum lädt nur der jüngste Zug nach.
+    const seq = ++reorderSeq.current;
+    reorderProducts.mutate(
+      { ids },
+      {
+        onSuccess: () => {
+          if (seq === reorderSeq.current) invalidateProducts();
+        },
+      },
+    );
   };
 
   /** Die Gruppen wieder zu einer flachen Reihenfolge von Produkt-IDs. */
@@ -590,7 +630,19 @@ export default function KasseControl() {
           )
         : prev,
     );
-    reorderCategories.mutate({ ids });
+
+    // Zwei Züge kurz hintereinander schicken zwei Mutationen los — gleiches
+    // Muster wie applyOrder: nur der jüngste Zug lädt nach, sonst überschreibt
+    // die Antwort des ersten kurz den optimistischen Stand des zweiten.
+    const seq = ++categoryReorderSeq.current;
+    reorderCategories.mutate(
+      { ids },
+      {
+        onSuccess: () => {
+          if (seq === categoryReorderSeq.current) invalidateCategories();
+        },
+      },
+    );
   };
 
   const handleCategoryDragEnd = (event: DragEndEvent) => {
@@ -841,6 +893,7 @@ export default function KasseControl() {
           ) : (
             <DndContext
               sensors={sensors}
+              accessibility={DND_ACCESSIBILITY}
               collisionDetection={closestCenter}
               onDragEnd={handleCategoryDragEnd}
             >
@@ -1053,6 +1106,7 @@ export default function KasseControl() {
           ) : (
             <DndContext
               sensors={sensors}
+              accessibility={DND_ACCESSIBILITY}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
