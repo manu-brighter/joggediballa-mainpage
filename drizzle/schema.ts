@@ -637,6 +637,36 @@ export type KasseSession = typeof kasseSessions.$inferSelect;
 export type InsertKasseSession = typeof kasseSessions.$inferInsert;
 
 /**
+ * Kategorie eines Produkts. `station` entscheidet, wohin eine Bestellung mit
+ * Positionen dieser Kategorie beim Senden geht (siehe `kasseOrders.station`) —
+ * eine Kategorie gehört immer zu genau einer Station, keine Ober-/Unterkategorie
+ * nötig: bei zwei Stationen (Küche, Bar) bringt eine zweite Ebene keinen
+ * funktionalen Vorteil.
+ */
+export const kasseCategories = mysqlTable(
+  'kasse_categories',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    name: varchar('name', { length: 50 }).notNull(),
+    station: mysqlEnum('station', ['kueche', 'bar']).notNull(),
+    displayOrder: int('displayOrder').default(0).notNull(),
+    isActive: boolean('isActive').default(true).notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().onUpdateNow().notNull(),
+    createdBy: int('createdBy').references(() => users.id),
+  },
+  table => ({
+    activeSortIdx: index('idx_kasse_categories_active_sort').on(
+      table.isActive,
+      table.displayOrder,
+    ),
+  }),
+);
+
+export type KasseCategory = typeof kasseCategories.$inferSelect;
+export type InsertKasseCategory = typeof kasseCategories.$inferInsert;
+
+/**
  * Produkt. Preis in Rappen (Integer), nie Float für Geld.
  * Beim Löschen wird `kasseOrderItems.productId` auf NULL gesetzt; die History
  * lebt von den Snapshot-Spalten der Bestellposition, nicht von dieser Zeile.
@@ -646,7 +676,22 @@ export const kasseProducts = mysqlTable(
   {
     id: int('id').autoincrement().primaryKey(),
     name: varchar('name', { length: 100 }).notNull(),
-    category: varchar('category', { length: 50 }), // z. B. "Essen", "Getränke"
+    // Ersetzt das frühere Freitext-`category`-Feld: die Kategorie bestimmt über
+    // ihre `station` mit, wohin eine Bestellung mit diesem Produkt geht, darum
+    // FK statt Freitext.
+    //
+    // ALTER TABLE kasse_products ADD COLUMN categoryId INT NULL AFTER name;
+    // -- je bisherigem distinktem `category`-String eine Zeile in
+    // -- kasse_categories anlegen (Produkte ohne Kategorie -> "Weiteres"),
+    // -- dann categoryId anhand des Namens zuordnen:
+    // UPDATE kasse_products p JOIN kasse_categories c
+    //   ON c.name = COALESCE(NULLIF(TRIM(p.category), ''), 'Weiteres')
+    //   SET p.categoryId = c.id;
+    // ALTER TABLE kasse_products MODIFY COLUMN categoryId INT NOT NULL;
+    // ALTER TABLE kasse_products DROP COLUMN category;
+    categoryId: int('categoryId')
+      .notNull()
+      .references(() => kasseCategories.id),
     priceRappen: int('priceRappen').notNull(),
     displayOrder: int('displayOrder').default(0).notNull(),
     isActive: boolean('isActive').default(true).notNull(),
@@ -729,6 +774,28 @@ export const kasseOrders = mysqlTable(
       .references(() => kasseSessions.id, { onDelete: 'cascade' }),
     tableId: int('tableId').references(() => kasseTables.id),
     tableName: varchar('tableName', { length: 20 }).notNull(),
+    // Eine Bestellung mit Positionen mehrerer Stationen wird beim Senden in
+    // eine Order pro Station aufgeteilt (siehe createOrder im Router) — jede
+    // Order gehört danach zu genau einer Station und hat ihren eigenen,
+    // unabhängigen Status. Das ersetzt den früheren Geräte-seitigen
+    // Kategorienfilter, der eine ganze Bestellung fälschlich als „bereit“
+    // markieren liess, sobald nur die eigenen Positionen fertig waren.
+    //
+    // ALTER TABLE kasse_orders ADD COLUMN station ENUM('kueche','bar') NULL AFTER tableName;
+    // -- Altbestand vor dem Rollout dieser Migration ist nie serverseitig
+    // -- gesplittet worden. Bei einer Order mit Positionen mehrerer Stationen
+    // -- (vor der Notlösung, Essen/Getränke getrennt aufzunehmen) landet hier
+    // -- irgendeine der beteiligten Stationen, MySQL garantiert bei mehreren
+    // -- Treffern im JOIN keine bestimmte Reihenfolge. Für die reine
+    // -- Nachschlage-Historie genügt das; für laufende (nicht abgeschlossene)
+    // -- Sessions vor dem Rollout lieber `clearSession` statt dieser Migration.
+    // UPDATE kasse_orders o
+    //   JOIN kasse_order_items i ON i.orderId = o.id
+    //   JOIN kasse_categories c ON c.name = i.productCategory
+    //   SET o.station = c.station
+    //   WHERE o.station IS NULL;
+    // ALTER TABLE kasse_orders MODIFY COLUMN station ENUM('kueche','bar') NOT NULL;
+    station: mysqlEnum('station', ['kueche', 'bar']).notNull(),
     status: mysqlEnum('status', ['pending', 'ready', 'delivered', 'cancelled'])
       .default('pending')
       .notNull(),
@@ -745,6 +812,11 @@ export const kasseOrders = mysqlTable(
       table.sessionId,
       table.status,
       table.createdAt,
+    ),
+    stationStatusIdx: index('idx_kasse_orders_station_status').on(
+      table.sessionId,
+      table.station,
+      table.status,
     ),
   }),
 );

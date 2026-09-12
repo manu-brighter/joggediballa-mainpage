@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import type { NewOrderItem } from './kasse_db';
+import type { KasseStationId, NewOrderItem } from './kasse_db';
 
 /**
  * Preisberechnung einer Bestellung, bewusst als reine Funktion ausgelagert,
@@ -14,7 +14,8 @@ import type { NewOrderItem } from './kasse_db';
 export type PricingProduct = {
   id: number;
   name: string;
-  category?: string | null;
+  categoryName: string;
+  station: KasseStationId;
   priceRappen: number;
   isActive: boolean;
 };
@@ -82,9 +83,14 @@ export function buildOrderItems(
     items.push({
       productId: product.id,
       productName: product.name,
-      // Kategorie als Snapshot mitschreiben, sonst kann die Bestellung später
-      // nicht mehr sauber der Station (Küche/Bar) zugeordnet werden.
-      productCategory: product.category ?? null,
+      // Kategorie-Name als Snapshot mitschreiben, wie productName/optionName:
+      // benennt oder verschiebt jemand die Kategorie später, darf sich die
+      // Anzeige einer bereits abgeschickten Bestellung nicht rückwirkend
+      // ändern. `station` ist dagegen kein Snapshot auf der Position, sondern
+      // nur transient hier — sie entscheidet, in welche Order (siehe
+      // groupItemsByStation) diese Position beim Anlegen wandert.
+      productCategory: product.categoryName,
+      station: product.station,
       quantity: line.quantity,
       unitPriceRappen,
       lineTotalRappen: unitPriceRappen * line.quantity,
@@ -97,4 +103,32 @@ export function buildOrderItems(
 
 export function orderTotalRappen(items: NewOrderItem[]): number {
   return items.reduce((sum, item) => sum + item.lineTotalRappen, 0);
+}
+
+/**
+ * Teilt die Positionen einer Bestellung nach Station auf. Eine gemischte
+ * Bestellung (Food + Drinks) wird so beim Senden zu einer Order pro
+ * betroffener Station statt einer einzigen Order mit einem gemeinsamen
+ * Status — die Bar konnte sonst die ganze Bestellung auf „bereit“ setzen,
+ * während das Essen in der Küche noch offen war.
+ *
+ * Reihenfolge deterministisch (Küche vor Bar), damit Tests und Anzeige nicht
+ * von der Item-Reihenfolge im Warenkorb abhängen.
+ */
+export function groupItemsByStation(
+  items: NewOrderItem[],
+): Array<{ station: KasseStationId; items: NewOrderItem[] }> {
+  const groups = new Map<KasseStationId, NewOrderItem[]>();
+  for (const item of items) {
+    const list = groups.get(item.station);
+    if (list) list.push(item);
+    else groups.set(item.station, [item]);
+  }
+  const order: KasseStationId[] = ['kueche', 'bar'];
+  const result: Array<{ station: KasseStationId; items: NewOrderItem[] }> = [];
+  for (const station of order) {
+    const stationItems = groups.get(station);
+    if (stationItems) result.push({ station, items: stationItems });
+  }
+  return result;
 }

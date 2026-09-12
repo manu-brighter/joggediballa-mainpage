@@ -9,13 +9,16 @@ import {
   clearKasseSessionOrders,
   closeKasseSessionSettling,
   countOpenKasseOrders,
-  createKasseOrder,
+  countProductsInKasseCategory,
+  createKasseCategory,
+  createKasseOrders,
   createKasseProduct,
   createKasseProductOption,
   createKasseSession,
   createKasseTable,
   createKasseTablesBulk,
   deleteAllKasseTables,
+  deleteKasseCategory,
   deleteKasseProduct,
   deleteKasseProductOption,
   deleteKasseSession,
@@ -25,20 +28,29 @@ import {
   getKasseSessionStats,
   getKasseSettings,
   getOpenKasseSession,
+  listKasseCategories,
   listKasseOrders,
   listKasseProductOptions,
   listKasseProducts,
   listKasseSessions,
   listKasseTables,
   reopenKasseSession,
+  reorderKasseCategories,
   reorderKasseProducts,
   setKasseOrderStatus,
+  updateKasseCategory,
   updateKasseProduct,
   updateKasseProductOption,
   updateKasseSettings,
   updateKasseTable,
+  type KasseStationId,
 } from './kasse_db';
-import { buildOrderItems, orderTotalRappen } from './kasse_pricing';
+import {
+  buildOrderItems,
+  groupItemsByStation,
+  orderTotalRappen,
+  type PricingProduct,
+} from './kasse_pricing';
 import { assertTransition } from './kasse_status';
 import {
   consume,
@@ -149,6 +161,7 @@ const orderItemInput = z.object({
 });
 
 const statusEnum = z.enum(['pending', 'ready', 'delivered', 'cancelled']);
+const stationEnum = z.enum(['kueche', 'bar']);
 
 export const kasseRouter = router({
   // ============================================
@@ -181,27 +194,42 @@ export const kasseRouter = router({
     .query(async ({ input }) => {
       await requireToken(input.token);
 
-      const [products, tables] = await Promise.all([
+      const [products, tables, categories] = await Promise.all([
         listKasseProducts(),
         listKasseTables(),
+        listKasseCategories(),
       ]);
       const active = products.filter(p => p.isActive);
       const options = await listKasseProductOptions(active.map(p => p.id));
+      const categoryById = new Map(categories.map(c => [c.id, c]));
 
       return {
-        products: active.map(p => ({
-          id: p.id,
-          name: p.name,
-          category: p.category,
-          priceRappen: p.priceRappen,
-          options: options
-            .filter(o => o.productId === p.id && o.isActive)
-            .map(o => ({
-              id: o.id,
-              name: o.name,
-              priceDeltaRappen: o.priceDeltaRappen,
-            })),
-        })),
+        products: active.map(p => {
+          const category = categoryById.get(p.categoryId);
+          return {
+            id: p.id,
+            name: p.name,
+            categoryId: p.categoryId,
+            // Für Anzeige/Filter im Client, gleiches Muster wie categoryLabel
+            // vorher: „gelöschte" Kategorie kann bei aktivem Produkt nicht
+            // vorkommen (FK), category ist also immer vorhanden.
+            category: category?.name ?? 'Weiteres',
+            station: category?.station ?? 'kueche',
+            priceRappen: p.priceRappen,
+            options: options
+              .filter(o => o.productId === p.id && o.isActive)
+              .map(o => ({
+                id: o.id,
+                name: o.name,
+                priceDeltaRappen: o.priceDeltaRappen,
+              })),
+          };
+        }),
+        // Nur aktive Kategorien: Küche/Bar bauen daraus ihren Sub-Filter
+        // (nur Kategorien der eigenen Station), Service seine Gruppierung.
+        categories: categories
+          .filter(c => c.isActive)
+          .map(c => ({ id: c.id, name: c.name, station: c.station })),
         tables: tables
           .filter(t => t.isActive)
           .map(t => ({ id: t.id, name: t.name, area: t.area })),
@@ -210,12 +238,20 @@ export const kasseRouter = router({
 
   /** Offene Bestellungen der laufenden Session, älteste zuerst. */
   listOpenOrders: publicProcedure
-    .input(z.object({ token: z.string() }))
+    .input(
+      z.object({
+        token: z.string(),
+        /** Küche/Bar: nur die eigene Station. Service lässt das weg (sieht beide). */
+        station: stationEnum.optional(),
+      }),
+    )
     .query(async ({ input }) => {
       await requireToken(input.token);
       const session = await getOpenKasseSession();
       if (!session) return [];
-      return listKasseOrders(session.id, ['pending', 'ready']);
+      return listKasseOrders(session.id, ['pending', 'ready'], {
+        station: input.station,
+      });
     }),
 
   /**
@@ -230,7 +266,9 @@ export const kasseRouter = router({
         limit: z.number().int().min(1).max(100).default(50),
         /** Service: nur die eigenen Bestellungen („Meine“). */
         waiterName: z.string().trim().max(60).optional(),
-        /** Küche/Bar: nur Bestellungen mit Positionen dieser Kategorien. */
+        /** Küche/Bar: nur die eigene Station. */
+        station: stationEnum.optional(),
+        /** Geräte-Sub-Filter innerhalb der Station (z. B. „nur Shots“). */
         categoryKeys: z.array(z.string().trim().max(50)).max(50).optional(),
       }),
     )
@@ -245,6 +283,7 @@ export const kasseRouter = router({
         limit: input.limit,
         newestFirst: true,
         waiterName: input.waiterName,
+        station: input.station,
         categoryKeys: input.categoryKeys,
       });
     }),
@@ -252,6 +291,11 @@ export const kasseRouter = router({
   /**
    * Bestellung aufnehmen. Preise kommen ausschliesslich aus der DB, der Client
    * schickt nur Produkt-, Options- und Mengenangaben.
+   *
+   * Enthält die Bestellung Positionen mehrerer Stationen (Food + Drinks),
+   * wird sie hier automatisch aufgeteilt: eine Order pro betroffener Station,
+   * jede mit eigenem Status. Das war die Notlösung am letzten Event von Hand
+   * (Essen und Getränke separat aufnehmen) — jetzt übernimmt das der Server.
    */
   createOrder: rateLimited('createOrder', CREATE_ORDER_LIMIT)
     .input(
@@ -282,26 +326,47 @@ export const kasseRouter = router({
         });
       }
 
-      const products = await listKasseProducts();
+      const [products, categories] = await Promise.all([
+        listKasseProducts(),
+        listKasseCategories(),
+      ]);
+      const categoryById = new Map(categories.map(c => [c.id, c]));
+      const pricingProducts: PricingProduct[] = products.map(p => {
+        const category = categoryById.get(p.categoryId);
+        return {
+          id: p.id,
+          name: p.name,
+          categoryName: category?.name ?? 'Weiteres',
+          station: (category?.station ?? 'kueche') as KasseStationId,
+          priceRappen: p.priceRappen,
+          isActive: p.isActive,
+        };
+      });
+
       const productIds = Array.from(new Set(input.items.map(i => i.productId)));
       const options = await listKasseProductOptions(productIds);
 
-      const items = buildOrderItems(products, options, input.items);
-      const totalRappen = orderTotalRappen(items);
+      const items = buildOrderItems(pricingProducts, options, input.items);
+      const groups = groupItemsByStation(items).map(group => ({
+        ...group,
+        totalRappen: orderTotalRappen(group.items),
+      }));
 
-      const orderId = await createKasseOrder(
+      const created = await createKasseOrders(
         {
           sessionId: session.id,
           tableId: table.id,
           tableName: table.name,
-          totalRappen,
           note: input.note || null,
           waiterName: input.waiterName || null,
         },
-        items,
+        groups,
       );
 
-      return { orderId, totalRappen };
+      return {
+        orders: created,
+        totalRappen: created.reduce((sum, o) => sum + o.totalRappen, 0),
+      };
     }),
 
   /**
@@ -582,6 +647,82 @@ export const kasseRouter = router({
       return { success: true };
     }),
 
+  // ---- Kategorien ----
+
+  listCategories: manageKasse.query(async () => listKasseCategories()),
+
+  createCategory: manageKasse
+    .input(
+      z.object({
+        name: z.string().trim().min(1).max(50),
+        station: stationEnum,
+        displayOrder: z.number().int().min(0).max(9999).optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const id = await createKasseCategory({
+        name: input.name,
+        station: input.station,
+        displayOrder: input.displayOrder ?? 0,
+        createdBy: ctx.user.id,
+      });
+      return { id };
+    }),
+
+  updateCategory: manageKasse
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        name: z.string().trim().min(1).max(50).optional(),
+        station: stationEnum.optional(),
+        displayOrder: z.number().int().min(0).max(9999).optional(),
+        isActive: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { id, ...patch } = input;
+      await updateKasseCategory(id, patch);
+      return { success: true };
+    }),
+
+  /** Gleiches Muster wie reorderProducts: volle Liste, displayOrder = Index. */
+  reorderCategories: manageKasse
+    .input(
+      z.object({
+        ids: z.array(z.number().int().positive()).min(1).max(200),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const unique = Array.from(new Set(input.ids));
+      if (unique.length !== input.ids.length) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Doppelte Kategorie-IDs in der Reihenfolge.',
+        });
+      }
+      await reorderKasseCategories(unique);
+      return { success: true };
+    }),
+
+  /**
+   * `kasse_products.categoryId` ist `NOT NULL` — eine Kategorie mit Produkten
+   * lässt sich nicht löschen, sonst bräuchten diese Produkte eine neue
+   * Kategorie, ohne dass die Verwaltung das je gesehen hätte.
+   */
+  deleteCategory: manageKasse
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const inUse = await countProductsInKasseCategory(input.id);
+      if (inUse > 0) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: `${inUse} Produkt(e) hängen noch an dieser Kategorie. Zuerst umkategorisieren oder löschen.`,
+        });
+      }
+      await deleteKasseCategory(input.id);
+      return { success: true };
+    }),
+
   // ---- Produkte + Zusätze ----
 
   listProducts: manageKasse.query(async () => {
@@ -597,7 +738,7 @@ export const kasseRouter = router({
     .input(
       z.object({
         name: z.string().trim().min(1).max(100),
-        category: z.string().trim().max(50).nullable().optional(),
+        categoryId: z.number().int().positive(),
         priceRappen: z.number().int().min(0).max(1000000),
         displayOrder: z.number().int().min(0).max(9999).optional(),
       }),
@@ -605,7 +746,7 @@ export const kasseRouter = router({
     .mutation(async ({ input, ctx }) => {
       const id = await createKasseProduct({
         name: input.name,
-        category: input.category || null,
+        categoryId: input.categoryId,
         priceRappen: input.priceRappen,
         displayOrder: input.displayOrder ?? 0,
         createdBy: ctx.user.id,
@@ -618,7 +759,7 @@ export const kasseRouter = router({
       z.object({
         id: z.number().int().positive(),
         name: z.string().trim().min(1).max(100).optional(),
-        category: z.string().trim().max(50).nullable().optional(),
+        categoryId: z.number().int().positive().optional(),
         priceRappen: z.number().int().min(0).max(1000000).optional(),
         displayOrder: z.number().int().min(0).max(9999).optional(),
         isActive: z.boolean().optional(),
