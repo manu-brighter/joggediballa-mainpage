@@ -12,6 +12,7 @@ import {
 import { nanoid } from 'nanoid';
 import { getDb } from './db';
 import {
+  kasseCategories,
   kasseOrderItemOptions,
   kasseOrderItems,
   kasseOrders,
@@ -20,6 +21,7 @@ import {
   kasseSessions,
   kasseSettings,
   kasseTables,
+  type InsertKasseCategory,
   type InsertKasseOrder,
   type InsertKasseOrderItem,
   type InsertKasseOrderItemOption,
@@ -251,6 +253,105 @@ export async function deleteKasseSession(sessionId: number): Promise<void> {
   if (!db) throw new Error('Database not available');
   // Orders + Items hängen per ON DELETE CASCADE dran.
   await db.delete(kasseSessions).where(eq(kasseSessions.id, sessionId));
+}
+
+// ============================================
+// KATEGORIEN
+// ============================================
+
+/** Alle Kategorien inklusive inaktiver, für die Verwaltung. */
+export async function listKasseCategories() {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  return db
+    .select()
+    .from(kasseCategories)
+    .orderBy(asc(kasseCategories.displayOrder), asc(kasseCategories.id));
+}
+
+export async function createKasseCategory(
+  data: InsertKasseCategory,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const result = await db.insert(kasseCategories).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateKasseCategory(
+  categoryId: number,
+  patch: Partial<InsertKasseCategory>,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db
+    .update(kasseCategories)
+    .set(patch)
+    .where(eq(kasseCategories.id, categoryId));
+}
+
+/** Reihenfolge der Kategorien neu setzen, gleiches Muster wie reorderKasseProducts. */
+export async function reorderKasseCategories(ids: number[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  if (ids.length === 0) return;
+
+  const cases = sql.join(
+    ids.map((id, index) => sql`WHEN ${id} THEN ${index}`),
+    sql` `,
+  );
+  await db
+    .update(kasseCategories)
+    .set({ displayOrder: sql`CASE ${kasseCategories.id} ${cases} END` })
+    .where(inArray(kasseCategories.id, ids));
+}
+
+/**
+ * Kategorien werden nicht hart gelöscht, solange Produkte daranhängen — die
+ * FK ist `NOT NULL`, ein Produkt ohne Kategorie darf es nicht geben. Der
+ * Router prüft das vorab und meldet eine verständliche Fehlermeldung statt
+ * eines rohen FK-Fehlers.
+ */
+export async function countProductsInKasseCategory(
+  categoryId: number,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const rows = await db
+    .select({ id: kasseProducts.id })
+    .from(kasseProducts)
+    .where(eq(kasseProducts.categoryId, categoryId));
+  return rows.length;
+}
+
+/**
+ * Wie oben, aber nur aktive Produkte. Eine Kategorie zu deaktivieren blendet
+ * sie aus `menu` und damit aus der Service-Produktliste aus (siehe
+ * `menu`-Prozedur) — ein noch aktives Produkt darunter verschwindet dann
+ * kommentarlos aus dem Bestellbildschirm, ohne Fehlermeldung. Inaktive
+ * Produkte stören dabei nicht, die zeigt der Service ohnehin nicht an.
+ */
+export async function countActiveProductsInKasseCategory(
+  categoryId: number,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const rows = await db
+    .select({ id: kasseProducts.id })
+    .from(kasseProducts)
+    .where(
+      and(
+        eq(kasseProducts.categoryId, categoryId),
+        eq(kasseProducts.isActive, true),
+      ),
+    );
+  return rows.length;
+}
+
+export async function deleteKasseCategory(categoryId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.delete(kasseCategories).where(eq(kasseCategories.id, categoryId));
 }
 
 // ============================================
@@ -534,12 +635,7 @@ export async function deleteAllKasseTables(): Promise<number> {
 // BESTELLUNGEN
 // ============================================
 
-/**
- * Vergleichsschlüssel für Positionen ohne Kategorie. Muss zu
- * `CATEGORY_FALLBACK` / `categoryKey()` in `client/src/lib/kasse.ts` passen —
- * Küche und Bar filtern im Client nach demselben Wert.
- */
-const CATEGORY_FALLBACK_KEY = 'weiteres';
+export type KasseStationId = 'kueche' | 'bar';
 
 export type NewOrderItemOption = {
   optionId: number;
@@ -550,19 +646,44 @@ export type NewOrderItemOption = {
 export type NewOrderItem = {
   productId: number;
   productName: string;
-  productCategory: string | null;
+  productCategory: string;
+  /** Nur für die Gruppierung beim Anlegen (siehe groupItemsByStation), keine eigene Spalte. */
+  station: KasseStationId;
   quantity: number;
   unitPriceRappen: number;
   lineTotalRappen: number;
   options: NewOrderItemOption[];
 };
 
-export async function createKasseOrder(
-  order: InsertKasseOrder,
-  items: NewOrderItem[],
-): Promise<number> {
+/** Bestellkopf ohne die Felder, die pro Station variieren. */
+export type NewOrderHeader = Omit<InsertKasseOrder, 'station' | 'totalRappen'>;
+
+export type NewOrderGroup = {
+  station: KasseStationId;
+  items: NewOrderItem[];
+  totalRappen: number;
+};
+
+/**
+ * Legt eine Order pro übergebener Stations-Gruppe an — bei einer gemischten
+ * Bestellung (Food + Drinks) also zwei, sonst wie bisher eine. Alle Gruppen
+ * teilen sich Tisch/Name/Notiz und entstehen in derselben Transaktion: entweder
+ * gehen beide Tickets raus, oder keines, nie nur die halbe Bestellung.
+ *
+ * Die entstandenen Orders sind danach vollständig unabhängig voneinander
+ * (eigener Status, eigenes Storno) — kein Splitting auf DB-Ebene über eine
+ * gemeinsame Gruppen-ID, Tisch + fast identischer Zeitstempel reichen zur
+ * visuellen Zuordnung im Service.
+ */
+export async function createKasseOrders(
+  header: NewOrderHeader,
+  groups: NewOrderGroup[],
+): Promise<
+  Array<{ orderId: number; station: KasseStationId; totalRappen: number }>
+> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
+  if (groups.length === 0) throw new Error('Keine Positionen zum Anlegen');
 
   // B-P0-05: Kopf und Positionen in einer Transaktion, sonst kann eine
   // Bestellung mit Betrag, aber ohne Positionen zurückbleiben: die Küche sieht
@@ -575,7 +696,7 @@ export async function createKasseOrder(
     const target = await tx
       .select({ status: kasseSessions.status })
       .from(kasseSessions)
-      .where(eq(kasseSessions.id, order.sessionId))
+      .where(eq(kasseSessions.id, header.sessionId))
       .for('update');
 
     if (target[0]?.status !== 'open') {
@@ -586,39 +707,57 @@ export async function createKasseOrder(
       });
     }
 
-    const result = await tx.insert(kasseOrders).values(order);
-    const orderId = Number(result[0].insertId);
+    const created: Array<{
+      orderId: number;
+      station: KasseStationId;
+      totalRappen: number;
+    }> = [];
 
-    // Positionen einzeln, weil wir die insertId jeder Position brauchen, um
-    // die gewählten Zusätze daranzuhängen. Eine Bestellung hat eine Handvoll
-    // Positionen, das kostet nichts und bleibt in derselben Transaktion.
-    for (const item of items) {
-      const row: InsertKasseOrderItem = {
-        orderId,
-        productId: item.productId,
-        productName: item.productName,
-        productCategory: item.productCategory,
-        quantity: item.quantity,
-        unitPriceRappen: item.unitPriceRappen,
-        lineTotalRappen: item.lineTotalRappen,
-      };
-      const inserted = await tx.insert(kasseOrderItems).values(row);
-      const orderItemId = Number(inserted[0].insertId);
+    for (const group of groups) {
+      const result = await tx.insert(kasseOrders).values({
+        ...header,
+        station: group.station,
+        totalRappen: group.totalRappen,
+      });
+      const orderId = Number(result[0].insertId);
 
-      if (item.options.length > 0) {
-        const optionRows: InsertKasseOrderItemOption[] = item.options.map(
-          option => ({
-            orderItemId,
-            optionId: option.optionId,
-            optionName: option.optionName,
-            priceDeltaRappen: option.priceDeltaRappen,
-          }),
-        );
-        await tx.insert(kasseOrderItemOptions).values(optionRows);
+      // Positionen einzeln, weil wir die insertId jeder Position brauchen, um
+      // die gewählten Zusätze daranzuhängen. Eine Bestellung hat eine Handvoll
+      // Positionen, das kostet nichts und bleibt in derselben Transaktion.
+      for (const item of group.items) {
+        const row: InsertKasseOrderItem = {
+          orderId,
+          productId: item.productId,
+          productName: item.productName,
+          productCategory: item.productCategory,
+          quantity: item.quantity,
+          unitPriceRappen: item.unitPriceRappen,
+          lineTotalRappen: item.lineTotalRappen,
+        };
+        const inserted = await tx.insert(kasseOrderItems).values(row);
+        const orderItemId = Number(inserted[0].insertId);
+
+        if (item.options.length > 0) {
+          const optionRows: InsertKasseOrderItemOption[] = item.options.map(
+            option => ({
+              orderItemId,
+              optionId: option.optionId,
+              optionName: option.optionName,
+              priceDeltaRappen: option.priceDeltaRappen,
+            }),
+          );
+          await tx.insert(kasseOrderItemOptions).values(optionRows);
+        }
       }
+
+      created.push({
+        orderId,
+        station: group.station,
+        totalRappen: group.totalRappen,
+      });
     }
 
-    return orderId;
+    return created;
   });
 }
 
@@ -645,7 +784,9 @@ export async function listKasseOrders(
     newestFirst?: boolean;
     /** Nur Bestellungen dieser Servicekraft (Vergleich wie im Client: getrimmt, klein). */
     waiterName?: string;
-    /** Nur Bestellungen mit mindestens einer Position in diesen Kategorien. */
+    /** Küche/Bar: nur Bestellungen dieser Station. Service lässt das weg (sieht beide). */
+    station?: KasseStationId;
+    /** Geräte-Sub-Filter innerhalb der eigenen Station (z. B. „nur Shots“). */
     categoryKeys?: string[];
   },
 ) {
@@ -667,11 +808,14 @@ export async function listKasseOrders(
       sql`LOWER(TRIM(COALESCE(${kasseOrders.waiterName}, ''))) = ${opts.waiterName.trim().toLowerCase()}`,
     );
   }
+  if (opts?.station != null) {
+    filters.push(eq(kasseOrders.station, opts.station));
+  }
   if (opts?.categoryKeys && opts.categoryKeys.length > 0) {
-    // Spiegelt `categoryKey()` im Client: getrimmt, kleingeschrieben, leer
-    // oder NULL zählt als „weiteres“.
+    // Jede Position hat seit dem Stations-Split immer eine echte Kategorie
+    // (nie mehr NULL/leer), darum reicht der einfache Vergleich ohne Fallback.
     filters.push(
-      sql`EXISTS (SELECT 1 FROM ${kasseOrderItems} WHERE ${kasseOrderItems.orderId} = ${kasseOrders.id} AND (CASE WHEN TRIM(COALESCE(${kasseOrderItems.productCategory}, '')) = '' THEN ${CATEGORY_FALLBACK_KEY} ELSE LOWER(TRIM(${kasseOrderItems.productCategory})) END) IN ${opts.categoryKeys})`,
+      sql`EXISTS (SELECT 1 FROM ${kasseOrderItems} WHERE ${kasseOrderItems.orderId} = ${kasseOrders.id} AND LOWER(TRIM(${kasseOrderItems.productCategory})) IN ${opts.categoryKeys})`,
     );
   }
   const where = filters.length === 1 ? filters[0] : and(...filters);

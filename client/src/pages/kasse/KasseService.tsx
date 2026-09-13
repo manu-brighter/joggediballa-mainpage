@@ -23,13 +23,14 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { categoryKey, categoryLabel, formatChf, formatWait } from '@/lib/kasse';
+import { formatChf, formatWait, sortItemsForDisplay } from '@/lib/kasse';
 import {
   Check,
   ClipboardList,
   ConciergeBell,
   History,
   Loader2,
+  Martini,
   Minus,
   Plus,
   ShoppingCart,
@@ -48,7 +49,17 @@ const WAITER_NAME_KEY = 'kasse.waiterName';
  */
 const ORDER_SCOPE_KEY = 'kasse.orderScope';
 
+/**
+ * Zweite, unabhängige Filterachse in der Offen-Ansicht: Bestellaufnahme nimmt
+ * immer gemischt auf (voller Warenkorb), aber Getränke- und Essensbringer sind
+ * reine Lauf-Rollen, die nur Tickets der eigenen Station abholen — sonst
+ * müssten sie sich durch fremde Kategorien scrollen. Geräte-Einstellung, wie
+ * ORDER_SCOPE_KEY.
+ */
+const STATION_FILTER_KEY = 'kasse.stationFilter';
+
 type OrderScope = 'mine' | 'all';
+type StationFilter = 'all' | 'kueche' | 'bar';
 
 /** Wie viele Zusätze als Pill unter dem Produkt stehen, bevor „+n“ übernimmt. */
 const OPTION_PILL_LIMIT = 3;
@@ -105,6 +116,11 @@ export default function KasseService() {
       ? 'all'
       : 'mine';
   });
+  const [stationFilter, setStationFilter] = useState<StationFilter>(() => {
+    if (typeof window === 'undefined') return 'all';
+    const raw = window.localStorage.getItem(STATION_FILTER_KEY);
+    return raw === 'kueche' || raw === 'bar' ? raw : 'all';
+  });
   // Aufleuchten nach dem Antippen. Ohne das quittiert nur das
   // active:bg-accent des Browsers, was auf dem Handy unter dem Finger liegt
   // und beim Loslassen schon wieder weg ist.
@@ -150,6 +166,15 @@ export default function KasseService() {
     }
   };
 
+  const setStationFilterPersisted = (next: StationFilter) => {
+    setStationFilter(next);
+    try {
+      window.localStorage.setItem(STATION_FILTER_KEY, next);
+    } catch {
+      // Privater Modus o. ä.: die Wahl gilt dann nur für diese Sitzung.
+    }
+  };
+
   const state = trpc.kasse.publicState.useQuery(
     { token },
     { refetchInterval: 20000 },
@@ -160,17 +185,26 @@ export default function KasseService() {
     { token },
     { enabled: state.data?.valid === true, refetchInterval: 60000 },
   );
+  // `station` geht an den Server, wenn ein Läufer sein Handy auf eine Station
+  // eingeschränkt hat — sonst (Bestellaufnahme, Standardfall) undefined und
+  // beide Stationen kommen gemischt zurück.
   const openOrders = trpc.kasse.listOpenOrders.useQuery(
-    { token },
+    { token, station: stationFilter === 'all' ? undefined : stationFilter },
     { enabled: state.data?.valid === true, refetchInterval: 5000 },
   );
   // Abgeschlossene bewusst ohne Polling. Die Liste ist ein Nachschlagewerk,
   // kein Arbeitsvorrat, und am Event werden das schnell ein paar hundert.
   const closedOrders = trpc.kasse.listClosedOrders.useQuery(
-    // Der Name geht an den Server: er filtert vor dem LIMIT von 50. Filterte
-    // erst der Client, sähe eine Servicekraft mit 40 eigenen Bestellungen
-    // „nichts abgeschlossen“, sobald die 50 neuesten von anderen stammen.
-    { token, limit: 50, waiterName: scope === 'mine' ? waiterName : undefined },
+    // Name und Station gehen an den Server: er filtert vor dem LIMIT von 50.
+    // Filterte erst der Client, sähe eine Servicekraft mit 40 eigenen
+    // Bestellungen „nichts abgeschlossen“, sobald die 50 neuesten von anderen
+    // stammen oder einer anderen Station gehören.
+    {
+      token,
+      limit: 50,
+      waiterName: scope === 'mine' ? waiterName : undefined,
+      station: stationFilter === 'all' ? undefined : stationFilter,
+    },
     { enabled: state.data?.valid === true && showClosed },
   );
 
@@ -183,13 +217,21 @@ export default function KasseService() {
   const seenReady = useRef<Set<number> | null>(null);
 
   const createOrder = trpc.kasse.createOrder.useMutation({
-    onSuccess: () => {
+    onSuccess: result => {
       setCart([]);
       setNote('');
       setTableId(null);
       setCartOpen(false);
       refreshOrders();
-      toast.success('Bestellung abgeschickt.');
+      // Mehr als ein Ticket heisst: die Bestellung enthielt Positionen
+      // mehrerer Stationen und wurde automatisch aufgeteilt — genau das soll
+      // sichtbar sein, statt sich hinter einem generischen "abgeschickt" zu
+      // verstecken.
+      toast.success(
+        result.orders.length > 1
+          ? `Bestellung aufgeteilt: ${result.orders.map(o => (o.station === 'kueche' ? 'Küche' : 'Bar')).join(' + ')}.`
+          : 'Bestellung abgeschickt.',
+      );
     },
     onError: e => toast.error(e.message),
   });
@@ -259,24 +301,31 @@ export default function KasseService() {
   );
 
   const categories = useMemo(() => {
-    // Gruppiert wird über `categoryKey`, angezeigt über `categoryLabel` —
-    // dieselben Helfer, nach denen Küche und Bar filtern. Ein eigener
-    // Vergleich hier wäre gross-/kleinschreibungsempfindlich: „Drinks“ und
-    // „drinks“ ergäben im Service zwei Gruppen, an der Bar aber einen
-    // einzigen Filtereintrag, der beide erfasst.
-    const groups = new Map<string, { label: string; items: typeof products }>();
+    // Reihenfolge und Label kommen direkt von der Kategorie (Kontrolle sortiert
+    // dort per Drag & Drop), nicht mehr vom ersten Produkt, das im Service
+    // auftaucht — sonst könnte die Gruppenreihenfolge hier von der in der
+    // Verwaltung abweichen, sobald sich die Kategorie-Reihenfolge ändert, ohne
+    // dass ein Produkt neu sortiert wurde.
+    const productsByCategory = new Map<number, typeof products>();
     for (const product of products) {
-      const key = categoryKey(product.category);
-      const group = groups.get(key);
-      if (group) group.items.push(product);
-      else
-        groups.set(key, {
-          label: categoryLabel(product.category),
-          items: [product],
-        });
+      const list = productsByCategory.get(product.categoryId);
+      if (list) list.push(product);
+      else productsByCategory.set(product.categoryId, [product]);
     }
-    return Array.from(groups.entries());
-  }, [products]);
+    const menuCategories = menu.data?.categories ?? [];
+    return menuCategories
+      .map(
+        category =>
+          [
+            String(category.id),
+            {
+              label: category.name,
+              items: productsByCategory.get(category.id) ?? [],
+            },
+          ] as const,
+      )
+      .filter(([, group]) => group.items.length > 0);
+  }, [products, menu.data]);
 
   const tableAreas = useMemo(() => {
     const groups = new Map<string, typeof tables>();
@@ -467,7 +516,7 @@ export default function KasseService() {
   if (state.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -581,7 +630,7 @@ export default function KasseService() {
                 onClick={commitName}
                 aria-label="Name speichern"
               >
-                <Check className="h-4 w-4" />
+                <Check className="size-4" />
               </Button>
               <Button
                 variant="outline"
@@ -590,7 +639,7 @@ export default function KasseService() {
                 onClick={() => setEditingName(false)}
                 aria-label="Namensänderung abbrechen"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </Button>
             </div>
           ) : (
@@ -626,7 +675,7 @@ export default function KasseService() {
             onClick={() => setTab('order')}
             className="h-11"
           >
-            <UtensilsCrossed className="mr-2 h-4 w-4" />
+            <UtensilsCrossed className="mr-2 size-4" />
             Bestellen
           </Button>
           <Button
@@ -634,7 +683,7 @@ export default function KasseService() {
             onClick={() => setTab('open')}
             className="h-11"
           >
-            <ClipboardList className="mr-2 h-4 w-4" />
+            <ClipboardList className="mr-2 size-4" />
             Offen
             {/* Bereit und in der Küche getrennt: auf dem Handy soll man ohne
                 Umschalten sehen, ob etwas zum Abholen bereitsteht. */}
@@ -843,7 +892,7 @@ export default function KasseService() {
               className="h-11"
               onClick={() => setOrderScope('mine')}
             >
-              <User className="mr-2 h-4 w-4" />
+              <User className="mr-2 size-4" />
               Meine
             </Button>
             <Button
@@ -851,7 +900,7 @@ export default function KasseService() {
               className="h-11"
               onClick={() => setOrderScope('all')}
             >
-              <Users className="mr-2 h-4 w-4" />
+              <Users className="mr-2 size-4" />
               Alle
             </Button>
           </div>
@@ -860,6 +909,35 @@ export default function KasseService() {
               {hiddenOpenCount} Bestellung(en) von anderen sind ausgeblendet.
             </p>
           )}
+
+          {/* Zweite Filterachse für reine Lauf-Rollen (Getränke-/Essensbringer):
+              schränkt ein, welche Station dieses Gerät überhaupt sieht.
+              Unabhängig von „Meine/Alle“ oben, das nach Servicename filtert. */}
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              variant={stationFilter === 'all' ? 'default' : 'outline'}
+              className="h-11"
+              onClick={() => setStationFilterPersisted('all')}
+            >
+              Alle
+            </Button>
+            <Button
+              variant={stationFilter === 'kueche' ? 'default' : 'outline'}
+              className="h-11"
+              onClick={() => setStationFilterPersisted('kueche')}
+            >
+              <UtensilsCrossed className="mr-2 size-4" />
+              Küche
+            </Button>
+            <Button
+              variant={stationFilter === 'bar' ? 'default' : 'outline'}
+              className="h-11"
+              onClick={() => setStationFilterPersisted('bar')}
+            >
+              <Martini className="mr-2 size-4" />
+              Bar
+            </Button>
+          </div>
 
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-success">
@@ -886,8 +964,11 @@ export default function KasseService() {
                       {formatChf(order.totalRappen)}
                     </p>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    {order.waiterName ?? 'ohne Name'}
+                  </p>
                   <ul className="mt-2 space-y-0.5 text-sm">
-                    {order.items.map(item => (
+                    {sortItemsForDisplay(order.items).map(item => (
                       <li key={item.id} className="break-words">
                         {item.quantity}× {item.productName}
                         {item.options.length > 0 && (
@@ -918,7 +999,7 @@ export default function KasseService() {
                       })
                     }
                   >
-                    <Check className="mr-2 h-5 w-5" />
+                    <Check className="mr-2 size-5" />
                     Serviert, abschliessen
                   </Button>
                 </div>
@@ -953,7 +1034,7 @@ export default function KasseService() {
                     </p>
                   </div>
                   <ul className="mt-2 space-y-0.5 text-sm text-muted-foreground">
-                    {order.items.map(item => (
+                    {sortItemsForDisplay(order.items).map(item => (
                       <li key={item.id} className="break-words">
                         {item.quantity}× {item.productName}
                         {item.options.length > 0 &&
@@ -981,7 +1062,7 @@ export default function KasseService() {
                         })
                       }
                     >
-                      <Check className="mr-2 h-4 w-4" />
+                      <Check className="mr-2 size-4" />
                       Bereit
                     </Button>
                     <Button
@@ -998,7 +1079,7 @@ export default function KasseService() {
                       onClick={() => setCancelId(order.id)}
                       aria-label={`Bestellung für Tisch ${order.tableName} stornieren`}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="size-4" />
                     </Button>
                   </div>
                 </div>
@@ -1015,7 +1096,7 @@ export default function KasseService() {
               className="text-muted-foreground"
               onClick={() => setShowClosed(v => !v)}
             >
-              <History className="mr-2 h-4 w-4" />
+              <History className="mr-2 size-4" />
               {showClosed
                 ? 'Abgeschlossene ausblenden'
                 : 'Abgeschlossene anzeigen'}
@@ -1054,7 +1135,7 @@ export default function KasseService() {
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {order.items
+                        {sortItemsForDisplay(order.items)
                           .map(i => `${i.quantity}× ${i.productName}`)
                           .join(', ')}
                         {order.deliveredSeconds != null &&
@@ -1078,7 +1159,7 @@ export default function KasseService() {
               onClick={() => setCartOpen(true)}
               disabled={cartCount === 0}
             >
-              <ShoppingCart className="mr-2 h-4 w-4" />
+              <ShoppingCart className="mr-2 size-4" />
               {cartCount} Pos. · {formatChf(cartTotal)}
             </Button>
             <Button
@@ -1092,7 +1173,7 @@ export default function KasseService() {
               }
             >
               {createOrder.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
               ) : null}
               Senden
             </Button>
@@ -1128,7 +1209,7 @@ export default function KasseService() {
                   onClick={() => toggleDraftOption(option.id)}
                 >
                   <span className="flex min-w-0 items-center gap-2">
-                    {active && <Check className="h-4 w-4 shrink-0" />}
+                    {active && <Check className="size-4 shrink-0" />}
                     <span className="truncate">{option.name}</span>
                   </span>
                   {option.priceDeltaRappen !== 0 && (
@@ -1194,7 +1275,7 @@ export default function KasseService() {
                       onClick={() => changeQuantity(key, -1)}
                       aria-label="Weniger"
                     >
-                      <Minus className="h-4 w-4" />
+                      <Minus className="size-4" />
                     </Button>
                     <span className="w-6 text-center tabular-nums">
                       {line.quantity}
@@ -1207,7 +1288,7 @@ export default function KasseService() {
                       disabled={line.quantity >= MAX_QUANTITY}
                       aria-label="Mehr"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="size-4" />
                     </Button>
                   </div>
                 </div>

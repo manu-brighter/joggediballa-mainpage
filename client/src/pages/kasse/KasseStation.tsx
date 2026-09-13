@@ -23,18 +23,16 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import {
-  CATEGORY_FALLBACK,
   categoryKey,
-  categoryLabel,
   formatChf,
   formatWait,
   matchesCategories,
+  sortItemsForDisplay,
   urgency,
   waitMinutes,
 } from '@/lib/kasse';
 import {
   Check,
-  EyeOff,
   History,
   Loader2,
   SlidersHorizontal,
@@ -49,11 +47,17 @@ import {
  */
 const NOTE_CLAMP_THRESHOLD = 80;
 
-/** Farbcodierung der Wartezeit, damit die Station sofort sieht, was liegen bleibt. */
+/**
+ * Farbcodierung der Wartezeit. Die ursprünglichen zwei Stufen (5′/10′)
+ * reichten am Event nicht — Bestellungen sind über eine Stunde liegen
+ * geblieben, ohne dass sich das optisch noch von „überfällig“ absetzte.
+ */
 const URGENCY_STYLES = {
   normal: 'border-pending/50 bg-pending/10',
   urgent: 'border-pending bg-pending/20',
   overdue: 'border-destructive bg-destructive/15',
+  critical: 'border-destructive bg-destructive/30',
+  extreme: 'border-destructive bg-destructive/40 animate-pulse',
 } as const;
 
 export type StationConfig = {
@@ -67,10 +71,10 @@ export type StationConfig = {
 };
 
 /**
- * Der Kategorienfilter ist eine Geräte-Einstellung, keine Server-Einstellung:
- * das Tablet in der Küche zeigt Food, das an der Bar Drinks und Shots, beide
- * hängen am selben Token. Darum pro Station im localStorage, wie der Name des
- * Service (WAITER_NAME_KEY).
+ * Der Kategorien-Sub-Filter ist eine Geräte-Einstellung, keine
+ * Server-Einstellung: die Bar bedient z. B. Drinks *und* Shots, ein einzelnes
+ * Tablet will aber vielleicht nur Shots sehen. Darum pro Station im
+ * localStorage, wie der Name des Service (WAITER_NAME_KEY).
  */
 const storageKey = (id: StationConfig['id']) =>
   `kasse.station.${id}.categories`;
@@ -90,9 +94,15 @@ function loadCategories(id: StationConfig['id']): string[] {
 }
 
 /**
- * Küche und Bar sind dieselbe Ansicht auf verschiedene Kategorien. Beide
+ * Küche und Bar sind dieselbe Ansicht auf verschiedene Stationen. Beide
  * Seiten sind darum nur eine Konfiguration dieser Komponente — was die eine
  * kann, kann die andere ohne Nacharbeit auch.
+ *
+ * Eine Bestellung mit Positionen mehrerer Stationen wird beim Senden im
+ * Service serverseitig aufgeteilt (siehe createOrder im Router) — hier kommt
+ * darum nie eine Order mit fremden Positionen an, `station` filtert bereits
+ * in SQL. Der Kategorien-Filter unten ist nur noch ein Sub-Filter *innerhalb*
+ * der eigenen Station (z. B. „nur Shots“ an der Bar).
  */
 export default function KasseStation({ station }: { station: StationConfig }) {
   const params = useParams<{ token: string }>();
@@ -100,12 +110,10 @@ export default function KasseStation({ station }: { station: StationConfig }) {
   const StationIcon = station.icon;
 
   const [showClosed, setShowClosed] = useState(false);
-  // Bestellungen ausserhalb der eigenen Kategorien: eingeklappt, siehe unten.
-  const [showOther, setShowOther] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   // Gespeicherte Kategorien als Vergleichsschlüssel (kleingeschrieben, siehe
-  // categoryKey). Leer heisst „alles zeigen“.
+  // categoryKey). Leer heisst „alle Kategorien dieser Station zeigen“.
   const [selected, setSelected] = useState<string[]>(() =>
     loadCategories(station.id),
   );
@@ -138,17 +146,17 @@ export default function KasseStation({ station }: { station: StationConfig }) {
   );
   // Die Wartezeit kommt als Sekunden vom Server mit; bei 3 s Poll-Intervall
   // läuft sie ohne eigenen Timer mit und hängt nicht an der Uhr des Tablets.
+  // `station` filtert bereits in SQL — dieses Tablet bekommt nie Positionen
+  // der anderen Station zu sehen.
   const orders = trpc.kasse.listOpenOrders.useQuery(
-    { token },
+    { token, station: station.id },
     { enabled: state.data?.valid === true, refetchInterval: 3000 },
   );
   const closedOrders = trpc.kasse.listClosedOrders.useQuery(
-    // Kategorien gehen an den Server: er filtert vor dem LIMIT von 50. Filterte
-    // erst der Client, meldete die Bar „noch nichts abgeschlossen“, sobald die
-    // 50 neuesten Bestellungen reine Küchenbestellungen waren.
     {
       token,
       limit: 50,
+      station: station.id,
       categoryKeys: selected.length > 0 ? selected : undefined,
     },
     { enabled: state.data?.valid === true && showClosed },
@@ -178,26 +186,18 @@ export default function KasseStation({ station }: { station: StationConfig }) {
   });
 
   /**
-   * Auswahl für den Filter: die Kategorien der aktiven Produkte, dazu die
+   * Auswahl für den Sub-Filter: nur Kategorien dieser Station, dazu die
    * bereits gewählten. Ohne den zweiten Teil verschwände ein Filter aus der
-   * Liste, sobald das letzte Produkt dieser Kategorie inaktiv geschaltet wird
-   * — und liesse sich nicht mehr abwählen, obwohl er noch filtert.
-   *
-   * „Weiteres“ steht immer zur Wahl, auch wenn gerade kein Produkt ohne
-   * Kategorie aktiv ist: Positionen aus der Zeit vor der Kategorie-Spalte und
-   * jedes Produkt, bei dem jemand das Feld leer lässt, landen dort — sie
-   * müssen sich anwählen lassen.
+   * Liste, sobald die Kategorie umbenannt oder deaktiviert wird — und liesse
+   * sich nicht mehr abwählen, obwohl er noch filtert.
    */
   const categoryChoices = useMemo(() => {
-    const byKey = new Map<string, string>([
-      [categoryKey(null), CATEGORY_FALLBACK],
-    ]);
-    for (const product of menu.data?.products ?? []) {
-      byKey.set(categoryKey(product.category), categoryLabel(product.category));
+    const byKey = new Map<string, string>();
+    for (const category of menu.data?.categories ?? []) {
+      if (category.station !== station.id) continue;
+      byKey.set(categoryKey(category.name), category.name);
     }
     for (const key of selected) {
-      // Kategorie gibt es nicht mehr (umbenannt, letztes Produkt gelöscht):
-      // der Schlüssel ist kleingeschrieben, als Label taugt er so nicht.
       if (!byKey.has(key)) {
         byKey.set(key, key.charAt(0).toLocaleUpperCase('de-CH') + key.slice(1));
       }
@@ -205,47 +205,38 @@ export default function KasseStation({ station }: { station: StationConfig }) {
     return Array.from(byKey.entries())
       .map(([key, label]) => ({ key, label }))
       .sort((a, b) => a.label.localeCompare(b.label, 'de-CH'));
-  }, [menu.data, selected]);
+  }, [menu.data, selected, station.id]);
 
   /**
-   * Bestellungen auf die Kategorien dieser Station eindampfen. Positionen
-   * anderer Stationen fliegen raus, ihre Anzahl bleibt als Hinweis stehen:
-   * sonst wirkt eine Bestellung mit zwei Bier und einer Wurst an der Bar wie
-   * eine vollständige, und niemand wundert sich über die fehlende Wurst.
-   *
-   * Bestellungen, bei denen *keine* Position passt, werden nicht verworfen,
-   * sondern getrennt zurückgegeben. Der Filter ist eine Geräte-Einstellung;
-   * keine Station weiss, was die andere eingestellt hat. Ein neues Produkt
-   * ohne Kategorie oder eine umbenannte Kategorie liesse eine Bestellung sonst
-   * auf *keinem* Tablet erscheinen — der Service wartet, die Küche weiss von
-   * nichts, und niemand kann es merken.
+   * Sub-Filter innerhalb der eigenen Station anwenden. Eine Bestellung, bei
+   * der danach keine Position mehr übrig bleibt, verschwindet ganz aus der
+   * Liste — anders als früher gibt es kein „ausserhalb dieser Kategorien“
+   * mehr, weil eine fremde Station hier strukturell nicht mehr ankommen kann.
    */
-  function forStation<
+  function applyFilter<
     T extends { items: Array<{ productCategory: string | null }> },
-  >(list: T[]) {
-    const mine: Array<T & { hiddenCount: number }> = [];
-    const unassigned: T[] = [];
-    for (const order of list) {
-      const items = order.items.filter(item =>
-        matchesCategories(item.productCategory, selected),
-      );
-      if (items.length === 0) {
-        unassigned.push(order);
-        continue;
-      }
-      mine.push({
-        ...order,
-        items,
-        hiddenCount: order.items.length - items.length,
-      });
+  >(list: T[]): Array<T & { hiddenCount: number }> {
+    if (selected.length === 0) {
+      return list.map(order => ({ ...order, hiddenCount: 0 }));
     }
-    return { mine, unassigned };
+    return list
+      .map(order => {
+        const items = order.items.filter(item =>
+          matchesCategories(item.productCategory, selected),
+        );
+        return {
+          ...order,
+          items,
+          hiddenCount: order.items.length - items.length,
+        };
+      })
+      .filter(order => order.items.length > 0);
   }
 
   if (state.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -267,22 +258,10 @@ export default function KasseStation({ station }: { station: StationConfig }) {
     );
   }
 
-  const open = forStation(orders.data ?? []);
-  const pending = open.mine.filter(o => o.status === 'pending');
-  const ready = open.mine.filter(o => o.status === 'ready');
-  // Offene Bestellungen, für die diese Station keine einzige Position hat —
-  // pending wie ready. Ohne die zweite Hälfte fiele eine solche Bestellung
-  // nach dem Antippen von „Bereit“ sofort wieder aus jeder Ansicht.
-  const unassigned = open.unassigned;
-  // Welche Bestellungen abgeschlossen zurückkommen, entscheidet der Server
-  // (vor dem LIMIT). Die Positionen anderer Stationen hier trotzdem
-  // wegblenden, damit die Historie dieselbe Sicht zeigt wie die Arbeitsliste.
-  const closed = (closedOrders.data ?? []).map(order => ({
-    ...order,
-    items: order.items.filter(item =>
-      matchesCategories(item.productCategory, selected),
-    ),
-  }));
+  const open = applyFilter(orders.data ?? []);
+  const pending = open.filter(o => o.status === 'pending');
+  const ready = open.filter(o => o.status === 'ready');
+  const closed = applyFilter(closedOrders.data ?? []);
   const busy = (orderId: number) =>
     setStatus.isPending && setStatus.variables?.orderId === orderId;
 
@@ -300,7 +279,7 @@ export default function KasseStation({ station }: { station: StationConfig }) {
 
       <header className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b bg-background/95 px-4 py-3 backdrop-blur xl:px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <StationIcon className="h-6 w-6 shrink-0 text-primary" />
+          <StationIcon className="size-6 shrink-0 text-primary" />
           <div className="min-w-0">
             <h1 className="text-lg font-semibold leading-tight">
               {station.title}
@@ -332,306 +311,247 @@ export default function KasseStation({ station }: { station: StationConfig }) {
             className="h-11 max-w-[14rem]"
             onClick={() => setFilterOpen(true)}
           >
-            <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0" />
+            <SlidersHorizontal className="mr-2 size-4 shrink-0" />
             <span className="truncate">{filterLabel}</span>
           </Button>
         </div>
       </header>
 
       <main className="space-y-8 p-4 xl:p-6">
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Zu erledigen
-          </h2>
+        {/* Zu erledigen und Bereit nebeneinander ab xl: auf dem iPad, das als
+            Hauptscreen dient, musste man sonst an viel offenem durch die ganze
+            Pending-Liste scrollen, um zu sehen, was schon abholbereit ist. Die
+            einzelnen Karten bleiben bis 2xl in ihrer kompakten Form (siehe
+            unten) — der dichte Vierspalten-Aufbau brauchte die volle
+            Bildschirmbreite, nicht nur eine halbe Spalte. */}
+        <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Zu erledigen
+            </h2>
 
-          {pending.length === 0 ? (
-            <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-              Keine offenen Bestellungen.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {pending.map(order => {
-                const minutes = waitMinutes(order.waitSeconds);
-                return (
-                  <article
-                    key={order.id}
-                    className={`grid gap-3 rounded-xl border-2 p-3 xl:grid-cols-[8rem_1fr_7rem_17rem] xl:items-center xl:gap-6 xl:p-4 ${
-                      URGENCY_STYLES[urgency(minutes)]
-                    }`}
-                  >
-                    {/* Unter xl stehen Tisch und Wartezeit nebeneinander in
-                        einer Kopfzeile; die feste Vierspalten-Aufteilung
-                        (32rem allein für Tisch, Wartezeit und Knöpfe) liess
-                        der Produktliste auf einem Hochkant-Tablet rund 150px
-                        und blähte jede Bestellung über den ganzen Schirm. */}
-                    <div className="flex items-baseline justify-between gap-3 xl:block">
-                      <div className="min-w-0">
-                        <p
-                          className="truncate text-2xl font-bold leading-none xl:text-3xl"
-                          title={order.tableName}
-                        >
-                          {order.tableName}
-                        </p>
-                        <p className="mt-1 truncate text-xs text-muted-foreground">
-                          {order.waiterName ?? 'ohne Name'}
+            {pending.length === 0 ? (
+              <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+                Keine offenen Bestellungen.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {pending.map(order => {
+                  const minutes = waitMinutes(order.waitSeconds);
+                  const items = sortItemsForDisplay(order.items);
+                  return (
+                    <article
+                      key={order.id}
+                      className={`grid gap-3 rounded-xl border-2 p-3 2xl:grid-cols-[8rem_1fr_7rem_17rem] 2xl:items-center 2xl:gap-6 2xl:p-4 ${
+                        URGENCY_STYLES[urgency(minutes)]
+                      }`}
+                    >
+                      {/* Unter 2xl stehen Tisch und Wartezeit nebeneinander in
+                          einer Kopfzeile; die feste Vierspalten-Aufteilung
+                          (32rem allein für Tisch, Wartezeit und Knöpfe) liess
+                          der Produktliste auf einem schmaleren Tablet oder in
+                          der Zwei-Spalten-Ansicht zu wenig Platz. */}
+                      <div className="flex items-baseline justify-between gap-3 2xl:block">
+                        <div className="min-w-0">
+                          <p
+                            className="truncate text-2xl font-bold leading-none 2xl:text-3xl"
+                            title={order.tableName}
+                          >
+                            {order.tableName}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {order.waiterName ?? 'ohne Name'}
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-xl font-bold tabular-nums 2xl:hidden">
+                          {formatWait(order.waitSeconds)}
                         </p>
                       </div>
-                      <p className="shrink-0 text-xl font-bold tabular-nums xl:hidden">
-                        {formatWait(order.waitSeconds)}
-                      </p>
-                    </div>
 
-                    <div className="min-w-0">
-                      <ul className="space-y-1">
-                        {order.items.map(item => (
-                          <li
-                            key={item.id}
-                            className="break-words text-base leading-snug xl:text-lg"
-                          >
-                            <span className="font-bold tabular-nums">
-                              {item.quantity}×
-                            </span>{' '}
-                            {item.productName}
-                            {item.options.length > 0 && (
-                              <span className="text-muted-foreground">
-                                {' · '}
-                                {item.options.map(o => o.optionName).join(', ')}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                      {order.hiddenCount > 0 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          + {order.hiddenCount} Position(en) für eine andere
-                          Station
-                        </p>
-                      )}
-                      {order.note &&
-                        (() => {
-                          const clampable =
-                            order.note.length > NOTE_CLAMP_THRESHOLD;
-                          const open = openNotes.has(order.id);
-                          // Kurze Notizen sind ohnehin ganz zu sehen und
-                          // brauchen weder Knopf noch Hinweis.
-                          if (!clampable) {
-                            return (
-                              <p className="mt-2 break-words text-sm italic xl:text-base">
-                                {order.note}
-                              </p>
-                            );
-                          }
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => toggleNote(order.id)}
-                              className="mt-2 block w-full text-left"
-                              aria-expanded={open}
-                              title={order.note}
+                      <div className="min-w-0">
+                        <ul className="space-y-1">
+                          {items.map(item => (
+                            <li
+                              key={item.id}
+                              className="break-words text-base leading-snug 2xl:text-lg"
                             >
-                              {/* `block` und `line-clamp-2` setzen beide
-                                  display; nebeneinander gewinnt `block` und
-                                  die Kürzung greift nicht. Darum sich
-                                  ausschliessend. */}
-                              <span
-                                className={`break-words text-sm italic xl:text-base ${
-                                  open ? 'block' : 'line-clamp-2'
-                                }`}
+                              <span className="font-bold tabular-nums">
+                                {item.quantity}×
+                              </span>{' '}
+                              {item.productName}
+                              {item.options.length > 0 && (
+                                <span className="text-muted-foreground">
+                                  {' · '}
+                                  {item.options
+                                    .map(o => o.optionName)
+                                    .join(', ')}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                        {order.hiddenCount > 0 && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            + {order.hiddenCount} Position(en) einer anderen
+                            Kategorie ausgeblendet
+                          </p>
+                        )}
+                        {order.note &&
+                          (() => {
+                            const clampable =
+                              order.note.length > NOTE_CLAMP_THRESHOLD;
+                            const noteOpen = openNotes.has(order.id);
+                            // Kurze Notizen sind ohnehin ganz zu sehen und
+                            // brauchen weder Knopf noch Hinweis.
+                            if (!clampable) {
+                              return (
+                                <p className="mt-2 break-words text-sm italic 2xl:text-base">
+                                  {order.note}
+                                </p>
+                              );
+                            }
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => toggleNote(order.id)}
+                                className="mt-2 block w-full text-left"
+                                aria-expanded={noteOpen}
+                                title={order.note}
                               >
-                                {order.note}
-                              </span>
-                              <span className="text-xs text-muted-foreground underline">
-                                {open ? 'Notiz einklappen' : 'Ganze Notiz'}
-                              </span>
-                            </button>
-                          );
-                        })()}
-                    </div>
+                                {/* `block` und `line-clamp-2` setzen beide
+                                    display; nebeneinander gewinnt `block` und
+                                    die Kürzung greift nicht. Darum sich
+                                    ausschliessend. */}
+                                <span
+                                  className={`break-words text-sm italic 2xl:text-base ${
+                                    noteOpen ? 'block' : 'line-clamp-2'
+                                  }`}
+                                >
+                                  {order.note}
+                                </span>
+                                <span className="text-xs text-muted-foreground underline">
+                                  {noteOpen
+                                    ? 'Notiz einklappen'
+                                    : 'Ganze Notiz'}
+                                </span>
+                              </button>
+                            );
+                          })()}
+                      </div>
 
-                    <div className="hidden text-center xl:block">
-                      <p className="text-2xl font-bold tabular-nums">
-                        {formatWait(order.waitSeconds)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Wartezeit</p>
-                    </div>
+                      <div className="hidden text-center 2xl:block">
+                        <p className="text-2xl font-bold tabular-nums">
+                          {formatWait(order.waitSeconds)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Wartezeit
+                        </p>
+                      </div>
 
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Button
-                        className="h-14 min-w-0 flex-1 text-base font-semibold xl:h-20 xl:text-xl"
-                        disabled={busy(order.id)}
-                        onClick={() =>
-                          setStatus.mutate({
-                            token,
-                            orderId: order.id,
-                            status: 'ready',
-                          })
-                        }
-                      >
-                        <Check className="mr-2 h-5 w-5 xl:h-7 xl:w-7" />
-                        Bereit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        // Rand in derselben Farbe wie die Fläche, sonst steht
-                        // der neutrale Standard-Rand um ein rotes Feld.
-                        // dark:-Pendants nötig: die outline-Variante setzt
-                        // dark:bg-transparent und dark:border-input, die sonst
-                        // im Dark Mode gewinnen.
-                        className="h-14 w-14 shrink-0 border-destructive/30 bg-destructive/10 text-destructive hover:border-destructive/50 hover:bg-destructive/20 hover:text-destructive dark:border-destructive/30 dark:bg-destructive/10 dark:hover:border-destructive/50 dark:hover:bg-destructive/20 xl:h-20 xl:w-20"
-                        disabled={busy(order.id)}
-                        onClick={() => setCancelId(order.id)}
-                        aria-label={`Bestellung für Tisch ${order.tableName} stornieren`}
-                      >
-                        <Trash2 className="h-5 w-5 xl:h-6 xl:w-6" />
-                      </Button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </section>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Button
+                          className="h-14 min-w-0 flex-1 text-base font-semibold 2xl:h-20 2xl:text-xl"
+                          disabled={busy(order.id)}
+                          onClick={() =>
+                            setStatus.mutate({
+                              token,
+                              orderId: order.id,
+                              status: 'ready',
+                            })
+                          }
+                        >
+                          <Check className="mr-2 size-5 2xl:size-7" />
+                          Bereit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          // Rand in derselben Farbe wie die Fläche, sonst steht
+                          // der neutrale Standard-Rand um ein rotes Feld.
+                          // dark:-Pendants nötig: die outline-Variante setzt
+                          // dark:bg-transparent und dark:border-input, die sonst
+                          // im Dark Mode gewinnen.
+                          className="h-14 w-14 shrink-0 border-destructive/30 bg-destructive/10 text-destructive hover:border-destructive/50 hover:bg-destructive/20 hover:text-destructive dark:border-destructive/30 dark:bg-destructive/10 dark:hover:border-destructive/50 dark:hover:bg-destructive/20 2xl:h-20 2xl:w-20"
+                          disabled={busy(order.id)}
+                          onClick={() => setCancelId(order.id)}
+                          aria-label={`Bestellung für Tisch ${order.tableName} stornieren`}
+                        >
+                          <Trash2 className="size-5 2xl:size-6" />
+                        </Button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
-        {/* Sicherheitsnetz gegen die eine Sorte Fehler, die am Event niemand
-            bemerkt: eine Bestellung, die auf *keinem* Tablet auftaucht. Der
-            Filter ist eine Geräte-Einstellung, keine Station weiss, was die
-            andere eingestellt hat — ein Produkt ohne Kategorie, eine neue oder
-            eine umbenannte Kategorie fällt sonst überall durch.
-
-            Bewusst leise und eingeklappt: hier steht auch jede ganz normale
-            Bestellung der anderen Station drin. Als roter Alarm wäre die Zeile
-            nach zehn Minuten Event Rauschen, den alle wegsehen — und damit
-            wertlos für den einen Fall, für den sie da ist. Wer sie aufklappt,
-            kann die Bestellung auch gleich erledigen. */}
-        {unassigned.length > 0 && (
           <section className="space-y-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground"
-              onClick={() => setShowOther(v => !v)}
-              aria-expanded={showOther}
-            >
-              <EyeOff className="mr-2 h-4 w-4" />
-              {unassigned.length} offene Bestellung(en) ausserhalb dieser
-              Kategorien
-            </Button>
-
-            {showOther && (
-              <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {unassigned.map(order => (
-                  <li
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-success">
+              Wartet auf Abholung
+            </h2>
+            {ready.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nichts wartet auf Abholung.
+              </p>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                {ready.map(order => (
+                  <div
                     key={order.id}
-                    className="rounded-lg border px-3 py-2 text-sm"
+                    className="rounded-xl border-2 border-success bg-success/10 p-4"
                   >
                     <div className="flex items-baseline justify-between gap-2">
-                      <span
-                        className="min-w-0 truncate font-medium"
+                      <p
+                        className="min-w-0 truncate text-xl font-bold xl:text-2xl"
                         title={order.tableName}
                       >
                         {order.tableName}
-                      </span>
-                      <span className="shrink-0 tabular-nums text-muted-foreground">
-                        {formatWait(order.waitSeconds)}
-                      </span>
+                      </p>
+                      {/* Der Betrag gilt für die ganze Bestellung. Sind
+                          Positionen ausgeblendet, passt er nicht zur Liste
+                          darunter — dann lieber sagen, was fehlt. */}
+                      <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
+                        {order.hiddenCount > 0
+                          ? `+${order.hiddenCount} andere Kategorie${order.hiddenCount > 1 ? 'n' : ''}`
+                          : formatChf(order.totalRappen)}
+                      </p>
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {order.items
-                        .map(
-                          i =>
-                            `${i.quantity}× ${i.productName} (${categoryLabel(
-                              i.productCategory,
-                            )})`,
-                        )
-                        .join(', ')}
+                    <p className="truncate text-xs text-muted-foreground">
+                      {order.waiterName ?? 'ohne Name'}
                     </p>
+                    <ul className="mt-2 space-y-0.5 text-sm text-muted-foreground">
+                      {sortItemsForDisplay(order.items).map(item => (
+                        <li key={item.id} className="break-words">
+                          {item.quantity}× {item.productName}
+                          {item.options.length > 0 &&
+                            ` · ${item.options.map(o => o.optionName).join(', ')}`}
+                        </li>
+                      ))}
+                    </ul>
+                    {/* Holt der Service am Durchreichefenster ab, ohne sein Handy
+                        zu zücken, bleibt die Bestellung sonst in der Abholliste
+                        liegen. Derselbe Statuswechsel wie im Service. */}
                     <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2 h-9 w-full"
+                      className="mt-3 h-12 w-full bg-success text-base font-semibold text-success-foreground shadow-sm hover:bg-success/90"
                       disabled={busy(order.id)}
                       onClick={() =>
                         setStatus.mutate({
                           token,
                           orderId: order.id,
-                          status:
-                            order.status === 'ready' ? 'delivered' : 'ready',
+                          status: 'delivered',
                         })
                       }
                     >
-                      <Check className="mr-2 h-4 w-4" />
-                      {order.status === 'ready' ? 'Abgeholt' : 'Bereit'}
+                      <Check className="mr-2 size-5" />
+                      Abgeholt
+                      <span className="sr-only">, Tisch {order.tableName}</span>
                     </Button>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </section>
-        )}
-
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-success">
-            Wartet auf Abholung
-          </h2>
-          {ready.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nichts wartet auf Abholung.
-            </p>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {ready.map(order => (
-                <div
-                  key={order.id}
-                  className="rounded-xl border-2 border-success bg-success/10 p-4"
-                >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p
-                      className="min-w-0 truncate text-xl font-bold xl:text-2xl"
-                      title={order.tableName}
-                    >
-                      {order.tableName}
-                    </p>
-                    {/* Der Betrag gilt für die ganze Bestellung. Sind
-                        Positionen ausgeblendet, passt er nicht zur Liste
-                        darunter — dann lieber sagen, was fehlt. */}
-                    <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
-                      {order.hiddenCount > 0
-                        ? `+${order.hiddenCount} andernorts`
-                        : formatChf(order.totalRappen)}
-                    </p>
-                  </div>
-                  <ul className="mt-2 space-y-0.5 text-sm text-muted-foreground">
-                    {order.items.map(item => (
-                      <li key={item.id} className="break-words">
-                        {item.quantity}× {item.productName}
-                        {item.options.length > 0 &&
-                          ` · ${item.options.map(o => o.optionName).join(', ')}`}
-                      </li>
-                    ))}
-                  </ul>
-                  {/* Holt der Service am Durchreichefenster ab, ohne sein Handy
-                      zu zücken, bleibt die Bestellung sonst in der Abholliste
-                      liegen. Derselbe Statuswechsel wie im Service. */}
-                  <Button
-                    className="mt-3 h-12 w-full bg-success text-base font-semibold text-success-foreground shadow-sm hover:bg-success/90"
-                    disabled={busy(order.id)}
-                    onClick={() =>
-                      setStatus.mutate({
-                        token,
-                        orderId: order.id,
-                        status: 'delivered',
-                      })
-                    }
-                  >
-                    <Check className="mr-2 h-5 w-5" />
-                    Abgeholt
-                    <span className="sr-only">, Tisch {order.tableName}</span>
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        </div>
 
         {/* Nachschlagen, was schon durch ist. Ohne Polling, damit die
             Arbeitsliste oben die einzige ist, die sich dauernd bewegt. */}
@@ -642,7 +562,7 @@ export default function KasseStation({ station }: { station: StationConfig }) {
             className="text-muted-foreground"
             onClick={() => setShowClosed(v => !v)}
           >
-            <History className="mr-2 h-4 w-4" />
+            <History className="mr-2 size-4" />
             {showClosed
               ? 'Abgeschlossene ausblenden'
               : 'Abgeschlossene anzeigen'}
@@ -678,8 +598,11 @@ export default function KasseStation({ station }: { station: StationConfig }) {
                         {formatWait(order.readySeconds)}
                       </span>
                     </div>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {order.waiterName ?? 'ohne Name'}
+                    </p>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {order.items
+                      {sortItemsForDisplay(order.items)
                         .map(i => `${i.quantity}× ${i.productName}`)
                         .join(', ')}
                     </p>
@@ -700,14 +623,14 @@ export default function KasseStation({ station }: { station: StationConfig }) {
           <div className="grid gap-2 p-4">
             <p className="text-xs text-muted-foreground">
               Gilt nur für dieses Gerät. Ohne Auswahl zeigt die Ansicht alle
-              Produkte.
+              Kategorien dieser Station.
             </p>
             <Button
               variant={selected.length === 0 ? 'default' : 'outline'}
               className="h-12 justify-start text-base"
               onClick={() => persistSelected([])}
             >
-              {selected.length === 0 && <Check className="mr-2 h-4 w-4" />}
+              {selected.length === 0 && <Check className="mr-2 size-4" />}
               Alle Kategorien
             </Button>
             {categoryChoices.map(choice => {
@@ -725,7 +648,7 @@ export default function KasseStation({ station }: { station: StationConfig }) {
                     )
                   }
                 >
-                  {active && <Check className="mr-2 h-4 w-4 shrink-0" />}
+                  {active && <Check className="mr-2 size-4 shrink-0" />}
                   <span className="truncate">{choice.label}</span>
                 </Button>
               );
@@ -750,9 +673,11 @@ export default function KasseStation({ station }: { station: StationConfig }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Bestellung stornieren?</AlertDialogTitle>
             <AlertDialogDescription>
-              Die ganze Bestellung verschwindet aus Küche, Bar und Service und
-              zählt nicht zum Umsatz — auch Positionen, die hier gerade
-              ausgeblendet sind. Rückgängig machen geht nicht.
+              Diese Bestellung verschwindet aus dieser Station und dem Service
+              und zählt nicht zum Umsatz — auch Positionen, die hier gerade
+              ausgeblendet sind. Eine allfällige Bestellung der anderen Station
+              (falls gemischt aufgenommen) ist davon nicht betroffen. Rückgängig
+              machen geht nicht.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -37,11 +37,16 @@ export function formatWait(seconds: number | null | undefined): string {
 }
 
 /**
- * Farbstufe einer wartenden Bestellung. Bis 5 Minuten normal, danach
- * „dringend“, ab 10 Minuten „überfällig“. So sieht die Küche auf einen Blick, was
- * liegen geblieben ist.
+ * Farbstufe einer wartenden Bestellung. Die ursprünglichen zwei Schwellen (5′
+ * gelb, 10′ rot) reichten am Event nicht — Bestellungen sind über eine Stunde
+ * liegen geblieben, ohne dass sich die Farbe von „überfällig“ noch absetzte.
+ * Zwei weitere Stufen bei 30′ und 60′ sollen das sichtbar eskalieren lassen.
  */
-export function urgency(minutes: number): 'normal' | 'urgent' | 'overdue' {
+export function urgency(
+  minutes: number,
+): 'normal' | 'urgent' | 'overdue' | 'critical' | 'extreme' {
+  if (minutes >= 60) return 'extreme';
+  if (minutes >= 30) return 'critical';
   if (minutes >= 10) return 'overdue';
   if (minutes >= 5) return 'urgent';
   return 'normal';
@@ -65,6 +70,21 @@ export function categoryLabel(category: string | null | undefined): string {
  */
 export function categoryKey(category: string | null | undefined): string {
   return categoryLabel(category).toLocaleLowerCase('de-CH');
+}
+
+/**
+ * Positionen einer Bestellkarte alphabetisch statt in Tipp-Reihenfolge zeigen:
+ * sonst stehen z. B. "Pommes Ketchup", "Chicken Nuggets", "Pommes Mayo" in der
+ * Reihenfolge, in der sie angeklickt wurden, statt "Chicken Nuggets", "Pommes
+ * Ketchup", "Pommes Mayo" gruppiert. Rein für die Anzeige, ändert nichts an
+ * der gespeicherten Reihenfolge.
+ */
+export function sortItemsForDisplay<T extends { productName: string }>(
+  items: T[],
+): T[] {
+  return [...items].sort((a, b) =>
+    a.productName.localeCompare(b.productName, 'de-CH'),
+  );
 }
 
 /**

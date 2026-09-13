@@ -70,8 +70,43 @@ describe('kasse: Verwaltung verlangt manage_kasse', () => {
   it("weist die Rolle 'editor' beim Anlegen eines Produkts ab", async () => {
     const caller = appRouter.createCaller(makeCtx('editor'));
     await expect(
-      caller.kasse.createProduct({ name: 'Pommes', priceRappen: 600 }),
+      caller.kasse.createProduct({
+        name: 'Pommes',
+        categoryId: 1,
+        priceRappen: 600,
+      }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it("weist die Rolle 'editor' beim Anlegen einer Kategorie ab", async () => {
+    const caller = appRouter.createCaller(makeCtx('editor'));
+    await expect(
+      caller.kasse.createCategory({ name: 'Drinks', station: 'bar' }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  // Eine Kategorie zu deaktivieren kann Produkte kommentarlos aus dem Service
+  // verschwinden lassen (siehe deactivate-Guard) — auch dieser Weg braucht
+  // manage_kasse.
+  it("weist die Rolle 'editor' beim Ändern einer Kategorie ab", async () => {
+    const caller = appRouter.createCaller(makeCtx('editor'));
+    await expect(
+      caller.kasse.updateCategory({ id: 1, isActive: false }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it("weist die Rolle 'editor' beim Sortieren der Kategorien ab", async () => {
+    const caller = appRouter.createCaller(makeCtx('editor'));
+    await expect(
+      caller.kasse.reorderCategories({ ids: [1, 2] }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it("weist die Rolle 'editor' beim Löschen einer Kategorie ab", async () => {
+    const caller = appRouter.createCaller(makeCtx('editor'));
+    await expect(caller.kasse.deleteCategory({ id: 1 })).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
   });
 
   it("weist die Rolle 'editor' beim Sortieren der Produkte ab", async () => {

@@ -41,9 +41,7 @@ import {
   closestCenter,
   useSensor,
   useSensors,
-  type CollisionDetection,
   type DragEndEvent,
-  type KeyboardCoordinateGetter,
   type UniqueIdentifier,
 } from '@dnd-kit/core';
 import {
@@ -52,13 +50,14 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { formatChf, formatWait, parseChfToRappen } from '@/lib/kasse';
 import {
-  categoryKey,
-  categoryLabel,
-  formatChf,
-  formatWait,
-  parseChfToRappen,
-} from '@/lib/kasse';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { DragHandle, SortableRow } from './KasseSortable';
 import {
   Check,
@@ -72,6 +71,11 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+
+const STATION_LABEL: Record<'kueche' | 'bar', string> = {
+  kueche: 'Küche',
+  bar: 'Bar',
+};
 
 function CopyableLink({ url }: { url: string }) {
   return (
@@ -88,11 +92,11 @@ function CopyableLink({ url }: { url: string }) {
             .catch(() => toast.error('Kopieren fehlgeschlagen.'));
         }}
       >
-        <Copy className="h-4 w-4" />
+        <Copy className="size-4" />
       </Button>
       <Button variant="outline" size="icon" asChild aria-label="Link öffnen">
         <a href={url} target="_blank" rel="noreferrer">
-          <ExternalLink className="h-4 w-4" />
+          <ExternalLink className="size-4" />
         </a>
       </Button>
     </div>
@@ -111,19 +115,6 @@ function parseOptionDelta(input: string | undefined): number | null {
   if (rappen === null) return null;
   return negative ? -rappen : rappen;
 }
-
-/**
- * Gruppen und Produkte sind beide sortierbar und liegen ineinander: das
- * Rechteck einer Gruppe umschliesst alle ihre Produkte. dnd-kit wirft aber
- * sämtliche Ziele in einen Topf und vergleicht nur Mittelpunkte — beim Ziehen
- * eines Produkts gewinnt darum rund um die Gruppenmitte die *Gruppe*, und der
- * Zug landet auf einem Ziel, das `handleDragEnd` verwerfen muss. Ergebnis war
- * eine tote Zone von einer halben Zeilenhöhe mitten in jeder Kategorie: kurze
- * Züge taten wortlos nichts, erst ab gut einer Zeile griff der Tausch.
- *
- * Darum kollidieren Gruppen nur mit Gruppen und Produkte nur mit Produkten.
- */
-const isGroupId = (id: UniqueIdentifier) => String(id).startsWith('group:');
 
 /**
  * Ansagen für Bildschirmleser. dnd-kit liefert sonst englische Sätze mitten
@@ -149,43 +140,6 @@ const DND_ACCESSIBILITY = {
   },
 };
 
-const sameLevelCollision: CollisionDetection = args =>
-  closestCenter({
-    ...args,
-    droppableContainers: args.droppableContainers.filter(
-      c => isGroupId(c.id) === isGroupId(args.active.id),
-    ),
-  });
-
-/**
- * Dieselbe Trennung für die Tastatur. `sortableKeyboardCoordinates` benutzt
- * *nicht* die Kollisionserkennung des DndContext, sondern sucht selbst über
- * alle Ziele — beim Verschieben einer Kategorie lägen sonst deren eigene
- * Produkte am nächsten und jeder Pfeiltastendruck wäre ein No-op.
- */
-const sameLevelKeyboard: KeyboardCoordinateGetter = (event, args) => {
-  const containers = args.context.droppableContainers;
-  // `droppableContainers` ist eine Map-Unterklasse mit eigenen Methoden
-  // (getEnabled/get), die der Getter benutzt. Über ihren Konstruktor neu
-  // aufbauen statt ein Array zu filtern, sonst gehen genau die verloren.
-  const Filtered = containers.constructor as {
-    new (
-      entries: Iterable<readonly [UniqueIdentifier, unknown]>,
-    ): typeof containers;
-  };
-  return sortableKeyboardCoordinates(event, {
-    ...args,
-    context: {
-      ...args.context,
-      droppableContainers: new Filtered(
-        Array.from(containers).filter(
-          ([id]) => isGroupId(id) === isGroupId(args.active),
-        ),
-      ),
-    },
-  });
-};
-
 export default function KasseControl() {
   const canManage = usePermission('manage_kasse');
   const utils = trpc.useUtils();
@@ -194,6 +148,10 @@ export default function KasseControl() {
     enabled: canManage,
     refetchInterval: 15000,
   });
+  const { data: categories = [] } = trpc.kasse.listCategories.useQuery(
+    undefined,
+    { enabled: canManage },
+  );
   const { data: products = [] } = trpc.kasse.listProducts.useQuery(undefined, {
     enabled: canManage,
   });
@@ -214,63 +172,76 @@ export default function KasseControl() {
     if (fallback) setStatsSessionId(fallback.id);
   }, [settings, statsSessionId]);
 
+  const categoryById = useMemo(
+    () => new Map(categories.map(c => [c.id, c])),
+    [categories],
+  );
+
   /**
-   * Produkte nach Kategorie gruppiert. Die Reihenfolge der Gruppen entscheidet
-   * das erste *aktive* Produkt — genau wie in der Serviceansicht, die nur
-   * aktive Produkte bekommt und danach gruppiert. Ginge die Verwaltung vom
-   * ersten Produkt überhaupt aus, stünden die Gruppen anders als auf dem
-   * Handy, sobald ein ausverkauftes Produkt vorne in seiner Kategorie liegt.
-   * Label ebenso: es soll das sein, das der Service anzeigt.
-   *
-   * Gruppen ohne ein einziges aktives Produkt tauchen im Service nicht auf und
-   * ordnen sich nach ihrem ersten Produkt ein.
+   * Produkte nach Kategorie gruppiert, sortiert nach der Reihenfolge der
+   * Kategorien selbst (siehe Kategorien-Karte), nicht mehr nach der
+   * Reihenfolge, in der ein Produkt zuerst auftaucht — die Kategorie ist seit
+   * dem Stations-Split eine eigene Entität mit eigener `displayOrder`. Das
+   * ersetzt den früheren Rang nach dem ersten *aktiven* Produkt: Küche/Bar und
+   * Service übernehmen dieselbe `displayOrder` jetzt direkt aus der Kategorie,
+   * keine Ableitung mehr über potenziell unterschiedlich gefilterte
+   * Produktlisten.
    */
   const groups = useMemo(() => {
-    type Group = {
-      label: string;
-      items: typeof products;
-      rank: number;
-      hasActive: boolean;
-    };
-    const map = new Map<string, Group>();
-    products.forEach((product, index) => {
-      const key = categoryKey(product.category);
-      const group = map.get(key);
-      if (!group) {
-        map.set(key, {
-          label: categoryLabel(product.category),
-          items: [product],
-          rank: index,
-          hasActive: product.isActive,
-        });
-        return;
-      }
-      group.items.push(product);
-      // Das erste aktive Produkt übernimmt Rang und Label von einem allenfalls
-      // vorher eingetragenen inaktiven.
-      if (product.isActive && !group.hasActive) {
-        group.rank = index;
-        group.label = categoryLabel(product.category);
-        group.hasActive = true;
-      }
-    });
-    return Array.from(map, ([key, group]) => ({ key, ...group })).sort(
-      (a, b) => a.rank - b.rank,
+    const map = new Map<number, { items: typeof products }>();
+    for (const product of products) {
+      const group = map.get(product.categoryId);
+      if (group) group.items.push(product);
+      else map.set(product.categoryId, { items: [product] });
+    }
+    return Array.from(map, ([categoryId, group]) => ({
+      categoryId,
+      key: String(categoryId),
+      label: categoryById.get(categoryId)?.name ?? 'Unbekannt',
+      station: categoryById.get(categoryId)?.station,
+      ...group,
+    })).sort(
+      (a, b) =>
+        (categoryById.get(a.categoryId)?.displayOrder ?? 0) -
+        (categoryById.get(b.categoryId)?.displayOrder ?? 0),
     );
-  }, [products]);
+  }, [products, categoryById]);
 
   // `distance: 8` unterscheidet Ziehen von Tippen: ohne die Schwelle löst
   // jeder Fingerkontakt auf dem Anfasser schon einen Zug aus, und ein
   // Fehlgriff beim Scrollen verschiebt ein Produkt.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sameLevelKeyboard }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const invalidateSettings = () => utils.kasse.getSettings.invalidate();
+  const invalidateCategories = () => utils.kasse.listCategories.invalidate();
   const invalidateProducts = () => utils.kasse.listProducts.invalidate();
   const invalidateTables = () => utils.kasse.listTables.invalidate();
   const onError = (e: { message: string }) => toast.error(e.message);
+
+  const createCategory = trpc.kasse.createCategory.useMutation({
+    onSuccess: invalidateCategories,
+    onError,
+  });
+  const updateCategory = trpc.kasse.updateCategory.useMutation({
+    onSuccess: invalidateCategories,
+    onError,
+  });
+  const reorderCategories = trpc.kasse.reorderCategories.useMutation({
+    // Das Nachladen hängt am Aufruf, nicht an der Mutation — siehe applyCategoryOrder.
+    onError: e => {
+      toast.error(e.message);
+      invalidateCategories();
+    },
+  });
+  const deleteCategory = trpc.kasse.deleteCategory.useMutation({
+    onSuccess: invalidateCategories,
+    onError,
+  });
 
   const updateSettings = trpc.kasse.updateSettings.useMutation({
     onSuccess: invalidateSettings,
@@ -390,7 +361,7 @@ export default function KasseControl() {
   const [sessionName, setSessionName] = useState('');
   const [productDraft, setProductDraft] = useState({
     name: '',
-    category: '',
+    categoryId: '',
     price: '',
   });
   const [optionDrafts, setOptionDrafts] = useState<Record<number, string>>({});
@@ -399,9 +370,18 @@ export default function KasseControl() {
   const [editProductId, setEditProductId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState({
     name: '',
-    category: '',
+    categoryId: '',
     price: '',
   });
+  const [categoryDraft, setCategoryDraft] = useState<{
+    name: string;
+    station: 'kueche' | 'bar';
+  }>({ name: '', station: 'kueche' });
+  const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
+  const [categoryEditDraft, setCategoryEditDraft] = useState<{
+    name: string;
+    station: 'kueche' | 'bar';
+  }>({ name: '', station: 'kueche' });
   // Ein Dialog für alle harten Löschungen. Produkt, Zusatz und Tisch werden
   // serverseitig echt gelöscht; Kasse schliessen, Token rotieren und Session
   // löschen fragen in dieser Datei längst nach, diese drei feuerten auf einen
@@ -424,6 +404,8 @@ export default function KasseControl() {
   const [tableName, setTableName] = useState('');
   // Laufende Nummer der Sortier-Mutationen, siehe applyOrder.
   const reorderSeq = useRef(0);
+  // Dasselbe für die Kategorien-Reihenfolge, siehe applyCategoryOrder.
+  const categoryReorderSeq = useRef(0);
 
   if (!canManage) {
     return (
@@ -444,7 +426,7 @@ export default function KasseControl() {
   if (!settings) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -466,7 +448,7 @@ export default function KasseControl() {
     setEditProductId(product.id);
     setEditDraft({
       name: product.name,
-      category: product.category ?? '',
+      categoryId: String(product.categoryId),
       // Als Text, sonst müsste jeder Tastendruck durch parseChfToRappen und
       // „8.“ wäre zwischendurch ungültig. Geparst wird beim Speichern.
       price: (product.priceRappen / 100).toFixed(2),
@@ -478,15 +460,18 @@ export default function KasseControl() {
     const previousName =
       products.find(p => p.id === editProductId)?.name ?? editDraft.name.trim();
     const priceRappen = parseChfToRappen(editDraft.price);
-    if (!editDraft.name.trim() || priceRappen == null) {
-      toast.error('Name und ein gültiger Preis (z. B. 8.50) sind nötig.');
+    const categoryId = Number(editDraft.categoryId);
+    if (!editDraft.name.trim() || priceRappen == null || !categoryId) {
+      toast.error(
+        'Name, Kategorie und ein gültiger Preis (z. B. 8.50) sind nötig.',
+      );
       return;
     }
     updateProduct.mutate(
       {
         id: editProductId,
         name: editDraft.name.trim(),
-        category: editDraft.category.trim() || null,
+        categoryId,
         priceRappen,
       },
       {
@@ -544,66 +529,130 @@ export default function KasseControl() {
   const flatten = (list: Array<{ items: typeof products }>) =>
     list.flatMap(group => group.items.map(p => p.id));
 
-  /** Index der Gruppe, zu der eine Zieh-ID gehört — Überschrift wie Produkt. */
-  const groupIndexOf = (id: string) =>
-    id.startsWith('group:')
-      ? groups.findIndex(g => `group:${g.key}` === id)
-      : groups.findIndex(g => g.items.some(p => `product:${p.id}` === id));
-
+  /**
+   * Nur Produkte innerhalb ihrer eigenen Kategorie lassen sich ziehen — die
+   * Reihenfolge der Kategorien selbst gehört der Kategorien-Karte (eigene
+   * `displayOrder`), nicht länger dieser Liste hier.
+   */
   const handleDragEnd = (event: DragEndEvent) => {
     const activeId = String(event.active.id);
     const overId = event.over ? String(event.over.id) : null;
     if (!overId || activeId === overId) return;
-
-    // Ganze Kategorie verschieben. Beim Ziehen über eine andere Gruppe liegt
-    // unter dem Zeiger meist eines ihrer Produkte, nicht ihre Überschrift —
-    // darum das Ziel auf die Gruppe auflösen, zu der es gehört.
-    if (activeId.startsWith('group:')) {
-      const from = groupIndexOf(activeId);
-      const to = groupIndexOf(overId);
-      if (from === -1 || to === -1 || from === to) return;
-      applyOrder(flatten(arrayMove(groups, from, to)));
+    if (!activeId.startsWith('product:') || !overId.startsWith('product:')) {
       return;
     }
 
-    // Produkt innerhalb seiner Kategorie verschieben. Ein Zug in eine fremde
-    // Kategorie tut nichts: das wäre eine Änderung am Produkt, nicht an der
-    // Reihenfolge — dafür ist der Stift da.
-    if (activeId.startsWith('product:') && overId.startsWith('product:')) {
-      const group = groups.find(g =>
-        g.items.some(p => `product:${p.id}` === activeId),
-      );
-      if (!group) return;
-      const from = group.items.findIndex(p => `product:${p.id}` === activeId);
-      const to = group.items.findIndex(p => `product:${p.id}` === overId);
-      if (from === -1 || to === -1) return;
-      applyOrder(
-        flatten(
-          groups.map(g =>
-            g === group ? { ...g, items: arrayMove(g.items, from, to) } : g,
-          ),
+    const group = groups.find(g =>
+      g.items.some(p => `product:${p.id}` === activeId),
+    );
+    if (!group) return;
+    const from = group.items.findIndex(p => `product:${p.id}` === activeId);
+    const to = group.items.findIndex(p => `product:${p.id}` === overId);
+    if (from === -1 || to === -1) return;
+    applyOrder(
+      flatten(
+        groups.map(g =>
+          g === group ? { ...g, items: arrayMove(g.items, from, to) } : g,
         ),
-      );
-    }
+      ),
+    );
   };
 
   const submitProduct = () => {
     const priceRappen = parseChfToRappen(productDraft.price);
-    if (!productDraft.name.trim() || priceRappen == null) {
-      toast.error('Name und ein gültiger Preis (z. B. 8.50) sind nötig.');
+    const categoryId = Number(productDraft.categoryId);
+    if (!productDraft.name.trim() || priceRappen == null || !categoryId) {
+      toast.error(
+        'Name, Kategorie und ein gültiger Preis (z. B. 8.50) sind nötig.',
+      );
       return;
     }
     createProduct.mutate(
       {
         name: productDraft.name.trim(),
-        category: productDraft.category.trim() || null,
+        categoryId,
         priceRappen,
         displayOrder: products.length,
       },
       {
-        onSuccess: () => setProductDraft({ name: '', category: '', price: '' }),
+        onSuccess: () =>
+          setProductDraft({ name: '', categoryId: '', price: '' }),
       },
     );
+  };
+
+  const submitCategory = () => {
+    if (!categoryDraft.name.trim()) {
+      toast.error('Ein Name ist nötig.');
+      return;
+    }
+    createCategory.mutate(
+      {
+        name: categoryDraft.name.trim(),
+        station: categoryDraft.station,
+        displayOrder: categories.length,
+      },
+      {
+        onSuccess: () => setCategoryDraft({ name: '', station: 'kueche' }),
+      },
+    );
+  };
+
+  const startEditCategory = (category: (typeof categories)[number]) => {
+    setEditCategoryId(category.id);
+    setCategoryEditDraft({ name: category.name, station: category.station });
+  };
+
+  const submitCategoryEdit = () => {
+    if (editCategoryId == null) return;
+    if (!categoryEditDraft.name.trim()) {
+      toast.error('Ein Name ist nötig.');
+      return;
+    }
+    updateCategory.mutate(
+      {
+        id: editCategoryId,
+        name: categoryEditDraft.name.trim(),
+        station: categoryEditDraft.station,
+      },
+      { onSuccess: () => setEditCategoryId(null) },
+    );
+  };
+
+  const applyCategoryOrder = (ids: number[]) => {
+    const rank = new Map(ids.map((id, index) => [id, index]));
+    utils.kasse.listCategories.setData(undefined, prev =>
+      prev
+        ? [...prev].sort(
+            (a, b) =>
+              (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+              (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+          )
+        : prev,
+    );
+
+    // Zwei Züge kurz hintereinander schicken zwei Mutationen los — gleiches
+    // Muster wie applyOrder: nur der jüngste Zug lädt nach, sonst überschreibt
+    // die Antwort des ersten kurz den optimistischen Stand des zweiten.
+    const seq = ++categoryReorderSeq.current;
+    reorderCategories.mutate(
+      { ids },
+      {
+        onSuccess: () => {
+          if (seq === categoryReorderSeq.current) invalidateCategories();
+        },
+      },
+    );
+  };
+
+  const handleCategoryDragEnd = (event: DragEndEvent) => {
+    const activeId = Number(event.active.id);
+    const overId = event.over ? Number(event.over.id) : null;
+    if (overId == null || activeId === overId) return;
+    const from = categories.findIndex(c => c.id === activeId);
+    const to = categories.findIndex(c => c.id === overId);
+    if (from === -1 || to === -1) return;
+    applyCategoryOrder(arrayMove(categories, from, to).map(c => c.id));
   };
 
   return (
@@ -766,7 +815,7 @@ export default function KasseControl() {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm">
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw className="mr-2 size-4" />
                 Token rotieren
               </Button>
             </AlertDialogTrigger>
@@ -789,6 +838,198 @@ export default function KasseControl() {
         </CardContent>
       </Card>
 
+      {/* Kategorien */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Kategorien</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Jede Kategorie gehört fix zu einer Station. Eine Bestellung mit
+            Produkten mehrerer Stationen wird beim Senden im Service automatisch
+            in ein Ticket pro Station aufgeteilt — deshalb muss hier vor dem
+            Event stimmen, was zu Küche und was zur Bar gehört.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Input
+              value={categoryDraft.name}
+              onChange={e =>
+                setCategoryDraft(d => ({ ...d, name: e.target.value }))
+              }
+              placeholder="Kategorie, z. B. Drinks"
+              className="flex-1 min-w-[12rem]"
+              maxLength={50}
+            />
+            <Select
+              value={categoryDraft.station}
+              onValueChange={v =>
+                setCategoryDraft(d => ({
+                  ...d,
+                  station: v as 'kueche' | 'bar',
+                }))
+              }
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="kueche">Küche</SelectItem>
+                <SelectItem value="bar">Bar</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={submitCategory}
+              disabled={createCategory.isPending}
+            >
+              <Plus className="mr-2 size-4" />
+              Anlegen
+            </Button>
+          </div>
+
+          {categories.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Noch keine Kategorien erfasst.
+            </p>
+          ) : (
+            <DndContext
+              sensors={sensors}
+              accessibility={DND_ACCESSIBILITY}
+              collisionDetection={closestCenter}
+              onDragEnd={handleCategoryDragEnd}
+            >
+              <SortableContext
+                items={categories.map(c => String(c.id))}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {categories.map(category => (
+                    <SortableRow key={category.id} id={String(category.id)}>
+                      {handle => (
+                        <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-background p-3">
+                          <DragHandle
+                            label={`${category.name} verschieben`}
+                            handle={handle}
+                          />
+                          {editCategoryId === category.id ? (
+                            <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+                              <Input
+                                value={categoryEditDraft.name}
+                                onChange={e =>
+                                  setCategoryEditDraft(d => ({
+                                    ...d,
+                                    name: e.target.value,
+                                  }))
+                                }
+                                className="flex-1 min-w-[10rem]"
+                                maxLength={50}
+                                aria-label={`Name von ${category.name}`}
+                              />
+                              <Select
+                                value={categoryEditDraft.station}
+                                onValueChange={v =>
+                                  setCategoryEditDraft(d => ({
+                                    ...d,
+                                    station: v as 'kueche' | 'bar',
+                                  }))
+                                }
+                              >
+                                <SelectTrigger
+                                  className="w-32"
+                                  aria-label={`Station von ${category.name}`}
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="kueche">Küche</SelectItem>
+                                  <SelectItem value="bar">Bar</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                size="icon"
+                                aria-label="Änderungen speichern"
+                                disabled={updateCategory.isPending}
+                                onClick={submitCategoryEdit}
+                              >
+                                <Check className="size-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                aria-label="Bearbeiten abbrechen"
+                                onClick={() => setEditCategoryId(null)}
+                              >
+                                <X className="size-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium">
+                                {category.name}
+                                <span className="ml-2 text-xs text-muted-foreground">
+                                  {STATION_LABEL[category.station]}
+                                </span>
+                              </p>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <Label
+                                htmlFor={`category-active-${category.id}`}
+                                className="text-xs text-muted-foreground"
+                              >
+                                Aktiv
+                              </Label>
+                              <Switch
+                                id={`category-active-${category.id}`}
+                                checked={category.isActive}
+                                onCheckedChange={v =>
+                                  updateCategory.mutate({
+                                    id: category.id,
+                                    isActive: v,
+                                  })
+                                }
+                              />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`${category.name} bearbeiten`}
+                              onClick={() =>
+                                editCategoryId === category.id
+                                  ? setEditCategoryId(null)
+                                  : startEditCategory(category)
+                              }
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`${category.name} löschen`}
+                              onClick={() =>
+                                setConfirm({
+                                  title: `„${category.name}“ löschen?`,
+                                  description:
+                                    'Geht nur, wenn kein Produkt mehr an dieser Kategorie hängt — sonst zuerst die Produkte umkategorisieren.',
+                                  run: () =>
+                                    deleteCategory.mutate({ id: category.id }),
+                                })
+                              }
+                            >
+                              <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </SortableRow>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Produkte */}
       <Card>
         <CardHeader className="pb-3">
@@ -800,46 +1041,68 @@ export default function KasseControl() {
           </p>
           <p className="text-xs text-muted-foreground">
             Reihenfolge am Punkteraster ziehen — Produkte innerhalb ihrer
-            Kategorie, ganze Kategorien am Raster neben der Überschrift. Genau
-            so steht es danach im Service. Die Kategorie eines Produkts ändert
-            man über den Stift, nicht durchs Ziehen; sie steuert ausserdem,
-            welche Station (Küche oder Bar) eine Position sieht.
+            Kategorie. Die Reihenfolge der Kategorien selbst wird unten bei
+            „Kategorien" gezogen. Genau so steht es danach im Service.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            <Input
-              value={productDraft.name}
-              onChange={e =>
-                setProductDraft(d => ({ ...d, name: e.target.value }))
-              }
-              placeholder="Produkt, z. B. Pommes Frites"
-              className="flex-1 min-w-[12rem]"
-              maxLength={100}
-            />
-            <Input
-              value={productDraft.category}
-              onChange={e =>
-                setProductDraft(d => ({ ...d, category: e.target.value }))
-              }
-              placeholder="Kategorie"
-              className="w-36"
-              maxLength={50}
-            />
-            <Input
-              value={productDraft.price}
-              onChange={e =>
-                setProductDraft(d => ({ ...d, price: e.target.value }))
-              }
-              placeholder="8.50"
-              inputMode="decimal"
-              className="w-24"
-            />
-            <Button onClick={submitProduct} disabled={createProduct.isPending}>
-              <Plus className="mr-2 h-4 w-4" />
-              Anlegen
-            </Button>
-          </div>
+          {categories.length === 0 ? (
+            <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+              Zuerst unten mindestens eine Kategorie anlegen — jedes Produkt
+              braucht eine, sie entscheidet, an welche Station (Küche/Bar) seine
+              Bestellungen gehen.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <Input
+                value={productDraft.name}
+                onChange={e =>
+                  setProductDraft(d => ({ ...d, name: e.target.value }))
+                }
+                placeholder="Produkt, z. B. Pommes Frites"
+                className="flex-1 min-w-[12rem]"
+                maxLength={100}
+              />
+              <Select
+                value={productDraft.categoryId}
+                onValueChange={v =>
+                  setProductDraft(d => ({ ...d, categoryId: v }))
+                }
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Kategorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  {/* Nur aktive Kategorien: ein neues Produkt unter einer
+                      bereits deaktivierten Kategorie verschwände sofort
+                      kommentarlos aus dem Service. */}
+                  {categories
+                    .filter(category => category.isActive)
+                    .map(category => (
+                      <SelectItem key={category.id} value={String(category.id)}>
+                        {category.name} ({STATION_LABEL[category.station]})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <Input
+                value={productDraft.price}
+                onChange={e =>
+                  setProductDraft(d => ({ ...d, price: e.target.value }))
+                }
+                placeholder="8.50"
+                inputMode="decimal"
+                className="w-24"
+              />
+              <Button
+                onClick={submitProduct}
+                disabled={createProduct.isPending}
+              >
+                <Plus className="mr-2 size-4" />
+                Anlegen
+              </Button>
+            </div>
+          )}
 
           {products.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -849,318 +1112,323 @@ export default function KasseControl() {
             <DndContext
               sensors={sensors}
               accessibility={DND_ACCESSIBILITY}
-              collisionDetection={sameLevelCollision}
+              collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext
-                items={groups.map(g => `group:${g.key}`)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-4">
-                  {groups.map(group => (
-                    <SortableRow
-                      key={`group:${group.key}`}
-                      id={`group:${group.key}`}
-                    >
-                      {groupHandle => (
-                        <section className="rounded-xl border bg-muted/40 p-3">
-                          <div className="mb-3 flex items-center gap-1">
-                            <DragHandle
-                              label={`Kategorie ${group.label} verschieben`}
-                              handle={groupHandle}
-                            />
-                            <h3 className="min-w-0 truncate text-sm font-semibold uppercase tracking-wide">
-                              {group.label}
-                            </h3>
-                            <span className="shrink-0 text-xs text-muted-foreground">
-                              ({group.items.length})
-                            </span>
-                          </div>
+              <div className="space-y-4">
+                {groups.map(group => (
+                  <section
+                    key={group.key}
+                    className="rounded-xl border bg-muted/40 p-3"
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <h3 className="min-w-0 truncate text-sm font-semibold uppercase tracking-wide">
+                        {group.label}
+                      </h3>
+                      {group.station && (
+                        <span className="shrink-0 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                          {STATION_LABEL[group.station]}
+                        </span>
+                      )}
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        ({group.items.length})
+                      </span>
+                    </div>
 
-                          <SortableContext
-                            items={group.items.map(p => `product:${p.id}`)}
-                            strategy={verticalListSortingStrategy}
+                    <SortableContext
+                      items={group.items.map(p => `product:${p.id}`)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-3">
+                        {group.items.map(product => (
+                          <SortableRow
+                            key={product.id}
+                            id={`product:${product.id}`}
                           >
-                            <div className="space-y-3">
-                              {group.items.map(product => (
-                                <SortableRow
-                                  key={product.id}
-                                  id={`product:${product.id}`}
-                                >
-                                  {handle => (
-                                    <div className="rounded-lg border bg-background p-4">
-                                      <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <DragHandle
-                                          label={`${product.name} verschieben`}
-                                          handle={handle}
-                                        />
-                                        {editProductId === product.id ? (
-                                          <div className="flex min-w-0 flex-1 flex-wrap gap-2">
-                                            <Input
-                                              value={editDraft.name}
-                                              onChange={e =>
-                                                setEditDraft(d => ({
-                                                  ...d,
-                                                  name: e.target.value,
-                                                }))
-                                              }
-                                              className="flex-1 min-w-[12rem]"
-                                              maxLength={100}
-                                              aria-label={`Name von ${product.name}`}
-                                            />
-                                            <Input
-                                              value={editDraft.category}
-                                              onChange={e =>
-                                                setEditDraft(d => ({
-                                                  ...d,
-                                                  category: e.target.value,
-                                                }))
-                                              }
-                                              placeholder="Kategorie"
-                                              className="w-36"
-                                              maxLength={50}
-                                              aria-label={`Kategorie von ${product.name}`}
-                                            />
-                                            <Input
-                                              value={editDraft.price}
-                                              onChange={e =>
-                                                setEditDraft(d => ({
-                                                  ...d,
-                                                  price: e.target.value,
-                                                }))
-                                              }
-                                              placeholder="8.50"
-                                              inputMode="decimal"
-                                              className="w-24"
-                                              aria-label={`Preis von ${product.name}`}
-                                            />
-                                            <Button
-                                              size="icon"
-                                              aria-label="Änderungen speichern"
-                                              disabled={updateProduct.isPending}
-                                              onClick={submitEdit}
+                            {handle => (
+                              <div className="rounded-lg border bg-background p-4">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                  <DragHandle
+                                    label={`${product.name} verschieben`}
+                                    handle={handle}
+                                  />
+                                  {editProductId === product.id ? (
+                                    <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+                                      <Input
+                                        value={editDraft.name}
+                                        onChange={e =>
+                                          setEditDraft(d => ({
+                                            ...d,
+                                            name: e.target.value,
+                                          }))
+                                        }
+                                        className="flex-1 min-w-[12rem]"
+                                        maxLength={100}
+                                        aria-label={`Name von ${product.name}`}
+                                      />
+                                      <Select
+                                        value={editDraft.categoryId}
+                                        onValueChange={v =>
+                                          setEditDraft(d => ({
+                                            ...d,
+                                            categoryId: v,
+                                          }))
+                                        }
+                                      >
+                                        <SelectTrigger
+                                          className="w-40"
+                                          aria-label={`Kategorie von ${product.name}`}
+                                        >
+                                          <SelectValue placeholder="Kategorie" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {/* Alle Kategorien, auch inaktive:
+                                              ein Altbestand-Produkt kann noch
+                                              an einer deaktivierten hängen,
+                                              die muss sich hier weiter
+                                              anzeigen und ummappen lassen. */}
+                                          {categories.map(category => (
+                                            <SelectItem
+                                              key={category.id}
+                                              value={String(category.id)}
                                             >
-                                              <Check className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                              variant="outline"
-                                              size="icon"
-                                              aria-label="Bearbeiten abbrechen"
-                                              onClick={() =>
-                                                setEditProductId(null)
-                                              }
-                                            >
-                                              <X className="h-4 w-4" />
-                                            </Button>
-                                          </div>
-                                        ) : (
-                                          // `flex-1`, damit der Name direkt
-                                          // neben dem Anfasser steht:
-                                          // justify-between schöbe ihn sonst
-                                          // in die Mitte der Zeile.
-                                          <div className="min-w-0 flex-1">
-                                            <p className="font-medium">
-                                              {product.name}
-                                              {product.category && (
-                                                <span className="ml-2 text-xs text-muted-foreground">
-                                                  {product.category}
-                                                </span>
+                                              {category.name} (
+                                              {STATION_LABEL[category.station]}
+                                              {category.isActive
+                                                ? ''
+                                                : ', inaktiv'}
+                                              )
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <Input
+                                        value={editDraft.price}
+                                        onChange={e =>
+                                          setEditDraft(d => ({
+                                            ...d,
+                                            price: e.target.value,
+                                          }))
+                                        }
+                                        placeholder="8.50"
+                                        inputMode="decimal"
+                                        className="w-24"
+                                        aria-label={`Preis von ${product.name}`}
+                                      />
+                                      <Button
+                                        size="icon"
+                                        aria-label="Änderungen speichern"
+                                        disabled={updateProduct.isPending}
+                                        onClick={submitEdit}
+                                      >
+                                        <Check className="size-4" />
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        aria-label="Bearbeiten abbrechen"
+                                        onClick={() => setEditProductId(null)}
+                                      >
+                                        <X className="size-4" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    // `flex-1`, damit der Name direkt
+                                    // neben dem Anfasser steht:
+                                    // justify-between schöbe ihn sonst
+                                    // in die Mitte der Zeile.
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium">
+                                        {product.name}
+                                        <span className="ml-2 text-xs text-muted-foreground">
+                                          {categoryById.get(product.categoryId)
+                                            ?.name ?? 'Unbekannt'}
+                                        </span>
+                                      </p>
+                                      <p className="text-sm tabular-nums text-muted-foreground">
+                                        {formatChf(product.priceRappen)}
+                                      </p>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
+                                      <Label
+                                        htmlFor={`product-active-${product.id}`}
+                                        className="text-xs text-muted-foreground"
+                                      >
+                                        Aktiv
+                                      </Label>
+                                      <Switch
+                                        id={`product-active-${product.id}`}
+                                        checked={product.isActive}
+                                        onCheckedChange={v =>
+                                          updateProduct.mutate({
+                                            id: product.id,
+                                            isActive: v,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      aria-label={`${product.name} bearbeiten`}
+                                      onClick={() =>
+                                        editProductId === product.id
+                                          ? setEditProductId(null)
+                                          : startEdit(product)
+                                      }
+                                    >
+                                      <Pencil className="size-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      aria-label={`${product.name} löschen`}
+                                      onClick={() =>
+                                        setConfirm({
+                                          title: `„${product.name}“ löschen?`,
+                                          description:
+                                            'Das Produkt und seine Zusätze verschwinden aus der Auswahl. Bereits erfasste Bestellungen behalten Name und Preis.',
+                                          run: () =>
+                                            deleteProduct.mutate({
+                                              id: product.id,
+                                            }),
+                                        })
+                                      }
+                                    >
+                                      <Trash2 className="size-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                {/* Zusätze */}
+                                <div className="mt-3 space-y-2 border-t pt-3">
+                                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                    Zusätze
+                                  </p>
+                                  {product.options.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {product.options.map(option => (
+                                        <span
+                                          key={option.id}
+                                          className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm"
+                                        >
+                                          {option.name}
+                                          {option.priceDeltaRappen !== 0 && (
+                                            <span className="text-xs text-muted-foreground">
+                                              {option.priceDeltaRappen > 0
+                                                ? '+'
+                                                : '−'}
+                                              {formatChf(
+                                                Math.abs(
+                                                  option.priceDeltaRappen,
+                                                ),
                                               )}
-                                            </p>
-                                            <p className="text-sm tabular-nums text-muted-foreground">
-                                              {formatChf(product.priceRappen)}
-                                            </p>
-                                          </div>
-                                        )}
-                                        <div className="flex items-center gap-3">
-                                          <div className="flex items-center gap-2">
-                                            <Label
-                                              htmlFor={`product-active-${product.id}`}
-                                              className="text-xs text-muted-foreground"
-                                            >
-                                              Aktiv
-                                            </Label>
-                                            <Switch
-                                              id={`product-active-${product.id}`}
-                                              checked={product.isActive}
-                                              onCheckedChange={v =>
-                                                updateProduct.mutate({
-                                                  id: product.id,
-                                                  isActive: v,
-                                                })
-                                              }
-                                            />
-                                          </div>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            aria-label={`${product.name} bearbeiten`}
-                                            onClick={() =>
-                                              editProductId === product.id
-                                                ? setEditProductId(null)
-                                                : startEdit(product)
-                                            }
-                                          >
-                                            <Pencil className="h-4 w-4" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            aria-label={`${product.name} löschen`}
+                                            </span>
+                                          )}
+                                          <button
+                                            type="button"
+                                            aria-label={`${option.name} entfernen`}
                                             onClick={() =>
                                               setConfirm({
-                                                title: `„${product.name}“ löschen?`,
+                                                title: `Zusatz „${option.name}“ löschen?`,
                                                 description:
-                                                  'Das Produkt und seine Zusätze verschwinden aus der Auswahl. Bereits erfasste Bestellungen behalten Name und Preis.',
+                                                  'Der Zusatz verschwindet aus der Auswahl. Bereits erfasste Bestellungen behalten ihn als Snapshot.',
                                                 run: () =>
-                                                  deleteProduct.mutate({
-                                                    id: product.id,
+                                                  deleteOption.mutate({
+                                                    id: option.id,
                                                   }),
                                               })
                                             }
+                                            className="text-muted-foreground hover:text-destructive"
                                           >
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                          </Button>
-                                        </div>
-                                      </div>
-
-                                      {/* Zusätze */}
-                                      <div className="mt-3 space-y-2 border-t pt-3">
-                                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                                          Zusätze
-                                        </p>
-                                        {product.options.length > 0 && (
-                                          <div className="flex flex-wrap gap-2">
-                                            {product.options.map(option => (
-                                              <span
-                                                key={option.id}
-                                                className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm"
-                                              >
-                                                {option.name}
-                                                {option.priceDeltaRappen !==
-                                                  0 && (
-                                                  <span className="text-xs text-muted-foreground">
-                                                    {option.priceDeltaRappen > 0
-                                                      ? '+'
-                                                      : '−'}
-                                                    {formatChf(
-                                                      Math.abs(
-                                                        option.priceDeltaRappen,
-                                                      ),
-                                                    )}
-                                                  </span>
-                                                )}
-                                                <button
-                                                  type="button"
-                                                  aria-label={`${option.name} entfernen`}
-                                                  onClick={() =>
-                                                    setConfirm({
-                                                      title: `Zusatz „${option.name}“ löschen?`,
-                                                      description:
-                                                        'Der Zusatz verschwindet aus der Auswahl. Bereits erfasste Bestellungen behalten ihn als Snapshot.',
-                                                      run: () =>
-                                                        deleteOption.mutate({
-                                                          id: option.id,
-                                                        }),
-                                                    })
-                                                  }
-                                                  className="text-muted-foreground hover:text-destructive"
-                                                >
-                                                  ×
-                                                </button>
-                                              </span>
-                                            ))}
-                                          </div>
-                                        )}
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <Input
-                                            value={
-                                              optionDrafts[product.id] ?? ''
-                                            }
-                                            onChange={e =>
-                                              setOptionDrafts(d => ({
-                                                ...d,
-                                                [product.id]: e.target.value,
-                                              }))
-                                            }
-                                            placeholder="Zusatz, z. B. Ketchup"
-                                            className="max-w-xs"
-                                            maxLength={100}
-                                          />
-                                          <Input
-                                            value={
-                                              optionPriceDrafts[product.id] ??
-                                              ''
-                                            }
-                                            onChange={e =>
-                                              setOptionPriceDrafts(d => ({
-                                                ...d,
-                                                [product.id]: e.target.value,
-                                              }))
-                                            }
-                                            placeholder="Aufpreis, z. B. 0.50"
-                                            className="w-40"
-                                            inputMode="decimal"
-                                            aria-label={`Aufpreis für Zusatz von ${product.name}`}
-                                          />
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={
-                                              !optionDrafts[
-                                                product.id
-                                              ]?.trim() ||
-                                              parseOptionDelta(
-                                                optionPriceDrafts[product.id],
-                                              ) === null
-                                            }
-                                            onClick={() => {
-                                              const delta = parseOptionDelta(
-                                                optionPriceDrafts[product.id],
-                                              );
-                                              if (delta === null) return;
-                                              createOption.mutate(
-                                                {
-                                                  productId: product.id,
-                                                  name: (
-                                                    optionDrafts[product.id] ??
-                                                    ''
-                                                  ).trim(),
-                                                  priceDeltaRappen: delta,
-                                                  displayOrder:
-                                                    product.options.length,
-                                                },
-                                                {
-                                                  onSuccess: () => {
-                                                    setOptionDrafts(d => ({
-                                                      ...d,
-                                                      [product.id]: '',
-                                                    }));
-                                                    setOptionPriceDrafts(d => ({
-                                                      ...d,
-                                                      [product.id]: '',
-                                                    }));
-                                                  },
-                                                },
-                                              );
-                                            }}
-                                          >
-                                            Hinzufügen
-                                          </Button>
-                                        </div>
-                                      </div>
+                                            ×
+                                          </button>
+                                        </span>
+                                      ))}
                                     </div>
                                   )}
-                                </SortableRow>
-                              ))}
-                            </div>
-                          </SortableContext>
-                        </section>
-                      )}
-                    </SortableRow>
-                  ))}
-                </div>
-              </SortableContext>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Input
+                                      value={optionDrafts[product.id] ?? ''}
+                                      onChange={e =>
+                                        setOptionDrafts(d => ({
+                                          ...d,
+                                          [product.id]: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="Zusatz, z. B. Ketchup"
+                                      className="max-w-xs"
+                                      maxLength={100}
+                                    />
+                                    <Input
+                                      value={
+                                        optionPriceDrafts[product.id] ?? ''
+                                      }
+                                      onChange={e =>
+                                        setOptionPriceDrafts(d => ({
+                                          ...d,
+                                          [product.id]: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="Aufpreis, z. B. 0.50"
+                                      className="w-40"
+                                      inputMode="decimal"
+                                      aria-label={`Aufpreis für Zusatz von ${product.name}`}
+                                    />
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      disabled={
+                                        !optionDrafts[product.id]?.trim() ||
+                                        parseOptionDelta(
+                                          optionPriceDrafts[product.id],
+                                        ) === null
+                                      }
+                                      onClick={() => {
+                                        const delta = parseOptionDelta(
+                                          optionPriceDrafts[product.id],
+                                        );
+                                        if (delta === null) return;
+                                        createOption.mutate(
+                                          {
+                                            productId: product.id,
+                                            name: (
+                                              optionDrafts[product.id] ?? ''
+                                            ).trim(),
+                                            priceDeltaRappen: delta,
+                                            displayOrder:
+                                              product.options.length,
+                                          },
+                                          {
+                                            onSuccess: () => {
+                                              setOptionDrafts(d => ({
+                                                ...d,
+                                                [product.id]: '',
+                                              }));
+                                              setOptionPriceDrafts(d => ({
+                                                ...d,
+                                                [product.id]: '',
+                                              }));
+                                            },
+                                          },
+                                        );
+                                      }}
+                                    >
+                                      Hinzufügen
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </SortableRow>
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </section>
+                ))}
+              </div>
             </DndContext>
           )}
         </CardContent>
@@ -1212,7 +1480,7 @@ export default function KasseControl() {
                   })
                 }
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="size-4" />
                 Alle löschen
               </Button>
             </CardAction>
@@ -1300,7 +1568,7 @@ export default function KasseControl() {
                   )
                 }
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="size-4" />
               </Button>
             </div>
           </div>
@@ -1383,7 +1651,7 @@ export default function KasseControl() {
                   })
                 }
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="size-4" />
                 Auswertung zurücksetzen
               </Button>
             </CardAction>
@@ -1601,7 +1869,7 @@ export default function KasseControl() {
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="sm">
-                              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                              <Trash2 className="mr-2 size-4 text-destructive" />
                               Löschen
                             </Button>
                           </AlertDialogTrigger>

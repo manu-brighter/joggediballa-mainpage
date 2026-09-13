@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import {
   buildOrderItems,
+  groupItemsByStation,
   orderTotalRappen,
   type PricingOption,
   type PricingProduct,
@@ -16,14 +17,35 @@ const products: PricingProduct[] = [
   {
     id: 1,
     name: 'Pommes Frites',
-    category: 'Food',
+    categoryName: 'Food',
+    station: 'kueche',
     priceRappen: 600,
     isActive: true,
   },
-  { id: 2, name: 'Bier', category: 'Drinks', priceRappen: 450, isActive: true },
-  { id: 3, name: 'Suppe', category: 'Food', priceRappen: 500, isActive: false },
-  // Ohne Kategorie: die Station zeigt so etwas unter „Weiteres“.
-  { id: 4, name: 'Kaffee', priceRappen: 350, isActive: true },
+  {
+    id: 2,
+    name: 'Bier',
+    categoryName: 'Drinks',
+    station: 'bar',
+    priceRappen: 450,
+    isActive: true,
+  },
+  {
+    id: 3,
+    name: 'Suppe',
+    categoryName: 'Food',
+    station: 'kueche',
+    priceRappen: 500,
+    isActive: false,
+  },
+  {
+    id: 4,
+    name: 'Kaffee',
+    categoryName: 'Weiteres',
+    station: 'kueche',
+    priceRappen: 350,
+    isActive: true,
+  },
 ];
 
 const options: PricingOption[] = [
@@ -204,18 +226,46 @@ describe('buildOrderItems', () => {
 });
 
 describe('Kategorie-Snapshot', () => {
-  it('schreibt die Kategorie des Produkts in die Position', () => {
+  it('schreibt den Kategorie-Namen des Produkts in die Position', () => {
     const items = buildOrderItems(products, options, [
       { productId: 1, quantity: 1 },
       { productId: 2, quantity: 2 },
     ]);
     expect(items.map(i => i.productCategory)).toEqual(['Food', 'Drinks']);
   });
+});
 
-  it('setzt die Kategorie auf null, wenn das Produkt keine hat', () => {
+describe('groupItemsByStation', () => {
+  it('lässt eine reine Küchen-Bestellung unangetastet als eine Gruppe', () => {
     const items = buildOrderItems(products, options, [
+      { productId: 1, quantity: 2 },
       { productId: 4, quantity: 1 },
     ]);
-    expect(items[0].productCategory).toBeNull();
+    const groups = groupItemsByStation(items);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].station).toBe('kueche');
+    expect(groups[0].items).toHaveLength(2);
+  });
+
+  it('teilt eine gemischte Bestellung in Küche und Bar auf', () => {
+    const items = buildOrderItems(products, options, [
+      { productId: 1, quantity: 1 }, // Food -> Küche
+      { productId: 2, quantity: 3 }, // Drinks -> Bar
+    ]);
+    const groups = groupItemsByStation(items);
+    expect(groups.map(g => g.station)).toEqual(['kueche', 'bar']);
+    expect(groups[0].items.map(i => i.productName)).toEqual(['Pommes Frites']);
+    expect(groups[1].items.map(i => i.productName)).toEqual(['Bier']);
+  });
+
+  it('summiert pro Station unabhängig, das Gesamttotal bleibt gleich', () => {
+    const items = buildOrderItems(products, options, [
+      { productId: 1, quantity: 2 }, // 2 x 6.00 = 12.00 Küche
+      { productId: 2, quantity: 1 }, // 1 x 4.50 = 4.50 Bar
+    ]);
+    const groups = groupItemsByStation(items);
+    const totals = groups.map(g => orderTotalRappen(g.items));
+    expect(totals).toEqual([1200, 450]);
+    expect(totals.reduce((a, b) => a + b, 0)).toBe(orderTotalRappen(items));
   });
 });
