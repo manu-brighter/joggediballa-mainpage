@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { usePermission } from '@/hooks/usePermissions';
@@ -378,6 +378,7 @@ export default function Goennermitglieder() {
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const searchTriggerRef = useRef<HTMLButtonElement>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -594,6 +595,12 @@ export default function Goennermitglieder() {
     visiblePendingMembers.length +
     visibleExpiredMembers.length;
 
+  const closeSearch = () => {
+    setSearchQuery('');
+    setSearchOpen(false);
+    requestAnimationFrame(() => searchTriggerRef.current?.focus());
+  };
+
   // Calculate total contribution amount from active members only
   const totalActiveContributions = useMemo(() => {
     return activeMembers.reduce(
@@ -748,8 +755,8 @@ export default function Goennermitglieder() {
                   onChange={event => setSearchQuery(event.target.value)}
                   onKeyDown={event => {
                     if (event.key === 'Escape') {
-                      setSearchQuery('');
-                      setSearchOpen(false);
+                      event.preventDefault();
+                      closeSearch();
                     }
                   }}
                   placeholder="Name"
@@ -759,10 +766,7 @@ export default function Goennermitglieder() {
                 />
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSearchOpen(false);
-                  }}
+                  onClick={closeSearch}
                   aria-label="Suche schliessen"
                   className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
@@ -771,6 +775,7 @@ export default function Goennermitglieder() {
               </div>
             ) : (
               <Button
+                ref={searchTriggerRef}
                 type="button"
                 variant="outline"
                 size="icon"
@@ -782,6 +787,15 @@ export default function Goennermitglieder() {
                 <Search className="h-4 w-4" />
               </Button>
             )}
+
+            <p
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className="sr-only"
+            >
+              {searchQuery.trim() ? `${visibleMemberCount} Treffer` : ''}
+            </p>
 
             {/* Year Filter Dropdown */}
             <Select
