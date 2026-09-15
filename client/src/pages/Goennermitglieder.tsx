@@ -58,10 +58,11 @@ import {
   Banknote,
   Copy,
   Check,
+  Search,
+  X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Link } from 'wouter';
 import { getLoginUrl } from '@/const';
 
 const MotionDiv = motion.div;
@@ -128,26 +129,52 @@ function getMemberStatus(member: Member): 'active' | 'expiring' | 'expired' {
   return 'active';
 }
 
+function normalizeSearchValue(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('de-CH');
+}
+
+function HighlightedName({ name, query }: { name: string; query: string }) {
+  const normalizedQuery = normalizeSearchValue(query.trim());
+
+  if (!normalizedQuery) return name;
+
+  const matchIndex = normalizeSearchValue(name).indexOf(normalizedQuery);
+  if (matchIndex === -1) return name;
+
+  return (
+    <>
+      {name.slice(0, matchIndex)}
+      <mark className="rounded-sm bg-primary/20 px-0.5 text-inherit ring-1 ring-primary/30 dark:bg-primary/30">
+        {name.slice(matchIndex, matchIndex + normalizedQuery.length)}
+      </mark>
+      {name.slice(matchIndex + normalizedQuery.length)}
+    </>
+  );
+}
+
 // MemberCard component defined outside to prevent re-renders
 const MemberCard = React.memo(
   ({
     member,
-    isExpired = false,
     canManageGoennermitglieder,
     onViewClick,
     onEditClick,
     onExtendClick,
     onDeleteClick,
     onConfirmPayment,
+    searchQuery,
   }: {
     member: Member;
-    isExpired?: boolean;
     canManageGoennermitglieder: boolean;
     onViewClick: (member: Member) => void;
     onEditClick: (member: Member) => void;
     onExtendClick: (member: Member) => void;
     onDeleteClick: (member: Member) => void;
     onConfirmPayment: (member: Member) => void;
+    searchQuery: string;
   }) => {
     const status = getMemberStatus(member);
     const daysLeft = getDaysUntilExpiry(member.membershipEndDate);
@@ -187,7 +214,10 @@ const MemberCard = React.memo(
                     'text-primary',
                 )}
               >
-                {member.firstName} {member.lastName}
+                <HighlightedName
+                  name={`${member.firstName} ${member.lastName}`}
+                  query={searchQuery}
+                />
               </h3>
               {status === 'expired' && (
                 <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium">
@@ -302,7 +332,7 @@ const MemberCard = React.memo(
 );
 
 export default function Goennermitglieder() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   // Detect if device is mobile to prevent auto-focus
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -324,6 +354,7 @@ export default function Goennermitglieder() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('endDate');
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -519,6 +550,27 @@ export default function Goennermitglieder() {
     };
   }, [allMembers, sortBy, filterYear]);
 
+  const { visibleActiveMembers, visiblePendingMembers, visibleExpiredMembers } =
+    useMemo(() => {
+      const normalizedQuery = normalizeSearchValue(searchQuery.trim());
+      const matchesSearch = (member: Member) =>
+        !normalizedQuery ||
+        normalizeSearchValue(`${member.firstName} ${member.lastName}`).includes(
+          normalizedQuery,
+        );
+
+      return {
+        visibleActiveMembers: activeMembers.filter(matchesSearch),
+        visiblePendingMembers: pendingMembers.filter(matchesSearch),
+        visibleExpiredMembers: expiredMembers.filter(matchesSearch),
+      };
+    }, [activeMembers, pendingMembers, expiredMembers, searchQuery]);
+
+  const visibleMemberCount =
+    visibleActiveMembers.length +
+    visiblePendingMembers.length +
+    visibleExpiredMembers.length;
+
   // Calculate total contribution amount from active members only
   const totalActiveContributions = useMemo(() => {
     return activeMembers.reduce(
@@ -664,7 +716,7 @@ export default function Goennermitglieder() {
             <Select
               value={filterYear.toString()}
               onValueChange={value =>
-                setFilterYear(value === 'all' ? 'all' : parseInt(value))
+                setFilterYear(value === 'all' ? 'all' : parseInt(value, 10))
               }
             >
               <SelectTrigger className="w-full sm:w-auto min-w-[140px] h-10">
@@ -1060,6 +1112,80 @@ export default function Goennermitglieder() {
         </div>
       </div>
 
+      {/* Live member search */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+        className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm sm:p-5"
+      >
+        <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 items-center gap-3 sm:w-64 sm:flex-none">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+              <Search className="h-5 w-5" />
+            </div>
+            <div>
+              <Label htmlFor="member-search" className="font-semibold">
+                Mitglieder durchsuchen
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Die Liste wird beim Tippen gefiltert.
+              </p>
+            </div>
+          </div>
+
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors peer-focus:text-primary" />
+            <Input
+              id="member-search"
+              type="search"
+              value={searchQuery}
+              onChange={event => setSearchQuery(event.target.value)}
+              placeholder="Vor- oder Nachname eingeben ..."
+              autoComplete="off"
+              className="peer h-11 rounded-xl bg-background/80 pl-10 pr-11 shadow-sm transition-all duration-300 focus-visible:bg-background focus-visible:shadow-md [&::-webkit-search-cancel-button]:hidden"
+            />
+            <AnimatePresence>
+              {searchQuery && (
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0, scale: 0.75 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.75 }}
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Suche löschen"
+                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="h-4 w-4" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="min-h-8"
+          >
+            <AnimatePresence mode="wait">
+              {searchQuery.trim() && (
+                <motion.div
+                  key={visibleMemberCount}
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  className="whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-center text-sm font-semibold text-primary"
+                >
+                  {visibleMemberCount} Treffer
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </MotionDiv>
+
       {/* Stats Cards - Compact horizontal layout */}
       {/* Total Contributions Card */}
       <MotionDiv
@@ -1123,69 +1249,101 @@ export default function Goennermitglieder() {
         </div>
       </div>
 
-      {/* Active Members */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <CheckCircle className="h-5 w-5 text-primary" />
-          <span className="text-primary">
-            Aktive Mitglieder ({activeMembers.length})
-          </span>
-        </h2>
-
-        {isLoading ? (
-          <Card>
+      {searchQuery.trim() && !isLoading && visibleMemberCount === 0 && (
+        <MotionDiv
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <Card className="border-dashed border-primary/30 bg-primary/5">
             <CardContent className="py-12">
-              <p className="text-center text-muted-foreground">
-                Lade Mitglieder...
-              </p>
-            </CardContent>
-          </Card>
-        ) : activeMembers.length === 0 ? (
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center space-y-4">
-                <Users className="h-16 w-16 text-muted-foreground/50 mx-auto" />
-                <p className="text-muted-foreground text-lg">
-                  Noch keine aktiven Mitglieder vorhanden.
-                </p>
+              <div className="text-center space-y-3">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                  <Search className="h-7 w-7 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-semibold">Keine Treffer</p>
+                  <p className="text-sm text-muted-foreground">
+                    Keine Treffer für „{searchQuery.trim()}“ mit den aktuellen
+                    Filtern.
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setSearchQuery('')}>
+                  Suche zurücksetzen
+                </Button>
               </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-3">
-            <AnimatePresence mode="popLayout">
-              {activeMembers.map(member => (
-                <MemberCard
-                  key={member.id}
-                  member={member as Member}
-                  canManageGoennermitglieder={canManageGoennermitglieder}
-                  onViewClick={openViewDialog}
-                  onEditClick={openEditDialog}
-                  onExtendClick={handleExtendClick}
-                  onDeleteClick={m => {
-                    setSelectedMember(m);
-                    setDeleteDialogOpen(true);
-                  }}
-                  onConfirmPayment={handleConfirmPayment}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </section>
+        </MotionDiv>
+      )}
+
+      {/* Active Members */}
+      {(!searchQuery.trim() ||
+        visibleActiveMembers.length > 0 ||
+        isLoading) && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-primary" />
+            <span className="text-primary">
+              Aktive Mitglieder ({visibleActiveMembers.length})
+            </span>
+          </h2>
+
+          {isLoading ? (
+            <Card>
+              <CardContent className="py-12">
+                <p className="text-center text-muted-foreground">
+                  Lade Mitglieder...
+                </p>
+              </CardContent>
+            </Card>
+          ) : visibleActiveMembers.length === 0 ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center space-y-4">
+                  <Users className="h-16 w-16 text-muted-foreground/50 mx-auto" />
+                  <p className="text-muted-foreground text-lg">
+                    Noch keine aktiven Mitglieder vorhanden.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              <AnimatePresence mode="popLayout">
+                {visibleActiveMembers.map(member => (
+                  <MemberCard
+                    key={member.id}
+                    member={member as Member}
+                    canManageGoennermitglieder={canManageGoennermitglieder}
+                    onViewClick={openViewDialog}
+                    onEditClick={openEditDialog}
+                    onExtendClick={handleExtendClick}
+                    onDeleteClick={m => {
+                      setSelectedMember(m);
+                      setDeleteDialogOpen(true);
+                    }}
+                    onConfirmPayment={handleConfirmPayment}
+                    searchQuery={searchQuery}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Provisorische Mitglieder Section */}
-      {pendingMembers.length > 0 && (
+      {visiblePendingMembers.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <Clock className="h-6 w-6 text-pending" />
             <span className="text-pending">
-              Provisorische Mitglieder ({pendingMembers.length})
+              Provisorische Mitglieder ({visiblePendingMembers.length})
             </span>
           </h2>
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
-              {pendingMembers.map(member => (
+              {visiblePendingMembers.map(member => (
                 <MemberCard
                   key={member.id}
                   member={member as Member}
@@ -1198,6 +1356,7 @@ export default function Goennermitglieder() {
                     setDeleteDialogOpen(true);
                   }}
                   onConfirmPayment={handleConfirmPayment}
+                  searchQuery={searchQuery}
                 />
               ))}
             </AnimatePresence>
@@ -1206,19 +1365,18 @@ export default function Goennermitglieder() {
       )}
 
       {/* Expired Members Section */}
-      {expiredMembers.length > 0 && (
+      {visibleExpiredMembers.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-destructive">
             <XCircle className="h-6 w-6 text-destructive" />
-            Abgelaufene Mitgliedschaften ({expiredMembers.length})
+            Abgelaufene Mitgliedschaften ({visibleExpiredMembers.length})
           </h2>
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
-              {expiredMembers.map(member => (
+              {visibleExpiredMembers.map(member => (
                 <MemberCard
                   key={member.id}
                   member={member as Member}
-                  isExpired
                   canManageGoennermitglieder={canManageGoennermitglieder}
                   onViewClick={openViewDialog}
                   onEditClick={openEditDialog}
@@ -1228,6 +1386,7 @@ export default function Goennermitglieder() {
                     setDeleteDialogOpen(true);
                   }}
                   onConfirmPayment={handleConfirmPayment}
+                  searchQuery={searchQuery}
                 />
               ))}
             </AnimatePresence>
@@ -1602,6 +1761,7 @@ export default function Goennermitglieder() {
           <div className="space-y-4 py-4">
             <div className="flex flex-col gap-3">
               <button
+                type="button"
                 onClick={() => setPendingPaymentStatus('paid')}
                 className={cn(
                   'flex items-center gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer',
@@ -1626,6 +1786,7 @@ export default function Goennermitglieder() {
                 </div>
               </button>
               <button
+                type="button"
                 onClick={() => setPendingPaymentStatus('pending')}
                 className={cn(
                   'flex items-center gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer',
