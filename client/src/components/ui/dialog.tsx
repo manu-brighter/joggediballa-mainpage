@@ -94,6 +94,7 @@ function DialogContent({
   children,
   showCloseButton = true,
   onEscapeKeyDown,
+  onKeyDown,
   onEnterKey,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
@@ -106,7 +107,7 @@ function DialogContent({
     (e: KeyboardEvent) => {
       // Check both the native isComposing property and our context state
       // This handles Safari's timing issues with composition events
-      const isCurrentlyComposing = (e as any).isComposing || isComposing();
+      const isCurrentlyComposing = e.isComposing || isComposing();
 
       // If IME is composing, prevent dialog from closing
       if (isCurrentlyComposing) {
@@ -120,31 +121,33 @@ function DialogContent({
     [isComposing, onEscapeKeyDown],
   );
 
-  // Handle Enter key to trigger primary action
-  React.useEffect(() => {
-    if (!onEnterKey) return;
+  const handleKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      onKeyDown?.(event);
+      if (event.defaultPrevented || !onEnterKey) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if IME is composing
-      const isCurrentlyComposing = (e as any).isComposing || isComposing();
+      const target = event.target;
+      const isCurrentlyComposing =
+        event.nativeEvent.isComposing || isComposing();
+      const isInteractiveTrigger =
+        target instanceof HTMLElement &&
+        Boolean(target.closest('button, [role="button"]'));
 
-      // Only trigger on Enter key, not composing, and not in textarea
       if (
-        e.key === 'Enter' &&
+        event.key === 'Enter' &&
         !isCurrentlyComposing &&
-        !e.shiftKey &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !(e.target instanceof HTMLTextAreaElement)
+        !event.shiftKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !(target instanceof HTMLTextAreaElement) &&
+        !isInteractiveTrigger
       ) {
-        e.preventDefault();
+        event.preventDefault();
         onEnterKey();
       }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onEnterKey, isComposing]);
+    },
+    [isComposing, onEnterKey, onKeyDown],
+  );
 
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -156,6 +159,7 @@ function DialogContent({
           className,
         )}
         onEscapeKeyDown={handleEscapeKeyDown}
+        onKeyDown={handleKeyDown}
         {...props}
       >
         {children}
