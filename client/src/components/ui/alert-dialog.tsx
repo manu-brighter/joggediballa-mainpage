@@ -44,32 +44,37 @@ function AlertDialogOverlay({
 
 function AlertDialogContent({
   className,
+  onKeyDown,
   onEnterKey,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
   onEnterKey?: () => void;
 }) {
-  // Handle Enter key to trigger primary action
-  React.useEffect(() => {
-    if (!onEnterKey) return;
+  const handleKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      onKeyDown?.(event);
+      if (event.defaultPrevented || !onEnterKey) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger on Enter key, not in textarea, and not with modifiers
+      const target = event.target;
+      const isInteractiveTrigger =
+        target instanceof HTMLElement &&
+        Boolean(target.closest('button, [role="button"]'));
+
       if (
-        e.key === 'Enter' &&
-        !e.shiftKey &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !(e.target instanceof HTMLTextAreaElement)
+        event.key === 'Enter' &&
+        !event.nativeEvent.isComposing &&
+        !event.shiftKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !(target instanceof HTMLTextAreaElement) &&
+        !isInteractiveTrigger
       ) {
-        e.preventDefault();
+        event.preventDefault();
         onEnterKey();
       }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onEnterKey]);
+    },
+    [onEnterKey, onKeyDown],
+  );
 
   return (
     <AlertDialogPortal>
@@ -80,6 +85,7 @@ function AlertDialogContent({
           'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
           className,
         )}
+        onKeyDown={handleKeyDown}
         {...props}
       />
     </AlertDialogPortal>

@@ -136,7 +136,15 @@ function normalizeSearchValue(value: string): string {
     .toLocaleLowerCase('de-CH');
 }
 
-function HighlightedName({ name, query }: { name: string; query: string }) {
+function HighlightedName({
+  name,
+  query,
+  highlightClassName,
+}: {
+  name: string;
+  query: string;
+  highlightClassName: string;
+}) {
   const normalizedQuery = normalizeSearchValue(query.trim());
 
   if (!normalizedQuery) return name;
@@ -147,7 +155,12 @@ function HighlightedName({ name, query }: { name: string; query: string }) {
   return (
     <>
       {name.slice(0, matchIndex)}
-      <mark className="rounded-sm bg-primary/20 px-0.5 text-inherit ring-1 ring-primary/30 dark:bg-primary/30">
+      <mark
+        className={cn(
+          'rounded-sm px-0.5 text-inherit ring-1',
+          highlightClassName,
+        )}
+      >
         {name.slice(matchIndex, matchIndex + normalizedQuery.length)}
       </mark>
       {name.slice(matchIndex + normalizedQuery.length)}
@@ -178,6 +191,14 @@ const MemberCard = React.memo(
   }) => {
     const status = getMemberStatus(member);
     const daysLeft = getDaysUntilExpiry(member.membershipEndDate);
+    const highlightClassName =
+      status === 'expired'
+        ? 'bg-destructive/20 ring-destructive/35 dark:bg-destructive/30'
+        : status === 'expiring'
+          ? 'bg-warning/25 ring-warning/40 dark:bg-warning/30'
+          : member.paymentStatus === 'pending'
+            ? 'bg-pending/20 ring-pending/35 dark:bg-pending/30'
+            : 'bg-primary/20 ring-primary/30 dark:bg-primary/30';
 
     return (
       <MotionDiv
@@ -217,6 +238,7 @@ const MemberCard = React.memo(
                 <HighlightedName
                   name={`${member.firstName} ${member.lastName}`}
                   query={searchQuery}
+                  highlightClassName={highlightClassName}
                 />
               </h3>
               {status === 'expired' && (
@@ -355,6 +377,7 @@ export default function Goennermitglieder() {
   const [sortBy, setSortBy] = useState<SortOption>('endDate');
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -710,8 +733,56 @@ export default function Goennermitglieder() {
         </MotionDiv>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
-          {/* Filter and Sort Dropdowns - Side by side on mobile */}
-          <div className="flex gap-2">
+          {/* Search, filter and sort controls */}
+          <div className="flex flex-wrap justify-end gap-2">
+            {searchOpen ? (
+              <div className="relative w-full sm:w-56">
+                <Label htmlFor="member-search" className="sr-only">
+                  Mitglieder suchen
+                </Label>
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="member-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={event => setSearchQuery(event.target.value)}
+                  onKeyDown={event => {
+                    if (event.key === 'Escape') {
+                      setSearchQuery('');
+                      setSearchOpen(false);
+                    }
+                  }}
+                  placeholder="Name"
+                  autoComplete="off"
+                  autoFocus
+                  className="h-10 bg-background pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchOpen(false);
+                  }}
+                  aria-label="Suche schliessen"
+                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => setSearchOpen(true)}
+                aria-label="Mitglieder suchen"
+                title="Mitglieder suchen"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            )}
+
             {/* Year Filter Dropdown */}
             <Select
               value={filterYear.toString()}
@@ -719,7 +790,7 @@ export default function Goennermitglieder() {
                 setFilterYear(value === 'all' ? 'all' : parseInt(value, 10))
               }
             >
-              <SelectTrigger className="w-full sm:w-auto min-w-[140px] h-10">
+              <SelectTrigger className="h-10 min-w-[140px] flex-1 sm:w-auto sm:flex-none">
                 <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
                 <SelectValue placeholder="Jahr" />
               </SelectTrigger>
@@ -738,7 +809,7 @@ export default function Goennermitglieder() {
               value={sortBy}
               onValueChange={value => setSortBy(value as SortOption)}
             >
-              <SelectTrigger className="w-full sm:w-auto min-w-[140px] h-10">
+              <SelectTrigger className="h-10 min-w-[140px] flex-1 sm:w-auto sm:flex-none">
                 <ArrowUpDown className="h-4 w-4 mr-2 flex-shrink-0" />
                 <SelectValue placeholder="Sortieren" />
               </SelectTrigger>
@@ -1111,80 +1182,6 @@ export default function Goennermitglieder() {
           </div>
         </div>
       </div>
-
-      {/* Live member search */}
-      <MotionDiv
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08 }}
-        className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm sm:p-5"
-      >
-        <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
-        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex min-w-0 items-center gap-3 sm:w-64 sm:flex-none">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-              <Search className="h-5 w-5" />
-            </div>
-            <div>
-              <Label htmlFor="member-search" className="font-semibold">
-                Mitglieder durchsuchen
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Die Liste wird beim Tippen gefiltert.
-              </p>
-            </div>
-          </div>
-
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors peer-focus:text-primary" />
-            <Input
-              id="member-search"
-              type="search"
-              value={searchQuery}
-              onChange={event => setSearchQuery(event.target.value)}
-              placeholder="Vor- oder Nachname eingeben ..."
-              autoComplete="off"
-              className="peer h-11 rounded-xl bg-background/80 pl-10 pr-11 shadow-sm transition-all duration-300 focus-visible:bg-background focus-visible:shadow-md [&::-webkit-search-cancel-button]:hidden"
-            />
-            <AnimatePresence>
-              {searchQuery && (
-                <motion.button
-                  type="button"
-                  initial={{ opacity: 0, scale: 0.75 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.75 }}
-                  onClick={() => setSearchQuery('')}
-                  aria-label="Suche löschen"
-                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <X className="h-4 w-4" />
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-            className="min-h-8"
-          >
-            <AnimatePresence mode="wait">
-              {searchQuery.trim() && (
-                <motion.div
-                  key={visibleMemberCount}
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -8 }}
-                  className="whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-center text-sm font-semibold text-primary"
-                >
-                  {visibleMemberCount} Treffer
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </MotionDiv>
 
       {/* Stats Cards - Compact horizontal layout */}
       {/* Total Contributions Card */}
