@@ -725,7 +725,7 @@ export default function Goennermitglieder() {
   return (
     <div className="container py-8 md:py-12 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4">
         <MotionDiv
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -739,54 +739,61 @@ export default function Goennermitglieder() {
           </p>
         </MotionDiv>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-end gap-3">
           {/* Search, filter and sort controls */}
-          <div className="flex flex-wrap justify-end gap-2">
-            {searchOpen ? (
-              <div className="relative w-full sm:w-56">
-                <Label htmlFor="member-search" className="sr-only">
-                  Mitglieder suchen
-                </Label>
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="member-search"
-                  type="search"
-                  value={searchQuery}
-                  onChange={event => setSearchQuery(event.target.value)}
-                  onKeyDown={event => {
-                    if (event.key === 'Escape') {
-                      event.preventDefault();
-                      closeSearch();
-                    }
-                  }}
-                  placeholder="Name"
-                  autoComplete="off"
-                  autoFocus
-                  className="h-10 bg-background pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden"
-                />
-                <button
+          <div className="flex flex-wrap sm:flex-nowrap justify-end gap-2">
+            <div
+              className={cn(
+                'relative h-10 shrink-0',
+                searchOpen ? 'w-full sm:w-10' : 'w-10',
+              )}
+            >
+              {searchOpen ? (
+                <div className="relative h-10 w-full sm:absolute sm:right-0 sm:top-0 sm:z-20 sm:w-56">
+                  <Label htmlFor="member-search" className="sr-only">
+                    Mitglieder suchen
+                  </Label>
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="member-search"
+                    type="search"
+                    value={searchQuery}
+                    onChange={event => setSearchQuery(event.target.value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closeSearch();
+                      }
+                    }}
+                    placeholder="Name"
+                    autoComplete="off"
+                    autoFocus
+                    className="h-10 bg-background pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={closeSearch}
+                    aria-label="Suche schliessen"
+                    className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <Button
+                  ref={searchTriggerRef}
                   type="button"
-                  onClick={closeSearch}
-                  aria-label="Suche schliessen"
-                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  onClick={() => setSearchOpen(true)}
+                  aria-label="Mitglieder suchen"
+                  title="Mitglieder suchen"
                 >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <Button
-                ref={searchTriggerRef}
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                onClick={() => setSearchOpen(true)}
-                aria-label="Mitglieder suchen"
-                title="Mitglieder suchen"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            )}
+                  <Search className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
 
             <p
               role="status"
@@ -836,7 +843,7 @@ export default function Goennermitglieder() {
           </div>
 
           {/* Action Buttons - Side by side on mobile */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 sm:justify-end">
             {/* Payment Info Button */}
             <Dialog
               open={paymentDialogOpen}
