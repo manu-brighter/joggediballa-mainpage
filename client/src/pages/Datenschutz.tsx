@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/PageHeader';
+import { ProtectedEmail } from '@/components/ProtectedEmail';
 import { SEO } from '@/components/SEO';
 
 export default function Datenschutz() {
@@ -36,7 +37,7 @@ export default function Datenschutz() {
             <br />
             4203 Grellingen, Schweiz
             <br />
-            E-Mail: joggediballa@gmail.com
+            E-Mail: <ProtectedEmail />
           </p>
         </div>
 

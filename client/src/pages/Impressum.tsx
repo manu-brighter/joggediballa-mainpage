@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/PageHeader';
+import { ProtectedEmail } from '@/components/ProtectedEmail';
 import { SEO } from '@/components/SEO';
 
 export default function Impressum() {
@@ -32,7 +33,9 @@ export default function Impressum() {
 
         <div>
           <h2 className="font-semibold mb-2">Kontakt</h2>
-          <p>E-Mail: joggediballa@gmail.com</p>
+          <p>
+            E-Mail: <ProtectedEmail />
+          </p>
         </div>
 
         <div>
