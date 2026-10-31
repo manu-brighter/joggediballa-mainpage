@@ -201,8 +201,8 @@ importers:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       nodemailer:
-        specifier: ^10.0.9
-        version: 10.0.9
+        specifier: ^10.1.4
+        version: 10.1.4
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -3084,8 +3084,8 @@ packages:
     resolution: {integrity: sha512-mIrE/Cw9y+9Au6dS5vDKDhQza9YvG6w+ZrS6X+ZzA7yFW/soAeaups4Qzn1bL6g5FVy8WtP79+0j82oPIbqRjQ==}
     engines: {node: '>=18'}
 
-  nodemailer@10.0.9:
-    resolution: {integrity: sha512-BF0qcyplCwp+jMk6HCjFykBz/YhhZSsxrARhOldLwFWH+8kGjQsd2WIMIZhqEuyXRoGFi0ONbDeWDMDoL8MhLw==}
+  nodemailer@10.1.4:
+    resolution: {integrity: sha512-EsMnOR2oRv4LGnWvHgcVYkkQ4O2j8KO4WTw6l+PHR4sOXo8SAgIraxtEnGDmotjbhv0hDsu3IuDIFZm8iXwO4A==}
     engines: {node: '>=20.0.0'}
 
   normalize-range@0.1.2:
@@ -6047,7 +6047,7 @@ snapshots:
 
   node-releases@2.0.55: {}
 
-  nodemailer@10.0.9: {}
+  nodemailer@10.1.4: {}
 
   normalize-range@0.1.2: {}
 
